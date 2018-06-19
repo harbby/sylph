@@ -1,0 +1,25 @@
+apply plugin: 'scala'
+
+configurations.all {
+    //--- check for updates every build
+    //resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
+dependencies {
+    compile group: 'org.json', name: 'json', version:'20160810'
+
+    compile group: 'commons-io', name: 'commons-io', version: '2.6'
+    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.6'
+
+    compile group: 'redis.clients', name: 'jedis', version: '2.9.0'
+    compile group: 'joda-time', name: 'joda-time', version:versions.joda_time
+
+    compileOnly group: 'org.scala-lang', name: 'scala-library', version: versions.scala
+    compileOnly group: 'org.apache.parquet', name: 'parquet-hadoop', version: '1.8.2'
+    compile group: 'commons-collections', name: 'commons-collections', version: '3.2.2'
+    compileOnly (group: 'org.apache.hadoop', name: 'hadoop-common', version: versions.hadoop){
+        exclude(module: '*')
+    }
+
+    compile group: 'org.slf4j', name: 'slf4j-log4j12', version:'1.7.12'
+}

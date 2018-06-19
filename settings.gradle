@@ -1,2 +1,10 @@
 rootProject.name = 'sylph'
 
+include 'sylph-api'
+include 'sylph-common'
+include 'sylph-runners'
+include 'sylph-runners:sylph-runner-flink'
+include 'sylph-runners:sylph-runner-spark'
+include 'sylph-server'
+include 'sylph-spi'
+

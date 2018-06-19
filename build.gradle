@@ -1,16 +1,54 @@
-plugins {
-    id 'java'
+allprojects{
+    group 'org.ideal'
+    version '0.1.0-SNAPSHOT'
+
+    apply plugin: 'java'
+    apply plugin: 'maven'
+    apply plugin: 'checkstyle'
+    ext.versions = [
+            flink:  '1.5.0',
+            jetty: "9.4.6.v20170531",   //8.1.17.v20150415   "9.4.6.v20170531"
+            hadoop: "2.7.4",
+            plugin_core: "1.0.4",
+            scala: '2.11.8',
+            joda_time:'2.9.3',
+            guava: '18.0'
+    ]
 }
 
-group 'org.ideal'
-version '0.1.0'
 
-sourceCompatibility = 1.8
+subprojects{
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
 
-repositories {
-    mavenCentral()
-}
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+    }
+    tasks.withType(ScalaCompile) {
+        options.encoding = 'UTF-8'
+    }
 
-dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+    repositories {
+        mavenLocal()
+        maven { url "http://maven.aliyun.com/nexus/content/groups/public/" }
+        mavenCentral()
+    }
+
+    dependencies {
+        testCompile group: 'junit', name: 'junit', version: '4.12'
+    }
+
+    checkstyle {
+        toolVersion '8.2'
+        showViolations true
+    }
+
+    task checkstyle(type: Checkstyle) {
+        configFile = file("${rootProject.projectDir}/src/checkstyle/facebook_checks.xml")
+        source  'src'
+        include  '**/*.java'
+        exclude '**/gen/**', '**/test/**', '**/build/**'
+        classpath = files()
+    }
+    assemble.dependsOn 'checkstyle'
 }
