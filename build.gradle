@@ -51,4 +51,9 @@ subprojects{
         classpath = files()
     }
     assemble.dependsOn 'checkstyle'
+
+    /* 如果依赖版本冲突 则直接失败策略设置*/
+    configurations.all {
+        resolutionStrategy {  failOnVersionConflict() }
+    }
 }
