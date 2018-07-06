@@ -15,7 +15,9 @@ dependencies {
     compile group: 'joda-time', name: 'joda-time', version:versions.joda_time
 
     compileOnly group: 'org.scala-lang', name: 'scala-library', version: versions.scala
-    compileOnly group: 'org.apache.parquet', name: 'parquet-hadoop', version: '1.8.2'
+    compileOnly (group: 'org.apache.parquet', name: 'parquet-hadoop', version: '1.8.2'){
+        exclude(module: 'slf4j-api')
+    }
     compile group: 'commons-collections', name: 'commons-collections', version: '3.2.2'
     compileOnly (group: 'org.apache.hadoop', name: 'hadoop-common', version: versions.hadoop){
         exclude(module: '*')

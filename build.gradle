@@ -1,5 +1,5 @@
 allprojects{
-    group 'org.ideal'
+    group 'ideal'
     version '0.1.0-SNAPSHOT'
 
     apply plugin: 'java'
@@ -18,8 +18,8 @@ allprojects{
 
 
 subprojects{
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
+    sourceCompatibility = 1.10
+    targetCompatibility = 1.10
 
     tasks.withType(JavaCompile) {
         options.encoding = 'UTF-8'
@@ -39,7 +39,7 @@ subprojects{
     }
 
     checkstyle {
-        toolVersion '8.2'
+        toolVersion '8.11'
         showViolations true
     }
 
@@ -47,7 +47,7 @@ subprojects{
         configFile = file("${rootProject.projectDir}/src/checkstyle/facebook_checks.xml")
         source  'src'
         include  '**/*.java'
-        exclude '**/gen/**', '**/test/**', '**/build/**'
+        exclude '**/gen/**', '**/test/**', '**/build/**', '**/module-info.java'
         classpath = files()
     }
     assemble.dependsOn 'checkstyle'

@@ -3,8 +3,14 @@ rootProject.name = 'sylph'
 include 'sylph-api'
 include 'sylph-common'
 include 'sylph-runners'
-include 'sylph-runners:sylph-runner-flink'
-include 'sylph-runners:sylph-runner-spark'
-include 'sylph-server'
+
+include 'sylph-runners:flink'
+project(':sylph-runners:flink').name = 'sylph-runner-flink'
+
+include ':sylph-runners:spark'
+//project(":sql-13").projectDir = new File(settingsDir, "spark/sql-13")
+project(':sylph-runners:spark').name = 'sylph-runner-spark'
+
 include 'sylph-spi'
+include 'sylph-main'
 
