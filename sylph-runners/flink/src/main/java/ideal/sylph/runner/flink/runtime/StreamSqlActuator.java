@@ -40,7 +40,6 @@ public class StreamSqlActuator
             logger.info("加载任务:", yaml);
 //                final QueryDagConf dagConf = QueryDagConf.load(yaml);  //解析Job定义文件
 //                return loadJob(jobDir, dagConf);
-
         }
         else {
             throw new SylphException(JOB_BUILD_ERROR, yaml + " file is not exists");
