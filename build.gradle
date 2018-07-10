@@ -34,7 +34,12 @@ allprojects{
 subprojects{
     repositories {
         mavenLocal()
-        System.getenv('TRAVIS_BUILD')?{}:{maven { url "http://maven.aliyun.com/nexus/content/groups/public/" }}
+        if("true".equals(System.getenv('TRAVIS_BUILD'))){
+            println("TRAVIS_BUILD...")
+        }else {
+            println("LOCAL_BUILD...")
+            maven { url "http://maven.aliyun.com/nexus/content/groups/public/" }
+        }
         mavenCentral()
     }
 
