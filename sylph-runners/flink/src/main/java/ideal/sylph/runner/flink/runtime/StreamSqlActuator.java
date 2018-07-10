@@ -22,7 +22,7 @@ import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
 public class StreamSqlActuator
         implements JobActuator
 {
-    private final static Logger logger = LoggerFactory.getLogger(StreamSqlActuator.class);
+    private static final Logger logger = LoggerFactory.getLogger(StreamSqlActuator.class);
 
     @Inject
     public StreamSqlActuator(
