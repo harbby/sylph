@@ -67,7 +67,7 @@ public class RunnerManger
     {
         String jobType = requireNonNull(jobProps.get("type"), "jobProps arg type is null");
         var jobActuator = jobActuatorMap.get(jobType);
-        checkArgument(jobActuator != null, "job ["+jobDir+"] loading error! JobActuator:[" + jobType + "] not exists,only "+jobActuatorMap.keySet());
+        checkArgument(jobActuator != null, "job [" + jobDir + "] loading error! JobActuator:[" + jobType + "] not exists,only " + jobActuatorMap.keySet());
         return jobActuator.formJob(jobDir);
     }
 }

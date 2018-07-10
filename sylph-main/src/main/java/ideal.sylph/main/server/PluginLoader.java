@@ -13,7 +13,6 @@ import javax.annotation.Nonnull;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.util.ServiceLoader;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.LOAD_MODULE_ERROR;
