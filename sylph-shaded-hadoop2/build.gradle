@@ -1,0 +1,60 @@
+plugins {
+  id "com.github.johnrengelman.shadow" version "2.0.2"
+}
+
+dependencies {
+    compile (group: 'org.apache.hadoop', name: 'hadoop-yarn-client', version: deps.hadoop){
+        exclude(module: 'jersey-json')  //dep jersey-json:1.9
+    }
+    compile ('com.sun.jersey:jersey-json:1.9'){
+        exclude(group: 'org.codehaus.jackson')
+    }
+
+    //---hdfs client
+    compile(group: 'org.apache.hadoop', name: 'hadoop-hdfs', version: deps.hadoop) {
+        exclude(module: '*')
+    }
+    compile(group: 'org.apache.hadoop', name: 'hadoop-common', version: deps.hadoop) {
+        exclude(module: '*')
+    }
+    compile(group: 'org.apache.hadoop', name: 'hadoop-auth', version: deps.hadoop) {
+        exclude(module: '*')
+    }
+
+    compile group: 'commons-collections', name: 'commons-collections', version: '3.2.1'
+    compile group: 'commons-cli', name: 'commons-cli', version: '1.2'
+    compile group: 'com.google.protobuf', name: 'protobuf-java', version: '2.5.0'
+    compile(group: 'org.htrace', name: 'htrace-core', version: '3.0.4') {
+        exclude(module: 'guava')
+        exclude(module: 'commons-logging')
+    }
+    //------hdfs client 结束----
+
+}
+
+
+shadowJar {
+    baseName = project.name
+    classifier = 'shaded'
+    version = project.version
+
+    configurations = [project.configurations.compile]
+
+    dependencies {
+        exclude 'bin'
+        exclude 'out'
+        exclude(dependency('junit:junit:'))
+        exclude(dependency('org.slf4j::'))
+        exclude(dependency('log4j::'))
+    }
+    def shadeBase = "ideal.sylph.shaded"
+
+    //relocate 'com.google.protobuf', 'shaded.com.google.protobuf'
+    relocate 'com.google.common', "${shadeBase}.com.google.common"
+    relocate 'com.google.protobu', "${shadeBase}.com.google.protobuf"
+    relocate 'com.fasterxml.jackson.core', "${shadeBase}.com.fasterxml.jackson.core"
+    relocate 'org.codehaus.jackson', "${shadeBase}.org.codehaus.jackson"
+    relocate 'com.google.inject', "${shadeBase}.com.google.inject"
+    relocate 'javax.servlet', "${shadeBase}.javax.servlet" //servlet-api 2.5
+}
+assemble.dependsOn shadowJar

@@ -1,0 +1,5 @@
+ext.moduleName = 'ideal.sylph.runner.spark'
+
+dependencies {
+
+}

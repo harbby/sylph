@@ -13,4 +13,6 @@ project(':sylph-runners:spark').name = 'sylph-runner-spark'
 
 include 'sylph-spi'
 include 'sylph-main'
+include 'sylph-shaded-hadoop2'
+include 'sylph-dist'
 

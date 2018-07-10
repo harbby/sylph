@@ -8,4 +8,4 @@ java -version
 
 ./gradlew -v
 
-./gradlew clean assemble
+./gradlew clean assemble "$@"

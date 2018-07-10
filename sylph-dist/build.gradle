@@ -1,0 +1,11 @@
+
+
+task copyFiles(type: Copy){
+  from('src')
+  into project.buildDir
+}
+assemble.dependsOn copyFiles
+
+task dist(){
+
+}

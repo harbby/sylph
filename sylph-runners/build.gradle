@@ -1,16 +1,69 @@
-plugins {
-    id 'java'
-}
+//java9 module
+//subprojects{
+//  afterEvaluate {
+//    repositories {
+//      mavenLocal()
+//      jcenter()
+//    }
+//
+//    compileJava {
+//      inputs.property("moduleName", moduleName)
+//      doFirst {
+//        options.compilerArgs = [
+//                '--module-path', classpath.asPath,
+//        ]
+//        classpath = files()
+//      }
+//    }
+//
+//    compileTestJava {
+//      inputs.property("moduleName", moduleName)
+//      doFirst {
+//        options.compilerArgs = [
+//                '--module-path', classpath.asPath,
+//                '--add-modules', 'junit',
+//                '--add-reads', "$moduleName=junit",
+//                '--patch-module', "$moduleName=" + files(sourceSets.test.java.srcDirs).asPath,
+//        ]
+//        classpath = files()
+//      }
+//    }
+//
+//    test {
+//      inputs.property("moduleName", moduleName)
+//      doFirst {
+//        jvmArgs = [
+//                '--module-path', classpath.asPath,
+//                '--add-modules', 'ALL-MODULE-PATH',
+//                '--add-reads', "$moduleName=junit",
+//                '--patch-module', "$moduleName=" + files(sourceSets.test.java.outputDir).asPath,
+//        ]
+//        classpath = files()
+//      }
+//    }
+//  }
+//}
 
-group 'org.ideal'
-version '0.1.0-SNAPSHOT'
+subprojects {
+    apply plugin: 'com.github.harbby.gradle.serviceloader'
+    serviceLoader {
+        serviceInterface 'ideal.sylph.spi.Runner'
+    }
 
-sourceCompatibility = 1.8
+    dependencies {
+        compile (project(':sylph-spi')){
+            exclude(module: 'jsr305')
+            exclude(module: ':sylph-shaded-hadoop2')
+        }
+    }
 
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+    def modules = project(':sylph-dist').buildDir.path + "/modules/${name}"
+    task buildModules(type: Copy) {
+        from(configurations.runtime)
+        from(jar)
+        into modules + "/lib"
+        //include   '*.jar'
+    }
+    assemble.dependsOn buildModules
+    project(':sylph-dist').dist.dependsOn assemble
 }
