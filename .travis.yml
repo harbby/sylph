@@ -13,7 +13,7 @@ script: ./gradlew clean assemble --no-daemon
 # Travis CI help-> https://docs.travis-ci.com/user/languages/java/#Projects-Using-Gradle
 
 before_deploy:
-- export TRAVIS_BUILD=true
+- echo build start... sylph
 
 
 before_cache:
