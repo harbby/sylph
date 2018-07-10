@@ -34,9 +34,9 @@ allprojects{
 subprojects{
     repositories.add(repositories.mavenCentral())
     if("true".equals(System.getenv('TRAVIS_BUILD'))){
-        println("TRAVIS_BUILD...")
+        println("TRAVIS_BUILD..." + System.getenv('TRAVIS_BUILD'))
     }else {
-        println("LOCAL_BUILD...")
+        println("LOCAL_BUILD... "+System.getenv('TRAVIS_BUILD'))
         repositories.add(repositories.maven {url "http://maven.aliyun.com/nexus/content/groups/public/"})
     }
     repositories.add(repositories.mavenCentral())
