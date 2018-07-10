@@ -2,7 +2,7 @@
 The sylph is stream framework
 
 ## Building
-sylph builds use Maven and requires Java 8 or higher.
+sylph builds use Maven and requires Java 10 or higher.
 
 ```
 # Build and install distributions
