@@ -33,7 +33,6 @@ allprojects{
 
 subprojects{
     repositories.add(repositories.mavenCentral())
-    println(System.getenv())
     if(System.getenv('TRAVIS_BUILD_DIR')!=null){
         println("TRAVIS_BUILD..." + System.getenv('TRAVIS_BUILD_DIR'))
     }else {
