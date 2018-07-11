@@ -1,26 +1,25 @@
 language: java
-
 jdk:
-  - oraclejdk10
+- oraclejdk10
 sudo: required
 dist: trusty
-
 services:
-  - docker
-
-script: ./gradlew clean assemble --no-daemon
-
-# Travis CI help-> https://docs.travis-ci.com/user/languages/java/#Projects-Using-Gradle
-
+- docker
+script: "./gradlew clean assemble --no-daemon sonarqube
+                                                -Dsonar.organization=harbby-github \
+                                                -Dsonar.host.url=https://sonarcloud.io \
+                                                -Dsonar.login=0d427ddf4030c248f81a1c2c4f6f3199b5d6e073"
 before_deploy:
 - echo build start... sylph
-
-
 before_cache:
-  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
-  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
-
+- rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+- rm -fr $HOME/.gradle/caches/*/plugin-resolution/
 cache:
   directories:
-    - $HOME/.gradle/caches/
-    - $HOME/.gradle/wrapper/
+  - "$HOME/.gradle/caches/"
+  - "$HOME/.gradle/wrapper/"
+addons:
+  sonarcloud:
+    organization: "sonarcloud_organization_key" # the key of the org you chose at step #3
+    token:
+      secure: "TVXacFjewb1PdMvfXF2vDHptrUUcpXod3I4/lTlIku7aDtpIwQ3Cpz+CCTJEVjj1wtdfMKMYTs/PXlCwbhs1uXPg5QtRs5duxk/oZ1YnWAui+QT3JGcgP20mqG0HfajozXfsq6ihmjyqMjpR8bBZ2L6/8lC+NDafPhLzE1/SYOOv70Uu8Wz/rEN0TGXhriY9nzDuCIzGRzHZIFBbhV1UC0YluMBlM04ViHWgXb0Uz7bFzCWEjZtOHG8v6TZWUps+8qq0zYvVXP499U2w//JdO8kCcn/OjdtzeTk1D+x3Yh7kfPW9NR2lyP1+3zN0z3/wOtezFqhKpIimjrEc0WS8+CPD3xUnkmIo1Hx5pd0a587yzk0blJk0GYQ6f+LbQyclloU1bIxUbibfHsQlOdZwW8eKVpOZiUU+WD5CitpZn63y5sMzLBoByMzXQMqgVfPbFr4/NgGFitAqtFtdOwpTTc6++B6xMMKf3ey3Qx92oNqncdFLPURKJX5ndXFrRkVN4vs7u12O/JKvVKkSKIcn60spoYp/LfKpQrl4nlxgREjb8nPsecjbFCvuNLD2VJRQJmvWRGDJfldwNhSf0XVLVXInhHf7IVyrk1PIkE5XnRzA0Z63w+fHwgxhA0VszhiyDsUBlTV61bWvtK7Q6e2fYmZU88G8Jzt9ILvUBeigt00=" # encrypted value of your token
