@@ -2,7 +2,7 @@ language: java
 jdk:
 - oraclejdk10
 sudo: required
-dist: trusty
+dist: bionic   #18.04
 services:
 - docker
 script: "./gradlew clean assemble --no-daemon sonarqube
