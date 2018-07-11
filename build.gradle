@@ -32,7 +32,7 @@ allprojects{
 
 
 subprojects{
-    repositories.add(repositories.mavenCentral())
+    repositories.add(repositories.mavenLocal())
     if(System.getenv('TRAVIS_BUILD_DIR')!=null){
         println("TRAVIS_BUILD..." + System.getenv('TRAVIS_BUILD_DIR'))
     }else {
@@ -46,9 +46,11 @@ subprojects{
         repositories {
             mavenLocal()
             maven { url 'https://harbby.github.io/.m2/repository/' }
+            maven {url "https://plugins.gradle.org/m2/"}
         }
         dependencies {
             classpath 'com.github.harbby:gradle-serviceloader:1.0.2'
+            classpath "org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:2.6"
         }
     }
 
