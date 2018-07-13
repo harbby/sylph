@@ -4,7 +4,6 @@ include 'sylph-spi'
 include 'sylph-main'
 include 'sylph-shaded-hadoop2'
 include 'sylph-common'
-include 'sylph-graph'
 include 'sylph-controller'
 
 include 'sylph-runners'
