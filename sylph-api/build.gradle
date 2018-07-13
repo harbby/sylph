@@ -1,7 +1,0 @@
-ext.moduleName = 'ideal.sylph.api'
-
-dependencies{
-    compile group: 'com.google.guava', name: 'guava', version: deps.guava
-
-    compile project(':sylph-common')
-}

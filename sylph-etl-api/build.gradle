@@ -1,0 +1,4 @@
+ext.moduleName = 'ideal.sylph.api'
+
+dependencies{
+}

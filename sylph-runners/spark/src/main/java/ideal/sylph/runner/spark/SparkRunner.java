@@ -1,9 +1,9 @@
 package ideal.sylph.runner.spark;
 
 import ideal.sylph.shaded.com.google.common.collect.ImmutableSet;
-import ideal.sylph.spi.JobActuator;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
+import ideal.sylph.spi.job.JobActuator;
 
 import java.util.Set;
 

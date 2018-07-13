@@ -2,10 +2,10 @@ package ideal.sylph.spi;
 
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 
-import javax.annotation.Nonnull;
+import javax.validation.constraints.NotNull;
 
 public interface RunnerContext
 {
-    @Nonnull
+    @NotNull
     YarnConfiguration getYarnConfiguration();
 }

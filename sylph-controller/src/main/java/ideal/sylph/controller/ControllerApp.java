@@ -1,8 +1,7 @@
-package ideal.sylph.main.controller;
+package ideal.sylph.controller;
 
 import com.google.inject.Inject;
-import ideal.sylph.main.SylphContext;
-import ideal.sylph.main.server.ServerConfig;
+import ideal.sylph.spi.SylphContext;
 
 import static java.util.Objects.requireNonNull;
 
@@ -24,6 +23,6 @@ public class ControllerApp
     public void start()
             throws Exception
     {
-        System.out.println("server.port: " + config.getServerPort());
+        System.out.println("web.server.port: " + config.getServerPort());
     }
 }

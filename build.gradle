@@ -33,6 +33,7 @@ allprojects{
 subprojects{
     buildscript {
         repositories {
+            mavenLocal()
             maven { url 'https://harbby.github.io/.m2/repository/' }
         }
         dependencies {

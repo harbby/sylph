@@ -45,25 +45,27 @@
 //}
 
 subprojects {
-    apply plugin: 'com.github.harbby.gradle.serviceloader'
-    serviceLoader {
-        serviceInterface 'ideal.sylph.spi.Runner'
-    }
+  apply plugin: 'com.github.harbby.gradle.serviceloader'
+  serviceLoader {
+    serviceInterface 'ideal.sylph.spi.Runner'
+  }
 
-    dependencies {
-        compile (project(':sylph-spi')){
-            exclude(module: 'jsr305')
-            exclude(module: ':sylph-shaded-hadoop2')
-        }
+  dependencies {
+    compile(project(':sylph-spi')) {
+      exclude(module: 'jsr305')
+      exclude(module: ':sylph-shaded-hadoop2')
     }
+    compile(project(":sylph-etl-api"))
+    compile project(":sylph-common")
+  }
 
-    def modules = project(':sylph-dist').buildDir.path + "/modules/${name}"
-    task buildModules(type: Copy) {
-        from(configurations.runtime)
-        from(jar)
-        into modules + "/lib"
-        //include   '*.jar'
-    }
-    assemble.dependsOn buildModules
-    project(':sylph-dist').dist.dependsOn assemble
+  def modules = project(':sylph-dist').buildDir.path + "/modules/${name}"
+  task buildModules(type: Copy) {
+    from(configurations.runtime)
+    from(jar)
+    into modules + "/lib"
+    //include   '*.jar'
+  }
+  assemble.dependsOn buildModules
+  project(':sylph-dist').dist.dependsOn assemble
 }

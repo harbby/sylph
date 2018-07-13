@@ -6,54 +6,46 @@ import com.google.inject.Module;
 import com.google.inject.Provider;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
-import ideal.sylph.main.controller.ControllerApp;
+import ideal.sylph.controller.ControllerApp;
+import ideal.sylph.controller.ServerConfig;
 import ideal.sylph.main.service.LocalJobStore;
 import ideal.sylph.main.service.RunnerManger;
-import ideal.sylph.spi.JobStore;
 import ideal.sylph.spi.RunnerContext;
+import ideal.sylph.spi.SylphContext;
+import ideal.sylph.spi.job.JobStore;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 
-import javax.annotation.Nonnull;
+import javax.validation.constraints.NotNull;
 
 import static io.airlift.configuration.ConfigBinder.configBinder;
 
 public final class ServerMainModule
         implements Module
 {
-    public ServerMainModule()
-    {
-    }
-
     @Override
     public void configure(Binder binder)
     {
-        //---
+        //--- controller ---
         configBinder(binder).bindConfig(ServerConfig.class);
         binder.bind(ControllerApp.class).in(Scopes.SINGLETON);
 
         binder.bind(JobStore.class).to(LocalJobStore.class).in(Scopes.SINGLETON);
-        binder.bind(RunnerManger.class).in(Scopes.SINGLETON);
 
+        //  --- Binding parameter
+        //  binder.bindConstant().annotatedWith(Names.named("redis.hosts")).to("localhost:6379");
+        //  Names.bindProperties(binder, new Properties());
+
+        binder.bind(RunnerManger.class).in(Scopes.SINGLETON);
         binder.bind(PluginLoader.class).in(Scopes.SINGLETON);
-        binder.bind(StaticJobLoader.class).in(Scopes.SINGLETON);
+
+        binder.bind(SylphContext.class).toProvider(()->new SylphContext(){}).in(Scopes.SINGLETON);
 
         binder.bind(RunnerContext.class).toProvider(RunnerContextImpl.class).in(Scopes.SINGLETON);
-//        binder.bind(RunnerContext.class).toProvider(() -> new RunnerContext()
-//        {
-//            private final YarnConfiguration yarnConfiguration = null;
-//
-//            @Nonnull
-//            @Override
-//            public YarnConfiguration getYarnConfiguration()
-//            {
-//                return yarnConfiguration;
-//            }
-//        }).in(Scopes.SINGLETON);
     }
 
-    @Provides
-    public YarnClient createYarnClient()
+    @Provides   //(隐式绑定 区别与上面配置的显式绑定)
+    public static YarnClient createYarnClient()
     {
         YarnConfiguration yarnConfiguration = loadYarnConfiguration();
         YarnClient client = YarnClient.createYarnClient();
@@ -89,7 +81,7 @@ public final class ServerMainModule
         {
             return new RunnerContext()
             {
-                @Nonnull
+                @NotNull
                 @Override
                 public YarnConfiguration getYarnConfiguration()
                 {

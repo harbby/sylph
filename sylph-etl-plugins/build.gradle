@@ -1,0 +1,26 @@
+
+subprojects {
+    configurations.all {
+        resolutionStrategy {  preferProjectModules() }
+    }
+
+    dependencies {
+        compileOnly project(":sylph-etl-api")
+        testCompile project(':sylph-etl-api')
+    }
+
+    def plugins=project(':sylph-dist').buildDir.path + "/etl-plugins/${name}"
+    task buildPlugins(type:Copy) {
+
+        from (configurations.runtime)
+        into plugins
+
+        from(jar)
+        into plugins
+
+        //include   '*.jar'
+    }
+    assemble.dependsOn buildPlugins
+    project(':sylph-dist').dist.dependsOn assemble
+}
+

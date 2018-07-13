@@ -2,12 +2,13 @@ package ideal.sylph.runner.flink;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Injector;
+import com.google.inject.Scopes;
 import ideal.sylph.runner.flink.runtime.StreamSqlActuator;
-import ideal.sylph.spi.JobActuator;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.bootstrap.Bootstrap;
 import ideal.sylph.spi.exception.SylphException;
+import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.utils.DirClassLoader;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 
@@ -34,7 +35,7 @@ public class FlinkRunner
         requireNonNull(context, "context is null");
         final File flinkJarFile = getFlinkJarFile();
 
-        final ClassLoader classLoader = FlinkRunner.class.getClass().getClassLoader();
+        final ClassLoader classLoader = this.getClass().getClassLoader();
         if (classLoader instanceof DirClassLoader) {
             try {
                 ((DirClassLoader) classLoader).addJarFile(flinkJarFile);
@@ -48,6 +49,7 @@ public class FlinkRunner
             var app = new Bootstrap(
                     binder -> {
                         binder.bind(YarnConfiguration.class).toInstance(context.getYarnConfiguration());
+                        binder.bind(StreamSqlActuator.class).in(Scopes.SINGLETON);
                     }
             );
             Injector injector = app.strictConfig()

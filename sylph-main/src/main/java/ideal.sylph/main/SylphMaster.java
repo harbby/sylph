@@ -2,12 +2,12 @@ package ideal.sylph.main;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Injector;
-import com.google.inject.Module;
-import ideal.sylph.main.controller.ControllerApp;
+import ideal.sylph.controller.ControllerApp;
 import ideal.sylph.main.server.PluginLoader;
 import ideal.sylph.main.server.ServerMainModule;
-import ideal.sylph.main.server.StaticJobLoader;
+import ideal.sylph.main.service.JobManager;
 import ideal.sylph.spi.bootstrap.Bootstrap;
+import ideal.sylph.spi.job.JobStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,23 +19,23 @@ public final class SylphMaster
 
     public static void main(String[] args)
     {
-        ImmutableList.Builder<Module> modules = ImmutableList.<Module>builder()
-                .add(new ServerMainModule());
+        var modules = ImmutableList.of(new ServerMainModule());
 
         /*2 Initialize Guice Injector */
         try {
-            Injector injector = new Bootstrap(modules.build()).strictConfig().initialize();
+            Injector injector = new Bootstrap(modules).strictConfig().requireExplicitBindings(false).initialize();
             injector.getInstance(PluginLoader.class).loadPlugins();
-            injector.getInstance(StaticJobLoader.class).loadJobs();
+            injector.getInstance(JobStore.class).loadJobs();
+
+            injector.getInstance(JobManager.class).start();
             injector.getInstance(ControllerApp.class).start();
+
+            logger.info("======== SERVER STARTED this pid is {}========", ProcessHandle.current().pid());
         }
         catch (Exception e) {
             logger.error("", e);
             e.printStackTrace();
             System.exit(1);
         }
-
-        var pid = ProcessHandle.current().pid();
-        logger.info("======== SERVER STARTED this pid is {}========", pid);
     }
 }

@@ -1,6 +1,8 @@
 ext.moduleName = 'ideal.sylph.spi'
 
 dependencies {
+    compile project(':sylph-common')
+
     compile ('io.airlift:configuration:0.171'){
         exclude(module: 'guice')
         exclude(module: 'guava')
@@ -13,7 +15,6 @@ dependencies {
 
     compile project(path: ':sylph-shaded-hadoop2', configuration: 'shadow')
 
-    compile group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'
     compile group: 'org.slf4j', name: 'slf4j-log4j12', version: deps.log4j12  //1.8.0-beta2
 
     compile (group: 'com.google.inject', name: 'guice', version: deps.guice){

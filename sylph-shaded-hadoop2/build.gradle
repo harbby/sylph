@@ -2,34 +2,18 @@ plugins {
   id "com.github.johnrengelman.shadow" version "2.0.2"
 }
 
+configurations.all {
+    resolutionStrategy {  preferProjectModules() }
+}
+
+
 dependencies {
-    compile (group: 'org.apache.hadoop', name: 'hadoop-yarn-client', version: deps.hadoop){
-        exclude(module: 'jersey-json')  //dep jersey-json:1.9
-    }
-    compile ('com.sun.jersey:jersey-json:1.9'){
-        exclude(group: 'org.codehaus.jackson')
-    }
-
+    compile (group: 'org.apache.hadoop', name: 'hadoop-yarn-client', version: deps.hadoop)
     //---hdfs client
-    compile(group: 'org.apache.hadoop', name: 'hadoop-hdfs', version: deps.hadoop) {
-        exclude(module: '*')
-    }
-    compile(group: 'org.apache.hadoop', name: 'hadoop-common', version: deps.hadoop) {
-        exclude(module: '*')
-    }
-    compile(group: 'org.apache.hadoop', name: 'hadoop-auth', version: deps.hadoop) {
-        exclude(module: '*')
-    }
-
-    compile group: 'commons-collections', name: 'commons-collections', version: '3.2.1'
-    compile group: 'commons-cli', name: 'commons-cli', version: '1.2'
-    compile group: 'com.google.protobuf', name: 'protobuf-java', version: '2.5.0'
-    compile(group: 'org.htrace', name: 'htrace-core', version: '3.0.4') {
-        exclude(module: 'guava')
-        exclude(module: 'commons-logging')
+    compile (group: 'org.apache.hadoop', name: 'hadoop-client', version: deps.hadoop){
+        exclude(module: 'servlet-api')
     }
     //------hdfs client 结束----
-
 }
 
 

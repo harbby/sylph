@@ -1,4 +1,4 @@
-package ideal.sylph.main.server;
+package ideal.sylph.controller;
 
 import io.airlift.configuration.Config;
 

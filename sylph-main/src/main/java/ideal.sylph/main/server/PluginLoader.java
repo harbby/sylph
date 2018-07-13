@@ -39,7 +39,7 @@ public class PluginLoader
 
     public void loadPlugins(@Nonnull final File dir)
     {
-        logger.info("Found the module directory {} Try to loading the runner", dir);
+        logger.info("Found module dir directory {} Try to loading the runner", dir);
         final DirClassLoader dirClassLoader = new DirClassLoader(this.getClass().getClassLoader());
         try {
             dirClassLoader.addDir(dir);

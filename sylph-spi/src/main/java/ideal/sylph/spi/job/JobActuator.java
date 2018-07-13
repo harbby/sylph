@@ -1,18 +1,18 @@
-package ideal.sylph.spi;
+package ideal.sylph.spi.job;
 
-import javax.annotation.Nonnull;
+import javax.validation.constraints.NotNull;
 
 import java.io.File;
 
 public interface JobActuator
 {
-    @Nonnull
-    default Job formJob(File jobDir)
+    @NotNull
+    default Job formJob(File jobDir, Flow flow)
     {
         throw new UnsupportedOperationException("this method have't support!");
     }
 
-    default void execJob(@Nonnull Job job)
+    default void execJob(@NotNull Job job)
     {
         throw new UnsupportedOperationException("this method have't support!");
     }

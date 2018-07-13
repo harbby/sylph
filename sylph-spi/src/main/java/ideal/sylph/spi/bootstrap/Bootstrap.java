@@ -2,6 +2,7 @@ package ideal.sylph.spi.bootstrap;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
+import com.google.inject.Binder;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -110,10 +111,12 @@ public final class Bootstrap
             moduleList.add(new ValidationErrorModule(messages));
         }
 
-//        moduleList.add(Binder::disableCircularProxies);
-//        if (this.requireExplicitBindings) {
-//            moduleList.add(Binder::requireExplicitBindings);
-//        }
+        //Prevents Guice from constructing a Proxy when a circular dependency is found.
+        moduleList.add(Binder::disableCircularProxies);
+        if (this.requireExplicitBindings) {
+            //Instructs the Injector that bindings must be listed in a Module in order to be injected.
+            moduleList.add(Binder::requireExplicitBindings);
+        }
         if (this.strictConfig) {
             moduleList.add((binder) -> {
                 for (Map.Entry<String, String> unusedProperty : unusedProperties.entrySet()) {
