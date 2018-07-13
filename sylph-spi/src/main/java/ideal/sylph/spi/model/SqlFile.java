@@ -7,11 +7,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableMap;
-import ideal.sylph.common.base.SylphSerializable;
 import ideal.sylph.spi.exception.SylphException;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Map;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_CONFIG_ERROR;
@@ -19,7 +19,7 @@ import static java.util.Objects.requireNonNull;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class SqlFile
-        implements SylphSerializable
+        implements Serializable
 {
     private static final transient ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
 

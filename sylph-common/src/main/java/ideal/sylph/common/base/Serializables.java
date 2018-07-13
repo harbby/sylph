@@ -6,16 +6,11 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
-public interface SylphSerializable
-        extends Serializable
+public class Serializables
 {
-    default byte[] serialize()
-            throws IOException
-    {
-        return serialize(this);
-    }
+    private Serializables() {}
 
-    static byte[] serialize(Serializable serializable)
+    public static byte[] serialize(Serializable serializable)
             throws IOException
     {
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream();

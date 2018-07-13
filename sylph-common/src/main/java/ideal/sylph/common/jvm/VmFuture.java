@@ -1,12 +1,10 @@
 package ideal.sylph.common.jvm;
 
-import ideal.sylph.common.base.SylphSerializable;
-
 import java.io.Serializable;
 import java.util.Optional;
 
 public class VmFuture<V extends Serializable>
-        implements SylphSerializable
+        implements Serializable
 {
     private V result;
     private String errorMessage;

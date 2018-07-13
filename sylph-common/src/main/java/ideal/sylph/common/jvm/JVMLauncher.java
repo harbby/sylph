@@ -1,7 +1,7 @@
 package ideal.sylph.common.jvm;
 
 import ideal.sylph.common.base.ObjectInputStream;
-import ideal.sylph.common.base.SylphSerializable;
+import ideal.sylph.common.base.Serializables;
 import ideal.sylph.common.base.Throwables;
 
 import java.io.BufferedOutputStream;
@@ -37,14 +37,14 @@ public final class JVMLauncher<R extends Serializable>
             throws IOException, ClassNotFoundException
     {
         byte[] bytes = startAndGetByte();
-        return (VmFuture<R>) SylphSerializable.byteToObject(bytes);
+        return (VmFuture<R>) Serializables.byteToObject(bytes);
     }
 
     public VmFuture<R> startAndGet(ClassLoader classLoader)
             throws IOException, ClassNotFoundException
     {
         byte[] bytes = startAndGetByte();
-        return (VmFuture<R>) SylphSerializable.byteToObject(bytes, classLoader);
+        return (VmFuture<R>) Serializables.byteToObject(bytes, classLoader);
     }
 
     public byte[] startAndGetByte()
@@ -57,7 +57,7 @@ public final class JVMLauncher<R extends Serializable>
 
             this.process = builder.start();
             try (OutputStream os = new BufferedOutputStream(process.getOutputStream())) {
-                os.write(SylphSerializable.serialize(callable));  //把当前对象 发送到编译进程
+                os.write(Serializables.serialize(callable));  //把当前对象 发送到编译进程
             }
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 String line;
@@ -118,7 +118,7 @@ public final class JVMLauncher<R extends Serializable>
         }
 
         try (OutputStream out = chooseOutputStream(args)) {
-            out.write(SylphSerializable.serialize(future));
+            out.write(Serializables.serialize(future));
             System.out.println("vm exiting ok ...");
         }
     }

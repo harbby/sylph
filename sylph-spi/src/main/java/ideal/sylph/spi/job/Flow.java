@@ -1,10 +1,10 @@
 package ideal.sylph.spi.job;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import ideal.sylph.common.base.SylphSerializable;
 import ideal.sylph.spi.model.EdgeInfo;
 import ideal.sylph.spi.model.NodeInfo;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -12,7 +12,7 @@ import java.util.List;
  * 可以转换为多种结构(json 和source-trans-sink 和graph)
  */
 public interface Flow
-        extends SylphSerializable
+        extends Serializable
 {
     List<EdgeInfo> getEdges();
 
