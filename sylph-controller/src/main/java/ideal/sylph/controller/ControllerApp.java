@@ -5,6 +5,9 @@ import ideal.sylph.spi.SylphContext;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * 视图层目前 为实验功能
+ */
 public class ControllerApp
 {
     private ServerConfig config;
@@ -23,6 +26,6 @@ public class ControllerApp
     public void start()
             throws Exception
     {
-        System.out.println("web.server.port: " + config.getServerPort());
+        new JettyServer(config, sylphContext).start();
     }
 }

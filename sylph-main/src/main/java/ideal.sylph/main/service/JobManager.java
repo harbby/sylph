@@ -5,19 +5,12 @@ import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobStore;
-import org.apache.hadoop.yarn.api.records.ApplicationId;
-import org.apache.hadoop.yarn.api.records.ApplicationReport;
-import org.apache.hadoop.yarn.api.records.YarnApplicationState;
-import org.apache.hadoop.yarn.client.api.YarnClient;
-import org.apache.hadoop.yarn.exceptions.ApplicationNotFoundException;
-import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nonnull;
 import javax.validation.constraints.Min;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,12 +19,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static ideal.sylph.spi.exception.StandardErrorCode.CONNECTION_ERROR;
 import static ideal.sylph.spi.exception.StandardErrorCode.ILLEGAL_OPERATION;
-import static ideal.sylph.spi.job.Job.Status.RUNNING;
-import static ideal.sylph.spi.job.Job.Status.STARTING;
-import static ideal.sylph.spi.job.Job.Status.START_ERROR;
-import static ideal.sylph.spi.job.Job.Status.STOP;
 
 /**
  * JobManager
@@ -44,8 +32,6 @@ public final class JobManager
     private JobStore jobStore;
     @Inject
     private RunnerManger runnerManger;
-    @Inject
-    private YarnClient yarnClient;
 
     @Min(1)
     //@Inject
@@ -63,8 +49,9 @@ public final class JobManager
     public void startJob(String jobId)
     {
         this.getJob(jobId).ifPresent(job -> {
-            var container = new YarnJobContainer(jobId, () -> runnerManger.runJob(job));
-            runContainers.put(jobId, container);
+            JobContainer container = runnerManger.runJob(job);
+            runningContainers.put(jobId, container);
+            logger.info("runningContainers size:{}", runningContainers.size());
         });
     }
 
@@ -73,7 +60,10 @@ public final class JobManager
      */
     public void stopJob(String jobId)
     {
-        throw new UnsupportedOperationException("this method have't support!");
+        JobContainer container = runningContainers.remove(jobId);
+        if (container != null) {
+            container.shutdown();
+        }
     }
 
     public void saveJob(@Nonnull Job job)
@@ -89,7 +79,7 @@ public final class JobManager
 
     public Optional<Job> removeJob(String jobId)
     {
-        if (runContainers.containsKey(jobId)) {
+        if (runningContainers.containsKey(jobId)) {
             throw new SylphException(ILLEGAL_OPERATION, "Can only delete tasks that have been offline");
         }
         return jobStore.removeJob(jobId);
@@ -106,78 +96,13 @@ public final class JobManager
         return jobStore.getJobs();
     }
 
-    private final ConcurrentMap<String, JobContainer> runContainers = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, JobContainer> runningContainers = new ConcurrentHashMap<>();
 
     private boolean run;
 
-    /**
-     * Container that runs the job
-     */
-    private class YarnJobContainer
-            implements JobContainer
-    {
-        private final String jobId;
-        private ApplicationId applicationId;
-        private Job.Status status = STOP;
-        private Runnable runnable;
-
-        private YarnJobContainer(String jobId, Runnable runnable)
-        {
-            this.jobId = jobId;
-//            this.applicationId = applicationId;
-        }
-
-        @Override
-        public String getId()
-        {
-            return applicationId.toString();
-        }
-
-        @Override
-        public Job.Status getStatus()
-        {
-            YarnApplicationState state = getYarnAppStatus(applicationId);
-            if (YarnApplicationState.ACCEPTED.equals(state) || YarnApplicationState.RUNNING.equals(state)) {  //运行良好
-                this.status = RUNNING;
-            }
-            return status;
-        }
-
-        @Override
-        public void run()
-        {
-            logger.warn("Job {}[{}]状态为:{} 即将进行重新启动", jobId, this.getId(), this.getStatus());
-            this.status = STARTING;
-            try {
-                runnable.run();
-            }
-            catch (Exception e) {
-                this.status = START_ERROR;
-                logger.warn("任务{}启动失败:", jobId, e);
-            }
-        }
-
-        /**
-         * 获取yarn Job运行情况
-         */
-        private YarnApplicationState getYarnAppStatus(ApplicationId applicationId)
-        {
-            try {
-                ApplicationReport app = yarnClient.getApplicationReport(applicationId); //获取某个指定的任务
-                return app.getYarnApplicationState();
-            }
-            catch (ApplicationNotFoundException e) {  //app 不存在与yarn上面
-                return null;
-            }
-            catch (YarnException | IOException e) {
-                throw new SylphException(CONNECTION_ERROR, e);
-            }
-        }
-    }
-
-    private Thread monitorService = new Thread(() -> {
+    private final Thread monitorService = new Thread(() -> {
         while (run) {
-            runContainers.forEach((jobId, container) -> {
+            runningContainers.forEach((jobId, container) -> {
                 try {
                     switch (container.getStatus()) {
                         case RUNNING:
@@ -188,7 +113,6 @@ public final class JobManager
                             break;
                         case START_ERROR:
                             break;
-                        case STOP:
                         default: {
                             jobStartPool.submit(container::run); //需要重启 Job
                         }
@@ -200,7 +124,7 @@ public final class JobManager
             });
 
             try {
-                TimeUnit.SECONDS.sleep(2);
+                TimeUnit.SECONDS.sleep(1);
             }
             catch (InterruptedException ignored) {
                 Thread.currentThread().interrupt();
@@ -216,5 +140,13 @@ public final class JobManager
         this.run = true;
         monitorService.setDaemon(false);
         monitorService.start();
+    }
+
+    /**
+     * get running JobContainer
+     */
+    public Optional<JobContainer> getJobContainer(String jobId)
+    {
+        return Optional.ofNullable(runningContainers.get(jobId));
     }
 }

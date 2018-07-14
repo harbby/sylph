@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -102,9 +103,9 @@ public class LocalJobStore
                 .parallel()
                 .forEach(jobDir -> {
                     try {
-                        final var typeFile = new File(jobDir, "type.job");
+                        final File typeFile = new File(jobDir, "type.job");
                         checkArgument(typeFile.exists() && typeFile.isFile(), typeFile + " is not exists or isDirectory");
-                        var jobProps = loadProperties(typeFile);
+                        Map<String, String> jobProps = loadProperties(typeFile);
                         Job job = runnerManger.formJobWithDir(jobDir, jobProps);
                         jobs.put(job.getId(), job);
                     }

@@ -7,8 +7,9 @@ import javax.validation.constraints.Min;
 public class ServerConfig
 {
     private int serverPort = 8080;
+    private int maxFormContentSize = 100;
 
-    @Config("server.http.port")
+    @Config("web.server.port")
     public ServerConfig setServerPort(int serverPort)
     {
         this.serverPort = serverPort;
@@ -19,5 +20,18 @@ public class ServerConfig
     public int getServerPort()
     {
         return serverPort;
+    }
+
+    @Config("server.http.maxFormContentSize")
+    public ServerConfig setMaxFormContentSize(int serverPort)
+    {
+        this.maxFormContentSize = maxFormContentSize;
+        return this;
+    }
+
+    @Min(10)
+    public int getMaxFormContentSize()
+    {
+        return maxFormContentSize;
     }
 }

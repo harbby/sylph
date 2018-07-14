@@ -1,8 +1,6 @@
 ext.moduleName = 'ideal.sylph.runner.flink'
 
 dependencies {
-  compileOnly project(path: ':sylph-shaded-hadoop2', configuration: 'shadow')
-
   compileOnly(group: 'org.apache.flink', name: 'flink-streaming-java_2.11', version: deps.flink) {
     exclude(module: 'flink-shaded-hadoop2')
     exclude(module: 'slf4j-api')

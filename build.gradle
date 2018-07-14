@@ -6,8 +6,8 @@ allprojects{
     apply plugin: 'maven'
     apply plugin: 'checkstyle'
 
-    sourceCompatibility = 1.10
-    targetCompatibility = 1.10
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
 
     tasks.withType(JavaCompile) {
         options.encoding = 'UTF-8'

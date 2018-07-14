@@ -12,12 +12,12 @@ public class FlinkRow
         implements Row
 {
     private org.apache.flink.types.Row row;
-    private final RowTypeInfo rowTypeInfo;
+    private final TypeInformation<org.apache.flink.types.Row> typeInformation;
 
     public FlinkRow(org.apache.flink.types.Row row, TypeInformation<org.apache.flink.types.Row> typeInformation)
     {
         this.row = row;
-        this.rowTypeInfo = (RowTypeInfo) typeInformation;
+        this.typeInformation = typeInformation;
     }
 
     public org.apache.flink.types.Row get()
@@ -33,7 +33,6 @@ public class FlinkRow
             stringBuilder.append(seq).append(row.getField(i));
         }
         return stringBuilder.substring(1);
-        //throw new UnsupportedOperationException("this method have't mkString!");
     }
 
     @Override
@@ -45,8 +44,13 @@ public class FlinkRow
     @Override
     public <T> T getAs(String key)
     {
-        int index = rowTypeInfo.getFieldIndex(key);
-        return (T) row.getField(index);
+        if (typeInformation instanceof RowTypeInfo) {
+            int index = ((RowTypeInfo) typeInformation).getFieldIndex(key);
+            return (T) row.getField(index);
+        }
+        else {
+            throw new IllegalStateException("typeInformation not is RowTypeInfo");
+        }
     }
 
     @Override

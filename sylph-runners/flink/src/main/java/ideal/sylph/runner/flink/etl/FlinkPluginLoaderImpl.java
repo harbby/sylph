@@ -103,7 +103,7 @@ public final class FlinkPluginLoaderImpl
 
     private static Sink<DataStream<Row>> loadRealTimeSink(RealTimeSink realTimeSink)
     {
-        return new Sink<>()
+        return new Sink<DataStream<Row>>()
         {
             @Override
             public void run(DataStream<Row> stream)
@@ -121,7 +121,7 @@ public final class FlinkPluginLoaderImpl
 
     private static TransForm<DataStream<Row>> loadRealTimeTransForm(RealTimeTransForm realTimeTransForm)
     {
-        return new TransForm<>()
+        return new TransForm<DataStream<Row>>()
         {
             @Override
             public DataStream<Row> transform(DataStream<Row> stream)

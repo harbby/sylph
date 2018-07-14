@@ -1,7 +1,9 @@
 package ideal.sylph.runner.flink.utils;
 
 import com.google.common.collect.ImmutableSet;
+import ideal.sylph.common.jvm.JVMLauncher;
 import ideal.sylph.common.jvm.JVMLaunchers;
+import ideal.sylph.common.jvm.VmFuture;
 import ideal.sylph.runner.flink.FlinkApp;
 import ideal.sylph.runner.flink.FlinkJob;
 import ideal.sylph.runner.flink.FlinkRunner;
@@ -33,14 +35,13 @@ public final class FlinkJobUtil
     private static final Logger logger = LoggerFactory.getLogger(FlinkJobUtil.class);
 
     public static Job createJob(
-            String actuatorName, File workDir, FlinkApp app, Flow flow)
+            String actuatorName, String jobId, FlinkApp app, Flow flow)
             throws Exception
     {
         List<URL> userJars = getAppClassLoaderJars(app);
         //---------编译job-------------
         JobGraph jobGraph = compile(app, 2, userJars);
         //----------------设置状态----------------
-        final String id = workDir.getName();
         JobParameter state = new JobParameter()
                 .queue("default")
                 .taskManagerCount(2) //-yn 注意是executer个数
@@ -49,12 +50,12 @@ public final class FlinkJobUtil
                 .jobManagerMemoryMb(1024) //-yjm
                 .appTags(ImmutableSet.of("a1", "a2"))
                 .setUserProvidedJar(getUserAdditionalJars(userJars))
-                .setYarnJobName("ysera_" + id);
+                .setYarnJobName("sylph_" + jobId);
 
         return FlinkJob.newJob()
                 .setJobParameter(state)
                 .setJobGraph(jobGraph)
-                .setId(id)
+                .setId(jobId)
                 .setActuatorName(actuatorName)
                 .setDescription("....test....")
                 .setFlow(flow)
@@ -67,7 +68,7 @@ public final class FlinkJobUtil
     private static JobGraph compile(FlinkApp flinkApp, int parallelism, List<URL> userProvidedJars)
             throws Exception
     {
-        var launcher = JVMLaunchers.<JobGraph>newJvm()
+        JVMLauncher<JobGraph> launcher = JVMLaunchers.<JobGraph>newJvm()
                 .setCallable(() -> {
                     System.out.println("************ job start ***************");
                     StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.createLocalEnvironment();
@@ -77,13 +78,12 @@ public final class FlinkJobUtil
                 })
                 .addUserjars(userProvidedJars)
                 .build();
-        var result = launcher.startAndGet(flinkApp.getClassLoader());
+        VmFuture<JobGraph> result = launcher.startAndGet(flinkApp.getClassLoader());
         return result.get().orElseThrow(() -> new SylphException(JOB_BUILD_ERROR, result.getOnFailure()));
     }
 
     private static List<URL> getAppClassLoaderJars(FlinkApp flinkApp)
     {
-        //URLClassLoader classLoader = (URLClassLoader) JobBuilder.class.getClassLoader();
         ImmutableList.Builder<URL> builder = ImmutableList.builder();
         final ClassLoader appClassLoader = flinkApp.getClassLoader();
         if (appClassLoader instanceof URLClassLoader) {
@@ -114,7 +114,6 @@ public final class FlinkJobUtil
                 logger.warn("add user jar error with URISyntaxException {}", jar);
             }
             return null;
-        }).filter(x -> Objects.nonNull(x) && !x.getName().startsWith(FlinkRunner.FLINK_DIST))
-                .collect(Collectors.toList());
+        }).filter(x -> Objects.nonNull(x) && !x.getName().startsWith(FlinkRunner.FLINK_DIST)).collect(Collectors.toList());
     }
 }

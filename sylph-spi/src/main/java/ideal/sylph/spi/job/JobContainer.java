@@ -8,10 +8,17 @@ import javax.validation.constraints.NotNull;
 public interface JobContainer
 {
     @NotNull
-    String getId();
+    String getRunId();
 
     public void run();
 
+    public void shutdown();
+
     @NotNull
     Job.Status getStatus();
+
+    /**
+     * get app run web url
+     */
+    String getJobUrl();
 }

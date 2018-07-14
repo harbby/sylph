@@ -110,4 +110,14 @@ public class FlinkJob
             return flinkJob;
         }
     }
+
+    public JobGraph getJobGraph()
+    {
+        return jobGraph;
+    }
+
+    public JobParameter getJobParameter()
+    {
+        return jobParameter;
+    }
 }

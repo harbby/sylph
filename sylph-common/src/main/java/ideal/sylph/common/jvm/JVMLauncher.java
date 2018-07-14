@@ -67,8 +67,10 @@ public final class JVMLauncher<R extends Serializable>
             }
 
             try (Socket client = sock.accept()) {
-                try (InputStream is = client.getInputStream()) {
-                    return is.readAllBytes();
+                try (InputStream input = client.getInputStream()) {
+                    byte[] byt = new byte[input.available()];
+                    input.read(byt);
+                    return byt;
                 }
             }
         }

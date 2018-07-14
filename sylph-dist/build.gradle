@@ -1,11 +1,20 @@
+dependencies{
+  compile project(':sylph-main')
+}
 
-
-task copyFiles(type: Copy){
+task copyLibs(type: Copy){
+  from(configurations.runtime)
+  into project.buildDir.path+'/lib'
+}
+task copyFiles(type: Copy,dependsOn: copyLibs){
   from('src')
   into project.buildDir
 }
+
 assemble.dependsOn copyFiles
 
 task dist(){
-
+//  from(configurations.runtime) {
+//    into tarpath+"/lib"
+//  }
 }

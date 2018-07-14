@@ -51,12 +51,11 @@ subprojects {
   }
 
   dependencies {
-    compile(project(':sylph-spi')) {
+    compileOnly project(":sylph-common")
+    compileOnly(project(':sylph-spi')) {
       exclude(module: 'jsr305')
-      exclude(module: ':sylph-shaded-hadoop2')
     }
     compile(project(":sylph-etl-api"))
-    compile project(":sylph-common")
   }
 
   def modules = project(':sylph-dist').buildDir.path + "/modules/${name}"

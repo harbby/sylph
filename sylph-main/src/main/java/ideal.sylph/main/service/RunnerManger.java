@@ -8,6 +8,7 @@ import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuator;
+import ideal.sylph.spi.job.JobContainer;
 
 import javax.annotation.Nonnull;
 
@@ -59,26 +60,31 @@ public class RunnerManger
     /**
      * 运行任务
      */
-    public void runJob(@Nonnull Job job)
+    public JobContainer runJob(@Nonnull Job job)
     {
         String jobType = requireNonNull(job.getActuatorName(), "job Actuator Name is null " + job.getId());
-        var jobActuator = jobActuatorMap.get(jobType);
+        JobActuator jobActuator = jobActuatorMap.get(jobType);
         checkArgument(jobActuator != null, jobType + " not exists");
-        jobActuator.execJob(job);
+        return jobActuator.execJob(job);
     }
 
     public Job formJobWithDir(File jobDir, Map<String, String> jobProps)
     {
         String jobType = requireNonNull(jobProps.get("type"), "jobProps arg type is null");
-        var jobActuator = jobActuatorMap.get(jobType);
-        checkArgument(jobActuator != null, "job [" + jobDir + "] loading error! JobActuator:[" + jobType + "] not exists,only " + jobActuatorMap.keySet());
-
         try {
             Flow flow = YamlFlow.load(new File(jobDir, "job.yaml"));
-            return jobActuator.formJob(jobDir, flow);
+            return formJobWithFlow(jobDir.getName(), flow, jobType);
         }
         catch (IOException e) {
             throw new SylphException(JOB_BUILD_ERROR, "loadding job " + jobDir + " job.yaml fail", e);
         }
+    }
+
+    public Job formJobWithFlow(String jobId, Flow flow, String actuatorName)
+    {
+        requireNonNull(actuatorName, "job actuatorName is null");
+        JobActuator jobActuator = jobActuatorMap.get(actuatorName);
+        checkArgument(jobActuator != null, "job [" + jobId + "] loading error! JobActuator:[" + actuatorName + "] not exists,only " + jobActuatorMap.keySet());
+        return jobActuator.formJob(jobId, flow);
     }
 }

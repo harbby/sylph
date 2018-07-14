@@ -13,7 +13,6 @@ import ideal.sylph.spi.model.NodeInfo;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 import static java.util.Objects.requireNonNull;
 
@@ -28,31 +27,15 @@ public final class YamlFlow
 
     private final List<NodeInfo> nodes;
     private final List<EdgeInfo> edges;
-    private final String jobId;
-    private final String type;
-    private final Map<String, ?> config;
 
     @JsonCreator
     public YamlFlow(
             @JsonProperty("nodes") List<NodeInfo> nodes,
-            @JsonProperty("edges") List<EdgeInfo> edges,
-            @JsonProperty("jobId") String jobId,
-            @JsonProperty("job.config") Map<String, ?> config,
-            @JsonProperty("type") String type
+            @JsonProperty("edges") List<EdgeInfo> edges
     )
     {
         this.nodes = requireNonNull(nodes, "nodes must not null");
         this.edges = requireNonNull(edges, "edges must not null");
-        this.jobId = requireNonNull(jobId, "jobId must not null");
-        this.config = requireNonNull(config, "job.config must not null");
-        this.type = requireNonNull(type, "type must not null");
-    }
-
-    @Override
-    @JsonProperty
-    public String getJobId()
-    {
-        return jobId;
     }
 
     @Override
@@ -70,34 +53,26 @@ public final class YamlFlow
     }
 
     @Override
-    @JsonProperty
-    public String getType()
+    public String toString()
     {
-        return type;
-    }
-
-    public Map<String, ?> getConfig()
-    {
-        return config;
-    }
-
-    @Override
-    public String toYamlDag()
-            throws JsonProcessingException
-    {
-        return MAPPER.writeValueAsString(this);
+        try {
+            return MAPPER.writeValueAsString(this);
+        }
+        catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
      * 加载yaml
      */
-    public static YamlFlow load(File file)
+    public static Flow load(File file)
             throws IOException
     {
         return MAPPER.readValue(file, YamlFlow.class);
     }
 
-    public static YamlFlow load(String dag)
+    public static Flow load(String dag)
             throws IOException
     {
         return MAPPER.readValue(dag, YamlFlow.class);

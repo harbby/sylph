@@ -1,6 +1,5 @@
 package ideal.sylph.spi.job;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import ideal.sylph.spi.model.EdgeInfo;
 import ideal.sylph.spi.model.NodeInfo;
 
@@ -17,14 +16,4 @@ public interface Flow
     List<EdgeInfo> getEdges();
 
     List<NodeInfo> getNodes();
-
-    String getJobId();
-
-    String getType();
-
-    /**
-     * 新的拖拽方式 job
-     */
-    String toYamlDag()
-            throws JsonProcessingException;
 }

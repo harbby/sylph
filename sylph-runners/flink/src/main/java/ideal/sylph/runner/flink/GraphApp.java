@@ -28,17 +28,19 @@ public class GraphApp
 {
     private static final transient ObjectMapper MAPPER = new ObjectMapper();
     private final Flow flow;
+    private final String jobId;
 
-    public GraphApp(Flow flow)
+    public GraphApp(String jobid, Flow flow)
     {
         this.flow = flow;
+        this.jobId = jobid;
     }
 
     @Override
     public void build(StreamExecutionEnvironment execEnv)
             throws Exception
     {
-        final var graphx = Graph.<DataStream<Row>>newGraph(flow.getJobId());
+        final Graph<DataStream<Row>> graphx = Graph.newGraph(jobId);
         List<NodeInfo> nodes = flow.getNodes();
         List<EdgeInfo> edges = flow.getEdges();
         StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(execEnv);
