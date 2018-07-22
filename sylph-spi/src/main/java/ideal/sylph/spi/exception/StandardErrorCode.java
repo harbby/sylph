@@ -24,17 +24,12 @@ public enum StandardErrorCode
 
     StandardErrorCode(int code, ErrorType type)
     {
-        this.errorCode = new ErrorCode(code, name(), type);
+        errorCode = new ErrorCode(code, name(), type);
     }
 
     public ErrorCode toErrorCode()
     {
         return errorCode;
-    }
-
-    public boolean equals(StandardErrorCode errCode)
-    {
-        return this.errorCode.equals(errCode.errorCode);
     }
 
     @Override

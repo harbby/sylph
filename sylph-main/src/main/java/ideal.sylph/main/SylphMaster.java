@@ -3,12 +3,13 @@ package ideal.sylph.main;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Injector;
 import com.google.inject.Module;
+import ideal.sylph.common.bootstrap.Bootstrap;
 import ideal.sylph.controller.ControllerApp;
 import ideal.sylph.main.server.PluginLoader;
 import ideal.sylph.main.server.ServerMainModule;
 import ideal.sylph.main.service.JobManager;
-import ideal.sylph.spi.bootstrap.Bootstrap;
 import ideal.sylph.spi.job.JobStore;
+import org.apache.log4j.PropertyConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +23,7 @@ public final class SylphMaster
 
     public static void main(String[] args)
     {
+        PropertyConfigurator.configure(System.getProperty("log4j.file"));
         List<Module> modules = ImmutableList.of(new ServerMainModule());
 
         /*2 Initialize Guice Injector */
@@ -36,9 +38,8 @@ public final class SylphMaster
             //ProcessHandle.current().pid()
             logger.info("======== SERVER STARTED this pid is {}========");
         }
-        catch (Exception e) {
-            logger.error("", e);
-            e.printStackTrace();
+        catch (Throwable e) {
+            logger.error("SERVER START FAILED...", e);
             System.exit(1);
         }
     }

@@ -50,27 +50,26 @@ public class LocalJobStore
     }
 
     @Override
-    public boolean saveJob(@Nonnull Job job)
+    public void saveJob(@Nonnull Job job)
     {
         File jobDir = new File("jobs/" + job.getId());
         job.getId();
         try {
-            Flow dagYaml = job.getFlow();
+            Flow flow = job.getFlow();
             File yaml = new File(jobDir, "job.yaml");
             File typeFile = new File(jobDir, "type.job");
 
             //TODO: save?
             String jobType = job.getActuatorName();
-            //FileUtils.writeStringToFile(yaml, dagYaml.toYamlDag(), UTF_8);
+            FileUtils.writeStringToFile(yaml, flow.toString(), UTF_8);
             FileUtils.writeStringToFile(typeFile, "type=" + jobType, UTF_8);
 
             jobs.put(job.getId(), job);
-            //logger.info("保存任务 {} 成功", job.getId());
+            logger.info("save job {} ok", job.getId());
         }
         catch (IOException e) {
-            throw new SylphException(SAVE_JOB_ERROR, "保存 " + job.getId() + "任务时失败", e);
+            throw new SylphException(SAVE_JOB_ERROR, "save " + job.getId() + " failed", e);
         }
-        return true;
     }
 
     @Override

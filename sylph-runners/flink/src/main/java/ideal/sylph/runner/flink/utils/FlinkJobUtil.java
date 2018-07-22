@@ -57,7 +57,7 @@ public final class FlinkJobUtil
                 .setJobGraph(jobGraph)
                 .setId(jobId)
                 .setActuatorName(actuatorName)
-                .setDescription("....test....")
+                .setDescription("this is flink stream job...")
                 .setFlow(flow)
                 .build();
     }

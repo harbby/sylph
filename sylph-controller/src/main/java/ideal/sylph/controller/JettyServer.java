@@ -3,6 +3,7 @@ package ideal.sylph.controller;
 import ideal.sylph.controller.selvet.ETLJobServlet;
 import ideal.sylph.controller.selvet.JobMangerSerlvet;
 import ideal.sylph.controller.selvet.SylphServletHolder;
+import ideal.sylph.controller.selvet.WebAppProxyServlet;
 import ideal.sylph.spi.SylphContext;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.HandlerList;
@@ -65,9 +66,11 @@ public final class JettyServer
         ServletContextHandler contextHandler = new ServletContextHandler(
                 ServletContextHandler.NO_SESSIONS);
         contextHandler.setContextPath("/");
+        contextHandler.setAttribute("sylphContext", sylphContext);
 
-        contextHandler.addServlet(new ServletHolder(new JobMangerSerlvet(sylphContext)), "/_sys/job_manger/*");
-        contextHandler.addServlet(new SylphServletHolder(new ETLJobServlet(sylphContext)), "/_sys/job_graph_edit/*");
+        contextHandler.addServlet(JobMangerSerlvet.class, "/_sys/job_manger/*");
+        contextHandler.addServlet(new SylphServletHolder(new ETLJobServlet()), "/_sys/job_graph_edit/*");
+        contextHandler.addServlet(WebAppProxyServlet.class, "/proxy/*");
 
         final ServletHolder staticServlet = new ServletHolder(new DefaultServlet());
         contextHandler.addServlet(staticServlet, "/css/*");

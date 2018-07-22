@@ -30,7 +30,7 @@ public class FlinkJob
     @Override
     public String getDescription()
     {
-        return null;
+        return description;
     }
 
     @NotNull
@@ -45,12 +45,6 @@ public class FlinkJob
     public Flow getFlow()
     {
         return flow;
-    }
-
-    @Override
-    public boolean getIsOnline()
-    {
-        return false;
     }
 
     public static Builder newJob()

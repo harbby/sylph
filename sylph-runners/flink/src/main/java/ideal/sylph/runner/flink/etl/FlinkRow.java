@@ -5,9 +5,6 @@ import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.api.java.typeutils.TypeExtractor;
 
-import java.util.List;
-import java.util.Map;
-
 public class FlinkRow
         implements Row
 {
@@ -33,12 +30,6 @@ public class FlinkRow
             stringBuilder.append(seq).append(row.getField(i));
         }
         return stringBuilder.substring(1);
-    }
-
-    @Override
-    public String mkString()
-    {
-        return this.mkString(",");
     }
 
     @Override
@@ -76,8 +67,8 @@ public class FlinkRow
         if (row instanceof FlinkRow) {
             return ((FlinkRow) row).get();
         }
-        else if (row instanceof GenericRowWithSchema) {
-            return org.apache.flink.types.Row.of(((GenericRowWithSchema) row).getValues());
+        else if (row instanceof DefaultRow) {
+            return org.apache.flink.types.Row.of(((DefaultRow) row).getValues());
         }
         else {
             throw new RuntimeException(" not souch row type: " + row.getClass());
@@ -95,35 +86,6 @@ public class FlinkRow
 
     private static TypeInformation<?> parserType(Class<?> javaType)
     {
-        if (javaType == String.class) {
-            return TypeExtractor.createTypeInfo(javaType);
-        }
-        else if (javaType == byte.class) {
-            return TypeExtractor.createTypeInfo(javaType);
-        }
-        else if (javaType == short.class) {
-            return TypeExtractor.createTypeInfo(javaType);
-        }
-        else if (javaType == int.class) {
-            return TypeExtractor.createTypeInfo(javaType);
-        }
-        else if (javaType == long.class) {
-            return TypeExtractor.createTypeInfo(javaType);
-        }
-        else if (javaType == double.class) {
-            return TypeExtractor.createTypeInfo(javaType);
-        }
-        else if (javaType == float.class) {
-            return TypeExtractor.createTypeInfo(javaType);
-        }
-        else if (javaType == Map.class) {
-            return TypeExtractor.createTypeInfo(javaType);
-        }
-        else if (javaType == List.class) {
-            return TypeExtractor.createTypeInfo(javaType);
-        }
-        else {
-            return TypeExtractor.createTypeInfo(javaType);
-        }
+        return TypeExtractor.createTypeInfo(javaType);
     }
 }

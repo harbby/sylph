@@ -7,7 +7,7 @@ import java.util.Optional;
 
 public interface JobStore
 {
-    public boolean saveJob(@NotNull Job job);
+    public void saveJob(@NotNull Job job);
 
     public Optional<Job> getJob(String jobId);
 

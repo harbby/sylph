@@ -2,8 +2,8 @@ package ideal.sylph.runner.flink;
 
 import io.airlift.configuration.Config;
 
-import javax.annotation.Nonnull;
 import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 
 import java.io.File;
 
@@ -25,7 +25,7 @@ public class FlinkRunnerConfig
         return serverPort;
     }
 
-    @Nonnull
+    @NotNull
     public File getFlinkJarFile()
     {
         return flinkJarFile;

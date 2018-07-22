@@ -1,4 +1,25 @@
 ext.moduleName = 'ideal.sylph.runner.spark'
+apply plugin: 'scala'
+
+
+configurations.all {
+  resolutionStrategy {  preferProjectModules() }
+}
+
+tasks.compileJava.dependsOn compileScala
+tasks.compileScala.dependsOn.remove("compileJava")
 
 dependencies {
+  compileOnly group: 'org.apache.spark', name: 'spark-sql_2.11', version: deps.spark
+  compileOnly group: 'org.apache.spark', name: 'spark-streaming_2.11', version: deps.spark
+  compileOnly "org.apache.spark:spark-yarn_2.11:$deps.spark"
+
+
+  compileOnly (group: 'org.apache.spark', name: 'spark-streaming-kafka-0-10_2.11', version: deps.spark){
+    //exclude(group: '*')
+  }
+
+  dependencies {
+    compile files("$sourceSets.main.scala.outputDir")
+  }
 }

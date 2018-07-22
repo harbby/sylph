@@ -23,7 +23,7 @@ public class ServerConfig
     }
 
     @Config("server.http.maxFormContentSize")
-    public ServerConfig setMaxFormContentSize(int serverPort)
+    public ServerConfig setMaxFormContentSize(int maxFormContentSize)
     {
         this.maxFormContentSize = maxFormContentSize;
         return this;

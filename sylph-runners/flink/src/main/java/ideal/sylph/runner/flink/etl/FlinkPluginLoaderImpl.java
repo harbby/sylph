@@ -13,8 +13,9 @@ import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
 
+import java.io.Serializable;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
 
@@ -22,7 +23,7 @@ public final class FlinkPluginLoaderImpl
         implements NodeLoader<StreamTableEnvironment, DataStream<Row>>
 {
     @Override
-    public Function<DataStream<Row>, DataStream<Row>> loadSource(final StreamTableEnvironment tableEnv, final Map<String, Object> config)
+    public UnaryOperator<DataStream<Row>> loadSource(final StreamTableEnvironment tableEnv, final Map<String, Object> config)
     {
         try {
             final ClassLoader classLoader = this.getClass().getClassLoader();
@@ -32,7 +33,7 @@ public final class FlinkPluginLoaderImpl
 
             source.driverInit(tableEnv, config);
             //source.getSource().getType();  //判断type
-            return (stream) -> source.getSource();
+            return (UnaryOperator<DataStream<Row>> & Serializable) (stream) -> source.getSource();
         }
         catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
             throw new SylphException(JOB_BUILD_ERROR, e);
@@ -40,7 +41,7 @@ public final class FlinkPluginLoaderImpl
     }
 
     @Override
-    public Function<DataStream<Row>, DataStream<Row>> loadSink(final Map<String, Object> config)
+    public UnaryOperator<DataStream<Row>> loadSink(final Map<String, Object> config)
     {
         final Object driver;
         try {
@@ -63,7 +64,7 @@ public final class FlinkPluginLoaderImpl
         }
 
         sink.driverInit(config); //传入参数
-        return (stream) -> {
+        return (UnaryOperator<DataStream<Row>> & Serializable) (stream) -> {
             sink.run(stream);
             return null;
         };
@@ -73,7 +74,7 @@ public final class FlinkPluginLoaderImpl
      * transform api
      **/
     @Override
-    public final Function<DataStream<Row>, DataStream<Row>> loadTransform(final Map<String, Object> config)
+    public final UnaryOperator<DataStream<Row>> loadTransform(final Map<String, Object> config)
     {
         final Object driver;
         try {
@@ -98,7 +99,7 @@ public final class FlinkPluginLoaderImpl
             throw new SylphException(JOB_BUILD_ERROR, "NOT SUPPORTED TransForm:" + driver);
         }
         transform.driverInit(config);
-        return (stream) -> transform.transform(stream);
+        return (UnaryOperator<DataStream<Row>> & Serializable) (stream) -> transform.transform(stream);
     }
 
     private static Sink<DataStream<Row>> loadRealTimeSink(RealTimeSink realTimeSink)

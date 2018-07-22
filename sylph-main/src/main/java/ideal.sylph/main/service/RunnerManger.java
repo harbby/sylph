@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.annotation.Name;
+import ideal.sylph.spi.classloader.ThreadContextClassLoader;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;
@@ -16,6 +17,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -39,7 +41,7 @@ public class RunnerManger
         this.runnerContext = requireNonNull(runnerContext, "runnerContext is null");
     }
 
-    public synchronized void createRunner(Runner runner)
+    public void createRunner(Runner runner)
     {
         runner.create(runnerContext).forEach(jobActuator -> {
             String errorMessage = jobActuator.getClass().getName() + " Missing @Name annotation";
@@ -58,14 +60,16 @@ public class RunnerManger
     }
 
     /**
-     * 运行任务
+     * 创建job 运行时
      */
-    public JobContainer runJob(@Nonnull Job job)
+    public JobContainer createJobContainer(@Nonnull Job job, Optional<String> jobInfo)
     {
         String jobType = requireNonNull(job.getActuatorName(), "job Actuator Name is null " + job.getId());
         JobActuator jobActuator = jobActuatorMap.get(jobType);
         checkArgument(jobActuator != null, jobType + " not exists");
-        return jobActuator.execJob(job);
+        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(jobActuator.getClass().getClassLoader())) {
+            return jobActuator.createJobContainer(job, jobInfo);
+        }
     }
 
     public Job formJobWithDir(File jobDir, Map<String, String> jobProps)

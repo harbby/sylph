@@ -23,7 +23,7 @@ import static java.util.Objects.requireNonNull;
 public final class YamlFlow
         implements Flow
 {
-    static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
+    private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
 
     private final List<NodeInfo> nodes;
     private final List<EdgeInfo> edges;

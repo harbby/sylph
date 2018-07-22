@@ -1,0 +1,17 @@
+
+dependencies {
+  compile ('io.airlift:configuration:0.171'){
+    exclude(module: 'guice')
+    exclude(module: 'guava')
+    exclude(module: "guice-multibindings")
+  }
+  compile (group: 'com.google.inject.extensions', name: 'guice-multibindings', version: deps.guice){
+    exclude(module: "guava")
+  }
+  compile (group: 'com.google.inject', name: 'guice', version: deps.guice){
+    exclude(module: 'guava')
+  }
+  compile group: 'com.google.guava', name: 'guava', version: deps.guava
+
+  compile group: 'org.slf4j', name: 'slf4j-log4j12', version: deps.log4j12   //1.8.0-beta2
+}

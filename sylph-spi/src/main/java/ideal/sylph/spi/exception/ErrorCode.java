@@ -3,11 +3,13 @@ package ideal.sylph.spi.exception;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
 public final class ErrorCode
+        implements Serializable
 {
     private final int code;
     private final String name;

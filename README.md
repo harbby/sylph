@@ -11,6 +11,13 @@ sylph builds use Maven and requires Java 10 or higher.
 # Clean the build
 ./gradlew clean
 ```
+vm
+-Dconfig=etc/sylph/sylph.properties
+-Dlog4j.file=etc/sylph/sylph-log4j.properties
+
+env
+FLINK_HOME=/ideal/hadoop/flink
+HADOOP_CONF_DIR=/ideal/hadoop/hadoop/etc/hadoop
  
 ## Useful mailing lists
 1. yezhixinghai@gmail.com - For discussions about code, design and features

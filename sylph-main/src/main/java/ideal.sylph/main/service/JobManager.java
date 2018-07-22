@@ -8,10 +8,11 @@ import ideal.sylph.spi.job.JobStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
-import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 
+import java.io.IOException;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -20,6 +21,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.ILLEGAL_OPERATION;
+import static ideal.sylph.spi.exception.StandardErrorCode.JOB_START_ERROR;
+import static ideal.sylph.spi.job.Job.Status.RUNNING;
+import static ideal.sylph.spi.job.Job.Status.STARTING;
+import static ideal.sylph.spi.job.Job.Status.START_ERROR;
 
 /**
  * JobManager
@@ -28,12 +33,10 @@ public final class JobManager
 {
     private static final Logger logger = LoggerFactory.getLogger(JobManager.class);
 
-    @Inject
-    private JobStore jobStore;
-    @Inject
-    private RunnerManger runnerManger;
+    @Inject private JobStore jobStore;
+    @Inject private RunnerManger runnerManger;
+    @Inject private MetadataManager metadataManager;
 
-    @Min(1)
     //@Inject
     //@Named("max.submitJob")
     private int maxSubmitJob = 10;
@@ -46,35 +49,32 @@ public final class JobManager
     /**
      * 上线job
      */
-    public void startJob(String jobId)
+    public synchronized void startJob(String jobId)
     {
-        this.getJob(jobId).ifPresent(job -> {
-            JobContainer container = runnerManger.runJob(job);
-            runningContainers.put(jobId, container);
-            logger.info("runningContainers size:{}", runningContainers.size());
-        });
+        if (runningContainers.containsKey(jobId)) {
+            throw new SylphException(JOB_START_ERROR, "Job " + jobId + " already started");
+        }
+        Job job = this.getJob(jobId).orElseThrow(() -> new SylphException(JOB_START_ERROR, "Job " + jobId + " not found with jobStore"));
+        runningContainers.computeIfAbsent(jobId, k -> runnerManger.createJobContainer(job, Optional.empty()));
+        logger.info("runningContainers size:{}", runningContainers.size());
     }
 
     /**
      * 下线Job
      */
     public void stopJob(String jobId)
+            throws Exception
     {
         JobContainer container = runningContainers.remove(jobId);
         if (container != null) {
+            metadataManager.removeMetadata(jobId);
             container.shutdown();
         }
     }
 
-    public void saveJob(@Nonnull Job job)
+    public synchronized void saveJob(@NotNull Job job)
     {
         jobStore.saveJob(job);
-    }
-
-    public void saveAndStartJob(@Nonnull Job job)
-    {
-        this.saveJob(job);
-        this.startJob(job.getId());
     }
 
     public Optional<Job> removeJob(String jobId)
@@ -90,7 +90,7 @@ public final class JobManager
         return jobStore.getJob(jobId);
     }
 
-    @Nonnull
+    @NotNull
     public Collection<Job> listJobs()
     {
         return jobStore.getJobs();
@@ -104,18 +104,30 @@ public final class JobManager
         while (run) {
             runningContainers.forEach((jobId, container) -> {
                 try {
-                    switch (container.getStatus()) {
+                    Job.Status status = container.getStatus();
+                    switch (status) {
                         case RUNNING:
+                        case START_ERROR:
                             break;
                         case STARTING:
                             //-------正在启动中-------
                             //TODO: 判断任务启动 用掉耗时 如果大于5分钟 则进行放弃
                             break;
-                        case START_ERROR:
-                            break;
-                        default: {
-                            jobStartPool.submit(container::run); //需要重启 Job
-                        }
+                        default:
+                            jobStartPool.submit(() -> {
+                                try {
+                                    logger.warn("Job {}[{}] Status is {}, Soon to start", jobId,
+                                            container.getRunId(), status);
+                                    container.setStatus(STARTING);
+                                    Optional<String> runResult = container.run();
+                                    container.setStatus(RUNNING);
+                                    runResult.ifPresent(result -> metadataManager.addMetadata(jobId, result));
+                                }
+                                catch (Exception e) {
+                                    container.setStatus(START_ERROR);
+                                    logger.warn("job {} start error", jobId, e);
+                                }
+                            }); //需要重启 Job
                     }
                 }
                 catch (Exception e) {
@@ -136,10 +148,18 @@ public final class JobManager
      * start jobManager
      */
     public void start()
+            throws IOException
     {
         this.run = true;
         monitorService.setDaemon(false);
         monitorService.start();
+        //---------  init  read metadata job status  ---------------
+        Map<String, String> metadatas = metadataManager.loadMetadata();
+        metadatas.forEach((jobId, jobInfo) -> this.getJob(jobId).ifPresent(job -> {
+            JobContainer container = runnerManger.createJobContainer(job, Optional.ofNullable(jobInfo));
+            runningContainers.put(job.getId(), container);
+            logger.info("runningContainers size:{}", runningContainers.size());
+        }));
     }
 
     /**

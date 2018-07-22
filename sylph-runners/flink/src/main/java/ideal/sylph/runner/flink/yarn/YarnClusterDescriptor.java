@@ -1,7 +1,6 @@
 package ideal.sylph.runner.flink.yarn;
 
 import ideal.sylph.runner.flink.JobParameter;
-import org.apache.flink.calcite.shaded.com.google.common.collect.Iterables;
 import org.apache.flink.client.deployment.ClusterDeploymentException;
 import org.apache.flink.client.deployment.ClusterSpecification;
 import org.apache.flink.client.program.ClusterClient;
@@ -180,7 +179,6 @@ public class YarnClusterDescriptor
         Resource capability = Records.newRecord(Resource.class);
         capability.setMemory(appConf.getJobManagerMemoryMb());  //设置jobManneger
         capability.setVirtualCores(1);  //默认是1
-        this.setDetachedMode(true);  //分离模式
 
         appContext.setApplicationName(appConf.getYarnJobName());
         appContext.setApplicationType(APPLICATION_TYPE);
@@ -225,7 +223,7 @@ public class YarnClusterDescriptor
             }
         }
 
-        for (Path p : Iterables.concat(clusterConf.systemJars(), appConf.getUserProvidedJars())) {
+        for (Path p : appConf.getUserProvidedJars()) {
             String name = p.getName();
             if (resources.containsKey(name)) {  //这里当jar 有重复的时候 会抛出异常
                 LOG.warn("Duplicated name in the shipped files {}", p);
@@ -303,34 +301,33 @@ public class YarnClusterDescriptor
             String dynamicProperties)
             throws IOException, URISyntaxException
     {
-        final Map<String, String> env = new HashMap<>();
+        final Map<String, String> appMasterEnv = new HashMap<>();
 
         // set Flink app class path
-        env.put(YarnConfigKeys.ENV_FLINK_CLASSPATH, amClassPath);
+        appMasterEnv.put(YarnConfigKeys.ENV_FLINK_CLASSPATH, amClassPath);
 
         // set Flink on YARN internal configuration values
-        env.put(YarnConfigKeys.ENV_TM_COUNT, String.valueOf(appConf.getTaskManagerCount()));
-        env.put(YarnConfigKeys.ENV_TM_MEMORY, String.valueOf(appConf.getTaskManagerMemoryMb()));
-        env.put(YarnConfigKeys.FLINK_JAR_PATH, flinkJar.toString());
-        env.put(YarnConfigKeys.ENV_APP_ID, appId.toString());
-        env.put(YarnConfigKeys.ENV_CLIENT_HOME_DIR, homedir.toString()); //$home/.flink/appid 这个目录里面存放临时数据
-        env.put(YarnConfigKeys.ENV_CLIENT_SHIP_FILES, shipFiles);
-        env.put(YarnConfigKeys.ENV_SLOTS, String.valueOf(appConf.getTaskManagerSlots()));
-        //env.put(YarnConfigKeys.FLINK_YARN_FILES,"") 新配置作用未知
-        env.put(YarnConfigKeys.ENV_DETACHED, "true");  //是否分离 分离就cluser模式 否则是client模式
+        appMasterEnv.put(YarnConfigKeys.ENV_TM_COUNT, String.valueOf(appConf.getTaskManagerCount()));
+        appMasterEnv.put(YarnConfigKeys.ENV_TM_MEMORY, String.valueOf(appConf.getTaskManagerMemoryMb()));
+        appMasterEnv.put(YarnConfigKeys.FLINK_JAR_PATH, flinkJar.toString());
+        appMasterEnv.put(YarnConfigKeys.ENV_APP_ID, appId.toString());
+        appMasterEnv.put(YarnConfigKeys.ENV_CLIENT_HOME_DIR, homedir.toString()); //$home/.flink/appid 这个目录里面存放临时数据
+        appMasterEnv.put(YarnConfigKeys.ENV_CLIENT_SHIP_FILES, shipFiles);
+        appMasterEnv.put(YarnConfigKeys.ENV_SLOTS, String.valueOf(appConf.getTaskManagerSlots()));
+        appMasterEnv.put(YarnConfigKeys.ENV_DETACHED, String.valueOf(true));  //是否分离 分离就cluser模式 否则是client模式
 
         // https://github.com/apache/hadoop/blob/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-site/src/site/markdown/YarnApplicationSecurity.md#identity-on-an-insecure-cluster-hadoop_user_name
-        env.put(YarnConfigKeys.ENV_HADOOP_USER_NAME,
+        appMasterEnv.put(YarnConfigKeys.ENV_HADOOP_USER_NAME,
                 UserGroupInformation.getCurrentUser().getUserName());
 
         if (dynamicProperties != null) {
-            env.put(YarnConfigKeys.ENV_DYNAMIC_PROPERTIES, dynamicProperties);
+            appMasterEnv.put(YarnConfigKeys.ENV_DYNAMIC_PROPERTIES, dynamicProperties);
         }
 
         // set classpath from YARN configuration
-        Utils.setupYarnClassPath(clusterConf.conf(), env);
+        Utils.setupYarnClassPath(clusterConf.conf(), appMasterEnv);
 
-        return env;
+        return appMasterEnv;
     }
 
     /**

@@ -1,0 +1,26 @@
+apply plugin: 'scala'
+
+dependencies {
+    compileOnly project(":sylph-runners:sylph-runner-flink")
+
+    compileOnly group: 'org.apache.spark', name: 'spark-sql_2.11', version: deps.spark
+    compileOnly group: 'org.apache.spark', name: 'spark-streaming_2.11', version: deps.spark
+
+
+    /**
+     * spark 结构化流 kafka专用
+     * */
+    compile group: 'org.apache.spark', name: 'spark-sql-kafka-0-10_2.11', version: deps.spark
+
+    /**
+     * spark streaming kafka 老流依赖
+     * */
+    compile (group: 'org.apache.spark', name: 'spark-streaming-kafka-0-10_2.11', version: deps.spark){
+        exclude(group: 'org.spark-project.spark')
+        exclude(group: 'org.scala-lang')
+        exclude(module: 'spark-tags_2.11')
+        exclude(module: 'slf4j-log4j12')
+        exclude(module: 'slf4j-api')
+        exclude(module: 'snappy-java')
+    }
+}

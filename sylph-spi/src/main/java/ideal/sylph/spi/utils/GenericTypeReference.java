@@ -1,7 +1,7 @@
 package ideal.sylph.spi.utils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import ideal.sylph.common.utils.ParameterizedTypeImpl;
+import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

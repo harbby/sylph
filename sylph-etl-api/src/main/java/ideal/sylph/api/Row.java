@@ -1,6 +1,7 @@
 package ideal.sylph.api;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -10,7 +11,10 @@ public interface Row
 {
     String mkString(String seq);
 
-    String mkString();
+    default String mkString()
+    {
+        return this.mkString(",");
+    }
 
     <T> T getAs(String key);
 
@@ -25,22 +29,22 @@ public interface Row
 
     public static Row of(Object[] values)
     {
-        return new GenericRowWithSchema(values);
+        return new DefaultRow(values);
     }
 
-    static class GenericRowWithSchema
+    static class DefaultRow
             implements Row
     {
         Object[] values;
 
-        private GenericRowWithSchema(Object[] values)
+        private DefaultRow(Object[] values)
         {
             this.values = values;
         }
 
         public Object[] getValues()
         {
-            return this.values;
+            return Arrays.copyOf(values, values.length);
         }
 
         @Override

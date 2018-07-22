@@ -2,11 +2,12 @@ rootProject.name = 'sylph'
 
 include 'sylph-spi'
 include 'sylph-main'
-include 'sylph-shaded-hadoop2'
-include 'sylph-common'
+include 'ideal-common'
 include 'sylph-controller'
 
 include 'sylph-runners'
+include 'sylph-runners:batch'
+project(':sylph-runners:batch').name = 'sylph-runner-batch'
 include 'sylph-runners:flink'
 project(':sylph-runners:flink').name = 'sylph-runner-flink'
 include ':sylph-runners:spark'
@@ -17,6 +18,9 @@ project(':sylph-runners:spark').name = 'sylph-runner-spark'
 include 'sylph-etl-api'
 include 'sylph-etl-plugins'
 include 'sylph-etl-plugins:flink-node-plugin'
+include 'sylph-etl-plugins:spark-node-plugin'
+
 //----
 include 'sylph-dist'
+
 

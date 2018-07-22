@@ -6,6 +6,8 @@ import ideal.sylph.controller.SylphServlet;
 import ideal.sylph.spi.SylphContext;
 import ideal.sylph.spi.job.Job;
 
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -24,11 +26,14 @@ public class ETLJobServlet
         extends SylphServlet
 {
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private final SylphContext sylphContext;
+    private SylphContext sylphContext;
 
-    public ETLJobServlet(SylphContext sylphContext)
+    @Override
+    public void init(ServletConfig config)
+            throws ServletException
     {
-        this.sylphContext = sylphContext;
+        super.init(config);
+        this.sylphContext = ((SylphContext) getServletContext().getAttribute("sylphContext"));
     }
 
     @Override

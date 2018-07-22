@@ -1,26 +1,9 @@
 ext.moduleName = 'ideal.sylph.spi'
 
 dependencies {
-    compile project(':sylph-common')
-
-    compile ('io.airlift:configuration:0.171'){
-        exclude(module: 'guice')
-        exclude(module: 'guava')
-        exclude(module: "guice-multibindings")
-        exclude(module: 'commons-lang3')
-    }
-    compile (group: 'com.google.inject.extensions', name: 'guice-multibindings', version: deps.guice){
-        exclude(module: "guava")
-    }
-
-    compile project(path: ':sylph-shaded-hadoop2', configuration: 'shadow')
-
-    compile group: 'org.slf4j', name: 'slf4j-log4j12', version: deps.log4j12  //1.8.0-beta2
-
-    compile (group: 'com.google.inject', name: 'guice', version: deps.guice){
-        exclude(module: 'guava')
-    }
+    compile project(':ideal-common')
     compile group: 'com.google.guava', name: 'guava', version: deps.guava
+    compile group: 'javax.validation', name: 'validation-api', version: '1.1.0.Final'
 
     compile group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: deps.jackson
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: deps.jackson

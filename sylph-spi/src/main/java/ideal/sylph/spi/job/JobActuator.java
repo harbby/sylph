@@ -2,6 +2,8 @@ package ideal.sylph.spi.job;
 
 import javax.validation.constraints.NotNull;
 
+import java.util.Optional;
+
 public interface JobActuator
 {
     @NotNull
@@ -10,7 +12,7 @@ public interface JobActuator
         throw new UnsupportedOperationException("this method have't support!");
     }
 
-    default JobContainer execJob(@NotNull Job job)
+    default JobContainer createJobContainer(@NotNull Job job, Optional<String> jobInfo)
     {
         throw new UnsupportedOperationException("this method have't support!");
     }

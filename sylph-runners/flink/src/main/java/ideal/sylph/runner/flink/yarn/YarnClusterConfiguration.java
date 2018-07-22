@@ -19,7 +19,7 @@ public class YarnClusterConfiguration
     private final String appRootDir;
 
     /**
-     * The location of the Flink Uber jar.
+     * The location of the Flink jar.
      */
     private final Path flinkJar;
 
@@ -30,11 +30,6 @@ public class YarnClusterConfiguration
     private final Set<Path> resourcesToLocalize;
 
     /**
-     * JARs that will be localized and put into the classpaths for bot JobManager and TaskManager.
-     */
-    private final Set<Path> systemJars;
-
-    /**
      * flink conf
      */
     private final Configuration flinkConfiguration = new Configuration();
@@ -43,14 +38,12 @@ public class YarnClusterConfiguration
             YarnConfiguration conf,
             String appRootDir,
             Path flinkJar,
-            Set<Path> resourcesToLocalize,
-            Set<Path> systemJars)
+            Set<Path> resourcesToLocalize)
     {
         this.conf = conf;
         this.appRootDir = appRootDir;
         this.flinkJar = flinkJar;
         this.resourcesToLocalize = resourcesToLocalize;
-        this.systemJars = systemJars;
     }
 
     YarnConfiguration conf()
@@ -78,8 +71,5 @@ public class YarnClusterConfiguration
         return resourcesToLocalize;
     }
 
-    public Set<Path> systemJars()
-    {
-        return systemJars;
-    }
+    //JARs that will be localized and put into the classpaths for bot JobManager and TaskManager.
 }

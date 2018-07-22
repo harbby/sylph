@@ -7,18 +7,16 @@ public interface Job
     @NotNull
     public String getId();
 
-    String getDescription();
+    default String getDescription()
+    {
+        return "none";
+    }
 
     @NotNull
     String getActuatorName();
 
     @NotNull
     Flow getFlow();
-
-    /**
-     * get Is it online?
-     */
-    boolean getIsOnline();
 
     public enum Status
     {
@@ -32,11 +30,6 @@ public interface Job
         Status(int code)
         {
             this.status = code;
-        }
-
-        public boolean equals(Status inState)
-        {
-            return inState.status == this.status;
         }
     }
 }

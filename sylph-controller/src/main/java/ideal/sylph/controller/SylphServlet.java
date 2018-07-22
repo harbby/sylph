@@ -13,7 +13,7 @@ import java.io.IOException;
 public abstract class SylphServlet
         extends HttpServlet
 {
-    protected static Logger logger = LoggerFactory.getLogger(SylphServlet.class);
+    protected static final Logger logger = LoggerFactory.getLogger(SylphServlet.class);
 
     @Override
     protected void doPost(

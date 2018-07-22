@@ -5,12 +5,12 @@ import ideal.sylph.api.NodeLoader;
 import ideal.sylph.common.graph.Graph;
 import ideal.sylph.common.graph.impl.DagNode;
 import ideal.sylph.runner.flink.etl.FlinkPluginLoaderImpl;
-import ideal.sylph.runner.flink.utils.JsonTextUtil;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.model.EdgeInfo;
 import ideal.sylph.spi.model.NodeInfo;
 import ideal.sylph.spi.utils.GenericTypeReference;
+import ideal.sylph.spi.utils.JsonTextUtil;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableEnvironment;
@@ -26,6 +26,7 @@ import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
 public class GraphApp
         implements FlinkApp
 {
+    private static final long serialVersionUID = 1L;
     private static final transient ObjectMapper MAPPER = new ObjectMapper();
     private final Flow flow;
     private final String jobId;

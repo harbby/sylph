@@ -11,7 +11,9 @@ import org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema
 import org.apache.flink.table.api.java.StreamTableEnvironment
 import org.apache.flink.types.Row
 
+@SerialVersionUID(2L)//使用注解来制定序列化id
 class KafkaSource extends Source[StreamTableEnvironment, DataStream[Row]] {
+
   @transient private var optionMap: java.util.Map[String, Object] = _
   @transient private var tableEnv: StreamTableEnvironment = _
 
@@ -45,7 +47,7 @@ class KafkaSource extends Source[StreamTableEnvironment, DataStream[Row]] {
     //org.apache.flink.streaming.api.checkpoint.CheckpointedFunction
     val stream: DataStream[Row] = FlinkEnvUtil.getFlinkEnv(tableEnv).addSource(new FlinkKafkaConsumer010[Row](
       topicSets,
-      new RowLine(),
+      new RowDeserializer(),
       properties)
     )
     //------------registerDataStream--------------
@@ -56,8 +58,7 @@ class KafkaSource extends Source[StreamTableEnvironment, DataStream[Row]] {
     stream
   }
 
-  private class RowLine extends KeyedDeserializationSchema[Row]() {
-
+  private class RowDeserializer extends KeyedDeserializationSchema[Row] {
 
     override def isEndOfStream(nextElement: Row): Boolean = {
       false
@@ -72,7 +73,6 @@ class KafkaSource extends Source[StreamTableEnvironment, DataStream[Row]] {
     }
 
     override def getProducedType: TypeInformation[Row] = {
-
       val types: Array[TypeInformation[_]] = Array(
         TypeExtractor.createTypeInfo(classOf[String]),
         TypeExtractor.createTypeInfo(classOf[String]),

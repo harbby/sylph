@@ -17,7 +17,9 @@ import scala.util.parsing.json.JSONObject
 /**
   * test source
   **/
+@SerialVersionUID(2L)//使用注解来制定序列化id
 class TestSource extends Source[StreamTableEnvironment, DataStream[Row]] {
+
   @transient private var optionMap: java.util.Map[String, Object] = _
   @transient private var tableEnv: StreamTableEnvironment = _
 

@@ -4,12 +4,14 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import ideal.sylph.common.base.Throwables;
 import ideal.sylph.controller.SylphServlet;
 import ideal.sylph.spi.SylphContext;
 import ideal.sylph.spi.job.JobContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -34,11 +36,14 @@ public class JobMangerSerlvet
     private static Logger logger = LoggerFactory.getLogger(JobMangerSerlvet.class);
     private static final long serialVersionUID = 33213425435L;
 
-    private final SylphContext sylphContext;
+    private SylphContext sylphContext;
 
-    public JobMangerSerlvet(SylphContext sylphContext)
+    @Override
+    public void init(ServletConfig config)
+            throws ServletException
     {
-        this.sylphContext = requireNonNull(sylphContext, "sylphContext is null");
+        super.init(config);
+        this.sylphContext = ((SylphContext) getServletContext().getAttribute("sylphContext"));
     }
 
     public static String getBodyString(HttpServletRequest request)
@@ -46,15 +51,16 @@ public class JobMangerSerlvet
     {
         //-获取post body--注意要放到--request.getParameter 之前 否则可能失效
         final StringBuilder stringBuilder = new StringBuilder(2000);
-        Scanner scanner = new Scanner(request.getInputStream());
-        while (scanner.hasNextLine()) {
-            stringBuilder.append(scanner.nextLine());
+        try (Scanner scanner = new Scanner(request.getInputStream())) {
+            while (scanner.hasNextLine()) {
+                stringBuilder.append(scanner.nextLine());
+            }
+            String bodyStr = stringBuilder.toString().trim();
+            if (bodyStr.equals("")) {
+                bodyStr = "{}";
+            }
+            return bodyStr;
         }
-        String bodyStr = stringBuilder.toString().trim();
-        if (bodyStr.equals("")) {
-            bodyStr = "{}";
-        }
-        return bodyStr;
     }
 
     @Override
@@ -114,14 +120,14 @@ public class JobMangerSerlvet
                 jobContainer.ifPresent(container -> {
                     line.put("yarnId", container.getRunId());
                     line.put("status", container.getStatus());
-                    line.put("app_url", container.getJobUrl());
+                    line.put("app_url", "/proxy/" + jobId + "/#");
                 });
                 outData.add(line);
             });
             json = MAPPER.writeValueAsString(ImmutableMap.of("data", outData));
         }
         catch (Exception e) {
-            e.printStackTrace();
+            logger.error("", Throwables.getRootCause(e));
         }
 
         return json;

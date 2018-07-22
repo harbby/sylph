@@ -1,8 +1,9 @@
 ext.moduleName = 'ideal.sylph.main'
 
 dependencies {
-    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.7'
+    compile group: 'commons-io', name: 'commons-io', version: '2.6'
 
     compile project(':sylph-controller')
     compile (project(':sylph-spi'))
+    compile project(':ideal-common')
 }
