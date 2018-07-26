@@ -1,0 +1,63 @@
+<html lang="en">
+<meta charset="UTF-8">
+<title>任务管理</title>
+<link href="./css/bootstrap.min.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="./libs/jquery-1.11.1.min.js"></script>
+<script type="text/javascript" src="./js/list.js"></script>
+<style>
+    body {
+        margin: 10px 50px;
+        font-size: 16px;
+    }
+    .row {
+        line-height: 40px;
+    }
+    button {
+        margin: 0 10px
+    }
+    button a{
+        color:#fff;
+    }
+    h2 {
+        border-bottom: 1px solid #ccc;
+        height: 50px;
+        text-align: center
+    }
+</style>
+</head>
+<body>
+
+
+<h2>任务管理</h2>
+
+<form method="post" action="/_sys/job_manger" enctype="multipart/form-data">
+    <div style="width: 500px; margin-bottom: 50px">
+        <div class="form-group">
+            <label>上传任务</label>
+            <input type="file" name="file" class="form-control" />
+        </div>
+        <span>
+            <input type="submit" class="btn btn-primary" value="点击上传" />
+        </span>
+    </div>
+</form>
+
+<div class="row">
+    <div class="col-md-8"><label>插件列表</label></div>
+    <div class="col-md-4">
+        <button class="btn btn-primary refresh_all">刷新</button>
+        <button class="btn btn-primary" onclick='window.location.href="etl.html"'>新增ETL任务</button>
+    </div>
+</div>
+
+<div class="row" id="rowHead">
+    <div class="col-md-2">任务id</div>
+    <div class="col-md-3">AppId</div>
+	<div class="col-md-1">类型</div>
+    <div class="col-md-2">创建时间</div>
+    <div class="col-md-1">状态</div>
+    <div class="col-md-3">操作</div>
+</div>
+
+</body>
+</html>
