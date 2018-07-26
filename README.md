@@ -19,7 +19,7 @@ sylph builds use Maven and requires Java 8.
 # Build and install distributions
 ./gradlew clean assemble
 ```
-## Running Presto in your IDE
+## Running Sylph in your IDE
 After building Sylph for the first time, you can load the project into your IDE and run the server. Me recommend using IntelliJ IDEA.
 
 After opening the project in IntelliJ, double check that the Java SDK is properly configured for the project:
