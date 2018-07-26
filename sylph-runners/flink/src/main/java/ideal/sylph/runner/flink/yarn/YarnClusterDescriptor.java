@@ -52,7 +52,7 @@ import static org.apache.hadoop.yarn.api.records.YarnApplicationState.NEW;
 public class YarnClusterDescriptor
         extends AbstractYarnClusterDescriptor
 {
-    private static final String APPLICATION_TYPE = "Ysera";
+    private static final String APPLICATION_TYPE = "Sylph_FLINK";
     private static final Logger LOG = LoggerFactory.getLogger(YarnClusterDescriptor.class);
     private static final int MAX_ATTEMPT = 1;
     private static final long DEPLOY_TIMEOUT_MS = 600 * 1000;
