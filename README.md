@@ -7,6 +7,8 @@ Support for
 * flink stream
 * batch job
 
+## status
+Experimental stage
 
 ## Show
 [![loading...](https://raw.githubusercontent.com/harbby/harbby.github.io/master/logo/sylph/briefing.gif)](https://travis-ci.org/harbby/sylph)
