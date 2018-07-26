@@ -58,7 +58,6 @@ public class YarnClusterDescriptor
     private static final long DEPLOY_TIMEOUT_MS = 600 * 1000;
     private static final long RETRY_DELAY_MS = 250;
     private static final ScheduledExecutorService YARN_POLL_EXECUTOR = Executors.newSingleThreadScheduledExecutor();
-    private static final String FLINK_JAR = "flink.jar";
 
     private final YarnClusterConfiguration clusterConf;
     private final YarnClient yarnClient;
