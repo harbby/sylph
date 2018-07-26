@@ -2,10 +2,7 @@ package ideal.sylph.common.graph;
 
 import ideal.sylph.common.graph.impl.DefaultGraph;
 
-import java.io.Serializable;
-
 public interface Graph<E>
-        extends Serializable
 {
     /**
      * 创建节点
@@ -19,7 +16,7 @@ public interface Graph<E>
      */
     void addEdge(String in, String out);
 
-    void build()
+    void run()
             throws Exception;
 
     void build(boolean parallel)

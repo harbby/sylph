@@ -10,6 +10,7 @@ import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobContainer;
+import ideal.sylph.spi.job.YamlFlow;
 
 import javax.annotation.Nonnull;
 

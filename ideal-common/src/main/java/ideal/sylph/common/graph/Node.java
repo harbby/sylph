@@ -1,10 +1,8 @@
 package ideal.sylph.common.graph;
 
-import java.io.Serializable;
 import java.util.Collection;
 
 public interface Node<E>
-        extends Serializable
 {
     String getId();
 

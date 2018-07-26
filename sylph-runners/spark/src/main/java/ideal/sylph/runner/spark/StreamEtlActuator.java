@@ -1,9 +1,10 @@
 package ideal.sylph.runner.spark;
 
-import ideal.sylph.api.NodeLoader;
 import ideal.sylph.common.jvm.JVMLauncher;
 import ideal.sylph.common.jvm.JVMLaunchers;
 import ideal.sylph.runner.spark.etl.sparkstreaming.StreamPluginLoader;
+import ideal.sylph.spi.App;
+import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.annotation.Description;
 import ideal.sylph.spi.annotation.Name;
 import ideal.sylph.spi.job.Flow;

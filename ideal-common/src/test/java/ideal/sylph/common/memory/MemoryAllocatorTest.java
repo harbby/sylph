@@ -2,7 +2,6 @@ package ideal.sylph.common.memory;
 
 import org.junit.Test;
 
-import java.io.BufferedOutputStream;
 import java.nio.ByteBuffer;
 
 public class MemoryAllocatorTest

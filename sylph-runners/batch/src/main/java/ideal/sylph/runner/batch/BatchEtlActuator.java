@@ -127,7 +127,7 @@ public class BatchEtlActuator
             JobDataMap jobDataMap = context.getJobDetail().getJobDataMap();
             final Graph graph = (Graph) requireNonNull(jobDataMap.get("graph"), "graph is null");
             try {
-                graph.build();
+                graph.run();
             }
             catch (Exception e) {
                 throw new JobExecutionException(e);

@@ -108,13 +108,11 @@ public final class JVMLauncher<R extends Serializable>
             throws Exception
     {
         System.out.println("vm start ok ...");
-        VmCallable<? extends Serializable> callable;
-        try (ObjectInputStreamProxy ois = new ObjectInputStreamProxy(System.in)) {
-            callable = (VmCallable<? extends Serializable>) ois.readObject();
-        }
-        System.out.println("vm start init ok ...");
         VmFuture<? extends Serializable> future = new VmFuture<>();
-        try {
+
+        try (ObjectInputStreamProxy ois = new ObjectInputStreamProxy(System.in)) {
+            VmCallable<? extends Serializable> callable = (VmCallable<? extends Serializable>) ois.readObject();
+            System.out.println("vm start init ok ...");
             future.setResult(callable.call());
         }
         catch (Exception e) {

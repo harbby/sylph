@@ -48,7 +48,7 @@ public class DefaultGraph<E>
     }
 
     @Override
-    public void build()
+    public void run()
             throws Exception
     {
         System.out.println("开始寻找轨迹");

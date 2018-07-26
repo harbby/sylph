@@ -1,11 +1,11 @@
 package ideal.sylph.runner.flink.etl;
 
-import ideal.sylph.api.NodeLoader;
 import ideal.sylph.api.etl.RealTimeSink;
 import ideal.sylph.api.etl.RealTimeTransForm;
 import ideal.sylph.api.etl.Sink;
 import ideal.sylph.api.etl.Source;
 import ideal.sylph.api.etl.TransForm;
+import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.exception.SylphException;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -13,7 +13,6 @@ import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
 
-import java.io.Serializable;
 import java.util.Map;
 import java.util.function.UnaryOperator;
 
@@ -33,7 +32,7 @@ public final class FlinkPluginLoaderImpl
 
             source.driverInit(tableEnv, config);
             //source.getSource().getType();  //判断type
-            return (UnaryOperator<DataStream<Row>> & Serializable) (stream) -> source.getSource();
+            return (stream) -> source.getSource();
         }
         catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
             throw new SylphException(JOB_BUILD_ERROR, e);
@@ -64,7 +63,7 @@ public final class FlinkPluginLoaderImpl
         }
 
         sink.driverInit(config); //传入参数
-        return (UnaryOperator<DataStream<Row>> & Serializable) (stream) -> {
+        return (stream) -> {
             sink.run(stream);
             return null;
         };
@@ -99,7 +98,7 @@ public final class FlinkPluginLoaderImpl
             throw new SylphException(JOB_BUILD_ERROR, "NOT SUPPORTED TransForm:" + driver);
         }
         transform.driverInit(config);
-        return (UnaryOperator<DataStream<Row>> & Serializable) (stream) -> transform.transform(stream);
+        return (stream) -> transform.transform(stream);
     }
 
     private static Sink<DataStream<Row>> loadRealTimeSink(RealTimeSink realTimeSink)

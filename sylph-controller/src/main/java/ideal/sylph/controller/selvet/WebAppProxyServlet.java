@@ -142,7 +142,7 @@ public class WebAppProxyServlet
             this.doGet1(req, resp);
         }
         catch (Exception e) {
-            resp.getWriter().println(Throwables.getRootCause(e));
+            resp.sendError(500, Throwables.getRootCause(e).toString());
         }
     }
 
@@ -156,10 +156,10 @@ public class WebAppProxyServlet
             String[] parts = pathInfo.split("/", 3);
             checkArgument(parts.length >= 2, remoteUser + " gave an invalid proxy path " + pathInfo);
             //parts[0] is empty because path info always starts with a /
-            String jobId = requireNonNull(parts[1], "jobId not setting");
+            String runId = requireNonNull(parts[1], "runId not setting");
             String rest = parts.length > 2 ? parts[2] : "";
 
-            URI trackingUri = new URI(getJobUrl(jobId));
+            URI trackingUri = new URI(getJobUrl(runId));
 
             // Append the user-provided path and query parameter to the original
             // tracking url.
@@ -178,16 +178,18 @@ public class WebAppProxyServlet
         }
     }
 
-    public String getJobUrl(String jobId)
+    public String getJobUrl(String id)
     {
-        JobContainer container = sylphContext.getJobContainer(jobId)
-                .orElseThrow(() -> new SylphException(JOB_CONFIG_ERROR, "job " + jobId + " not Online"));
+        JobContainer container = sylphContext.getJobContainer(id)
+                .orElseGet(() -> sylphContext.getJobContainerWithRunId(id).orElseThrow(() ->
+                        new SylphException(JOB_CONFIG_ERROR, "job " + id + " not Online"))
+                );
         Job.Status status = container.getStatus();
         if (status == Job.Status.RUNNING) {
             return container.getJobUrl();
         }
         else {
-            throw new RuntimeException("job " + jobId + " Status " + status + ",is not RUNNING");
+            throw new RuntimeException("job " + id + " Status " + status + ",is not RUNNING");
         }
     }
 }

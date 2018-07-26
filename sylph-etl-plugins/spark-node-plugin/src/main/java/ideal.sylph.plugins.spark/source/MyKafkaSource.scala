@@ -1,4 +1,4 @@
-package com.broadtech.streamingload.runtime.sparkstreaming.source
+package ideal.sylph.plugins.spark.source
 
 import ideal.sylph.api.etl.{Sink, Source, TransForm}
 import org.apache.spark.rdd.RDD

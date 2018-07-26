@@ -1,10 +1,10 @@
 package ideal.sylph.runner.flink;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ideal.sylph.api.NodeLoader;
 import ideal.sylph.common.graph.Graph;
 import ideal.sylph.common.graph.impl.DagNode;
 import ideal.sylph.runner.flink.etl.FlinkPluginLoaderImpl;
+import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.model.EdgeInfo;
@@ -76,6 +76,6 @@ public class GraphApp
                 edgeInfo.getInNodeId().split("-")[0],
                 edgeInfo.getOutNodeId().split("-")[0]
         ));
-        graphx.build();
+        graphx.run();
     }
 }

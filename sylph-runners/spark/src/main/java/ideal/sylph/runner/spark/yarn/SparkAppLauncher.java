@@ -1,8 +1,10 @@
 package ideal.sylph.runner.spark.yarn;
 
 import com.google.common.collect.ImmutableList;
+import com.google.inject.Inject;
 import ideal.sylph.runner.spark.SparkJob;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
+import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.spark.SparkConf;
 import org.apache.spark.deploy.yarn.Client;
 import org.apache.spark.deploy.yarn.ClientArguments;
@@ -16,12 +18,12 @@ import java.util.stream.Collectors;
 
 public class SparkAppLauncher
 {
+    @Inject private YarnClient yarnClient;
+
     public ApplicationId run(SparkJob job)
             throws Exception
     {
         final String sparkHome = System.getenv("SPARK_HOME");  //获取环境变量
-//        Configuration config = client.getConfig();
-
         System.setProperty("SPARK_YARN_MODE", "true");
         //
         SparkConf sparkConf = new SparkConf();
@@ -32,11 +34,15 @@ public class SparkAppLauncher
         sparkConf.set("spark.submit.deployMode", "cluster"); // worked
         //------------addJars-> --jars    ------------  上传依赖的jar文件
         String additionalJars = getAppClassLoaderJars().stream()
-                .map(URL::getPath).filter(x -> new File(x).isFile())
+                .map(URL::getPath).filter(x -> {
+                    File file = new File(x);
+                    return file.isFile() && !file.getPath().startsWith(sparkHome);
+                })
                 .collect(Collectors.joining(","));
         if (additionalJars != null && additionalJars.length() > 0) {
             sparkConf.set("spark.yarn.dist.jars", additionalJars);
         }
+
         //-------------addFiles->  --files  ----------------------------
 //        File[] userFiles = loadDir.listFiles();
 //        if (userFiles != null) {
@@ -49,9 +55,11 @@ public class SparkAppLauncher
 
         String[] args = getArgs();
         ClientArguments clientArguments = new ClientArguments(args);                 // spark-2.0.0
-        Client appClient = new SylphSparkYarnClient(clientArguments, sparkConf);
 
-        //Client client = new Client(clientArguments, sparkConf);
+        yarnClient.getConfig().iterator().forEachRemaining(x -> {
+            sparkConf.set("spark.hadoop." + x.getKey(), x.getValue());
+        });
+        Client appClient = new SylphSparkYarnClient(clientArguments, sparkConf, yarnClient);
         return appClient.submitApplication();
     }
 
@@ -66,7 +74,7 @@ public class SparkAppLauncher
 
                 //"--jar", sparkExamplesJar,
 
-                "--class", "com.broadtech.streamingload.StreamingLoadMain",
+                "--class", "ideal.sylph.runner.spark.SparkAppUtil",
 
                 // argument 1 to my Spark program
                 //"--arg", slices   用户自定义的参数
@@ -77,7 +85,7 @@ public class SparkAppLauncher
     }
 
     /**
-     * 暂时从jobBuilder中 copy过来的 后面应该删除
+     *
      */
     @Deprecated
     private List<URL> getAppClassLoaderJars()

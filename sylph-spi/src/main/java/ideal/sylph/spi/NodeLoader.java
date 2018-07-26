@@ -1,4 +1,4 @@
-package ideal.sylph.api;
+package ideal.sylph.spi;
 
 import java.util.Map;
 import java.util.function.UnaryOperator;

@@ -2,7 +2,6 @@ package ideal.sylph.common.graph.impl;
 
 import ideal.sylph.common.graph.Node;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -17,12 +16,12 @@ public class DagNode<T>
     private List<Node<T>> nextNodes = new ArrayList<>();
     private transient T tempData;
 
-    private Serializable nodeFunc;
+    private UnaryOperator<T> nodeFunc;
 
     public DagNode(String id, UnaryOperator<T> nodeFunc)
     {
-        this.id = id;
-        this.nodeFunc = (UnaryOperator<T> & Serializable) nodeFunc;
+        this.id = requireNonNull(id, "node id is null");
+        this.nodeFunc = requireNonNull(nodeFunc, "nodeFunc is null");
     }
 
     @Override
@@ -52,13 +51,12 @@ public class DagNode<T>
     @Override
     public void action(Node<T> parentNode)
     {
-        UnaryOperator<T> function = (UnaryOperator<T>) this.nodeFunc;
         if (parentNode == null) { //根节点
-            this.tempData = function.apply(null);  //进行变换
+            this.tempData = nodeFunc.apply(null);  //进行变换
         }
         else {  //叶子节点
             T parentOutput = requireNonNull(parentNode.getOutput(), parentNode.getId() + " return is null");
-            this.tempData = function.apply(parentOutput);  //进行变换
+            this.tempData = nodeFunc.apply(parentOutput);  //进行变换
         }
     }
 }

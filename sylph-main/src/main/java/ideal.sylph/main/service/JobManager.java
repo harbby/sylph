@@ -165,8 +165,21 @@ public final class JobManager
     /**
      * get running JobContainer
      */
-    public Optional<JobContainer> getJobContainer(String jobId)
+    public Optional<JobContainer> getJobContainer(@NotNull String jobId)
     {
         return Optional.ofNullable(runningContainers.get(jobId));
+    }
+
+    /**
+     * get running JobContainer with this runId(demo: yarnAppId)
+     */
+    public Optional<JobContainer> getJobContainerWithRunId(@NotNull String runId)
+    {
+        for (JobContainer container : runningContainers.values()) {
+            if (runId.equals(container.getRunId())) {
+                return Optional.ofNullable(container);
+            }
+        }
+        return Optional.empty();
     }
 }

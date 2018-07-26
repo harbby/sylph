@@ -1,7 +1,7 @@
 package ideal.sylph.runner.spark;
 
-import ideal.sylph.api.annotation.Description;
-import ideal.sylph.api.annotation.Name;
+import ideal.sylph.spi.annotation.Description;
+import ideal.sylph.spi.annotation.Name;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuator;

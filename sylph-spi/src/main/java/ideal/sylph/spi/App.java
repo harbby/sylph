@@ -1,7 +1,6 @@
-package ideal.sylph.runner.spark;
+package ideal.sylph.spi;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ideal.sylph.api.NodeLoader;
 import ideal.sylph.common.graph.Graph;
 import ideal.sylph.common.graph.impl.DagNode;
 import ideal.sylph.spi.exception.SylphException;
@@ -12,14 +11,12 @@ import ideal.sylph.spi.utils.GenericTypeReference;
 import ideal.sylph.spi.utils.JsonTextUtil;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
 
 public interface App<T, R>
-        extends Serializable
 {
     ObjectMapper MAPPER = new ObjectMapper();
 
@@ -27,8 +24,7 @@ public interface App<T, R>
 
     T getContext();
 
-    default void build(String jobId, Flow flow)
-            throws Exception
+    default Graph<R> build(String jobId, Flow flow)
     {
         final T context = getContext();
         final Graph<R> graphx = Graph.newGraph(jobId);
@@ -66,6 +62,7 @@ public interface App<T, R>
                 edgeInfo.getInNodeId().split("-")[0],
                 edgeInfo.getOutNodeId().split("-")[0]
         ));
-        graphx.build();
+
+        return graphx;
     }
 }

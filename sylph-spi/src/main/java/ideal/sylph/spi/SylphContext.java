@@ -25,4 +25,6 @@ public interface SylphContext
     Optional<Job> getJob(String jobId);
 
     Optional<JobContainer> getJobContainer(@NotNull String jobId);
+
+    Optional<JobContainer> getJobContainerWithRunId(@NotNull String jobId);
 }

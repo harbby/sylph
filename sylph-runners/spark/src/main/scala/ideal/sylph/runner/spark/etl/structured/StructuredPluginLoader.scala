@@ -3,9 +3,9 @@ package ideal.sylph.runner.spark.etl.structured
 import java.util
 import java.util.function.UnaryOperator
 
-import ideal.sylph.api.NodeLoader
 import ideal.sylph.api.etl.{RealTimeSink, RealTimeTransForm, Sink, TransForm}
 import ideal.sylph.runner.spark.etl.{SparkRow, SparkUtil}
+import ideal.sylph.spi.NodeLoader
 import org.apache.spark.sql.streaming.{DataStreamWriter, Trigger}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Dataset, ForeachWriter, Row, SparkSession}
@@ -61,7 +61,7 @@ class StructuredPluginLoader extends NodeLoader[SparkSession, Dataset[Row]] {
           writer.option("checkpointLocation", config.get("checkpoint").asInstanceOf[String])
         }
         sink.run(writer)
-        //val streamingQuery = writer.start //启动job
+        val streamingQuery = writer.start //启动job
         //streamingQuery.stop();
         null
       }

@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Injector;
 import com.google.inject.Scopes;
 import ideal.sylph.common.bootstrap.Bootstrap;
+import ideal.sylph.runner.spark.yarn.SparkAppLauncher;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.classloader.DirClassLoader;
@@ -37,12 +38,15 @@ public class SparkRunner
 
             Bootstrap app = new Bootstrap(new SparkRunnerModule(), binder -> {
                 binder.bind(StreamEtlActuator.class).in(Scopes.SINGLETON);
+                binder.bind(Stream2EtlActuator.class).in(Scopes.SINGLETON);
+                binder.bind(SparkAppLauncher.class).in(Scopes.SINGLETON);
                 binder.bind(SparkSubmitActuator.class).in(Scopes.SINGLETON);
             });
             Injector injector = app.strictConfig()
                     .setRequiredConfigurationProperties(Collections.emptyMap())
                     .initialize();
-            return ImmutableSet.of(StreamEtlActuator.class
+            return ImmutableSet.of(StreamEtlActuator.class,
+                    Stream2EtlActuator.class, SparkSubmitActuator.class
             ).stream().map(injector::getInstance).collect(Collectors.toSet());
         }
         catch (Exception e) {

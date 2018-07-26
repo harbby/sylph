@@ -28,4 +28,4 @@ exec java $GRAPHX_OPTS -cp lib/*: -Dconfig=etc/sylph/sylph.properties -Dlog4j.fi
 
 
 #nohup $cmd > ${0%/*}/../logs/server.log 2>&1 &
-#echo "Starting YseraServer,the pid is "$!
+#echo "Starting $mainClass,the pid is "$!

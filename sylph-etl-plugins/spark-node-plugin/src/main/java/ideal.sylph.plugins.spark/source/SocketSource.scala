@@ -1,9 +1,11 @@
-package com.broadtech.streamingload.runtime.sparkstreaming.source
+package ideal.sylph.plugins.spark.source
 
 import ideal.sylph.api.etl.Source
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
+import org.apache.spark.streaming.StreamingContext
+import org.apache.spark.streaming.dstream.DStream
 
 /**
   * Created by ideal on 17-4-25.
