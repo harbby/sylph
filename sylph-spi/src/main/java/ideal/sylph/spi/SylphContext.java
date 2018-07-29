@@ -1,6 +1,7 @@
 package ideal.sylph.spi;
 
 import ideal.sylph.spi.job.Job;
+import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobContainer;
 
 import javax.validation.constraints.NotNull;
@@ -27,4 +28,9 @@ public interface SylphContext
     Optional<JobContainer> getJobContainer(@NotNull String jobId);
 
     Optional<JobContainer> getJobContainerWithRunId(@NotNull String jobId);
+
+    /**
+     * get all Actuator Names
+     */
+    Collection<JobActuator.ActuatorInfo> getAllActuatorsInfo();
 }

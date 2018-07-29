@@ -7,7 +7,7 @@ import java.util.Optional;
 public interface JobActuator
 {
     @NotNull
-    default Job formJob(String jobId, Flow flow)
+    default JobHandle formJob(String jobId, Flow flow)
     {
         throw new UnsupportedOperationException("this method have't support!");
     }
@@ -15,5 +15,21 @@ public interface JobActuator
     default JobContainer createJobContainer(@NotNull Job job, Optional<String> jobInfo)
     {
         throw new UnsupportedOperationException("this method have't support!");
+    }
+
+    default ActuatorInfo getInfo()
+    {
+        throw new UnsupportedOperationException("this method have't support!");
+    }
+
+    interface ActuatorInfo
+    {
+        String[] getName();
+
+        String getDescription();
+
+        long getCreateTime();
+
+        String getVersion();
     }
 }
