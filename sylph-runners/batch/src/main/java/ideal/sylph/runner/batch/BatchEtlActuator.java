@@ -9,6 +9,7 @@ import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobContainerAbs;
+import ideal.sylph.spi.job.JobHandle;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.CronTrigger;
 import org.quartz.JobBuilder;
@@ -33,28 +34,9 @@ public class BatchEtlActuator
     @Inject private Scheduler batchJobScheduler;
 
     @Override
-    public Job formJob(String jobId, Flow flow)
+    public JobHandle formJob(String jobId, Flow flow)
     {
-        return new Job()
-        {
-            @Override
-            public String getId()
-            {
-                return jobId;
-            }
-
-            @Override
-            public String getActuatorName()
-            {
-                return "BatchEtl";
-            }
-
-            @Override
-            public Flow getFlow()
-            {
-                return flow;
-            }
-        };
+        return new JobHandle() {};
     }
 
     @Override
