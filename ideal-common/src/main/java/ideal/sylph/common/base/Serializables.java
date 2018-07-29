@@ -24,11 +24,7 @@ public class Serializables
     public static Object byteToObject(byte[] bytes)
             throws IOException, ClassNotFoundException
     {
-        try (ByteArrayInputStream bi = new ByteArrayInputStream(bytes);
-                ObjectInputStreamProxy oi = new ObjectInputStreamProxy(bi)
-        ) {
-            return oi.readObject();
-        }
+        return byteToObject(bytes, null);
     }
 
     public static Object byteToObject(byte[] bytes, ClassLoader classLoader)
