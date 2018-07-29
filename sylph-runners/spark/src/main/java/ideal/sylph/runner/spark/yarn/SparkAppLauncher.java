@@ -2,7 +2,7 @@ package ideal.sylph.runner.spark.yarn;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
-import ideal.sylph.runner.spark.SparkJob;
+import ideal.sylph.spi.job.Job;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.spark.SparkConf;
@@ -20,7 +20,7 @@ public class SparkAppLauncher
 {
     @Inject private YarnClient yarnClient;
 
-    public ApplicationId run(SparkJob job)
+    public ApplicationId run(Job job)
             throws Exception
     {
         final String sparkHome = System.getenv("SPARK_HOME");  //获取环境变量
@@ -30,7 +30,7 @@ public class SparkAppLauncher
         sparkConf.setSparkHome(sparkHome);
 
         sparkConf.setMaster("yarn");
-        sparkConf.setAppName("sylph_" + job.getId());
+        sparkConf.setAppName(job.getId());
         sparkConf.set("spark.submit.deployMode", "cluster"); // worked
         //------------addJars-> --jars    ------------  上传依赖的jar文件
         String additionalJars = getAppClassLoaderJars().stream()
@@ -74,7 +74,7 @@ public class SparkAppLauncher
 
                 //"--jar", sparkExamplesJar,
 
-                "--class", "ideal.sylph.runner.spark.SparkAppUtil",
+                "--class", "ideal.sylph.runner.spark.SparkAppMain",
 
                 // argument 1 to my Spark program
                 //"--arg", slices   用户自定义的参数

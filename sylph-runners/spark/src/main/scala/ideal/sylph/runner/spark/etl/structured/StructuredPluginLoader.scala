@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory
 /**
   * Created by ideal on 17-5-8.
   */
-class StructuredPluginLoader extends NodeLoader[SparkSession, Dataset[Row]] {
+class StructuredPluginLoader extends NodeLoader[SparkSession, DataFrame] {
   private val logger = LoggerFactory.getLogger(this.getClass)
 
   override def loadSource(spark: SparkSession, config: util.Map[String, Object]): UnaryOperator[DataFrame] = {
@@ -34,9 +34,19 @@ class StructuredPluginLoader extends NodeLoader[SparkSession, Dataset[Row]] {
   }
 
   override def loadSink(config: util.Map[String, Object]): UnaryOperator[DataFrame] = {
+    new UnaryOperator[DataFrame] {
+      override def apply(stream: DataFrame): DataFrame = {
+        //-------启动job-------
+        val streamingQuery = loadSinkWithComplic(config).apply(stream).start() //start job
+        //streamingQuery.stop()
+        null
+      }
+    }
+  }
+
+  def loadSinkWithComplic(config: util.Map[String, Object]): DataFrame => DataStreamWriter[Row] = {
     val driverStr = Class.forName(config.get("driver").asInstanceOf[String])
     val driver: Any = driverStr.newInstance()
-
     val sink: Sink[DataStreamWriter[Row]] = driver match {
       case realTimeSink: RealTimeSink => realTimeSink.driverInit(config) //传入这个模块的参数
         loadRealTimeSink(realTimeSink)
@@ -47,24 +57,20 @@ class StructuredPluginLoader extends NodeLoader[SparkSession, Dataset[Row]] {
 
     logger.info("初始化{} 完成", driver)
 
-    new UnaryOperator[DataFrame] {
-      override def apply(stream: DataFrame): DataFrame = {
-        //-------启动job-------
-        val writer = stream.writeStream
-        if (config.containsKey("outputMode")) { //设置输出模式
-          writer.outputMode(config.get("outputMode").asInstanceOf[String])
-        }
-        val jobName = config.get("name").asInstanceOf[String]
-        writer.queryName(jobName).trigger(Trigger.ProcessingTime("2 seconds")) //设置触发器
-
-        if (config.containsKey("checkpoint")) {
-          writer.option("checkpointLocation", config.get("checkpoint").asInstanceOf[String])
-        }
-        sink.run(writer)
-        val streamingQuery = writer.start //启动job
-        //streamingQuery.stop();
-        null
+    stream: DataFrame => {
+      //-------启动job-------
+      val writer = stream.writeStream
+      if (config.containsKey("outputMode")) { //设置输出模式
+        writer.outputMode(config.get("outputMode").asInstanceOf[String])
       }
+      val jobName = config.get("name").asInstanceOf[String]
+      writer.queryName(jobName).trigger(Trigger.ProcessingTime("1 seconds")) //设置触发器
+
+      if (config.containsKey("checkpoint")) {
+        writer.option("checkpointLocation", config.get("checkpoint").asInstanceOf[String])
+      }
+      sink.run(writer)
+      writer
     }
   }
 
