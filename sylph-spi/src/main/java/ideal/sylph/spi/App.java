@@ -65,4 +65,6 @@ public interface App<T, R>
 
         return graphx;
     }
+
+    Graph<R> build();
 }
