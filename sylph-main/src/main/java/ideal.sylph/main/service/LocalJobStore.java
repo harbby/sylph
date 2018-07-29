@@ -117,7 +117,7 @@ public class LocalJobStore
     }
 
     /**
-     * 隐式绑定 JobStoreConfig
+     * 绑定 JobStoreConfig
      */
     @Singleton
     public static class JobStoreConfig

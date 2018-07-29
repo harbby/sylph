@@ -3,26 +3,27 @@ package ideal.sylph.main.service;
 import com.google.inject.Inject;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
-import ideal.sylph.spi.annotation.Name;
 import ideal.sylph.spi.classloader.ThreadContextClassLoader;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobContainer;
+import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.job.YamlFlow;
 
 import javax.annotation.Nonnull;
+import javax.validation.constraints.NotNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
 import static java.util.Objects.requireNonNull;
 
@@ -45,11 +46,10 @@ public class RunnerManger
     public void createRunner(Runner runner)
     {
         runner.create(runnerContext).forEach(jobActuator -> {
-            String errorMessage = jobActuator.getClass().getName() + " Missing @Name annotation";
-            Name actuatorName = jobActuator.getClass().getAnnotation(Name.class);
-            String[] names = Stream.of(requireNonNull(actuatorName, errorMessage).value()).distinct().toArray(String[]::new);
-            checkState(names.length > 0, errorMessage);
-            for (String name : names) {
+            JobActuatorProxy dynamicProxy = new JobActuatorProxy(jobActuator);
+            JobActuator proxy = (JobActuator) dynamicProxy.getProxy(JobActuator.class);
+
+            for (String name : proxy.getInfo().getName()) {
                 if (jobActuatorMap.containsKey(name)) {
                     throw new IllegalArgumentException(String.format("Multiple entries with same key: %s=%s and %s=%s", name, jobActuatorMap.get(name), name, jobActuator));
                 }
@@ -78,6 +78,9 @@ public class RunnerManger
         String jobType = requireNonNull(jobProps.get("type"), "jobProps arg type is null");
         try {
             Flow flow = YamlFlow.load(new File(jobDir, "job.yaml"));
+            //----create jobClassLoader
+            //DirClassLoader jobClassLoader = new DirClassLoader(null,);
+            //jobClassLoader.addDir(jobDir);
             return formJobWithFlow(jobDir.getName(), flow, jobType);
         }
         catch (IOException e) {
@@ -90,6 +93,47 @@ public class RunnerManger
         requireNonNull(actuatorName, "job actuatorName is null");
         JobActuator jobActuator = jobActuatorMap.get(actuatorName);
         checkArgument(jobActuator != null, "job [" + jobId + "] loading error! JobActuator:[" + actuatorName + "] not exists,only " + jobActuatorMap.keySet());
-        return jobActuator.formJob(jobId, flow);
+        //--- 通过代理 返回job类型信息 ---
+        //jobActuator.getClass().getClassLoader();
+
+        JobHandle jobHandle = jobActuator.formJob(jobId, flow);
+        return new Job()
+        {
+            @NotNull
+            @Override
+            public String getId()
+            {
+                return jobId;
+            }
+
+            @NotNull
+            @Override
+            public String getActuatorName()
+            {
+                return actuatorName;
+            }
+
+            @NotNull
+            @Override
+            public JobHandle getJobHandle()
+            {
+                return jobHandle;
+            }
+
+            @NotNull
+            @Override
+            public Flow getFlow()
+            {
+                return flow;
+            }
+        };
+    }
+
+    public Collection<JobActuator.ActuatorInfo> getAllActuatorsInfo()
+    {
+        return jobActuatorMap.values()
+                .stream()
+                .distinct().map(JobActuator::getInfo)
+                .collect(Collectors.toList());
     }
 }

@@ -6,6 +6,7 @@ import ideal.sylph.main.service.RunnerManger;
 import ideal.sylph.spi.SylphContext;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Job;
+import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.YamlFlow;
 
@@ -81,5 +82,11 @@ public class SylphContextImpl
     public Optional<JobContainer> getJobContainerWithRunId(String runId)
     {
         return jobManager.getJobContainerWithRunId(requireNonNull(runId, "runId is null"));
+    }
+
+    @Override
+    public Collection<JobActuator.ActuatorInfo> getAllActuatorsInfo()
+    {
+        return runnerManger.getAllActuatorsInfo();
     }
 }

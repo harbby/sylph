@@ -1,6 +1,8 @@
 ext.moduleName = 'ideal.sylph.main'
 
 dependencies {
+    compile group: 'org.javassist', name: 'javassist', version: '3.22.0-GA'
+
     compile group: 'commons-io', name: 'commons-io', version: '2.6'
 
     compile project(':sylph-controller')
