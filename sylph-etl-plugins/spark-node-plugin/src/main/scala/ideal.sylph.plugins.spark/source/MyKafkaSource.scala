@@ -1,10 +1,16 @@
 package ideal.sylph.plugins.spark.source
 
-import ideal.sylph.api.etl.{Sink, Source, TransForm}
-import org.apache.spark.rdd.RDD
+import ideal.sylph.api.etl.Source
+import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
+import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.dstream.{DStream, InputDStream}
+import org.apache.spark.streaming.kafka010.ConsumerStrategies.Subscribe
+import org.apache.spark.streaming.kafka010.KafkaUtils
+import org.apache.spark.streaming.kafka010.LocationStrategies.PreferConsistent
 
 /**
   * Created by ideal on 17-4-25.
@@ -46,32 +52,6 @@ class MyKafkaSource extends Source[StreamingContext, DStream[Row]] {
     val topicSets = topics.split(",")
     KafkaUtils.createDirectStream[String, String](
       ssc, PreferConsistent, Subscribe[String, String](topicSets, kafkaParams))
-  }
-
-  //-----------------------这里作为备份---------------------
-  private def addSink(sink: Sink[RDD[Row]], transForms: List[TransForm[DStream[Row]]]): Unit = {
-    //stream.mapPartitions()
-    var transStream = getSource //.window(Duration(10 * 1000))
-
-    transForms.foreach(transForm => {
-      transStream = transForm.transform(transStream)
-    })
-
-    transStream.foreachRDD { rdd =>
-      //val offsetRanges = rdd.asInstanceOf[HasOffsetRanges].offsetRanges
-      val kafkaRdd = StaticFunc.getFristRdd(rdd) //rdd.dependencies(0).rdd
-    val offsetRanges = kafkaRdd.asInstanceOf[HasOffsetRanges].offsetRanges
-      if (kafkaRdd.count() > 0) {
-        //val rowrdd: RDD[Row] = rdd.map(record =>Row(record.topic(), record.value(), record.key()))
-        //val rowrdd: RDD[Row] = rdd.map(record => new DefaultRow(Array(record.topic(), record.value(), record.key()), schema))
-        sink.run(rdd)
-      }
-      //      rdd.foreachPartition(partion => {
-      //                val o: OffsetRange = offsetRanges(TaskContext.get.partitionId)
-      //                println(s"${o.topic} ${o.partition} ${o.fromOffset} ${o.untilOffset}")
-      //      })
-      kafkaStream.asInstanceOf[CanCommitOffsets].commitAsync(offsetRanges)
-    }
   }
 
   override def getSource: DStream[Row] = {

@@ -1,8 +1,9 @@
 package ideal.sylph.plugins.spark.source
 
-import ideal.sylph.api.etl.Source
+import ideal.sylph.api.etl.{Sink, Source, TransForm}
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.streaming.dstream.DStream
