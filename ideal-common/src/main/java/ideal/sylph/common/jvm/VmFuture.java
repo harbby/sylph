@@ -19,21 +19,23 @@ public class VmFuture<V extends Serializable>
         return errorMessage;
     }
 
-    public void setErrorMessage(String errorMessage)
-    {
-        this.errorMessage = errorMessage;
-    }
-
-    public void setResult(Serializable result)
+    public VmFuture(Serializable result)
     {
         this.result = (V) result;
     }
 
+    public VmFuture(String errorMessage)
+    {
+        this.errorMessage = errorMessage;
+    }
+
+    public VmFuture(Serializable result, String errorMessage)
+    {
+        this.errorMessage = errorMessage;
+    }
+
     static <V extends Serializable> VmFuture<V> make(Serializable result, String errorMessage)
     {
-        VmFuture<V> future = new VmFuture<>();
-        future.setResult(result);
-        future.setErrorMessage(errorMessage);
-        return future;
+        return new VmFuture<>(result, errorMessage);
     }
 }

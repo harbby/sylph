@@ -36,20 +36,23 @@ public final class JVMLauncher<R extends Serializable>
     }
 
     public VmFuture<R> startAndGet()
-            throws IOException, ClassNotFoundException
+            throws IOException, ClassNotFoundException, JVMRunningException
     {
-        byte[] bytes = startAndGetByte();
-        return (VmFuture<R>) Serializables.byteToObject(bytes);
+        return startAndGet(null);
     }
 
     public VmFuture<R> startAndGet(ClassLoader classLoader)
-            throws IOException, ClassNotFoundException
+            throws IOException, ClassNotFoundException, JVMRunningException
     {
         byte[] bytes = startAndGetByte();
-        return (VmFuture<R>) Serializables.byteToObject(bytes, classLoader);
+        VmFuture<R> vmFuture = (VmFuture<R>) Serializables.byteToObject(bytes, classLoader);
+        if (!vmFuture.get().isPresent()) {
+            throw new JVMRunningException(vmFuture.getOnFailure());
+        }
+        return vmFuture;
     }
 
-    public byte[] startAndGetByte()
+    private byte[] startAndGetByte()
             throws IOException
     {
         try (ServerSocket sock = new ServerSocket()) {
@@ -108,15 +111,15 @@ public final class JVMLauncher<R extends Serializable>
             throws Exception
     {
         System.out.println("vm start ok ...");
-        VmFuture<? extends Serializable> future = new VmFuture<>();
+        VmFuture<? extends Serializable> future;
 
         try (ObjectInputStreamProxy ois = new ObjectInputStreamProxy(System.in)) {
             VmCallable<? extends Serializable> callable = (VmCallable<? extends Serializable>) ois.readObject();
             System.out.println("vm start init ok ...");
-            future.setResult(callable.call());
+            future = new VmFuture<>(callable.call());
         }
         catch (Exception e) {
-            future.setErrorMessage(Throwables.getStackTraceAsString(e));
+            future = new VmFuture<>(Throwables.getStackTraceAsString(e));
         }
 
         try (OutputStream out = chooseOutputStream(args)) {
