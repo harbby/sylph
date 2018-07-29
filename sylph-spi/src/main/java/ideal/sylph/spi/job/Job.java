@@ -16,6 +16,9 @@ public interface Job
     String getActuatorName();
 
     @NotNull
+    JobHandle getJobHandle();
+
+    @NotNull
     Flow getFlow();
 
     public enum Status
