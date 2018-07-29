@@ -1,19 +1,26 @@
 package ideal.sylph.runner.flink.utils;
 
 import com.google.common.collect.ImmutableSet;
+import ideal.sylph.common.graph.Graph;
 import ideal.sylph.common.jvm.JVMLauncher;
 import ideal.sylph.common.jvm.JVMLaunchers;
 import ideal.sylph.common.jvm.VmFuture;
-import ideal.sylph.runner.flink.FlinkApp;
-import ideal.sylph.runner.flink.FlinkJob;
+import ideal.sylph.runner.flink.FlinkJobHandle;
 import ideal.sylph.runner.flink.FlinkRunner;
 import ideal.sylph.runner.flink.JobParameter;
+import ideal.sylph.runner.flink.etl.FlinkPluginLoaderImpl;
+import ideal.sylph.spi.App;
+import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Flow;
-import ideal.sylph.spi.job.Job;
+import ideal.sylph.spi.job.JobHandle;
 import org.apache.flink.calcite.shaded.com.google.common.collect.ImmutableList;
 import org.apache.flink.runtime.jobgraph.JobGraph;
+import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.api.StreamTableEnvironment;
+import org.apache.flink.table.api.TableEnvironment;
+import org.apache.flink.types.Row;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,13 +41,12 @@ public final class FlinkJobUtil
 
     private static final Logger logger = LoggerFactory.getLogger(FlinkJobUtil.class);
 
-    public static Job createJob(
-            String actuatorName, String jobId, FlinkApp app, Flow flow)
+    public static JobHandle createJob(String jobId, Flow flow, URLClassLoader jobClassLoader)
             throws Exception
     {
-        List<URL> userJars = getAppClassLoaderJars(app);
+        List<URL> userJars = getAppClassLoaderJars(jobClassLoader);
         //---------编译job-------------
-        JobGraph jobGraph = compile(app, 2, userJars);
+        JobGraph jobGraph = compile(jobId, flow, 2, jobClassLoader);
         //----------------设置状态----------------
         JobParameter state = new JobParameter()
                 .queue("default")
@@ -48,24 +54,20 @@ public final class FlinkJobUtil
                 .taskManagerMemoryMb(1024) //1024mb
                 .taskManagerSlots(1) // -ys
                 .jobManagerMemoryMb(1024) //-yjm
-                .appTags(ImmutableSet.of("a1", "a2"))
+                .appTags(ImmutableSet.of("demo1", "demo2"))
                 .setUserProvidedJar(getUserAdditionalJars(userJars))
-                .setYarnJobName("sylph_" + jobId);
+                .setYarnJobName(jobId);
 
-        return FlinkJob.newJob()
+        return FlinkJobHandle.newJob()
                 .setJobParameter(state)
                 .setJobGraph(jobGraph)
-                .setId(jobId)
-                .setActuatorName(actuatorName)
-                .setDescription("this is flink stream job...")
-                .setFlow(flow)
                 .build();
     }
 
     /**
      * 对job 进行编译
      */
-    private static JobGraph compile(FlinkApp flinkApp, int parallelism, List<URL> userProvidedJars)
+    private static JobGraph compile(String jobId, Flow flow, int parallelism, URLClassLoader jobClassLoader)
             throws Exception
     {
         JVMLauncher<JobGraph> launcher = JVMLaunchers.<JobGraph>newJvm()
@@ -73,23 +75,43 @@ public final class FlinkJobUtil
                     System.out.println("************ job start ***************");
                     StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.createLocalEnvironment();
                     execEnv.setParallelism(parallelism);
-                    flinkApp.build(execEnv);
+                    StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(execEnv);
+                    App<StreamTableEnvironment, DataStream<Row>> app = new App<StreamTableEnvironment, DataStream<Row>>()
+                    {
+                        @Override
+                        public NodeLoader<StreamTableEnvironment, DataStream<Row>> getNodeLoader()
+                        {
+                            return new FlinkPluginLoaderImpl();
+                        }
+
+                        @Override
+                        public StreamTableEnvironment getContext()
+                        {
+                            return tableEnv;
+                        }
+
+                        @Override
+                        public Graph<DataStream<Row>> build()
+                        {
+                            return App.super.build(jobId, flow);
+                        }
+                    };
+                    app.build().run();
                     return execEnv.getStreamGraph().getJobGraph();
                 })
-                .addUserjars(userProvidedJars)
+                .addUserURLClassLoader(jobClassLoader)
                 .build();
-        VmFuture<JobGraph> result = launcher.startAndGet(flinkApp.getClassLoader());
+        VmFuture<JobGraph> result = launcher.startAndGet(jobClassLoader);
         return result.get().orElseThrow(() -> new SylphException(JOB_BUILD_ERROR, result.getOnFailure()));
     }
 
-    private static List<URL> getAppClassLoaderJars(FlinkApp flinkApp)
+    private static List<URL> getAppClassLoaderJars(final ClassLoader jobClassLoader)
     {
         ImmutableList.Builder<URL> builder = ImmutableList.builder();
-        final ClassLoader appClassLoader = flinkApp.getClassLoader();
-        if (appClassLoader instanceof URLClassLoader) {
-            builder.add(((URLClassLoader) appClassLoader).getURLs());
+        if (jobClassLoader instanceof URLClassLoader) {
+            builder.add(((URLClassLoader) jobClassLoader).getURLs());
 
-            final ClassLoader parentClassLoader = appClassLoader.getParent();
+            final ClassLoader parentClassLoader = jobClassLoader.getParent();
             if (parentClassLoader instanceof URLClassLoader) {
                 builder.add(((URLClassLoader) parentClassLoader).getURLs());
             }

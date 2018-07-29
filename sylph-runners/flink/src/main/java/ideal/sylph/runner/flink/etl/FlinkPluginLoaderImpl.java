@@ -10,7 +10,7 @@ import ideal.sylph.spi.exception.SylphException;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
-import org.apache.flink.table.api.java.StreamTableEnvironment;
+import org.apache.flink.table.api.StreamTableEnvironment;
 import org.apache.flink.types.Row;
 
 import java.util.Map;

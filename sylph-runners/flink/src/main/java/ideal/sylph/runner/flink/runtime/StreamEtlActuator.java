@@ -2,9 +2,7 @@ package ideal.sylph.runner.flink.runtime;
 
 import com.google.inject.Inject;
 import ideal.sylph.common.proxy.DynamicProxy;
-import ideal.sylph.runner.flink.FlinkApp;
-import ideal.sylph.runner.flink.FlinkJob;
-import ideal.sylph.runner.flink.GraphApp;
+import ideal.sylph.runner.flink.FlinkJobHandle;
 import ideal.sylph.runner.flink.utils.FlinkJobUtil;
 import ideal.sylph.runner.flink.yarn.FlinkYarnJobLauncher;
 import ideal.sylph.spi.annotation.Description;
@@ -15,6 +13,7 @@ import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobContainer;
+import ideal.sylph.spi.job.JobHandle;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import javax.validation.constraints.NotNull;
 
 import java.lang.reflect.Method;
+import java.net.URLClassLoader;
 import java.util.Optional;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -37,11 +37,11 @@ public class StreamEtlActuator
 
     @NotNull
     @Override
-    public Job formJob(String jobId, Flow flow)
+    public JobHandle formJob(String jobId, Flow flow)
     {
+        URLClassLoader jobClassLoader = (URLClassLoader) FlinkJobUtil.class.getClassLoader();
         try {
-            final FlinkApp app = new GraphApp(jobId, flow);
-            return FlinkJobUtil.createJob("StreamETL", jobId, app, flow);
+            return FlinkJobUtil.createJob(jobId, flow, jobClassLoader);
         }
         catch (Exception e) {
             throw new SylphException(JOB_BUILD_ERROR, e);
@@ -49,7 +49,7 @@ public class StreamEtlActuator
     }
 
     @Override
-    public JobContainer createJobContainer(Job job, Optional<String> jobInfo)
+    public JobContainer createJobContainer(@NotNull Job job, Optional<String> jobInfo)
     {
         JobContainer yarnJobContainer = new YarnJobContainer(jobLauncher.getYarnClient(), jobInfo)
         {
@@ -60,7 +60,7 @@ public class StreamEtlActuator
                 ApplicationId yarnAppId = jobLauncher.createApplication();
                 this.setYarnAppId(yarnAppId);
                 logger.info("Instantiating flinkSqlJob {} at yarnId {}", job.getId(), yarnAppId);
-                jobLauncher.start((FlinkJob) job, yarnAppId);
+                jobLauncher.start((FlinkJobHandle) job.getJobHandle(), yarnAppId);
                 return Optional.of(yarnAppId.toString());
             }
         };

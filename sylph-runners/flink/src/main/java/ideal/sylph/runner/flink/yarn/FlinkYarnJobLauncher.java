@@ -1,7 +1,7 @@
 package ideal.sylph.runner.flink.yarn;
 
 import com.google.inject.Inject;
-import ideal.sylph.runner.flink.FlinkJob;
+import ideal.sylph.runner.flink.FlinkJobHandle;
 import ideal.sylph.runner.flink.JobParameter;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.JobID;
@@ -64,13 +64,13 @@ public class FlinkYarnJobLauncher
         yarnClient.killApplication(yarnAppId);
     }
 
-    public void start(FlinkJob flinkJob, ApplicationId yarnAppId)
+    public void start(FlinkJobHandle jobHandle, ApplicationId yarnAppId)
             throws Exception
     {
-        final JobParameter jobState = flinkJob.getJobParameter();
+        final JobParameter jobState = jobHandle.getJobParameter();
         final YarnClusterDescriptor descriptor = new YarnClusterDescriptor(clusterConf, yarnClient, jobState, yarnAppId);
 
-        start(descriptor, flinkJob.getJobGraph());
+        start(descriptor, jobHandle.getJobGraph());
     }
 
     @VisibleForTesting
