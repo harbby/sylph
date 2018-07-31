@@ -73,11 +73,11 @@ public class WebAppProxyServlet
      * @param req the http request
      * @param resp the http response
      * @param link the link to download
-     * @param c the cookie to set if any
+     * @param cookie the cookie to set if any
      * @throws IOException on any error.
      */
     private static void proxyLink(HttpServletRequest req,
-            HttpServletResponse resp, URI link, Cookie c, String proxyHost)
+            HttpServletResponse resp, URI link, Cookie cookie, String proxyHost)
             throws IOException
     {
         DefaultHttpClient client = new DefaultHttpClient();
@@ -121,8 +121,8 @@ public class WebAppProxyServlet
             for (Header header : httpResp.getAllHeaders()) {
                 resp.setHeader(header.getName(), header.getValue());
             }
-            if (c != null) {
-                resp.addCookie(c);
+            if (cookie != null) {
+                resp.addCookie(cookie);
             }
             InputStream in = httpResp.getEntity().getContent();
             if (in != null) {

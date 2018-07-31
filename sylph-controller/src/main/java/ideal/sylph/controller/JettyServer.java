@@ -1,8 +1,5 @@
 package ideal.sylph.controller;
 
-import ideal.sylph.controller.selvet.ETLJobServlet;
-import ideal.sylph.controller.selvet.JobMangerSerlvet;
-import ideal.sylph.controller.selvet.SylphServletHolder;
 import ideal.sylph.controller.selvet.WebAppProxyServlet;
 import ideal.sylph.spi.SylphContext;
 import org.eclipse.jetty.server.Server;
@@ -11,8 +8,11 @@ import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.webapp.WebAppContext;
+import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.servlet.MultipartConfigElement;
 
 import java.io.File;
 import java.util.Arrays;
@@ -53,7 +53,6 @@ public final class JettyServer
 
         HandlerList handlers = loadHandlers();  //加载路由
         server.setHandler(handlers);
-
         logger.info("web Server started... the port {}", jettyPort);
         server.start();
     }
@@ -61,6 +60,9 @@ public final class JettyServer
     private HandlerList loadHandlers()
     {
         HandlerList handlers = new HandlerList();
+        ServletHolder servlet = new ServletHolder(new ServletContainer(new WebApplication()));
+        servlet.getRegistration().setMultipartConfig(new MultipartConfigElement("data/tmp", 1048576, 1048576, 262144));
+
         //--------------------全局的----------------------
         //selvet
         ServletContextHandler contextHandler = new ServletContextHandler(
@@ -68,8 +70,10 @@ public final class JettyServer
         contextHandler.setContextPath("/");
         contextHandler.setAttribute("sylphContext", sylphContext);
 
-        contextHandler.addServlet(JobMangerSerlvet.class, "/_sys/job_manger/*");
-        contextHandler.addServlet(new SylphServletHolder(new ETLJobServlet()), "/_sys/job_graph_edit/*");
+        //-------add jersey--------
+        contextHandler.addServlet(servlet, "/_sys/*");
+        //contextHandler.addServlet(JobMangerSerlvet.class, "/_sys/job_manger/*");
+        //contextHandler.addServlet(new SylphServletHolder(new ETLJobServlet()), "/_sys/job_graph_edit/*");
         contextHandler.addServlet(WebAppProxyServlet.class, "/proxy/*");
 
         final ServletHolder staticServlet = new ServletHolder(new DefaultServlet());

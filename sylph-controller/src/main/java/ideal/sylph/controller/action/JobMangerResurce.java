@@ -1,87 +1,75 @@
-package ideal.sylph.controller.selvet;
+package ideal.sylph.controller.action;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import ideal.sylph.common.base.Throwables;
-import ideal.sylph.controller.SylphServlet;
 import ideal.sylph.spi.SylphContext;
 import ideal.sylph.spi.job.JobContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import javax.servlet.ServletContext;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.UriInfo;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Scanner;
+import java.util.stream.Collectors;
 
 import static ideal.sylph.spi.job.Job.Status.STOP;
 import static java.util.Objects.requireNonNull;
 
-@WebServlet(urlPatterns = "/_sys/job_manger")
-public class JobMangerSerlvet
-        extends SylphServlet
+@javax.inject.Singleton
+@Path("/job_manger")
+public class JobMangerResurce
 {
-    private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static Logger logger = LoggerFactory.getLogger(JobMangerSerlvet.class);
-    private static final long serialVersionUID = 33213425435L;
+    private static final Logger logger = LoggerFactory.getLogger(JobMangerResurce.class);
 
+    private ServletContext servletContext;
+    private UriInfo uriInfo;
     private SylphContext sylphContext;
 
-    @Override
-    public void init(ServletConfig config)
-            throws ServletException
+    public JobMangerResurce(
+            @Context ServletContext servletContext,
+            @Context UriInfo uriInfo)
     {
-        super.init(config);
-        this.sylphContext = ((SylphContext) getServletContext().getAttribute("sylphContext"));
+        this.servletContext = servletContext;
+        this.uriInfo = uriInfo;
+        this.sylphContext = (SylphContext) servletContext.getAttribute("sylphContext");
     }
 
-    public static String getBodyString(HttpServletRequest request)
-            throws IOException
+    @Path("/get_all_actuators")
+    @GET
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+    public List<String> getAllActuators(@QueryParam("name") String name)
     {
-        //-获取post body--注意要放到--request.getParameter 之前 否则可能失效
-        final StringBuilder stringBuilder = new StringBuilder(2000);
-        try (Scanner scanner = new Scanner(request.getInputStream())) {
-            while (scanner.hasNextLine()) {
-                stringBuilder.append(scanner.nextLine());
-            }
-            String bodyStr = stringBuilder.toString().trim();
-            if (bodyStr.equals("")) {
-                bodyStr = "{}";
-            }
-            return bodyStr;
-        }
+        //test Object a1 = uriInfo.getQueryParameters();
+        List<String> names = sylphContext.getAllActuatorsInfo().stream().flatMap(x -> Arrays.stream(x.getName())).collect(Collectors.toList());
+        return names;
     }
 
-    @Override
-    protected void doPostHandler(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException
+    @POST
+    @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
+    @Produces({MediaType.APPLICATION_JSON})
+    public Map doPostHandler(Body body)
     {
-        final String bodyStr = getBodyString(request);
-        Body body;
-        String type = request.getParameter("type");
-        if ("add".equals(type)) {
-            body = new Body(type, "jobid");
-        }
-        else {
-            body = MAPPER.readValue(bodyStr, Body.class);
-        }
-
-        String out = null;
         switch (body.getType()) {
+            case "refresh_all":  //刷新
             case "list":  //获取列表
-                out = listJobs();
-                break;
+                return listJobs();
             case "stop":  //下线应用
                 sylphContext.stopJob(body.getJobId());
                 break;
@@ -91,21 +79,16 @@ public class JobMangerSerlvet
             case "delete": //删除任务
                 sylphContext.deleteJob(body.getJobId());
                 break;
-            case "refresh_all":  //刷新
-                out = listJobs();
-                break;
             default:
                 break;
         }
 
-        response.getWriter().println(out);
+        return ImmutableMap.of();
     }
 
-    private String listJobs()
-            throws IOException
+    private Map listJobs()
     {
         final List<Object> outData = new ArrayList<>();
-        String json = null;
         try {
             sylphContext.getAllJobs().forEach(job -> {
                 String jobId = job.getId();
@@ -124,16 +107,16 @@ public class JobMangerSerlvet
                 });
                 outData.add(line);
             });
-            json = MAPPER.writeValueAsString(ImmutableMap.of("data", outData));
+            return ImmutableMap.of("data", outData);
         }
         catch (Exception e) {
             logger.error("", Throwables.getRootCause(e));
+            throw new RuntimeException(Throwables.getRootCause(e));
         }
-
-        return json;
     }
 
-    private static final class Body
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static final class Body
     {
         private final String type;
         private final String jobId;
