@@ -28,6 +28,6 @@ public class GraphxTest
         graph.addEdge("a2", "a5");
         graph.addEdge("a3", "a6");
 
-        graph.build();
+        graph.run();
     }
 }

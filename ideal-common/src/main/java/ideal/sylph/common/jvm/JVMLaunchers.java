@@ -24,9 +24,13 @@ public class JVMLaunchers
             return this;
         }
 
-        public VmBuilder<T> addUserURLClassLoader(URLClassLoader classLoader)
+        public VmBuilder<T> addUserURLClassLoader(URLClassLoader vmClassLoader)
         {
-            Collections.addAll(tmpJars, classLoader.getURLs());
+            ClassLoader classLoader = vmClassLoader;
+            while (classLoader instanceof URLClassLoader) {
+                Collections.addAll(tmpJars, ((URLClassLoader) classLoader).getURLs());
+                classLoader = classLoader.getParent();
+            }
             return this;
         }
 
