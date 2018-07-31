@@ -9,7 +9,7 @@ import ideal.sylph.runner.flink.yarn.FlinkYarnJobLauncher;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.classloader.DirClassLoader;
-import ideal.sylph.spi.job.JobActuator;
+import ideal.sylph.spi.job.JobActuatorHandle;
 
 import java.io.File;
 import java.util.Collections;
@@ -26,7 +26,7 @@ public class FlinkRunner
     public static final String FLINK_DIST = "flink-dist";
 
     @Override
-    public Set<JobActuator> create(RunnerContext context)
+    public Set<JobActuatorHandle> create(RunnerContext context)
     {
         requireNonNull(context, "context is null");
         String flinkHome = requireNonNull(System.getenv("FLINK_HOME"), "FLINK_HOME not setting");

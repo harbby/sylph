@@ -11,7 +11,7 @@ import ideal.sylph.spi.classloader.ThreadContextClassLoader;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;
-import ideal.sylph.spi.job.JobActuator;
+import ideal.sylph.spi.job.JobActuatorHandle;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobHandle;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
@@ -30,16 +30,15 @@ import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
 @Name("StreamETL")
 @Description("this is stream etl Actuator")
 public class StreamEtlActuator
-        implements JobActuator
+        implements JobActuatorHandle
 {
     private static final Logger logger = LoggerFactory.getLogger(StreamEtlActuator.class);
     @Inject private FlinkYarnJobLauncher jobLauncher;
 
     @NotNull
     @Override
-    public JobHandle formJob(String jobId, Flow flow)
+    public JobHandle formJob(String jobId, Flow flow, URLClassLoader jobClassLoader)
     {
-        URLClassLoader jobClassLoader = (URLClassLoader) FlinkJobUtil.class.getClassLoader();
         try {
             return FlinkJobUtil.createJob(jobId, flow, jobClassLoader);
         }

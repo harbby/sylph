@@ -91,7 +91,7 @@ public class FlinkYarnJobLauncher
                 hdfs.delete(appDir, true);
             }
             catch (IOException e) {
-                logger.error("清除临时目录失败", e);
+                logger.error("clear tmp dir is fail", e);
             }
         }
     }

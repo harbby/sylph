@@ -6,7 +6,7 @@ import ideal.sylph.spi.annotation.Description;
 import ideal.sylph.spi.annotation.Name;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;
-import ideal.sylph.spi.job.JobActuator;
+import ideal.sylph.spi.job.JobActuatorHandle;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobContainerAbs;
 import ideal.sylph.spi.job.JobHandle;
@@ -22,6 +22,7 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.TriggerBuilder;
 
+import java.net.URLClassLoader;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
@@ -29,12 +30,12 @@ import static java.util.Objects.requireNonNull;
 @Name("BatchEtl")
 @Description("batch Etl job")
 public class BatchEtlActuator
-        implements JobActuator
+        implements JobActuatorHandle
 {
     @Inject private Scheduler batchJobScheduler;
 
     @Override
-    public JobHandle formJob(String jobId, Flow flow)
+    public JobHandle formJob(String jobId, Flow flow, URLClassLoader jobClassLoader)
     {
         return new JobHandle() {};
     }

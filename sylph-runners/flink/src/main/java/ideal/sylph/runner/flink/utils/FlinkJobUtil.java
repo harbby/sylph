@@ -1,7 +1,6 @@
 package ideal.sylph.runner.flink.utils;
 
 import com.google.common.collect.ImmutableSet;
-import ideal.sylph.common.graph.Graph;
 import ideal.sylph.common.jvm.JVMLauncher;
 import ideal.sylph.common.jvm.JVMLaunchers;
 import ideal.sylph.common.jvm.VmFuture;
@@ -10,6 +9,7 @@ import ideal.sylph.runner.flink.FlinkRunner;
 import ideal.sylph.runner.flink.JobParameter;
 import ideal.sylph.runner.flink.etl.FlinkPluginLoaderImpl;
 import ideal.sylph.spi.App;
+import ideal.sylph.spi.GraphApp;
 import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Flow;
@@ -76,7 +76,7 @@ public final class FlinkJobUtil
                     StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.createLocalEnvironment();
                     execEnv.setParallelism(parallelism);
                     StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(execEnv);
-                    App<StreamTableEnvironment, DataStream<Row>> app = new App<StreamTableEnvironment, DataStream<Row>>()
+                    App<StreamTableEnvironment> app = new GraphApp<StreamTableEnvironment, DataStream<Row>>()
                     {
                         @Override
                         public NodeLoader<StreamTableEnvironment, DataStream<Row>> getNodeLoader()
@@ -91,12 +91,13 @@ public final class FlinkJobUtil
                         }
 
                         @Override
-                        public Graph<DataStream<Row>> build()
+                        public void build()
+                                throws Exception
                         {
-                            return App.super.build(jobId, flow);
+                            this.buildGraph(jobId, flow).run();
                         }
                     };
-                    app.build().run();
+                    app.build();
                     return execEnv.getStreamGraph().getJobGraph();
                 })
                 .addUserURLClassLoader(jobClassLoader)

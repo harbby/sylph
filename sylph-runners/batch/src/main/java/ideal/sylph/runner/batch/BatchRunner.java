@@ -6,7 +6,7 @@ import com.google.inject.Scopes;
 import ideal.sylph.common.bootstrap.Bootstrap;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
-import ideal.sylph.spi.job.JobActuator;
+import ideal.sylph.spi.job.JobActuatorHandle;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SchedulerFactory;
@@ -23,7 +23,7 @@ public class BatchRunner
         implements Runner
 {
     @Override
-    public Set<JobActuator> create(RunnerContext context)
+    public Set<JobActuatorHandle> create(RunnerContext context)
     {
         requireNonNull(context, "context is null");
         try {

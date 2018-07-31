@@ -330,7 +330,7 @@ public class YarnClusterDescriptor
     }
 
     /**
-     * flink 1.5 新增方法
+     * flink 1.5 add
      */
     @Override
     public ClusterClient<ApplicationId> deployJobCluster(ClusterSpecification clusterSpecification, JobGraph jobGraph, boolean detached)

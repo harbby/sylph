@@ -1,7 +1,10 @@
 package ideal.sylph.runner.flink;
 
 import com.google.inject.Binder;
+import com.google.inject.Inject;
 import com.google.inject.Module;
+import com.google.inject.Provider;
+import com.google.inject.Scopes;
 import ideal.sylph.runner.flink.yarn.YarnClusterConfiguration;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -24,11 +27,47 @@ public class FlinkRunnerModule
     @Override
     public void configure(Binder binder)
     {
-        YarnConfiguration yarnConfiguration = loadYarnConfiguration();
+        binder.bind(YarnConfiguration.class).toProvider(FlinkRunnerModule::loadYarnConfiguration).in(Scopes.SINGLETON);
+        binder.bind(YarnClient.class).toProvider(YarnClientProvider.class).in(Scopes.SINGLETON);
+        binder.bind(YarnClusterConfiguration.class).toProvider(YarnClusterConfigurationProvider.class).in(Scopes.SINGLETON);
+    }
 
-        binder.bind(YarnConfiguration.class).toInstance(yarnConfiguration);
-        binder.bind(YarnClient.class).toInstance(createYarnClient(yarnConfiguration));
-        binder.bind(YarnClusterConfiguration.class).toInstance(loadYarnCluster(yarnConfiguration));
+    private static class YarnClientProvider
+            implements Provider<YarnClient>
+    {
+        @Inject private YarnConfiguration yarnConfiguration;
+
+        @Override
+        public YarnClient get()
+        {
+            YarnClient client = YarnClient.createYarnClient();
+            client.init(yarnConfiguration);
+            client.start();
+            return client;
+        }
+    }
+
+    private static class YarnClusterConfigurationProvider
+            implements Provider<YarnClusterConfiguration>
+    {
+        @Inject private YarnConfiguration yarnConf;
+
+        @Override
+        public YarnClusterConfiguration get()
+        {
+            Path flinkJar = new Path(getFlinkJarFile().toURI());
+            @SuppressWarnings("ConstantConditions") final Set<Path> resourcesToLocalize = Stream
+                    .of("conf/flink-conf.yaml", "conf/log4j.properties", "conf/logback.xml")
+                    .map(x -> new Path(new File(System.getenv("FLINK_HOME"), x).toURI()))
+                    .collect(Collectors.toSet());
+
+            String home = "hdfs:///tmp/sylph/apps";
+            return new YarnClusterConfiguration(
+                    yarnConf,
+                    home,
+                    flinkJar,
+                    resourcesToLocalize);
+        }
     }
 
     private static YarnConfiguration loadYarnConfiguration()
@@ -48,30 +87,6 @@ public class FlinkRunnerModule
 //            yarnConf.writeXml(pw);
 //        }
         return yarnConf;
-    }
-
-    private static YarnClusterConfiguration loadYarnCluster(YarnConfiguration yarnConf)
-    {
-        Path flinkJar = new Path(getFlinkJarFile().toURI());
-        @SuppressWarnings("ConstantConditions") final Set<Path> resourcesToLocalize = Stream
-                .of("conf/flink-conf.yaml", "conf/log4j.properties", "conf/logback.xml")
-                .map(x -> new Path(new File(System.getenv("FLINK_HOME"), x).toURI()))
-                .collect(Collectors.toSet());
-
-        String home = "hdfs:///tmp/sylph/apps";
-        return new YarnClusterConfiguration(
-                yarnConf,
-                home,
-                flinkJar,
-                resourcesToLocalize);
-    }
-
-    private static YarnClient createYarnClient(YarnConfiguration yarnConfiguration)
-    {
-        YarnClient client = YarnClient.createYarnClient();
-        client.init(yarnConfiguration);
-        client.start();
-        return client;
     }
 
     private static File getFlinkJarFile()

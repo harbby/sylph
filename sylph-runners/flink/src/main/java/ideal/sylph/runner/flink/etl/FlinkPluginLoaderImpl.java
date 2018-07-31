@@ -12,6 +12,8 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.table.api.StreamTableEnvironment;
 import org.apache.flink.types.Row;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.function.UnaryOperator;
@@ -21,6 +23,8 @@ import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
 public final class FlinkPluginLoaderImpl
         implements NodeLoader<StreamTableEnvironment, DataStream<Row>>
 {
+    private static final Logger logger = LoggerFactory.getLogger(FlinkPluginLoaderImpl.class);
+
     @Override
     public UnaryOperator<DataStream<Row>> loadSource(final StreamTableEnvironment tableEnv, final Map<String, Object> config)
     {
@@ -31,7 +35,7 @@ public final class FlinkPluginLoaderImpl
             final Source<StreamTableEnvironment, DataStream<Row>> source = clazz.newInstance();
 
             source.driverInit(tableEnv, config);
-            //source.getSource().getType();  //判断type
+            logger.info("source {} schema:{}", clazz, source.getSource().getType());
             return (stream) -> source.getSource();
         }
         catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
@@ -98,7 +102,11 @@ public final class FlinkPluginLoaderImpl
             throw new SylphException(JOB_BUILD_ERROR, "NOT SUPPORTED TransForm:" + driver);
         }
         transform.driverInit(config);
-        return (stream) -> transform.transform(stream);
+        return (stream) -> {
+            DataStream<Row> dataStream = transform.transform(stream);
+            logger.info("transfrom {} schema to:", driver, dataStream.getType());
+            return dataStream;
+        };
     }
 
     private static Sink<DataStream<Row>> loadRealTimeSink(RealTimeSink realTimeSink)
