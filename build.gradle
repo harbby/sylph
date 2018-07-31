@@ -26,7 +26,8 @@ allprojects{
             log4j12:'1.7.21',
             guice:'4.2.0',
             guava: '25.1-jre',
-            jackson: '2.9.5'
+            jackson: '2.9.5',
+            jersey: '2.27'
     ]
 }
 

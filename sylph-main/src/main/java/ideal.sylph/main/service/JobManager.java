@@ -77,12 +77,13 @@ public final class JobManager
         jobStore.saveJob(job);
     }
 
-    public Optional<Job> removeJob(String jobId)
+    public void removeJob(String jobId)
+            throws IOException
     {
         if (runningContainers.containsKey(jobId)) {
             throw new SylphException(ILLEGAL_OPERATION, "Can only delete tasks that have been offline");
         }
-        return jobStore.removeJob(jobId);
+        jobStore.removeJob(jobId);
     }
 
     public Optional<Job> getJob(String jobId)

@@ -26,6 +26,7 @@ public final class ServerMainModule
         //--- controller ---
         configBinder(binder).bindConfig(ServerConfig.class);
         binder.bind(ControllerApp.class).in(Scopes.SINGLETON);
+
         configBinder(binder).bindConfig(ServerMainConfig.class);
         binder.bind(MetadataManager.class).in(Scopes.SINGLETON);
         binder.bind(JobStore.class).to(LocalJobStore.class).in(Scopes.SINGLETON);
@@ -38,8 +39,21 @@ public final class ServerMainModule
         binder.bind(PluginLoader.class).in(Scopes.SINGLETON);
         binder.bind(JobManager.class).in(Scopes.SINGLETON);
 
-        binder.bind(SylphContext.class).to(SylphContextImpl.class).in(Scopes.SINGLETON);
+        binder.bind(SylphContext.class).toProvider(SylphContextProvider.class).in(Scopes.SINGLETON);
         binder.bind(RunnerContext.class).toProvider(RunnerContextImpl.class).in(Scopes.SINGLETON);
+    }
+
+    private static class SylphContextProvider
+            implements Provider<SylphContext>
+    {
+        @Inject private JobManager jobManager;
+        @Inject private RunnerManger runnerManger;
+
+        @Override
+        public SylphContext get()
+        {
+            return new SylphContextImpl(jobManager, runnerManger);
+        }
     }
 
     private static class RunnerContextImpl

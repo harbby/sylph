@@ -1,10 +1,10 @@
 package ideal.sylph.spi;
 
-import ideal.sylph.spi.job.JobActuator;
+import ideal.sylph.spi.job.JobActuatorHandle;
 
 import java.util.Set;
 
 public interface Runner
 {
-    Set<JobActuator> create(RunnerContext context);
+    Set<JobActuatorHandle> create(RunnerContext context);
 }

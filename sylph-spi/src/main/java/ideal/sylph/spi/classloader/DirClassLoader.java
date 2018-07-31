@@ -8,6 +8,8 @@ import java.net.URLStreamHandlerFactory;
 import java.text.DateFormat;
 import java.util.Date;
 
+import static org.apache.commons.lang3.ObjectUtils.firstNonNull;
+
 public class DirClassLoader
         extends URLClassLoader
 {
@@ -15,7 +17,7 @@ public class DirClassLoader
 
     public DirClassLoader(URL[] urls, ClassLoader parent)
     {
-        super(urls, parent);
+        super(firstNonNull(urls, new URL[0]), parent);
     }
 
     public DirClassLoader(URL[] urls)

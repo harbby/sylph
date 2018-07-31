@@ -1,6 +1,5 @@
 package ideal.sylph.main.server;
 
-import com.google.inject.Inject;
 import ideal.sylph.main.service.JobManager;
 import ideal.sylph.main.service.RunnerManger;
 import ideal.sylph.spi.SylphContext;
@@ -10,20 +9,25 @@ import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.YamlFlow;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Optional;
 
+import static ideal.sylph.spi.exception.StandardErrorCode.SYSTEM_ERROR;
 import static ideal.sylph.spi.exception.StandardErrorCode.UNKNOWN_ERROR;
 import static java.util.Objects.requireNonNull;
 
 public class SylphContextImpl
         implements SylphContext
 {
-    @Inject
     private JobManager jobManager;
-
-    @Inject
     private RunnerManger runnerManger;
+
+    SylphContextImpl(JobManager jobManager, RunnerManger runnerManger)
+    {
+        this.jobManager = requireNonNull(jobManager, "jobManager is null");
+        this.runnerManger = requireNonNull(runnerManger, "runnerManger is null");
+    }
 
     @Override
     public void saveJob(String jobId, String flow, String actuatorName)
@@ -57,7 +61,12 @@ public class SylphContextImpl
     @Override
     public void deleteJob(String jobId)
     {
-        jobManager.removeJob(requireNonNull(jobId, "jobId is null"));
+        try {
+            jobManager.removeJob(requireNonNull(jobId, "jobId is null"));
+        }
+        catch (IOException e) {
+            throw new SylphException(SYSTEM_ERROR, "drop job " + jobId + " is fail", e);
+        }
     }
 
     @Override

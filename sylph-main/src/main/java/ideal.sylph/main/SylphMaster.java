@@ -34,7 +34,6 @@ public final class SylphMaster
 
             injector.getInstance(JobManager.class).start();
             injector.getInstance(ControllerApp.class).start();
-
             //ProcessHandle.current().pid()
             logger.info("======== SERVER STARTED this pid is {}========");
         }

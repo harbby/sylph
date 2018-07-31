@@ -455,13 +455,12 @@ jsPlumb.ready(function () {
         $('#task_name').val(job_id);
         //页面加载获取流程图
         $.ajax({
-            url: "/_sys/job_graph_edit/?type=edit&jobId="+job_id,
-            type: "post",
+            url: "/_sys/etl_builder/get/?jobId="+job_id,
+            type: "get",
             data: {},
             success: function (result) {
-                var _result=JSON.parse(result);
-                if(_result.graph && _result.graph!=""){
-                    drawNodesConnections(instance,_result.graph);
+                if(result.graph && result.graph!=""){
+                    drawNodesConnections(instance,result.graph);
                 }
             },
             error: function (result) {
@@ -469,6 +468,23 @@ jsPlumb.ready(function () {
             }
         });
     }
+
+    //加载所有的执行引擎
+    $.ajax({
+        url: "/_sys/job_manger/get_all_actuators",
+        type: "get",
+        data: {},
+        success: function (result) {
+            $("#actuators_select :last").remove()
+            result.forEach(function (value) {
+                $("#actuators_select").append("<option value='Value'>"+value+"</option>")
+            })
+        },
+        error: function (result) {
+            alert("执行引擎 actuators获取失败");
+        }
+    });
+
 
     /*点击保存*/
     $("#flow_save").click(function () {
@@ -486,14 +502,13 @@ jsPlumb.ready(function () {
         }
         formData.append('config', $('.config_modal_textarea').val());
         $.ajax({
-            url: '/_sys/job_graph_edit?type=save',
+            url: '/_sys/etl_builder/save',
             type: 'POST',
             cache: false,
             data: formData,
             processData: false,
             contentType: false
         }).done(function(result) {
-            var result = JSON.parse(result);
             if (result.status == "ok") {
                 alert("保存成功");
                 window.location.href = "index.html";
@@ -537,6 +552,3 @@ function getUrlParam(paramName) {
     }
     return paramValue;
 }
-
-
-

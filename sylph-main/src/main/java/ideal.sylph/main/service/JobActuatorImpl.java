@@ -1,31 +1,31 @@
 package ideal.sylph.main.service;
 
-import ideal.sylph.common.proxy.DynamicProxy;
 import ideal.sylph.spi.annotation.Description;
 import ideal.sylph.spi.annotation.Name;
 import ideal.sylph.spi.job.JobActuator;
+import ideal.sylph.spi.job.JobActuatorHandle;
 
-import java.lang.reflect.Method;
+import java.net.URLClassLoader;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
-public class JobActuatorProxy
-        extends DynamicProxy
+public class JobActuatorImpl
+        implements JobActuator
 {
     private final long startTime = System.currentTimeMillis();
     private final JobActuator.ActuatorInfo info;
+    private final JobActuatorHandle jobActuatorHandle;
 
     private final String[] name;
-
     private final String description;
 
-    JobActuatorProxy(JobActuator jobActuator)
+    JobActuatorImpl(JobActuatorHandle jobActuatorHandle)
     {
-        super(jobActuator);
-        this.name = buildName(jobActuator);
-        this.description = buildDescription(jobActuator);
+        this.jobActuatorHandle = requireNonNull(jobActuatorHandle, "jobActuatorHandle is null");
+        this.name = buildName(jobActuatorHandle);
+        this.description = buildDescription(jobActuatorHandle);
         this.info = new JobActuator.ActuatorInfo()
         {
             @Override
@@ -55,16 +55,24 @@ public class JobActuatorProxy
     }
 
     @Override
-    public Object invoke(Object proxy, Method method, Object[] args)
-            throws Throwable
+    public JobActuatorHandle getHandle()
     {
-        if ("getInfo".equals(method.getName())) {
-            return info;
-        }
-        return super.invoke(proxy, method, args);
+        return jobActuatorHandle;
     }
 
-    private String[] buildName(JobActuator jobActuator)
+    @Override
+    public ActuatorInfo getInfo()
+    {
+        return info;
+    }
+
+    @Override
+    public URLClassLoader getHandleClassLoader()
+    {
+        return (URLClassLoader) jobActuatorHandle.getClass().getClassLoader();
+    }
+
+    private String[] buildName(JobActuatorHandle jobActuator)
     {
         String errorMessage = jobActuator.getClass().getName() + " Missing @Name annotation";
         Name actuatorName = jobActuator.getClass().getAnnotation(Name.class);
@@ -73,7 +81,7 @@ public class JobActuatorProxy
         return names;
     }
 
-    private String buildDescription(JobActuator jobActuator)
+    private String buildDescription(JobActuatorHandle jobActuator)
     {
         String errorMessage = jobActuator.getClass().getName() + " Missing @Name annotation";
         Description description = jobActuator.getClass().getAnnotation(Description.class);

@@ -2,6 +2,9 @@ package ideal.sylph.spi.job;
 
 import javax.validation.constraints.NotNull;
 
+import java.io.File;
+import java.net.URLClassLoader;
+
 public interface Job
 {
     @NotNull
@@ -11,6 +14,10 @@ public interface Job
     {
         return "none";
     }
+
+    File getWorkDir();
+
+    URLClassLoader getJobClassLoader();
 
     @NotNull
     String getActuatorName();

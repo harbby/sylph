@@ -1,26 +1,14 @@
 package ideal.sylph.spi.job;
 
-import javax.validation.constraints.NotNull;
-
-import java.util.Optional;
+import java.net.URLClassLoader;
 
 public interface JobActuator
 {
-    @NotNull
-    default JobHandle formJob(String jobId, Flow flow)
-    {
-        throw new UnsupportedOperationException("this method have't support!");
-    }
+    JobActuatorHandle getHandle();
 
-    default JobContainer createJobContainer(@NotNull Job job, Optional<String> jobInfo)
-    {
-        throw new UnsupportedOperationException("this method have't support!");
-    }
+    ActuatorInfo getInfo();
 
-    default ActuatorInfo getInfo()
-    {
-        throw new UnsupportedOperationException("this method have't support!");
-    }
+    URLClassLoader getHandleClassLoader();
 
     interface ActuatorInfo
     {

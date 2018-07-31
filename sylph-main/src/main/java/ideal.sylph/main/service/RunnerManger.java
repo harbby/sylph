@@ -3,6 +3,7 @@ package ideal.sylph.main.service;
 import com.google.inject.Inject;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
+import ideal.sylph.spi.classloader.DirClassLoader;
 import ideal.sylph.spi.classloader.ThreadContextClassLoader;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Flow;
@@ -17,6 +18,7 @@ import javax.validation.constraints.NotNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URLClassLoader;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,11 +47,9 @@ public class RunnerManger
 
     public void createRunner(Runner runner)
     {
-        runner.create(runnerContext).forEach(jobActuator -> {
-            JobActuatorProxy dynamicProxy = new JobActuatorProxy(jobActuator);
-            JobActuator proxy = (JobActuator) dynamicProxy.getProxy(JobActuator.class);
-
-            for (String name : proxy.getInfo().getName()) {
+        runner.create(runnerContext).forEach(jobActuatorHandle -> {
+            JobActuator jobActuator = new JobActuatorImpl(jobActuatorHandle);
+            for (String name : jobActuator.getInfo().getName()) {
                 if (jobActuatorMap.containsKey(name)) {
                     throw new IllegalArgumentException(String.format("Multiple entries with same key: %s=%s and %s=%s", name, jobActuatorMap.get(name), name, jobActuator));
                 }
@@ -68,8 +68,8 @@ public class RunnerManger
         String jobType = requireNonNull(job.getActuatorName(), "job Actuator Name is null " + job.getId());
         JobActuator jobActuator = jobActuatorMap.get(jobType);
         checkArgument(jobActuator != null, jobType + " not exists");
-        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(jobActuator.getClass().getClassLoader())) {
-            return jobActuator.createJobContainer(job, jobInfo);
+        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(jobActuator.getHandleClassLoader())) {
+            return jobActuator.getHandle().createJobContainer(job, jobInfo);
         }
     }
 
@@ -89,14 +89,16 @@ public class RunnerManger
     }
 
     public Job formJobWithFlow(String jobId, Flow flow, String actuatorName)
+            throws IOException
     {
         requireNonNull(actuatorName, "job actuatorName is null");
         JobActuator jobActuator = jobActuatorMap.get(actuatorName);
         checkArgument(jobActuator != null, "job [" + jobId + "] loading error! JobActuator:[" + actuatorName + "] not exists,only " + jobActuatorMap.keySet());
-        //--- 通过代理 返回job类型信息 ---
-        //jobActuator.getClass().getClassLoader();
 
-        JobHandle jobHandle = jobActuator.formJob(jobId, flow);
+        File jobDir = new File("jobs/" + jobId);
+        DirClassLoader jobClassLoader = new DirClassLoader(null, jobActuator.getHandleClassLoader());
+        jobClassLoader.addDir(jobDir);
+        JobHandle jobHandle = jobActuator.getHandle().formJob(jobId, flow, jobClassLoader);
         return new Job()
         {
             @NotNull
@@ -104,6 +106,18 @@ public class RunnerManger
             public String getId()
             {
                 return jobId;
+            }
+
+            @Override
+            public File getWorkDir()
+            {
+                return jobDir;
+            }
+
+            @Override
+            public URLClassLoader getJobClassLoader()
+            {
+                return jobClassLoader;
             }
 
             @NotNull

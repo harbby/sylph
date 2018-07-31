@@ -52,7 +52,7 @@ public class LocalJobStore
     @Override
     public void saveJob(@Nonnull Job job)
     {
-        File jobDir = new File("jobs/" + job.getId());
+        File jobDir = job.getWorkDir();
         job.getId();
         try {
             Flow flow = job.getFlow();
@@ -85,9 +85,12 @@ public class LocalJobStore
     }
 
     @Override
-    public Optional<Job> removeJob(String jobId)
+    public Job removeJob(String jobId)
+            throws IOException
     {
-        throw new UnsupportedOperationException("this method have't support!");
+        Job job = requireNonNull(jobs.remove(jobId), jobId + " is not exists");
+        FileUtils.deleteDirectory(job.getWorkDir());  //先删除然后在复制
+        return job;
     }
 
     /**
