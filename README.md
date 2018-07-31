@@ -45,7 +45,7 @@ Sylph comes with sample configuration that should work out-of-the-box for develo
 We need more power to improve the view layer. If you are interested, you can contact me by email.
 
 ## Other
-* sylph为我个人思想的实验产物 被设计来处理分布式实时ETL,实时指标计算以及离线周期任务,您可以拿来实验您的方案和思路.如果可以解决您的场景，还是建立您使用
+* sylph被设计来处理分布式实时ETL,实时指标计算以及离线周期任务,您可以拿来实验您的方案和思路.如果可以解决您的场景，还是建立您使用
 阿里云流计算(https://help.aliyun.com/product/45029.html),
 华为流计算等更加成熟可靠的产品来为您的业务保驾护航
 * QQ群 438625067
