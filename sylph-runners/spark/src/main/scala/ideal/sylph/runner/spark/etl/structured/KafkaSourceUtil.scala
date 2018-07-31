@@ -50,7 +50,6 @@ object KafkaSourceUtil {
       .format("kafka")
       .options(configParser(optionMap))
       .load()
-    df.printSchema()
 
     val columns = df.columns.map {
       case "key" => "CAST(key AS STRING) as key"

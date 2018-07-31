@@ -4,20 +4,21 @@ import ideal.sylph.spi.annotation.Description;
 import ideal.sylph.spi.annotation.Name;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;
-import ideal.sylph.spi.job.JobActuator;
+import ideal.sylph.spi.job.JobActuatorHandle;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.model.NodeInfo;
 
+import java.net.URLClassLoader;
 import java.util.Optional;
 
 @Name("SparkSubmit")
 @Description("spark submit job")
 public class SparkSubmitActuator
-        implements JobActuator
+        implements JobActuatorHandle
 {
     @Override
-    public JobHandle formJob(String jobId, Flow flow)
+    public JobHandle formJob(String jobId, Flow flow, URLClassLoader jobClassLoader)
     {
         NodeInfo node = flow.getNodes().get(0);
         String cmd = node.getNodeData();

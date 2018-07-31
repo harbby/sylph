@@ -1,7 +1,10 @@
 package ideal.sylph.runner.spark;
 
 import com.google.inject.Binder;
+import com.google.inject.Inject;
 import com.google.inject.Module;
+import com.google.inject.Provider;
+import com.google.inject.Scopes;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
@@ -15,9 +18,23 @@ public class SparkRunnerModule
     @Override
     public void configure(Binder binder)
     {
-        YarnConfiguration yarnConfiguration = loadYarnConfiguration();
-        binder.bind(YarnConfiguration.class).toInstance(yarnConfiguration);
-        binder.bind(YarnClient.class).toInstance(createYarnClient(yarnConfiguration));
+        binder.bind(YarnConfiguration.class).toProvider(SparkRunnerModule::loadYarnConfiguration).in(Scopes.SINGLETON);
+        binder.bind(YarnClient.class).toProvider(YarnClientProvider.class).in(Scopes.SINGLETON);
+    }
+
+    private static class YarnClientProvider
+            implements Provider<YarnClient>
+    {
+        @Inject private YarnConfiguration yarnConfiguration;
+
+        @Override
+        public YarnClient get()
+        {
+            YarnClient client = YarnClient.createYarnClient();
+            client.init(yarnConfiguration);
+            client.start();
+            return client;
+        }
     }
 
     private static YarnConfiguration loadYarnConfiguration()
@@ -37,13 +54,5 @@ public class SparkRunnerModule
 //            yarnConf.writeXml(pw);
 //        }
         return yarnConf;
-    }
-
-    private static YarnClient createYarnClient(YarnConfiguration yarnConfiguration)
-    {
-        YarnClient client = YarnClient.createYarnClient();
-        client.init(yarnConfiguration);
-        client.start();
-        return client;
     }
 }

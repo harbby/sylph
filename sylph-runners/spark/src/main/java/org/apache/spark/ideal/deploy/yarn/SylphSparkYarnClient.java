@@ -1,5 +1,6 @@
 package org.apache.spark.ideal.deploy.yarn;
 
+import com.google.common.collect.ImmutableSet;
 import org.apache.hadoop.yarn.api.records.ApplicationSubmissionContext;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
 import org.apache.hadoop.yarn.client.api.YarnClient;
@@ -30,6 +31,7 @@ public class SylphSparkYarnClient
     {
         final ApplicationSubmissionContext appContext = super.createApplicationSubmissionContext(newApp, containerContext);
         appContext.setApplicationType("Sylph_SPARK");
+        appContext.setApplicationTags(ImmutableSet.of("a1", "a2"));
         return appContext;
     }
 }

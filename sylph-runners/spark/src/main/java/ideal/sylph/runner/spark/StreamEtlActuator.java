@@ -1,11 +1,11 @@
 package ideal.sylph.runner.spark;
 
-import ideal.sylph.common.graph.Graph;
 import ideal.sylph.common.jvm.JVMLauncher;
 import ideal.sylph.common.jvm.JVMLaunchers;
 import ideal.sylph.common.jvm.JVMRunningException;
 import ideal.sylph.runner.spark.etl.sparkstreaming.StreamPluginLoader;
 import ideal.sylph.spi.App;
+import ideal.sylph.spi.GraphApp;
 import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.annotation.Description;
 import ideal.sylph.spi.annotation.Name;
@@ -34,9 +34,9 @@ public class StreamEtlActuator
 {
     @NotNull
     @Override
-    public JobHandle formJob(String jobId, Flow flow)
+    public JobHandle formJob(String jobId, Flow flow, URLClassLoader jobClassLoader)
     {
-        final Supplier<App<StreamingContext, DStream<Row>>> appGetter = (Supplier<App<StreamingContext, DStream<Row>>> & Serializable) () -> new App<StreamingContext, DStream<Row>>()
+        final Supplier<App<StreamingContext>> appGetter = (Supplier<App<StreamingContext>> & Serializable) () -> new GraphApp<StreamingContext, DStream<Row>>()
         {
             private final StreamingContext spark = new StreamingContext(new SparkConf(), Seconds.apply(5));
 
@@ -53,22 +53,22 @@ public class StreamEtlActuator
             }
 
             @Override
-            public Graph<DStream<Row>> build()
+            public void build()
+                    throws Exception
             {
-                return App.super.build(jobId, flow);
+                this.buildGraph(jobId, flow).run();
             }
         };
 
         try {
             JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
                     .setCallable(() -> {
-                        App<StreamingContext, DStream<Row>> app = appGetter.get();
-                        app.build().run();
+                        appGetter.get().build();
                         return 1;
                     })
-                    .addUserURLClassLoader((URLClassLoader) this.getClass().getClassLoader())
+                    .addUserURLClassLoader(jobClassLoader)
                     .build();
-            launcher.startAndGet(this.getClass().getClassLoader());
+            launcher.startAndGet(jobClassLoader);
             return new SparkJobHandle<>(appGetter);
         }
         catch (IOException | ClassNotFoundException | JVMRunningException e) {

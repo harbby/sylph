@@ -2,9 +2,9 @@ package ideal.sylph.runner.spark.etl.sparkstreaming
 
 import java.util.function.UnaryOperator
 
-import ideal.sylph.spi.NodeLoader
 import ideal.sylph.api.etl._
 import ideal.sylph.runner.spark.etl.{SparkRow, SparkUtil}
+import ideal.sylph.spi.NodeLoader
 import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row

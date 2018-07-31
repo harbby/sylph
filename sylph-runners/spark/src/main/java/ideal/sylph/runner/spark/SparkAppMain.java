@@ -1,15 +1,13 @@
 package ideal.sylph.runner.spark;
 
+import ideal.sylph.common.base.Serializables;
 import ideal.sylph.spi.App;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.streaming.StreamingContext;
 
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
@@ -26,17 +24,11 @@ public final class SparkAppMain
     {
         System.out.println("spark on yarn app starting...");
 
-        SparkJobHandle<App<?, ?>> sparkJobHandle = null;
-        try (ServerSocket sock = new ServerSocket()) {
-            sock.bind(new InetSocketAddress(InetAddress.getLocalHost(), 7102));
-            try (Socket client = sock.accept()) {
-                try (InputStream input = client.getInputStream(); ObjectInputStream os = new ObjectInputStream(input)) {
-                    sparkJobHandle = (SparkJobHandle<App<?, ?>>) os.readObject();
-                }
-            }
-        }
-        App<?, ?> app = requireNonNull(sparkJobHandle, "sparkJobHandle is null").getApp().get();
-        app.build().run();
+        byte[] bytes = Files.readAllBytes(Paths.get(new File("job_handle.byt").toURI()));
+        SparkJobHandle<App<?>> sparkJobHandle = (SparkJobHandle<App<?>>) Serializables.byteToObject(bytes);
+
+        App<?> app = requireNonNull(sparkJobHandle, "sparkJobHandle is null").getApp().get();
+        app.build();
         Object appContext = app.getContext();
         if (appContext instanceof SparkSession) {
             checkArgument(((SparkSession) appContext).streams().active().length > 0, "no stream pipeline");

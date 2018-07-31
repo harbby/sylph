@@ -28,6 +28,9 @@ class StructuredPluginLoader extends NodeLoader[SparkSession, DataFrame] {
         .load()
     }
 
+    logger.info("source {} schema:", driver)
+    source.printSchema()
+
     new UnaryOperator[DataFrame] {
       override def apply(stream: DataFrame): DataFrame = source
     }
@@ -90,7 +93,12 @@ class StructuredPluginLoader extends NodeLoader[SparkSession, DataFrame] {
       case _ => throw new RuntimeException("未知的TransForm插件:" + driver)
     }
     new UnaryOperator[DataFrame] {
-      override def apply(stream: DataFrame): DataFrame = transform.transform(stream)
+      override def apply(stream: DataFrame): DataFrame = {
+        var transStream = transform.transform(stream)
+        logger.info("{} schema to :", driver)
+        transStream.printSchema()
+        transStream
+      }
     }
   }
 
@@ -131,8 +139,6 @@ class StructuredPluginLoader extends NodeLoader[SparkSession, DataFrame] {
       implicit val matchError: org.apache.spark.sql.Encoder[Row] = org.apache.spark.sql.Encoders.kryo[Row]
       //implicit val mapenc = RowEncoder.apply(rddSchema)  //此处无法注册 原因是必须是sql基本类型   //Encoders.STRING
       val transStream = stream.mapPartitions(partition => SparkUtil.transFunction(partition, realTimeTransForm))
-
-      transStream.printSchema()
       //或者使用 transStream.as()
       //transStream.repartition(10)
       transStream
