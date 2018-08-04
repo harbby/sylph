@@ -4,6 +4,7 @@ import java.util
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
+import ideal.sylph.annotation.{Description, Name, Version}
 import ideal.sylph.api.etl.Source
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.{ResultTypeQueryable, RowTypeInfo, TypeExtractor}
@@ -17,7 +18,10 @@ import scala.util.parsing.json.JSONObject
 /**
   * test source
   **/
-@SerialVersionUID(2L)//使用注解来制定序列化id
+@Name("test_source")
+@Description("this flink test source inputStream")
+@Version
+@SerialVersionUID(2L) //使用注解来制定序列化id
 class TestSource extends Source[StreamTableEnvironment, DataStream[Row]] {
 
   @transient private var optionMap: java.util.Map[String, Object] = _
@@ -27,7 +31,7 @@ class TestSource extends Source[StreamTableEnvironment, DataStream[Row]] {
     val stream = FlinkEnvUtil.getFlinkEnv(tableEnv).addSource(new MyDataSource)
     val tableName = optionMap.getOrDefault("table_name", null).asInstanceOf[String]
     if (tableName != null) {
-      tableEnv.registerDataStream(tableName, stream, "key, value, server_time, proctime.proctime")
+      tableEnv.registerDataStream(tableName, stream)
     }
     stream
   }

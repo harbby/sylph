@@ -1,5 +1,10 @@
 
 subprojects {
+    apply plugin: 'com.github.harbby.gradle.serviceloader'
+    serviceLoader {
+        serviceInterface 'ideal.sylph.api.PipelinePlugin'
+    }
+
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
 

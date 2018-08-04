@@ -38,8 +38,8 @@ public class JobMangerResurce
 {
     private static final Logger logger = LoggerFactory.getLogger(JobMangerResurce.class);
 
-    private ServletContext servletContext;
-    private UriInfo uriInfo;
+    @Context private ServletContext servletContext;
+    @Context private UriInfo uriInfo;
     private SylphContext sylphContext;
 
     public JobMangerResurce(

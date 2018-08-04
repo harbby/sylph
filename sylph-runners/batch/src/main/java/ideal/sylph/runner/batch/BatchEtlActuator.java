@@ -1,9 +1,9 @@
 package ideal.sylph.runner.batch;
 
 import com.google.inject.Inject;
+import ideal.sylph.annotation.Description;
+import ideal.sylph.annotation.Name;
 import ideal.sylph.common.graph.Graph;
-import ideal.sylph.spi.annotation.Description;
-import ideal.sylph.spi.annotation.Name;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuatorHandle;

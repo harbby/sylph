@@ -3,6 +3,7 @@ package ideal.sylph.runner.flink.jvm;
 import com.google.common.collect.ImmutableList;
 import ideal.sylph.common.jvm.JVMLauncher;
 import ideal.sylph.common.jvm.JVMLaunchers;
+import ideal.sylph.common.jvm.JVMRunningException;
 import ideal.sylph.common.jvm.VmFuture;
 import org.junit.Assert;
 import org.junit.Before;
@@ -24,7 +25,7 @@ public class JVMLauncherTest
 
     @Test
     public void test1()
-            throws IOException, ClassNotFoundException
+            throws IOException, ClassNotFoundException, JVMRunningException
     {
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
                 .setCallable(() -> {

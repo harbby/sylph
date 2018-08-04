@@ -10,8 +10,6 @@ tasks.compileJava.dependsOn compileScala
 tasks.compileScala.dependsOn.remove("compileJava")
 
 dependencies {
-  compile group: 'org.javassist', name: 'javassist', version: '3.22.0-GA'
-
   compileOnly group: 'org.apache.spark', name: 'spark-sql_2.11', version: deps.spark
   compileOnly group: 'org.apache.spark', name: 'spark-streaming_2.11', version: deps.spark
   compileOnly "org.apache.spark:spark-yarn_2.11:$deps.spark"
@@ -29,7 +27,6 @@ dependencies {
 
   //--- add scala class
   compileOnly files("$sourceSets.main.scala.outputDir")
-
 
   testCompile group: 'org.apache.spark', name: 'spark-sql_2.11', version: deps.spark
   testCompile group: 'org.apache.spark', name: 'spark-streaming_2.11', version: deps.spark

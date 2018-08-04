@@ -17,7 +17,7 @@ allprojects{
     }
 
     ext.deps = [
-            flink:  '1.5.1',
+            flink:  '1.5.2',
             jetty: "9.4.6.v20170531",   //8.1.17.v20150415   "9.4.6.v20170531"
             hadoop: "2.7.4",
             spark: "2.3.1",
@@ -38,7 +38,7 @@ subprojects{
             maven { url 'https://harbby.github.io/.m2/repository/' }
         }
         dependencies {
-            classpath 'com.github.harbby:gradle-serviceloader:1.0.2'
+            classpath 'com.github.harbby:gradle-serviceloader:1.1.2'
         }
     }
 

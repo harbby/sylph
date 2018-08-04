@@ -1,6 +1,8 @@
 package ideal.sylph.runner.spark;
 
 import com.google.inject.Inject;
+import ideal.sylph.annotation.Description;
+import ideal.sylph.annotation.Name;
 import ideal.sylph.common.jvm.JVMLauncher;
 import ideal.sylph.common.jvm.JVMLaunchers;
 import ideal.sylph.common.jvm.JVMRunningException;
@@ -11,8 +13,6 @@ import ideal.sylph.runner.spark.yarn.YarnJobContainer;
 import ideal.sylph.spi.App;
 import ideal.sylph.spi.GraphApp;
 import ideal.sylph.spi.NodeLoader;
-import ideal.sylph.spi.annotation.Description;
-import ideal.sylph.spi.annotation.Name;
 import ideal.sylph.spi.classloader.ThreadContextClassLoader;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Flow;

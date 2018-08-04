@@ -22,5 +22,6 @@ include 'sylph-etl-plugins:spark-node-plugin'
 
 //----
 include 'sylph-dist'
-
+include 'sylph-parser'
+include 'sylph-annotations'
 

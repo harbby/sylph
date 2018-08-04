@@ -8,6 +8,8 @@ dependencies {
   compileOnly(group: 'org.apache.flink', name: 'flink-streaming-java_2.11', version: deps.flink) {
     exclude(module: 'slf4j-api')
   }
+  compile group: 'org.apache.flink', name: 'flink-shaded-hadoop2', version: deps.flink
+
   compileOnly(group: 'org.apache.flink', name: 'flink-streaming-scala_2.11', version: deps.flink) {
     exclude(module: 'slf4j-api')
     exclude(module: 'scala-library')
@@ -25,4 +27,14 @@ dependencies {
   //-------cep-------------------
   runtime "org.apache.flink:flink-cep_2.11:$deps.flink"
   runtime "org.apache.flink:flink-cep-scala_2.11:$deps.flink"
+
+  //--- other----
+  compile project(':sylph-parser')
+
+  //----test----
+  runtime group: 'mysql', name: 'mysql-connector-java', version:'5.1.38'
+}
+
+configurations {
+  testCompile.extendsFrom compileOnly
 }

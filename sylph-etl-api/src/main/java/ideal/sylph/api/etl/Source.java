@@ -1,10 +1,11 @@
 package ideal.sylph.api.etl;
 
-import java.io.Serializable;
+import ideal.sylph.api.PipelinePlugin;
+
 import java.util.Map;
 
 public interface Source<T, R>
-        extends Serializable
+        extends PipelinePlugin
 {
     /**
      * 初始化(driver阶段执行) 这里需要传入sess

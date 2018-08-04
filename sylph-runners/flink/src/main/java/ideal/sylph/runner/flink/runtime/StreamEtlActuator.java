@@ -1,12 +1,12 @@
 package ideal.sylph.runner.flink.runtime;
 
 import com.google.inject.Inject;
+import ideal.sylph.annotation.Description;
+import ideal.sylph.annotation.Name;
 import ideal.sylph.common.proxy.DynamicProxy;
 import ideal.sylph.runner.flink.FlinkJobHandle;
 import ideal.sylph.runner.flink.utils.FlinkJobUtil;
 import ideal.sylph.runner.flink.yarn.FlinkYarnJobLauncher;
-import ideal.sylph.spi.annotation.Description;
-import ideal.sylph.spi.annotation.Name;
 import ideal.sylph.spi.classloader.ThreadContextClassLoader;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Flow;

@@ -14,7 +14,7 @@ Experimental stage
 [![loading...](https://raw.githubusercontent.com/harbby/harbby.github.io/master/logo/sylph/briefing.gif)](https://travis-ci.org/harbby/sylph)
 
 ## Building
-sylph builds use Maven and requires Java 8.
+sylph builds use Gradle and requires Java 8.
 ```
 # Build and install distributions
 ./gradlew clean assemble

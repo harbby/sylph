@@ -1,7 +1,7 @@
 package ideal.sylph.main.service;
 
-import ideal.sylph.spi.annotation.Description;
-import ideal.sylph.spi.annotation.Name;
+import ideal.sylph.annotation.Description;
+import ideal.sylph.annotation.Name;
 import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobActuatorHandle;
 
@@ -75,8 +75,11 @@ public class JobActuatorImpl
     private String[] buildName(JobActuatorHandle jobActuator)
     {
         String errorMessage = jobActuator.getClass().getName() + " Missing @Name annotation";
-        Name actuatorName = jobActuator.getClass().getAnnotation(Name.class);
-        String[] names = Stream.of(requireNonNull(actuatorName, errorMessage).value()).distinct().toArray(String[]::new);
+        //Name actuatorName = jobActuator.getClass().getAnnotation(Name.class);
+        Name[] actuatorNames = jobActuator.getClass().getAnnotationsByType(Name.class);  //多重注解
+        String[] names = Stream.of(requireNonNull(actuatorNames, errorMessage))
+                .map(Name::value).distinct()
+                .toArray(String[]::new);
         checkState(names.length > 0, errorMessage);
         return names;
     }
