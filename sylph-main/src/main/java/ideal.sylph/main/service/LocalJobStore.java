@@ -35,14 +35,14 @@ public class LocalJobStore
 {
     private static final Logger logger = LoggerFactory.getLogger(LocalJobStore.class);
     private final JobStoreConfig config;
-    private final RunnerManger runnerManger;
+    private final RunnerManager runnerManger;
 
     private final ConcurrentMap<String, Job> jobs = new ConcurrentHashMap<>();
 
     @Inject
     public LocalJobStore(
             JobStoreConfig config,
-            RunnerManger runnerManger
+            RunnerManager runnerManger
     )
     {
         this.config = requireNonNull(config, "JobStore config is null");

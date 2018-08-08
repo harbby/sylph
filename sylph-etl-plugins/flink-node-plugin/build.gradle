@@ -10,8 +10,6 @@ dependencies {
     //--table sql---
     compileOnly group: 'org.apache.flink', name: 'flink-table_2.11', version:deps.flink
 
-
     compileOnly group: 'org.scala-lang', name: 'scala-library', version: '2.11.12'
-    compile group: 'org.apache.parquet', name: 'parquet-hadoop', version: '1.8.2'
     compile group: 'org.apache.flink', name: 'flink-connector-kafka-0.10_2.11', version:deps.flink
 }

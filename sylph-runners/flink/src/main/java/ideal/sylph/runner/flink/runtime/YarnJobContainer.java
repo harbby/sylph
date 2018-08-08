@@ -11,7 +11,6 @@ import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.util.Apps;
 
 import java.io.IOException;
-import java.util.Optional;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.CONNECTION_ERROR;
 import static ideal.sylph.spi.job.Job.Status.RUNNING;
@@ -23,13 +22,13 @@ public abstract class YarnJobContainer
     private ApplicationId yarnAppId;
     private YarnClient yarnClient;
 
-    protected YarnJobContainer(YarnClient yarnClient, Optional<String> jobInfo)
+    protected YarnJobContainer(YarnClient yarnClient, String jobInfo)
     {
         this.yarnClient = yarnClient;
-        jobInfo.ifPresent(id -> {
-            this.yarnAppId = Apps.toAppID(id);
+        if (jobInfo != null) {
+            this.yarnAppId = Apps.toAppID(jobInfo);
             this.setStatus(RUNNING);
-        });
+        }
     }
 
     @Override

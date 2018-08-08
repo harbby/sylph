@@ -1,6 +1,6 @@
 package ideal.sylph.runner.flink.etl;
 
-import ideal.sylph.api.Row;
+import ideal.sylph.etl.Row;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.api.java.typeutils.TypeExtractor;

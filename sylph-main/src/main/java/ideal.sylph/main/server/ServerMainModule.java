@@ -10,8 +10,7 @@ import ideal.sylph.controller.ServerConfig;
 import ideal.sylph.main.service.JobManager;
 import ideal.sylph.main.service.LocalJobStore;
 import ideal.sylph.main.service.MetadataManager;
-import ideal.sylph.main.service.RunnerManger;
-import ideal.sylph.spi.RunnerContext;
+import ideal.sylph.main.service.RunnerManager;
 import ideal.sylph.spi.SylphContext;
 import ideal.sylph.spi.job.JobStore;
 
@@ -35,39 +34,23 @@ public final class ServerMainModule
         //  binder.bindConstant().annotatedWith(Names.named("redis.hosts")).to("localhost:6379");
         //  Names.bindProperties(binder, new Properties());
 
-        binder.bind(RunnerManger.class).in(Scopes.SINGLETON);
+        binder.bind(RunnerManager.class).in(Scopes.SINGLETON);
         binder.bind(PluginLoader.class).in(Scopes.SINGLETON);
         binder.bind(JobManager.class).in(Scopes.SINGLETON);
 
         binder.bind(SylphContext.class).toProvider(SylphContextProvider.class).in(Scopes.SINGLETON);
-        binder.bind(RunnerContext.class).toProvider(RunnerContextImpl.class).in(Scopes.SINGLETON);
     }
 
     private static class SylphContextProvider
             implements Provider<SylphContext>
     {
         @Inject private JobManager jobManager;
-        @Inject private RunnerManger runnerManger;
+        @Inject private RunnerManager runnerManger;
 
         @Override
         public SylphContext get()
         {
             return new SylphContextImpl(jobManager, runnerManger);
-        }
-    }
-
-    private static class RunnerContextImpl
-            implements Provider<RunnerContext>
-    {
-        @Inject
-        public RunnerContextImpl(ServerConfig serverConfig)
-        {
-        }
-
-        @Override
-        public RunnerContext get()
-        {
-            return new RunnerContext() {};
         }
     }
 }

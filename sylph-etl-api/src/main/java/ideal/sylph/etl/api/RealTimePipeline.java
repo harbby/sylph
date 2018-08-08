@@ -1,12 +1,8 @@
-package ideal.sylph.api.etl;
-
-import ideal.sylph.api.PipelinePlugin;
-import ideal.sylph.api.Row;
+package ideal.sylph.etl.api;
 
 import java.util.Map;
 
-public interface RealTimeTransForm
-        extends PipelinePlugin
+public interface RealTimePipeline
 {
     /**
      * 初始化(driver阶段执行) 需要注意序列化问题
@@ -19,17 +15,7 @@ public interface RealTimeTransForm
     boolean open(long partitionId, long version);
 
     /**
-     * line 级别的 需要注意线程安全问题
-     **/
-    Row[] process(Row value);
-
-    /**
      * partition级别的资源释放
      **/
     void close(Throwable errorOrNull);
-
-    /**
-     * driver 上运行
-     */
-    Row.Schema getRowSchema();
 }

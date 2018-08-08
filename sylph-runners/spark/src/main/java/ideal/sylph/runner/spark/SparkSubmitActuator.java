@@ -9,8 +9,9 @@ import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.model.NodeInfo;
 
+import javax.validation.constraints.NotNull;
+
 import java.net.URLClassLoader;
-import java.util.Optional;
 
 @Name("SparkSubmit")
 @Description("spark submit job")
@@ -26,7 +27,7 @@ public class SparkSubmitActuator
     }
 
     @Override
-    public JobContainer createJobContainer(Job job, Optional<String> jobInfo)
+    public JobContainer createJobContainer(@NotNull Job job, String jobInfo)
     {
         throw new UnsupportedOperationException("this method have't support!");
     }

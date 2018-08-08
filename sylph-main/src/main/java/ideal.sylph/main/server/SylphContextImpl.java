@@ -1,13 +1,14 @@
 package ideal.sylph.main.server;
 
 import ideal.sylph.main.service.JobManager;
-import ideal.sylph.main.service.RunnerManger;
+import ideal.sylph.main.service.RunnerManager;
 import ideal.sylph.spi.SylphContext;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobContainer;
-import ideal.sylph.spi.job.YamlFlow;
+
+import javax.validation.constraints.NotNull;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -15,33 +16,34 @@ import java.util.Optional;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.SYSTEM_ERROR;
 import static ideal.sylph.spi.exception.StandardErrorCode.UNKNOWN_ERROR;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
 public class SylphContextImpl
         implements SylphContext
 {
     private JobManager jobManager;
-    private RunnerManger runnerManger;
+    private RunnerManager runnerManger;
 
-    SylphContextImpl(JobManager jobManager, RunnerManger runnerManger)
+    SylphContextImpl(JobManager jobManager, RunnerManager runnerManger)
     {
         this.jobManager = requireNonNull(jobManager, "jobManager is null");
         this.runnerManger = requireNonNull(runnerManger, "runnerManger is null");
     }
 
     @Override
-    public void saveJob(String jobId, String flow, String actuatorName)
+    public void saveJob(@NotNull String jobId, @NotNull String flowString, @NotNull String actuatorName)
             throws Exception
     {
         requireNonNull(jobId, "jobId is null");
-        requireNonNull(flow, "flow is null");
+        requireNonNull(flowString, "flowString is null");
         requireNonNull(actuatorName, "actuatorName is null");
-        Job job = runnerManger.formJobWithFlow(jobId, YamlFlow.load(flow), actuatorName);
+        Job job = runnerManger.formJobWithFlow(jobId, flowString.getBytes(UTF_8), actuatorName);
         jobManager.saveJob(job);
     }
 
     @Override
-    public void stopJob(String jobId)
+    public void stopJob(@NotNull String jobId)
     {
         requireNonNull(jobId, "jobId is null");
         try {
@@ -53,13 +55,13 @@ public class SylphContextImpl
     }
 
     @Override
-    public void startJob(String jobId)
+    public void startJob(@NotNull String jobId)
     {
         jobManager.startJob(requireNonNull(jobId, "jobId is null"));
     }
 
     @Override
-    public void deleteJob(String jobId)
+    public void deleteJob(@NotNull String jobId)
     {
         try {
             jobManager.removeJob(requireNonNull(jobId, "jobId is null"));
@@ -69,6 +71,7 @@ public class SylphContextImpl
         }
     }
 
+    @NotNull
     @Override
     public Collection<Job> getAllJobs()
     {
@@ -82,13 +85,13 @@ public class SylphContextImpl
     }
 
     @Override
-    public Optional<JobContainer> getJobContainer(String jobId)
+    public Optional<JobContainer> getJobContainer(@NotNull String jobId)
     {
         return jobManager.getJobContainer(requireNonNull(jobId, "jobId is null"));
     }
 
     @Override
-    public Optional<JobContainer> getJobContainerWithRunId(String runId)
+    public Optional<JobContainer> getJobContainerWithRunId(@NotNull String runId)
     {
         return jobManager.getJobContainerWithRunId(requireNonNull(runId, "runId is null"));
     }

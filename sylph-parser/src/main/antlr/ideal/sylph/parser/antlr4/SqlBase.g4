@@ -38,6 +38,10 @@ statement
         (WITH properties)?                                             #createSchema
     | DROP SCHEMA (IF EXISTS)? qualifiedName (CASCADE | RESTRICT)?     #dropSchema
     | ALTER SCHEMA qualifiedName RENAME TO identifier                  #renameSchema
+    | CREATE (SOURCE | SINK) STREAM (IF NOT EXISTS)? qualifiedName
+        '(' tableElement (',' tableElement)* ')'
+         (COMMENT string)?
+         (WITH properties)?                                            #createStream
     | CREATE TABLE (IF NOT EXISTS)? qualifiedName columnAliases?
         (COMMENT string)?
         (WITH properties)? AS (query | '('query')')
@@ -545,6 +549,9 @@ FOLLOWING: 'FOLLOWING';
 FOR: 'FOR';
 FORMAT: 'FORMAT';
 FROM: 'FROM';
+SOURCE: 'SOURCE';
+SINK: 'SINK';
+STREAM: 'STREAM';
 FULL: 'FULL';
 FUNCTIONS: 'FUNCTIONS';
 GRANT: 'GRANT';

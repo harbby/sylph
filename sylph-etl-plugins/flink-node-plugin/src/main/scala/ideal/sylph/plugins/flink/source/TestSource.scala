@@ -5,7 +5,7 @@ import java.util.Date
 import java.util.concurrent.TimeUnit
 
 import ideal.sylph.annotation.{Description, Name, Version}
-import ideal.sylph.api.etl.Source
+import ideal.sylph.etl.api.Source
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.{ResultTypeQueryable, RowTypeInfo, TypeExtractor}
 import org.apache.flink.streaming.api.datastream.DataStream
@@ -18,9 +18,9 @@ import scala.util.parsing.json.JSONObject
 /**
   * test source
   **/
-@Name("test_source")
+@Name("test")
 @Description("this flink test source inputStream")
-@Version
+@Version("1.0.0")
 @SerialVersionUID(2L) //使用注解来制定序列化id
 class TestSource extends Source[StreamTableEnvironment, DataStream[Row]] {
 
@@ -45,9 +45,7 @@ class TestSource extends Source[StreamTableEnvironment, DataStream[Row]] {
     this.tableEnv = tableEnv
   }
 
-
   override def getSource(): DataStream[Row] = loadStream
-
 
   private class MyDataSource
     extends RichParallelSourceFunction[Row] with ResultTypeQueryable[Row] {

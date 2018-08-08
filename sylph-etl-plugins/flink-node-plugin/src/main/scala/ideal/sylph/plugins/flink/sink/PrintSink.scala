@@ -1,7 +1,7 @@
 package ideal.sylph.plugins.flink.sink
 
-import ideal.sylph.api.Row
-import ideal.sylph.api.etl.RealTimeSink
+import ideal.sylph.etl.Row
+import ideal.sylph.etl.api.RealTimeSink
 
 class PrintSink extends RealTimeSink {
   /**

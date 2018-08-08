@@ -3,7 +3,7 @@ package ideal.sylph.plugins.flink.source
 import java.util.Properties
 
 import ideal.sylph.annotation.{Description, Name, Version}
-import ideal.sylph.api.etl.Source
+import ideal.sylph.etl.api.Source
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.{RowTypeInfo, TypeExtractor}
 import org.apache.flink.streaming.api.datastream.DataStream
@@ -12,13 +12,12 @@ import org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema
 import org.apache.flink.table.api.java.StreamTableEnvironment
 import org.apache.flink.types.Row
 
-@Name("kafka")
-@Name("kafka_v1")
-@Version
+
+@Name(value = "kafka")
+@Version("1.0.0")
 @Description("this flink kafka source inputStream")
 @SerialVersionUID(2L) //scala 使用注解来制定序列化id
 class KafkaSource extends Source[StreamTableEnvironment, DataStream[Row]] {
-
   @transient private var optionMap: java.util.Map[String, Object] = _
   @transient private var tableEnv: StreamTableEnvironment = _
 

@@ -14,6 +14,7 @@ import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobHandle;
+import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.flink.calcite.shaded.com.google.common.collect.ImmutableList;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -41,12 +42,12 @@ public final class FlinkJobUtil
 
     private static final Logger logger = LoggerFactory.getLogger(FlinkJobUtil.class);
 
-    public static JobHandle createJob(String jobId, Flow flow, URLClassLoader jobClassLoader)
+    public static JobHandle createJob(String jobId, Flow flow, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
             throws Exception
     {
         List<URL> userJars = getAppClassLoaderJars(jobClassLoader);
         //---------编译job-------------
-        JobGraph jobGraph = compile(jobId, flow, 2, jobClassLoader);
+        JobGraph jobGraph = compile(jobId, flow, 2, jobClassLoader, pluginManager);
         //----------------设置状态----------------
         JobParameter state = new JobParameter()
                 .queue("default")
@@ -67,7 +68,7 @@ public final class FlinkJobUtil
     /**
      * 对job 进行编译
      */
-    private static JobGraph compile(String jobId, Flow flow, int parallelism, URLClassLoader jobClassLoader)
+    private static JobGraph compile(String jobId, Flow flow, int parallelism, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
             throws Exception
     {
         JVMLauncher<JobGraph> launcher = JVMLaunchers.<JobGraph>newJvm()
@@ -81,7 +82,7 @@ public final class FlinkJobUtil
                         @Override
                         public NodeLoader<StreamTableEnvironment, DataStream<Row>> getNodeLoader()
                         {
-                            return new FlinkPluginLoaderImpl();
+                            return new FlinkPluginLoaderImpl(pluginManager);
                         }
 
                         @Override

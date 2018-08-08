@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 /**
  * Let java like scala use lazy freely
- * google guava {@code com.google.common.base.Suppliers.memoize}
+ * google guava {@link com.google.common.base.Suppliers::memoize}
  */
 public class LazyReference<T>
         implements Serializable

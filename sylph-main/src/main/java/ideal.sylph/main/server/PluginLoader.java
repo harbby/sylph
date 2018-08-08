@@ -2,8 +2,9 @@ package ideal.sylph.main.server;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
-import ideal.sylph.main.service.RunnerManger;
+import ideal.sylph.main.service.RunnerManager;
 import ideal.sylph.spi.Runner;
+import ideal.sylph.spi.RunnerFactory;
 import ideal.sylph.spi.classloader.ThreadContextClassLoader;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -14,7 +15,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.ServiceLoader;
 
@@ -25,6 +25,9 @@ public class PluginLoader
     private static final ImmutableList<String> SPI_PACKAGES = ImmutableList.<String>builder()
             .add("ideal.sylph.spi.")
             .add("ideal.sylph.common.")
+            .add("ideal.sylph.annotation.")
+            .add("ideal.sylph.etl.")  // etl api ?
+            //-------------------------------------------------
             .add("com.fasterxml.jackson.annotation.")
             .add("com.fasterxml.jackson.")
             .add("org.openjdk.jol.")
@@ -35,14 +38,14 @@ public class PluginLoader
             .add("org.apache.log4j.")
             .build();
     private static final Logger logger = LoggerFactory.getLogger(PluginLoader.class);
-    private final RunnerManger runnerManger;
+    private final RunnerManager runnerManager;
 
     @Inject
     public PluginLoader(
-            final RunnerManger runnerManger
+            final RunnerManager runnerManager
     )
     {
-        this.runnerManger = requireNonNull(runnerManger, "runnerManger is null");
+        this.runnerManager = requireNonNull(runnerManager, "runnerManager is null");
     }
 
     public void loadPlugins()
@@ -69,7 +72,7 @@ public class PluginLoader
     {
         logger.debug("Classpath for {}:", dir.getName());
         List<URL> urls = new ArrayList<>();
-        for (File file : listFiles(dir)) {
+        for (File file : FileUtils.listFiles(dir, null, true)) {
             logger.debug("    {}", file);
             urls.add(file.toURI().toURL());
         }
@@ -78,27 +81,22 @@ public class PluginLoader
 
     private URLClassLoader createClassLoader(List<URL> urls)
     {
-        ClassLoader parent = getClass().getClassLoader();
-        return new PluginClassLoader(urls, parent, SPI_PACKAGES);
-    }
-
-    private static Collection<File> listFiles(File installedPluginsDir)
-    {
-        return FileUtils.listFiles(installedPluginsDir, null, true);
+        ClassLoader spiLoader = getClass().getClassLoader();
+        return new PluginClassLoader(urls, spiLoader, SPI_PACKAGES);
     }
 
     private void loadPlugin(URLClassLoader pluginClassLoader)
     {
-        ServiceLoader<Runner> serviceLoader = ServiceLoader.load(Runner.class, pluginClassLoader);
-        List<Runner> plugins = ImmutableList.copyOf(serviceLoader);
+        ServiceLoader<RunnerFactory> serviceLoader = ServiceLoader.load(RunnerFactory.class, pluginClassLoader);
+        List<RunnerFactory> plugins = ImmutableList.copyOf(serviceLoader);
 
         if (plugins.isEmpty()) {
             logger.warn("No service providers of type {}", Runner.class.getName());
         }
 
-        for (Runner runner : plugins) {
-            logger.info("Installing runner {} with dir{}", runner.getClass().getName(), runner);
-            runnerManger.createRunner(runner);
+        for (RunnerFactory factory : plugins) {
+            logger.info("Installing runner {} with dir{}", factory.getClass().getName(), factory);
+            runnerManager.createRunner(factory);
         }
     }
 }

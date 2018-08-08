@@ -22,11 +22,14 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.TriggerBuilder;
 
+import javax.validation.constraints.NotNull;
+
 import java.net.URLClassLoader;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
+@Name("BatchEtl123")
 @Name("BatchEtl")
 @Description("batch Etl job")
 public class BatchEtlActuator
@@ -41,7 +44,7 @@ public class BatchEtlActuator
     }
 
     @Override
-    public JobContainer createJobContainer(Job job, Optional<String> jobInfo)
+    public JobContainer createJobContainer(@NotNull Job job, String jobInfo)
     {
         final Graph graph = GraphUtils.getGraph(job.getId(), job.getFlow());
         String cronExpression = "30/5 * * * * ?"; // 每分钟的30s起，每5s触发任务

@@ -1,6 +1,6 @@
 package ideal.sylph.runner.flink.etl;
 
-import ideal.sylph.api.etl.RealTimeSink;
+import ideal.sylph.etl.api.RealTimeSink;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;

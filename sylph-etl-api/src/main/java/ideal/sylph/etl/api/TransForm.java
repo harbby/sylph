@@ -1,6 +1,6 @@
-package ideal.sylph.api.etl;
+package ideal.sylph.etl.api;
 
-import ideal.sylph.api.PipelinePlugin;
+import ideal.sylph.etl.PipelinePlugin;
 
 import java.util.Map;
 

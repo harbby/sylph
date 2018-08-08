@@ -8,4 +8,6 @@ dependencies {
   compile project(':sylph-controller')
   compile(project(':sylph-spi'))
   compile project(':ideal-common')
+
+  compile(project(':sylph-etl-api'))
 }

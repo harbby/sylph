@@ -5,6 +5,7 @@ import ideal.sylph.parser.antlr4.SqlBaseBaseVisitor;
 import ideal.sylph.parser.antlr4.SqlBaseLexer;
 import ideal.sylph.parser.antlr4.SqlBaseParser;
 import ideal.sylph.parser.tree.ColumnDefinition;
+import ideal.sylph.parser.tree.CreateStream;
 import ideal.sylph.parser.tree.CreateTable;
 import ideal.sylph.parser.tree.Expression;
 import ideal.sylph.parser.tree.Identifier;
@@ -60,6 +61,29 @@ public class AstBuilder
                 .replace("\"\"", "\"");
 
         return new Identifier(getLocation(context), identifier, true);
+    }
+
+    @Override
+    public Node visitCreateStream(SqlBaseParser.CreateStreamContext context)
+    {
+        Optional<String> comment = Optional.empty();
+        if (context.COMMENT() != null) {
+            comment = Optional.of(((StringLiteral) visit(context.string())).getValue());
+        }
+        List<Property> properties = ImmutableList.of();
+        if (context.properties() != null) {
+            properties = visit(context.properties().property(), Property.class);
+        }
+
+        CreateStream.Type type = context.SINK() != null ? CreateStream.Type.SINK : CreateStream.Type.SOURCE;
+        return new CreateStream(
+                requireNonNull(type, "stream type is null,but must is SOURCE or SINK"),
+                getLocation(context),
+                getQualifiedName(context.qualifiedName()),
+                visit(context.tableElement(), TableElement.class),
+                context.EXISTS() != null,
+                properties,
+                comment);
     }
 
     @Override

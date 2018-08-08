@@ -2,8 +2,8 @@ package ideal.sylph.spi.job;
 
 import javax.validation.constraints.NotNull;
 
+import java.io.IOException;
 import java.net.URLClassLoader;
-import java.util.Optional;
 
 public interface JobActuatorHandle
 {
@@ -13,7 +13,13 @@ public interface JobActuatorHandle
         throw new UnsupportedOperationException("this method have't support!");
     }
 
-    default JobContainer createJobContainer(@NotNull Job job, Optional<String> jobInfo)
+    default Flow formFlow(byte[] flowString)
+            throws IOException
+    {
+        return YamlFlow.load(flowString);
+    }
+
+    default JobContainer createJobContainer(@NotNull Job job, String jobInfo)
     {
         throw new UnsupportedOperationException("this method have't support!");
     }

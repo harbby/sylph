@@ -1,11 +1,12 @@
 package ideal.sylph.plugins.flink.transform
 
-import ideal.sylph.api.etl.TransForm
+import ideal.sylph.etl.api.TransForm
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.table.api.{Table, TableEnvironment}
 import org.apache.flink.types.Row
 
+@SerialVersionUID(2L) //使用注解来制定序列化id
 class SqlWindow extends TransForm[DataStream[Row]] {
 
   override def transform(stream: DataStream[Row]): DataStream[Row] = {

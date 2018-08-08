@@ -1,6 +1,6 @@
 package ideal.sylph.runner.spark.etl.sparkstreaming
 
-import ideal.sylph.api.etl.Sink
+import ideal.sylph.etl.api.Sink
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 import org.apache.spark.streaming.dstream.DStream

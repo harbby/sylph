@@ -6,6 +6,7 @@ import com.google.inject.Module;
 import com.google.inject.Provider;
 import com.google.inject.Scopes;
 import ideal.sylph.runner.flink.yarn.YarnClusterConfiguration;
+import ideal.sylph.spi.exception.SylphException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.client.api.YarnClient;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static ideal.sylph.runner.flink.FlinkRunner.FLINK_DIST;
+import static ideal.sylph.spi.exception.StandardErrorCode.CONFIG_ERROR;
 import static java.util.Objects.requireNonNull;
 
 public class FlinkRunnerModule
@@ -80,12 +82,15 @@ public class FlinkRunnerModule
             if (site.exists() && site.isFile()) {
                 hadoopConf.addResource(new org.apache.hadoop.fs.Path(site.toURI()));
             }
+            else {
+                throw new SylphException(CONFIG_ERROR, site + "not exists");
+            }
         });
 
         YarnConfiguration yarnConf = new YarnConfiguration(hadoopConf);
-        //        try (PrintWriter pw = new PrintWriter(new FileWriter(yarnSite))) { //写到本地
-//            yarnConf.writeXml(pw);
-//        }
+        //        try (PrintWriter pw = new PrintWriter(new FileWriter(yarnSite))) { //write local file
+        //            yarnConf.writeXml(pw);
+        //        }
         return yarnConf;
     }
 

@@ -76,4 +76,10 @@ public final class YamlFlow
     {
         return MAPPER.readValue(dag, YamlFlow.class);
     }
+
+    public static Flow load(byte[] dag)
+            throws IOException
+    {
+        return MAPPER.readValue(dag, YamlFlow.class);
+    }
 }

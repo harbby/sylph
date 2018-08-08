@@ -6,6 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+@Target(ElementType.TYPE)
 @Repeatable(Name.Names.class)   //java8 多重注解
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Name

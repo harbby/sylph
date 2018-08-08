@@ -1,12 +1,12 @@
 package ideal.sylph.runner.spark.etl
 
-import ideal.sylph.api.Row.DefaultRow
+import ideal.sylph.etl.Row.DefaultRow
 import org.apache.spark.sql.Row
 
 object SparkRow {
   def make(row: Row): SparkRow = new SparkRow(row)
 
-  def parserRow(row: ideal.sylph.api.Row): Row = row match {
+  def parserRow(row: ideal.sylph.etl.Row): Row = row match {
     case row1: SparkRow => row1.get()
     case row1: DefaultRow => Row.apply(row1.getValues)
     case _ =>
@@ -14,7 +14,7 @@ object SparkRow {
   }
 }
 
-class SparkRow(private val row: Row) extends ideal.sylph.api.Row {
+class SparkRow(private val row: Row) extends ideal.sylph.etl.Row {
 
   def get() = row
 

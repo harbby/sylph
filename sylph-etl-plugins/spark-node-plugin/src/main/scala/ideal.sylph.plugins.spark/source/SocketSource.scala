@@ -1,7 +1,7 @@
 package ideal.sylph.plugins.spark.source
 
 import ideal.sylph.annotation.{Description, Name, Version}
-import ideal.sylph.api.etl.{Sink, Source, TransForm}
+import ideal.sylph.etl.api.{Sink, Source, TransForm}
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
@@ -13,7 +13,7 @@ import org.apache.spark.streaming.dstream.DStream
   * Created by ideal on 17-4-25.
   */
 @Name("socket")
-@Version
+@Version("1.0.0")
 @Description("this spark socket source inputStream")
 @SerialVersionUID(1L)
 class SocketSource extends Source[StreamingContext, DStream[Row]] {

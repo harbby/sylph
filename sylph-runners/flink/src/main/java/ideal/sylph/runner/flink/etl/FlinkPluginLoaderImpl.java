@@ -1,12 +1,13 @@
 package ideal.sylph.runner.flink.etl;
 
-import ideal.sylph.api.etl.RealTimeSink;
-import ideal.sylph.api.etl.RealTimeTransForm;
-import ideal.sylph.api.etl.Sink;
-import ideal.sylph.api.etl.Source;
-import ideal.sylph.api.etl.TransForm;
+import ideal.sylph.etl.api.RealTimeSink;
+import ideal.sylph.etl.api.RealTimeTransForm;
+import ideal.sylph.etl.api.Sink;
+import ideal.sylph.etl.api.Source;
+import ideal.sylph.etl.api.TransForm;
 import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.exception.SylphException;
+import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
@@ -24,21 +25,26 @@ public final class FlinkPluginLoaderImpl
         implements NodeLoader<StreamTableEnvironment, DataStream<Row>>
 {
     private static final Logger logger = LoggerFactory.getLogger(FlinkPluginLoaderImpl.class);
+    private final PipelinePluginManager pluginManager;
+
+    public FlinkPluginLoaderImpl(PipelinePluginManager pluginManager)
+    {
+        this.pluginManager = pluginManager;
+    }
 
     @Override
     public UnaryOperator<DataStream<Row>> loadSource(final StreamTableEnvironment tableEnv, final Map<String, Object> config)
     {
         try {
-            final ClassLoader classLoader = this.getClass().getClassLoader();
             final String driverStr = (String) config.get("driver");
-            final Class<? extends Source> clazz = (Class<? extends Source>) classLoader.loadClass(driverStr);
+            final Class<? extends Source> clazz = (Class<? extends Source>) pluginManager.loadPluginDriver(driverStr);
             final Source<StreamTableEnvironment, DataStream<Row>> source = clazz.newInstance();
 
             source.driverInit(tableEnv, config);
             logger.info("source {} schema:{}", clazz, source.getSource().getType());
             return (stream) -> source.getSource();
         }
-        catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+        catch (IllegalAccessException | InstantiationException e) {
             throw new SylphException(JOB_BUILD_ERROR, e);
         }
     }
@@ -49,9 +55,9 @@ public final class FlinkPluginLoaderImpl
         final Object driver;
         try {
             final String driverStr = (String) config.get("driver");
-            driver = Class.forName(driverStr).newInstance();
+            driver = pluginManager.loadPluginDriver(driverStr).newInstance();
         }
-        catch (IllegalAccessException | InstantiationException | ClassNotFoundException e) {
+        catch (IllegalAccessException | InstantiationException e) {
             throw new SylphException(JOB_BUILD_ERROR, e);
         }
 
@@ -82,13 +88,10 @@ public final class FlinkPluginLoaderImpl
         final Object driver;
         try {
             String driverStr = (String) config.get("driver");
-            driver = Class.forName(driverStr).newInstance();
+            driver = pluginManager.loadPluginDriver(driverStr).newInstance();
         }
         catch (IllegalAccessException | InstantiationException e) {
             throw new SylphException(JOB_BUILD_ERROR, e);
-        }
-        catch (ClassNotFoundException e) {
-            throw new SylphException(JOB_BUILD_ERROR, "no such driver class", e);
         }
 
         final TransForm<DataStream<Row>> transform;
@@ -136,7 +139,7 @@ public final class FlinkPluginLoaderImpl
             {
                 final SingleOutputStreamOperator<Row> tmp = stream.flatMap(new FlinkTransFrom(realTimeTransForm, stream.getType()));
                 // schema必须要在driver上面指定
-                ideal.sylph.api.Row.Schema schema = realTimeTransForm.getRowSchema();
+                ideal.sylph.etl.Row.Schema schema = realTimeTransForm.getRowSchema();
                 if (schema != null) {
                     RowTypeInfo outPutStreamType = FlinkRow.parserRowType(schema);
                     return tmp.returns(outPutStreamType);

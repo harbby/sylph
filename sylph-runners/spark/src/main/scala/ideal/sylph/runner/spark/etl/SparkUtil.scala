@@ -1,6 +1,6 @@
 package ideal.sylph.runner.spark.etl
 
-import ideal.sylph.api.etl.RealTimeTransForm
+import ideal.sylph.etl.api.RealTimeTransForm
 import org.apache.spark.TaskContext
 import org.apache.spark.sql.Row
 

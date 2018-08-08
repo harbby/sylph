@@ -1,7 +1,7 @@
 package ideal.sylph.plugins.flink.transform
 
-import ideal.sylph.api.Row
-import ideal.sylph.api.etl.RealTimeTransForm
+import ideal.sylph.etl.Row
+import ideal.sylph.etl.api.RealTimeTransForm
 
 
 class TestTrans extends RealTimeTransForm {

@@ -32,6 +32,10 @@ allprojects{
 }
 
 subprojects{
+    configurations {
+        testCompile.extendsFrom compileOnly
+    }
+
     buildscript {
         repositories {
             mavenLocal()

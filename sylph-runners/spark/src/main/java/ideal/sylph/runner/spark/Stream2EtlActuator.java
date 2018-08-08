@@ -56,7 +56,7 @@ public class Stream2EtlActuator
     }
 
     @Override
-    public JobContainer createJobContainer(@NotNull Job job, Optional<String> jobInfo)
+    public JobContainer createJobContainer(@NotNull Job job, String jobInfo)
     {
         final JobContainer yarnJobContainer = new YarnJobContainer(yarnClient, jobInfo)
         {

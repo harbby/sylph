@@ -34,7 +34,7 @@ public final class JobManager
     private static final Logger logger = LoggerFactory.getLogger(JobManager.class);
 
     @Inject private JobStore jobStore;
-    @Inject private RunnerManger runnerManger;
+    @Inject private RunnerManager runnerManger;
     @Inject private MetadataManager metadataManager;
 
     //@Inject
@@ -55,7 +55,7 @@ public final class JobManager
             throw new SylphException(JOB_START_ERROR, "Job " + jobId + " already started");
         }
         Job job = this.getJob(jobId).orElseThrow(() -> new SylphException(JOB_START_ERROR, "Job " + jobId + " not found with jobStore"));
-        runningContainers.computeIfAbsent(jobId, k -> runnerManger.createJobContainer(job, Optional.empty()));
+        runningContainers.computeIfAbsent(jobId, k -> runnerManger.createJobContainer(job, null));
         logger.info("runningContainers size:{}", runningContainers.size());
     }
 
@@ -157,7 +157,7 @@ public final class JobManager
         //---------  init  read metadata job status  ---------------
         Map<String, String> metadatas = metadataManager.loadMetadata();
         metadatas.forEach((jobId, jobInfo) -> this.getJob(jobId).ifPresent(job -> {
-            JobContainer container = runnerManger.createJobContainer(job, Optional.ofNullable(jobInfo));
+            JobContainer container = runnerManger.createJobContainer(job, jobInfo);
             runningContainers.put(job.getId(), container);
             logger.info("runningContainers size:{}", runningContainers.size());
         }));

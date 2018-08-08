@@ -1,7 +1,7 @@
 package ideal.sylph.plugins.spark.source
 
 import ideal.sylph.annotation.{Description, Name, Version}
-import ideal.sylph.api.etl.Source
+import ideal.sylph.etl.api.Source
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.spark.sql.Row
@@ -18,7 +18,7 @@ import org.apache.spark.streaming.kafka010.LocationStrategies.PreferConsistent
   * kafka load
   */
 @Name("kafka")
-@Version
+@Version("1.0.0")
 @Description("this spark kafka source inputStream")
 @SerialVersionUID(1L)
 class MyKafkaSource extends Source[StreamingContext, DStream[Row]] {
