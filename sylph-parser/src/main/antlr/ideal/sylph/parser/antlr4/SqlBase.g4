@@ -38,7 +38,7 @@ statement
         (WITH properties)?                                             #createSchema
     | DROP SCHEMA (IF EXISTS)? qualifiedName (CASCADE | RESTRICT)?     #dropSchema
     | ALTER SCHEMA qualifiedName RENAME TO identifier                  #renameSchema
-    | CREATE (SOURCE | SINK) STREAM (IF NOT EXISTS)? qualifiedName
+    | CREATE (SOURCE | SINK) TABLE (IF NOT EXISTS)? qualifiedName
         '(' tableElement (',' tableElement)* ')'
          (COMMENT string)?
          (WITH properties)?                                            #createStream
