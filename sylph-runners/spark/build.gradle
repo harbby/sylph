@@ -27,8 +27,4 @@ dependencies {
 
   //--- add scala class
   compileOnly files("$sourceSets.main.scala.outputDir")
-
-  testCompile group: 'org.apache.spark', name: 'spark-sql_2.11', version: deps.spark
-  testCompile group: 'org.apache.spark', name: 'spark-streaming_2.11', version: deps.spark
-  testCompile "org.apache.spark:spark-yarn_2.11:$deps.spark"
 }

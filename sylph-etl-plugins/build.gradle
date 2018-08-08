@@ -14,7 +14,6 @@ subprojects {
 
     dependencies {
         compileOnly project(":sylph-etl-api")
-        testCompile project(':sylph-etl-api')
     }
 
     def plugins=project(':sylph-dist').buildDir.path + "/etl-plugins/${name}"
