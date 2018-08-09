@@ -1,8 +1,6 @@
 apply plugin: 'scala'
 
 dependencies {
-    compileOnly project(":sylph-runners:sylph-runner-flink")
-
     compileOnly(group: 'org.apache.flink', name: 'flink-streaming-scala_2.11', version: deps.flink) {
         exclude(module: 'flink-shaded-hadoop2')
     }

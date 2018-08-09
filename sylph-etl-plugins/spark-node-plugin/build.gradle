@@ -1,8 +1,6 @@
 apply plugin: 'scala'
 
 dependencies {
-    //compileOnly project(":sylph-runners:sylph-runner-spark")
-
     compileOnly group: 'org.apache.spark', name: 'spark-sql_2.11', version: deps.spark
     compileOnly group: 'org.apache.spark', name: 'spark-streaming_2.11', version: deps.spark
 
