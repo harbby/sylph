@@ -14,7 +14,7 @@ public class DagNode<T>
 {
     private final String id;
     private List<Node<T>> nextNodes = new ArrayList<>();
-    private transient T tempData;
+    private transient T outData;
 
     private UnaryOperator<T> nodeFunc;
 
@@ -33,7 +33,7 @@ public class DagNode<T>
     @Override
     public T getOutput()
     {
-        return tempData;
+        return outData;
     }
 
     @Override
@@ -52,11 +52,11 @@ public class DagNode<T>
     public void action(Node<T> parentNode)
     {
         if (parentNode == null) { //根节点
-            this.tempData = nodeFunc.apply(null);  //进行变换
+            this.outData = nodeFunc.apply(null);  //进行变换
         }
         else {  //叶子节点
             T parentOutput = requireNonNull(parentNode.getOutput(), parentNode.getId() + " return is null");
-            this.tempData = nodeFunc.apply(parentOutput);  //进行变换
+            this.outData = nodeFunc.apply(parentOutput);  //进行变换
         }
     }
 }

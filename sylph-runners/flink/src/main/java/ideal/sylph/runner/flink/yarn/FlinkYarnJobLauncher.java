@@ -2,7 +2,9 @@ package ideal.sylph.runner.flink.yarn;
 
 import com.google.inject.Inject;
 import ideal.sylph.runner.flink.FlinkJobHandle;
-import ideal.sylph.runner.flink.JobParameter;
+import ideal.sylph.runner.flink.FlinkRunner;
+import ideal.sylph.runner.flink.actuator.JobParameter;
+import ideal.sylph.spi.job.Job;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.client.program.ClusterClient;
@@ -12,7 +14,6 @@ import org.apache.flink.yarn.YarnClusterClient;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
-import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.client.api.YarnClientApplication;
 import org.apache.hadoop.yarn.exceptions.YarnException;
@@ -22,8 +23,14 @@ import scala.concurrent.Await;
 import scala.concurrent.Future;
 import scala.concurrent.duration.FiniteDuration;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URL;
+import java.util.Collection;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -52,23 +59,13 @@ public class FlinkYarnJobLauncher
         return yarnClient;
     }
 
-    public ApplicationReport getApplicationReport(ApplicationId yarnAppId)
-            throws IOException, YarnException
-    {
-        return yarnClient.getApplicationReport(yarnAppId);
-    }
-
-    public void killApplication(ApplicationId yarnAppId)
-            throws IOException, YarnException
-    {
-        yarnClient.killApplication(yarnAppId);
-    }
-
-    public void start(FlinkJobHandle jobHandle, ApplicationId yarnAppId)
+    public void start(Job job, ApplicationId yarnAppId)
             throws Exception
     {
+        FlinkJobHandle jobHandle = (FlinkJobHandle) job.getJobHandle();
         final JobParameter jobState = jobHandle.getJobParameter();
-        final YarnClusterDescriptor descriptor = new YarnClusterDescriptor(clusterConf, yarnClient, jobState, yarnAppId);
+        Iterable<Path> userProvidedJars = getUserAdditionalJars(job.getDepends());
+        final YarnClusterDescriptor descriptor = new YarnClusterDescriptor(clusterConf, yarnClient, jobState, yarnAppId, userProvidedJars);
 
         start(descriptor, jobHandle.getJobGraph());
     }
@@ -113,5 +110,25 @@ public class FlinkYarnJobLauncher
             throw new RuntimeException("Unable to tell application master to stop"
                     + " once the specified flinkLoadJob has been finished", e);
         }
+    }
+
+    /**
+     * 获取任务额外需要的jar
+     */
+    private static Iterable<Path> getUserAdditionalJars(Collection<URL> userJars)
+    {
+        return userJars.stream().map(jar -> {
+            try {
+                final URI uri = jar.toURI();
+                final File file = new File(uri);
+                if (file.exists() && file.isFile()) {
+                    return new Path(uri);
+                }
+            }
+            catch (Exception e) {
+                logger.warn("add user jar error with URISyntaxException {}", jar);
+            }
+            return null;
+        }).filter(x -> Objects.nonNull(x) && !x.getName().startsWith(FlinkRunner.FLINK_DIST)).collect(Collectors.toList());
     }
 }

@@ -18,6 +18,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,27 +28,27 @@ public final class JVMLauncher<R extends Serializable>
 {
     private VmCallable<R> callable;
     private Process process;
-    private List<URL> userJars;
+    private Collection<URL> userJars;
 
-    public JVMLauncher(VmCallable<R> callable, List<URL> userJars)
+    public JVMLauncher(VmCallable<R> callable, Collection<URL> userJars)
     {
         this.callable = callable;
         this.userJars = userJars;
     }
 
     public VmFuture<R> startAndGet()
-            throws IOException, ClassNotFoundException, JVMRunningException
+            throws IOException, ClassNotFoundException, JVMException
     {
         return startAndGet(null);
     }
 
     public VmFuture<R> startAndGet(ClassLoader classLoader)
-            throws IOException, ClassNotFoundException, JVMRunningException
+            throws IOException, ClassNotFoundException, JVMException
     {
         byte[] bytes = startAndGetByte();
         VmFuture<R> vmFuture = (VmFuture<R>) Serializables.byteToObject(bytes, classLoader);
         if (!vmFuture.get().isPresent()) {
-            throw new JVMRunningException(vmFuture.getOnFailure());
+            throw new JVMException(vmFuture.getOnFailure());
         }
         return vmFuture;
     }
@@ -118,7 +119,7 @@ public final class JVMLauncher<R extends Serializable>
             System.out.println("vm start init ok ...");
             future = new VmFuture<>(callable.call());
         }
-        catch (Exception e) {
+        catch (Throwable e) {
             future = new VmFuture<>(Throwables.getStackTraceAsString(e));
         }
 

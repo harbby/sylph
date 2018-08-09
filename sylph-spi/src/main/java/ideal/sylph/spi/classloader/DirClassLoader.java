@@ -6,6 +6,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLStreamHandlerFactory;
 import java.text.DateFormat;
+import java.util.Collection;
 import java.util.Date;
 
 import static org.apache.commons.lang3.ObjectUtils.firstNonNull;
@@ -38,6 +39,11 @@ public class DirClassLoader
     public void addJarFile(URL jarfile)
     {
         this.addURL(jarfile);
+    }
+
+    public void addJarFile(Collection<URL> jarfiles)
+    {
+        jarfiles.forEach(this::addJarFile);
     }
 
     public void addJarFile(File jarfile)

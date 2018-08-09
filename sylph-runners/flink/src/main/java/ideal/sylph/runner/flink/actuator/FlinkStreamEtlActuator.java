@@ -1,11 +1,9 @@
-package ideal.sylph.runner.flink.runtime;
+package ideal.sylph.runner.flink.actuator;
 
 import com.google.inject.Inject;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.common.proxy.DynamicProxy;
-import ideal.sylph.runner.flink.FlinkJobHandle;
-import ideal.sylph.runner.flink.utils.FlinkJobUtil;
 import ideal.sylph.runner.flink.yarn.FlinkYarnJobLauncher;
 import ideal.sylph.spi.classloader.ThreadContextClassLoader;
 import ideal.sylph.spi.exception.SylphException;
@@ -61,7 +59,7 @@ public class FlinkStreamEtlActuator
                 ApplicationId yarnAppId = jobLauncher.createApplication();
                 this.setYarnAppId(yarnAppId);
                 logger.info("Instantiating flinkSqlJob {} at yarnId {}", job.getId(), yarnAppId);
-                jobLauncher.start((FlinkJobHandle) job.getJobHandle(), yarnAppId);
+                jobLauncher.start(job, yarnAppId);
                 return Optional.of(yarnAppId.toString());
             }
         };

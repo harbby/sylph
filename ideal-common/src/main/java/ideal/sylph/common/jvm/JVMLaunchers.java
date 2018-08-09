@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -34,7 +35,7 @@ public class JVMLaunchers
             return this;
         }
 
-        public VmBuilder<T> addUserjars(List<URL> jars)
+        public VmBuilder<T> addUserjars(Collection<URL> jars)
         {
             tmpJars.addAll(jars);
             return this;

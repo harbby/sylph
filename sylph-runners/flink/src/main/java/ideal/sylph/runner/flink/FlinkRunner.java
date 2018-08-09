@@ -2,8 +2,8 @@ package ideal.sylph.runner.flink;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
-import ideal.sylph.runner.flink.runtime.FlinkStreamEtlActuator;
-import ideal.sylph.runner.flink.runtime.FlinkStreamSqlActuator;
+import ideal.sylph.runner.flink.actuator.FlinkStreamEtlActuator;
+import ideal.sylph.runner.flink.actuator.FlinkStreamSqlActuator;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.job.JobActuatorHandle;
 import ideal.sylph.spi.model.PipelinePluginManager;

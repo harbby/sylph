@@ -1,10 +1,11 @@
 package ideal.sylph.runner.spark;
 
+import com.google.inject.Inject;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
+import ideal.sylph.common.jvm.JVMException;
 import ideal.sylph.common.jvm.JVMLauncher;
 import ideal.sylph.common.jvm.JVMLaunchers;
-import ideal.sylph.common.jvm.JVMRunningException;
 import ideal.sylph.runner.spark.etl.sparkstreaming.StreamPluginLoader;
 import ideal.sylph.spi.App;
 import ideal.sylph.spi.GraphApp;
@@ -12,6 +13,7 @@ import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobHandle;
+import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.Row;
 import org.apache.spark.streaming.Seconds;
@@ -32,6 +34,8 @@ import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
 public class StreamEtlActuator
         extends Stream2EtlActuator
 {
+    @Inject private PipelinePluginManager pluginManager;
+
     @NotNull
     @Override
     public JobHandle formJob(String jobId, Flow flow, URLClassLoader jobClassLoader)
@@ -43,7 +47,7 @@ public class StreamEtlActuator
             @Override
             public NodeLoader<StreamingContext, DStream<Row>> getNodeLoader()
             {
-                return new StreamPluginLoader();
+                return new StreamPluginLoader(pluginManager);
             }
 
             @Override
@@ -71,7 +75,7 @@ public class StreamEtlActuator
             launcher.startAndGet(jobClassLoader);
             return new SparkJobHandle<>(appGetter);
         }
-        catch (IOException | ClassNotFoundException | JVMRunningException e) {
+        catch (IOException | ClassNotFoundException | JVMException e) {
             throw new SylphException(JOB_BUILD_ERROR, "JOB_BUILD_ERROR", e);
         }
     }

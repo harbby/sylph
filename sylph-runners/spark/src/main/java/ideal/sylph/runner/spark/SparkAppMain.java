@@ -25,6 +25,7 @@ public final class SparkAppMain
         System.out.println("spark on yarn app starting...");
 
         byte[] bytes = Files.readAllBytes(Paths.get(new File("job_handle.byt").toURI()));
+        @SuppressWarnings("unchecked")
         SparkJobHandle<App<?>> sparkJobHandle = (SparkJobHandle<App<?>>) Serializables.byteToObject(bytes);
 
         App<?> app = requireNonNull(sparkJobHandle, "sparkJobHandle is null").getApp().get();

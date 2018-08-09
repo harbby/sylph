@@ -3,7 +3,8 @@ package ideal.sylph.spi.job;
 import javax.validation.constraints.NotNull;
 
 import java.io.File;
-import java.net.URLClassLoader;
+import java.net.URL;
+import java.util.Collection;
 
 public interface Job
 {
@@ -17,7 +18,7 @@ public interface Job
 
     File getWorkDir();
 
-    URLClassLoader getJobClassLoader();
+    Collection<URL> getDepends();
 
     @NotNull
     String getActuatorName();

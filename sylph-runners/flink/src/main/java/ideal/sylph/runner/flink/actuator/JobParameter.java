@@ -1,7 +1,6 @@
-package ideal.sylph.runner.flink;
+package ideal.sylph.runner.flink.actuator;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.apache.hadoop.fs.Path;
 
 import java.util.Objects;
 import java.util.Set;
@@ -19,7 +18,6 @@ public class JobParameter
     private int jobManagerMemoryMb = 1024;
     private Set<String> appTags;
     private String yarnJobName;
-    private Iterable<Path> userProvidedJars;
 
     public JobParameter()
     {
@@ -64,17 +62,6 @@ public class JobParameter
     {
         this.appTags = appTags;
         return this;
-    }
-
-    public JobParameter setUserProvidedJar(Iterable<Path> userProvidedJars)
-    {
-        this.userProvidedJars = userProvidedJars;
-        return this;
-    }
-
-    public Iterable<Path> getUserProvidedJars()
-    {
-        return userProvidedJars;
     }
 
     public Set<String> getAppTags()

@@ -6,6 +6,7 @@ import java.util.function.UnaryOperator
 import ideal.sylph.etl.api.{RealTimeSink, RealTimeTransForm, Sink, TransForm}
 import ideal.sylph.runner.spark.etl.{SparkRow, SparkUtil}
 import ideal.sylph.spi.NodeLoader
+import ideal.sylph.spi.model.PipelinePluginManager
 import org.apache.spark.sql.streaming.{DataStreamWriter, Trigger}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Dataset, ForeachWriter, Row, SparkSession}
@@ -14,7 +15,7 @@ import org.slf4j.LoggerFactory
 /**
   * Created by ideal on 17-5-8.
   */
-class StructuredPluginLoader extends NodeLoader[SparkSession, DataFrame] {
+class StructuredPluginLoader(private val pluginManager: PipelinePluginManager) extends NodeLoader[SparkSession, DataFrame] {
   private val logger = LoggerFactory.getLogger(this.getClass)
 
   override def loadSource(spark: SparkSession, config: util.Map[String, Object]): UnaryOperator[DataFrame] = {
@@ -48,8 +49,8 @@ class StructuredPluginLoader extends NodeLoader[SparkSession, DataFrame] {
   }
 
   def loadSinkWithComplic(config: util.Map[String, Object]): DataFrame => DataStreamWriter[Row] = {
-    val driverStr = Class.forName(config.get("driver").asInstanceOf[String])
-    val driver: Any = driverStr.newInstance()
+    val driverClass = pluginManager.loadPluginDriver(config.get("driver").asInstanceOf[String])
+    val driver: Any = driverClass.newInstance()
     val sink: Sink[DataStreamWriter[Row]] = driver match {
       case realTimeSink: RealTimeSink => realTimeSink.driverInit(config) //传入这个模块的参数
         loadRealTimeSink(realTimeSink)
@@ -81,8 +82,8 @@ class StructuredPluginLoader extends NodeLoader[SparkSession, DataFrame] {
     * transform api 尝试中
     **/
   override def loadTransform(config: util.Map[String, Object]): UnaryOperator[DataFrame] = {
-    val driverStr = Class.forName(config.get("driver").asInstanceOf[String])
-    val driver: Any = driverStr.newInstance()
+    val driverClass = pluginManager.loadPluginDriver(config.get("driver").asInstanceOf[String])
+    val driver: Any = driverClass.newInstance()
 
     val transform: TransForm[DataFrame] = driver match {
       case realTimeTransForm: RealTimeTransForm =>

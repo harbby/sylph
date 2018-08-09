@@ -3,8 +3,8 @@ package ideal.sylph.runner.flink;
 import com.google.inject.Injector;
 import com.google.inject.Scopes;
 import ideal.sylph.common.bootstrap.Bootstrap;
-import ideal.sylph.runner.flink.runtime.FlinkStreamEtlActuator;
-import ideal.sylph.runner.flink.runtime.FlinkStreamSqlActuator;
+import ideal.sylph.runner.flink.actuator.FlinkStreamEtlActuator;
+import ideal.sylph.runner.flink.actuator.FlinkStreamSqlActuator;
 import ideal.sylph.runner.flink.yarn.FlinkYarnJobLauncher;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
@@ -13,9 +13,13 @@ import ideal.sylph.spi.classloader.DirClassLoader;
 import ideal.sylph.spi.model.PipelinePluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.reflect.generics.tree.ClassTypeSignature;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Throwables.throwIfUnchecked;
@@ -44,7 +48,9 @@ public class FlinkRunnerFactory
                 binder.bind(FlinkStreamSqlActuator.class).in(Scopes.SINGLETON);
                 binder.bind(FlinkYarnJobLauncher.class).in(Scopes.SINGLETON);
                 //----------------------------------
-                binder.bind(PipelinePluginManager.class).toInstance(context.getPluginManager());
+                binder.bind(PipelinePluginManager.class)
+                        .toProvider(() -> createPipelinePluginManager(context))
+                        .in(Scopes.SINGLETON);
             });
             Injector injector = app.strictConfig()
                     .setRequiredConfigurationProperties(Collections.emptyMap())
@@ -55,5 +61,35 @@ public class FlinkRunnerFactory
             throwIfUnchecked(e);
             throw new RuntimeException(e);
         }
+    }
+
+    private static PipelinePluginManager createPipelinePluginManager(RunnerContext context)
+    {
+        Set<String> keyword = Stream.of(
+                org.apache.flink.table.api.StreamTableEnvironment.class,
+                org.apache.flink.table.api.java.StreamTableEnvironment.class,
+                org.apache.flink.table.api.scala.StreamTableEnvironment.class,
+                org.apache.flink.streaming.api.datastream.DataStream.class
+        ).map(Class::getName).collect(Collectors.toSet());
+
+        Set<PipelinePluginManager.PipelinePluginInfo> flinkPlugin = context.getFindPlugins().stream().filter(it -> {
+            if (it.getRealTime()) {
+                return true;
+            }
+            if (it.getJavaGenerics().length == 0) {
+                return false;
+            }
+            ClassTypeSignature typeSignature = (ClassTypeSignature) it.getJavaGenerics()[0];
+            String typeName = typeSignature.getPath().get(0).getName();
+            return keyword.contains(typeName);
+        }).collect(Collectors.toSet());
+        return new PipelinePluginManager()
+        {
+            @Override
+            public Set<PipelinePluginInfo> getAllPlugins()
+            {
+                return flinkPlugin;
+            }
+        };
     }
 }

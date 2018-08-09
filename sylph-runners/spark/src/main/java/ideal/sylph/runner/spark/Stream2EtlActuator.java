@@ -3,9 +3,9 @@ package ideal.sylph.runner.spark;
 import com.google.inject.Inject;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
+import ideal.sylph.common.jvm.JVMException;
 import ideal.sylph.common.jvm.JVMLauncher;
 import ideal.sylph.common.jvm.JVMLaunchers;
-import ideal.sylph.common.jvm.JVMRunningException;
 import ideal.sylph.common.proxy.DynamicProxy;
 import ideal.sylph.runner.spark.etl.structured.StructuredPluginLoader;
 import ideal.sylph.runner.spark.yarn.SparkAppLauncher;
@@ -20,6 +20,7 @@ import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuatorHandle;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobHandle;
+import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.spark.sql.Dataset;
@@ -47,12 +48,18 @@ public class Stream2EtlActuator
 {
     @Inject private YarnClient yarnClient;
     @Inject private SparkAppLauncher appLauncher;
+    @Inject private PipelinePluginManager pluginManager;
 
     @NotNull
     @Override
     public JobHandle formJob(String jobId, Flow flow, URLClassLoader jobClassLoader)
     {
-        return new SparkJobHandle<>(buildJob(jobId, flow, jobClassLoader));
+        try {
+            return new SparkJobHandle<>(buildJob(jobId, flow, jobClassLoader, pluginManager));
+        }
+        catch (Exception e) {
+            throw new SylphException(JOB_BUILD_ERROR, e);
+        }
     }
 
     @Override
@@ -90,10 +97,9 @@ public class Stream2EtlActuator
         return (JobContainer) invocationHandler.getProxy(JobContainer.class);
     }
 
-    private static Supplier<App<SparkSession>> buildJob(String jobId, Flow flow, URLClassLoader classLoader)
+    private static Supplier<App<SparkSession>> buildJob(String jobId, Flow flow, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
     {
         final AtomicBoolean isComplic = new AtomicBoolean(true);
-
         Supplier<App<SparkSession>> appGetter = (Supplier<App<SparkSession>> & Serializable) () -> new GraphApp<SparkSession, Dataset<Row>>()
         {
             private final SparkSession spark = getSparkSession();
@@ -111,7 +117,7 @@ public class Stream2EtlActuator
             @Override
             public NodeLoader<SparkSession, Dataset<Row>> getNodeLoader()
             {
-                return new StructuredPluginLoader()
+                return new StructuredPluginLoader(pluginManager)
                 {
                     @Override
                     public UnaryOperator<Dataset<Row>> loadSink(Map<String, Object> config)
@@ -144,14 +150,14 @@ public class Stream2EtlActuator
                         appGetter.get().build();
                         return 1;
                     })
-                    .addUserURLClassLoader(classLoader)
+                    .addUserURLClassLoader(jobClassLoader)
                     .build();
-            launcher.startAndGet(classLoader);
+            launcher.startAndGet(jobClassLoader);
 
             isComplic.set(false);
             return appGetter;
         }
-        catch (IOException | ClassNotFoundException | JVMRunningException e) {
+        catch (IOException | ClassNotFoundException | JVMException e) {
             throw new SylphException(JOB_BUILD_ERROR, "JOB_BUILD_ERROR", e);
         }
     }

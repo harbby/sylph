@@ -12,6 +12,8 @@ import org.apache.spark.deploy.yarn.ClientArguments;
 
 import java.lang.reflect.Field;
 
+import static org.apache.spark.launcher.SparkLauncher.DRIVER_MEMORY;
+
 public class SylphSparkYarnClient
         extends Client
 {
@@ -20,6 +22,7 @@ public class SylphSparkYarnClient
             throws NoSuchFieldException, IllegalAccessException
     {
         super(clientArgs, spConf);
+        String key = DRIVER_MEMORY; //test
         Field field = this.getClass().getSuperclass().getDeclaredField("org$apache$spark$deploy$yarn$Client$$hadoopConf");
         field.setAccessible(true);
         YarnConfiguration yarnConfiguration = new YarnConfiguration(yarnClient.getConfig());

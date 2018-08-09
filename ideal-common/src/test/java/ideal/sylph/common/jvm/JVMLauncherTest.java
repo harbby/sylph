@@ -16,7 +16,7 @@ public class JVMLauncherTest
 {
     @Test
     public void test1()
-            throws IOException, ClassNotFoundException, JVMRunningException
+            throws IOException, ClassNotFoundException, JVMException
     {
         System.out.println("--- vm test ---");
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()

@@ -1,9 +1,9 @@
 package ideal.sylph.main.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
-import ideal.sylph.annotation.Name;
-import ideal.sylph.common.base.LazyReference;
 import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
@@ -16,7 +16,11 @@ import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobHandle;
+import ideal.sylph.spi.model.NodeInfo;
 import ideal.sylph.spi.model.PipelinePluginManager;
+import ideal.sylph.spi.utils.GenericTypeReference;
+import ideal.sylph.spi.utils.JsonTextUtil;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,26 +29,19 @@ import javax.validation.constraints.NotNull;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.annotation.AnnotationFormatError;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
-import java.util.Enumeration;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.ServiceLoader;
-import java.util.Set;
+import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
-import static ideal.sylph.spi.exception.StandardErrorCode.LOAD_MODULE_ERROR;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -52,25 +49,22 @@ import static java.util.Objects.requireNonNull;
  */
 public class RunnerManager
 {
+    private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final Logger logger = LoggerFactory.getLogger(RunnerManager.class);
-    private static final String PREFIX = "META-INF/services/";   // copy form ServiceLoader
     private final Map<String, JobActuator> jobActuatorMap = new HashMap<>();
+    private final Map<String, Runner> runnerMap = new HashMap<>();
+    private final PipelinePluginLoader pluginLoader;
 
     @Inject
-    public RunnerManager() {}
+    public RunnerManager(PipelinePluginLoader pluginLoader)
+    {
+        this.pluginLoader = requireNonNull(pluginLoader, "pluginLoader is null");
+    }
 
     public void createRunner(RunnerFactory factory)
     {
+        RunnerContext runnerContext = pluginLoader::getPluginsInfo;
         logger.info("===== Runner: {} starts loading {} =====", factory.getClass().getName(), PipelinePlugin.class.getName());
-        final Set<Class<?>> plugins;
-        try {
-            plugins = loadPipelinePlugins(factory.getClass().getClassLoader());
-        }
-        catch (Exception e) {
-            throw new RuntimeException(e); //test
-        }
-        LazyReference<PipelinePluginManager> lazyGetter = LazyReference.goLazy(() -> new PipelinePluginManagerImpl(plugins, factory.getClass()));
-        RunnerContext runnerContext = lazyGetter::get;
 
         final Runner runner = factory.create(runnerContext);
         runner.getJobActuators().forEach(jobActuatorHandle -> {
@@ -81,6 +75,7 @@ public class RunnerManager
                 }
                 else {
                     jobActuatorMap.put(name, jobActuator);
+                    runnerMap.put(name, runner);
                 }
             }
         });
@@ -115,56 +110,76 @@ public class RunnerManager
             throws IOException
     {
         requireNonNull(actuatorName, "job actuatorName is null");
+        Runner runner = runnerMap.get(actuatorName);
         JobActuator jobActuator = jobActuatorMap.get(actuatorName);
-        checkArgument(jobActuator != null, "job [" + jobId + "] loading error! JobActuator:[" + actuatorName + "] not exists,only " + jobActuatorMap.keySet());
+        checkArgument(jobActuator != null, "job [" + jobId + "] loading error! JobActuator:[" + actuatorName + "] not find,only " + jobActuatorMap.keySet());
+        checkArgument(runner != null, "Unable to find runner for " + actuatorName);
 
         File jobDir = new File("jobs/" + jobId);
-        DirClassLoader jobClassLoader = new DirClassLoader(null, jobActuator.getHandleClassLoader());
-        jobClassLoader.addDir(jobDir);
-        Flow flow = jobActuator.getHandle().formFlow(flowBytes);
-        JobHandle jobHandle = jobActuator.getHandle().formJob(jobId, flow, jobClassLoader);
-        return new Job()
-        {
-            @NotNull
-            @Override
-            public String getId()
-            {
-                return jobId;
-            }
 
-            @Override
-            public File getWorkDir()
-            {
-                return jobDir;
-            }
+        try (DirClassLoader jobClassLoader = new DirClassLoader(null, jobActuator.getHandleClassLoader())) {
+            jobClassLoader.addDir(jobDir);
+            Flow flow = jobActuator.getHandle().formFlow(flowBytes);
 
-            @Override
-            public URLClassLoader getJobClassLoader()
-            {
-                return jobClassLoader;
+            //---- flow parser depends ----
+            ImmutableSet.Builder<URL> builder = ImmutableSet.builder();
+            for (NodeInfo nodeInfo : flow.getNodes()) {
+                String json = JsonTextUtil.readJsonText(nodeInfo.getNodeData());
+                Map<String, Object> config = MAPPER.readValue(json, new GenericTypeReference(Map.class, String.class, Object.class));
+                String driverString = (String) requireNonNull(config.get("driver"), "driver is null");
+                Optional<PipelinePluginManager.PipelinePluginInfo> pluginInfo = runner.getPluginManager().findPluginInfo(driverString);
+                if (pluginInfo.isPresent()) {
+                    for (File jar : FileUtils.listFiles(pluginInfo.get().getPluginFile(), null, true)) {
+                        builder.add(jar.toURI().toURL());
+                    }
+                }
             }
+            jobClassLoader.addJarFile(builder.build());
+            Collection<URL> dependFiles = getJobDependFiles(jobClassLoader);
+            JobHandle jobHandle = jobActuator.getHandle().formJob(jobId, flow, jobClassLoader);
+            return new Job()
+            {
+                @NotNull
+                @Override
+                public String getId()
+                {
+                    return jobId;
+                }
 
-            @NotNull
-            @Override
-            public String getActuatorName()
-            {
-                return actuatorName;
-            }
+                @Override
+                public File getWorkDir()
+                {
+                    return jobDir;
+                }
 
-            @NotNull
-            @Override
-            public JobHandle getJobHandle()
-            {
-                return jobHandle;
-            }
+                @Override
+                public Collection<URL> getDepends()
+                {
+                    return dependFiles;
+                }
 
-            @NotNull
-            @Override
-            public Flow getFlow()
-            {
-                return flow;
-            }
-        };
+                @NotNull
+                @Override
+                public String getActuatorName()
+                {
+                    return actuatorName;
+                }
+
+                @NotNull
+                @Override
+                public JobHandle getJobHandle()
+                {
+                    return jobHandle;
+                }
+
+                @NotNull
+                @Override
+                public Flow getFlow()
+                {
+                    return flow;
+                }
+            };
+        }
     }
 
     public Collection<JobActuator.ActuatorInfo> getAllActuatorsInfo()
@@ -175,43 +190,19 @@ public class RunnerManager
                 .collect(Collectors.toList());
     }
 
-    private static Set<Class<?>> loadPipelinePlugins(ClassLoader runnerClassLoader)
-            throws IOException, NoSuchMethodException, InvocationTargetException, IllegalAccessException
+    private static Collection<URL> getJobDependFiles(final ClassLoader jobClassLoader)
     {
-        final String fullName = PREFIX + PipelinePlugin.class.getName();
-        final Enumeration<URL> configs = runnerClassLoader.getResources(fullName);
+        ImmutableList.Builder<URL> builder = ImmutableList.builder();
+        if (jobClassLoader instanceof URLClassLoader) {
+            builder.add(((URLClassLoader) jobClassLoader).getURLs());
 
-        Method method = ServiceLoader.class.getDeclaredMethod("parse", Class.class, URL.class);
-        method.setAccessible(true);
-        ImmutableSet.Builder<Class<?>> builder = ImmutableSet.builder();
-        while (configs.hasMoreElements()) {
-            URL url = configs.nextElement();
-            @SuppressWarnings("unchecked") Iterator<String> iterator = (Iterator<String>) method
-                    .invoke(ServiceLoader.load(Object.class), PipelinePlugin.class, url);
-            iterator.forEachRemaining(x -> {
-                Class<?> javaClass = null;
-                try {
-                    javaClass = Class.forName(x, false, runnerClassLoader);  // runnerClassLoader.loadClass(x)
-                    if (PipelinePlugin.class.isAssignableFrom(javaClass)) {
-                        Name[] names = javaClass.getAnnotationsByType(Name.class);
-                        logger.info("Find PipelinePlugin:{} name is {}", x, Stream.of(names).map(Name::value).collect(Collectors.toSet()));
-
-                        builder.add(javaClass);
-                        //parserDriver(javaClass);
-                    }
-                    else {
-                        logger.warn("UNKNOWN java class " + javaClass);
-                    }
-                }
-                catch (AnnotationFormatError e) {
-                    String errorMsg = "this scala class " + javaClass + " not getAnnotationsByType please see: https://issues.scala-lang.org/browse/SI-9529";
-                    throw new SylphException(LOAD_MODULE_ERROR, errorMsg, e);
-                }
-                catch (Exception e) {
-                    throw new SylphException(LOAD_MODULE_ERROR, e);
-                }
-            });
+            final ClassLoader parentClassLoader = jobClassLoader.getParent();
+            if (parentClassLoader instanceof URLClassLoader) {
+                builder.add(((URLClassLoader) parentClassLoader).getURLs());
+            }
         }
-        return builder.build();
+        return builder.build().stream().collect(Collectors.toMap(URL::getPath, v -> v, (x, y) -> y))  //distinct
+                .values().stream().sorted(Comparator.comparing(URL::getPath))
+                .collect(Collectors.toList());
     }
 }

@@ -5,9 +5,10 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import ideal.sylph.common.bootstrap.Bootstrap;
 import ideal.sylph.controller.ControllerApp;
-import ideal.sylph.main.server.PluginLoader;
+import ideal.sylph.main.server.RunnerLoader;
 import ideal.sylph.main.server.ServerMainModule;
 import ideal.sylph.main.service.JobManager;
+import ideal.sylph.main.service.PipelinePluginLoader;
 import ideal.sylph.spi.job.JobStore;
 import org.apache.log4j.PropertyConfigurator;
 import org.slf4j.Logger;
@@ -29,7 +30,8 @@ public final class SylphMaster
         /*2 Initialize Guice Injector */
         try {
             Injector injector = new Bootstrap(modules).strictConfig().requireExplicitBindings(false).initialize();
-            injector.getInstance(PluginLoader.class).loadPlugins();
+            injector.getInstance(PipelinePluginLoader.class).loadPlugins();
+            injector.getInstance(RunnerLoader.class).loadPlugins();
             injector.getInstance(JobStore.class).loadJobs();
 
             injector.getInstance(JobManager.class).start();

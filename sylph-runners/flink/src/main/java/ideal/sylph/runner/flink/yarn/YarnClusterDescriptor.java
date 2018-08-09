@@ -1,6 +1,6 @@
 package ideal.sylph.runner.flink.yarn;
 
-import ideal.sylph.runner.flink.JobParameter;
+import ideal.sylph.runner.flink.actuator.JobParameter;
 import org.apache.flink.client.deployment.ClusterDeploymentException;
 import org.apache.flink.client.deployment.ClusterSpecification;
 import org.apache.flink.client.program.ClusterClient;
@@ -64,7 +64,7 @@ public class YarnClusterDescriptor
     private final JobParameter appConf;
     private final Path homedir;
     private final ApplicationId yarnAppId;
-
+    private final Iterable<Path> userProvidedJars;
     private Path flinkJar;
 
     /**
@@ -74,7 +74,8 @@ public class YarnClusterDescriptor
             final YarnClusterConfiguration clusterConf,
             final YarnClient yarnClient,
             final JobParameter appConf,
-            ApplicationId yarnAppId)
+            ApplicationId yarnAppId,
+            Iterable<Path> userProvidedJars)
     {
         super(clusterConf.flinkConfiguration(), clusterConf.conf(), clusterConf.appRootDir(), yarnClient, false);
 
@@ -82,6 +83,7 @@ public class YarnClusterDescriptor
         this.yarnClient = yarnClient;
         this.appConf = appConf;
         this.yarnAppId = yarnAppId;
+        this.userProvidedJars = userProvidedJars;
         this.homedir = new Path(clusterConf.appRootDir(), yarnAppId.toString());
     }
 
@@ -157,8 +159,7 @@ public class YarnClusterDescriptor
 
         amContainer.setLocalResources(localResources);
 
-        final String classPath = localResources.keySet().stream()
-                .collect(Collectors.joining(File.pathSeparator));
+        final String classPath = String.join(File.pathSeparator, localResources.keySet());
 
         final String shippedFiles = shippedPaths.stream()
                 .map(path -> path.getName() + "=" + path)
@@ -222,7 +223,7 @@ public class YarnClusterDescriptor
             }
         }
 
-        for (Path p : appConf.getUserProvidedJars()) {
+        for (Path p : userProvidedJars) {
             String name = p.getName();
             if (resources.containsKey(name)) {  //这里当jar 有重复的时候 会抛出异常
                 LOG.warn("Duplicated name in the shipped files {}", p);

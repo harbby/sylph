@@ -13,6 +13,8 @@ public class SparkRunner
 {
     private final Set<JobActuatorHandle> jobActuators;
 
+    @Inject private PipelinePluginManager pluginManager;
+
     @Inject
     public SparkRunner(
             StreamEtlActuator streamEtlActuator,
@@ -36,6 +38,6 @@ public class SparkRunner
     @Override
     public PipelinePluginManager getPluginManager()
     {
-        return new PipelinePluginManager() {};
+        return pluginManager;
     }
 }

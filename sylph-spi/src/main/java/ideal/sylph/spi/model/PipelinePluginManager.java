@@ -2,11 +2,12 @@ package ideal.sylph.spi.model;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import ideal.sylph.spi.RunnerFactory;
+import sun.reflect.generics.tree.TypeArgument;
 
+import java.io.File;
 import java.io.Serializable;
-import java.lang.reflect.Type;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -38,62 +39,75 @@ public interface PipelinePluginManager
     }
 
     default Class<?> loadPluginDriver(String driverString)
+            throws ClassNotFoundException
     {
-        ImmutableMap.Builder<String, Class> builder = ImmutableMap.builder();
+        PipelinePluginInfo info = findPluginInfo(driverString).orElseThrow(() -> new ClassNotFoundException("no such driver class " + driverString));
+        return Class.forName(info.getDriverClass());
+    }
+
+    default Optional<PipelinePluginInfo> findPluginInfo(String driverString)
+    {
+        ImmutableMap.Builder<String, PipelinePluginInfo> builder = ImmutableMap.builder();
         getAllPlugins().forEach(it -> {
-            Stream.of(it.getNames()).forEach(name -> builder.put(name, it.getDriverClass()));
+            Stream.of(it.getNames()).forEach(name -> builder.put(name, it));
         });
-        Map<String, Class> plugins = builder.build();
-        return requireNonNull(plugins.get(driverString), "no such driver class " + driverString);
+        Map<String, PipelinePluginInfo> plugins = builder.build();
+        return Optional.ofNullable(plugins.get(driverString));
     }
 
     public static class PipelinePluginInfo
             implements Serializable
     {
-        private final int type;
+        private final boolean realTime;
         private final String[] names;
         private final String description;
         private final String version;
-        private final Class<?> driverClass;
-        private final Class<? extends RunnerFactory> runnerClass;
-        private final transient Type[] javaGenerics;
+        private final String driverClass;
+        private final transient TypeArgument[] javaGenerics;
+        //-------------
+        private final File pluginFile;
 
         public PipelinePluginInfo(
                 String[] names,
                 String description,
                 String version,
-                int type,
-                Class<?> driverClass,
-                Class<? extends RunnerFactory> runnerClass,
-                Type[] javaGenerics)
+                boolean realTime,
+                String driverClass,
+                TypeArgument[] javaGenerics,
+                File pluginFile)
         {
             this.names = requireNonNull(names, "names is null");
             this.description = requireNonNull(description, "description is null");
             this.version = requireNonNull(version, "version is null");
-            this.type = type;
+            this.realTime = realTime;
             this.driverClass = requireNonNull(driverClass, "driverClass is null");
-            this.runnerClass = requireNonNull(runnerClass, "runnerClass is null");
             this.javaGenerics = requireNonNull(javaGenerics, "javaGenerics is null");
+            this.pluginFile = requireNonNull(pluginFile, "pluginFile is null");
         }
 
-        public Class<? extends RunnerFactory> getRunnerClass()
-        {
-            return runnerClass;
-        }
-
-        public Class<?> getDriverClass()
+        public String getDriverClass()
         {
             return driverClass;
         }
 
-        public int getType()
+        public boolean getRealTime()
         {
-            return type;
+            return realTime;
         }
 
         public String[] getNames()
         {
             return names;
+        }
+
+        public File getPluginFile()
+        {
+            return pluginFile;
+        }
+
+        public TypeArgument[] getJavaGenerics()
+        {
+            return javaGenerics;
         }
 
         public String getDescription()

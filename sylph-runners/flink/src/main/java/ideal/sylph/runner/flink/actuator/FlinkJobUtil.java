@@ -1,12 +1,10 @@
-package ideal.sylph.runner.flink.utils;
+package ideal.sylph.runner.flink.actuator;
 
 import com.google.common.collect.ImmutableSet;
 import ideal.sylph.common.jvm.JVMLauncher;
 import ideal.sylph.common.jvm.JVMLaunchers;
 import ideal.sylph.common.jvm.VmFuture;
 import ideal.sylph.runner.flink.FlinkJobHandle;
-import ideal.sylph.runner.flink.FlinkRunner;
-import ideal.sylph.runner.flink.JobParameter;
 import ideal.sylph.runner.flink.etl.FlinkPluginLoaderImpl;
 import ideal.sylph.spi.App;
 import ideal.sylph.spi.GraphApp;
@@ -15,24 +13,16 @@ import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.model.PipelinePluginManager;
-import org.apache.flink.calcite.shaded.com.google.common.collect.ImmutableList;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
-import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.net.URI;
-import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
 
@@ -45,24 +35,19 @@ public final class FlinkJobUtil
     public static JobHandle createJob(String jobId, Flow flow, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
             throws Exception
     {
-        List<URL> userJars = getAppClassLoaderJars(jobClassLoader);
         //---------编译job-------------
         JobGraph jobGraph = compile(jobId, flow, 2, jobClassLoader, pluginManager);
         //----------------设置状态----------------
-        JobParameter state = new JobParameter()
+        JobParameter jobParameter = new JobParameter()
                 .queue("default")
                 .taskManagerCount(2) //-yn 注意是executer个数
                 .taskManagerMemoryMb(1024) //1024mb
                 .taskManagerSlots(1) // -ys
                 .jobManagerMemoryMb(1024) //-yjm
                 .appTags(ImmutableSet.of("demo1", "demo2"))
-                .setUserProvidedJar(getUserAdditionalJars(userJars))
                 .setYarnJobName(jobId);
-
-        return FlinkJobHandle.newJob()
-                .setJobParameter(state)
-                .setJobGraph(jobGraph)
-                .build();
+        //getUserAdditionalJars(userJars)
+        return new FlinkJobHandle(jobGraph, jobParameter);
     }
 
     /**
@@ -71,6 +56,7 @@ public final class FlinkJobUtil
     private static JobGraph compile(String jobId, Flow flow, int parallelism, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
             throws Exception
     {
+        //---- build flow----
         JVMLauncher<JobGraph> launcher = JVMLaunchers.<JobGraph>newJvm()
                 .setCallable(() -> {
                     System.out.println("************ job start ***************");
@@ -105,39 +91,5 @@ public final class FlinkJobUtil
                 .build();
         VmFuture<JobGraph> result = launcher.startAndGet(jobClassLoader);
         return result.get().orElseThrow(() -> new SylphException(JOB_BUILD_ERROR, result.getOnFailure()));
-    }
-
-    private static List<URL> getAppClassLoaderJars(final ClassLoader jobClassLoader)
-    {
-        ImmutableList.Builder<URL> builder = ImmutableList.builder();
-        if (jobClassLoader instanceof URLClassLoader) {
-            builder.add(((URLClassLoader) jobClassLoader).getURLs());
-
-            final ClassLoader parentClassLoader = jobClassLoader.getParent();
-            if (parentClassLoader instanceof URLClassLoader) {
-                builder.add(((URLClassLoader) parentClassLoader).getURLs());
-            }
-        }
-        return builder.build();
-    }
-
-    /**
-     * 获取任务额外需要的jar
-     */
-    private static Iterable<Path> getUserAdditionalJars(List<URL> userJars)
-    {
-        return userJars.stream().map(jar -> {
-            try {
-                final URI uri = jar.toURI();
-                final File file = new File(uri);
-                if (file.exists() && file.isFile()) {
-                    return new Path(uri);
-                }
-            }
-            catch (Exception e) {
-                logger.warn("add user jar error with URISyntaxException {}", jar);
-            }
-            return null;
-        }).filter(x -> Objects.nonNull(x) && !x.getName().startsWith(FlinkRunner.FLINK_DIST)).collect(Collectors.toList());
     }
 }

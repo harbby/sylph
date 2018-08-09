@@ -20,7 +20,7 @@ import java.util.ServiceLoader;
 
 import static java.util.Objects.requireNonNull;
 
-public class PluginLoader
+public class RunnerLoader
 {
     private static final ImmutableList<String> SPI_PACKAGES = ImmutableList.<String>builder()
             .add("ideal.sylph.spi.")
@@ -37,11 +37,11 @@ public class PluginLoader
             .add("org.slf4j.")
             .add("org.apache.log4j.")
             .build();
-    private static final Logger logger = LoggerFactory.getLogger(PluginLoader.class);
+    private static final Logger logger = LoggerFactory.getLogger(RunnerLoader.class);
     private final RunnerManager runnerManager;
 
     @Inject
-    public PluginLoader(
+    public RunnerLoader(
             final RunnerManager runnerManager
     )
     {

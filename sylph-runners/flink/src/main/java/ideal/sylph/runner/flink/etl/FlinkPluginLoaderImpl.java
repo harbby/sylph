@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.function.UnaryOperator;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
+import static java.util.Objects.requireNonNull;
 
 public final class FlinkPluginLoaderImpl
         implements NodeLoader<StreamTableEnvironment, DataStream<Row>>
@@ -44,7 +45,7 @@ public final class FlinkPluginLoaderImpl
             logger.info("source {} schema:{}", clazz, source.getSource().getType());
             return (stream) -> source.getSource();
         }
-        catch (IllegalAccessException | InstantiationException e) {
+        catch (IllegalAccessException | InstantiationException | ClassNotFoundException e) {
             throw new SylphException(JOB_BUILD_ERROR, e);
         }
     }
@@ -57,7 +58,7 @@ public final class FlinkPluginLoaderImpl
             final String driverStr = (String) config.get("driver");
             driver = pluginManager.loadPluginDriver(driverStr).newInstance();
         }
-        catch (IllegalAccessException | InstantiationException e) {
+        catch (IllegalAccessException | InstantiationException | ClassNotFoundException e) {
             throw new SylphException(JOB_BUILD_ERROR, e);
         }
 
@@ -74,6 +75,7 @@ public final class FlinkPluginLoaderImpl
 
         sink.driverInit(config); //传入参数
         return (stream) -> {
+            requireNonNull(stream, "Sink find input stream is null");
             sink.run(stream);
             return null;
         };
@@ -90,7 +92,7 @@ public final class FlinkPluginLoaderImpl
             String driverStr = (String) config.get("driver");
             driver = pluginManager.loadPluginDriver(driverStr).newInstance();
         }
-        catch (IllegalAccessException | InstantiationException e) {
+        catch (IllegalAccessException | InstantiationException | ClassNotFoundException e) {
             throw new SylphException(JOB_BUILD_ERROR, e);
         }
 
@@ -106,6 +108,7 @@ public final class FlinkPluginLoaderImpl
         }
         transform.driverInit(config);
         return (stream) -> {
+            requireNonNull(stream, "Transform find input stream is null");
             DataStream<Row> dataStream = transform.transform(stream);
             logger.info("transfrom {} schema to:", driver, dataStream.getType());
             return dataStream;
