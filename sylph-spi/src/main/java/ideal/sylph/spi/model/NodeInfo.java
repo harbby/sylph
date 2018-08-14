@@ -16,23 +16,23 @@ public class NodeInfo
     private final String nodeId;
     private final String nodeType;
     private final Map<String, Object> nodeConfig;
-    private final String nodeData;
+    private final String nodeText;
     private final int nodeX;
     private final int nodeY;
 
     @JsonCreator
     public NodeInfo(
             @JsonProperty("nodeId") String nodeId,
-            @JsonProperty("nodeText") String nodeType,
+            @JsonProperty("nodeType") String nodeType,
             @JsonProperty("nodeConfig") Map<String, Object> nodeConfig,
-            @JsonProperty("nodeData") String nodeData,
+            @JsonProperty("nodeText") String nodeText,
             @JsonProperty("nodeX") int nodeX,
             @JsonProperty("nodeY") int nodeY
     )
     {
         this.nodeId = requireNonNull(nodeId, "nodeId is null");
         this.nodeType = nodeType;
-        this.nodeData = nodeData;
+        this.nodeText = nodeText;
         this.nodeConfig = nodeConfig;
         this.nodeX = nodeX;
         this.nodeY = nodeY;
@@ -56,10 +56,10 @@ public class NodeInfo
         return nodeConfig;
     }
 
-    @JsonProperty
-    public String getNodeData()
+    @JsonProperty("nodeText")
+    public String getNodeText()
     {
-        return nodeData;
+        return nodeText;
     }
 
     @JsonProperty
@@ -68,7 +68,7 @@ public class NodeInfo
         return nodeId;
     }
 
-    @JsonProperty("nodeText")
+    @JsonProperty("nodeType")
     public String getNodeType()
     {
         return nodeType;

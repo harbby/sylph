@@ -20,6 +20,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -29,11 +30,13 @@ public final class JVMLauncher<R extends Serializable>
     private VmCallable<R> callable;
     private Process process;
     private Collection<URL> userJars;
+    private Consumer<String> consoleHandler;
 
-    public JVMLauncher(VmCallable<R> callable, Collection<URL> userJars)
+    public JVMLauncher(VmCallable<R> callable, Consumer<String> consoleHandler, Collection<URL> userJars)
     {
         this.callable = callable;
         this.userJars = userJars;
+        this.consoleHandler = consoleHandler;
     }
 
     public VmFuture<R> startAndGet()
@@ -65,10 +68,11 @@ public final class JVMLauncher<R extends Serializable>
             try (OutputStream os = new BufferedOutputStream(process.getOutputStream())) {
                 os.write(Serializables.serialize(callable));  //把当前对象 发送到编译进程
             }
+            //IOUtils.copyBytes();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    System.err.println(line);  //打印编译进程的控制台输出
+                    consoleHandler.accept(line);
                 }
             }
 

@@ -1,4 +1,4 @@
-package ideal.sylph.runner.flink.table;
+package ideal.sylph.plugins.flink.sink;
 
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import ideal.sylph.common.graph.Graph;
 import ideal.sylph.common.graph.impl.DagNode;
 import ideal.sylph.spi.exception.SylphException;
-import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.model.EdgeInfo;
 import ideal.sylph.spi.model.NodeInfo;
 import ideal.sylph.spi.utils.GenericTypeReference;
@@ -23,7 +22,7 @@ public interface GraphApp<T, R>
 
     NodeLoader<T, R> getNodeLoader();
 
-    default Graph<R> buildGraph(String jobId, Flow flow)
+    default Graph<R> buildGraph(String jobId, EtlFlow flow)
     {
         final T context = getContext();
         final Graph<R> graphx = Graph.newGraph(jobId);
@@ -33,7 +32,7 @@ public interface GraphApp<T, R>
         final NodeLoader<T, R> loader = getNodeLoader();
         nodes.forEach(nodeInfo -> {
             try {
-                String json = JsonTextUtil.readJsonText(nodeInfo.getNodeData());
+                String json = JsonTextUtil.readJsonText(nodeInfo.getNodeText());
                 final Map<String, Object> config = MAPPER.readValue(json, new GenericTypeReference(Map.class, String.class, Object.class));
                 String id = nodeInfo.getNodeId();
 

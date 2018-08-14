@@ -4,9 +4,9 @@ MAIN_HOME=.
 
 source etc/sylph/sylph-env.sh
 #JAVA10_HOME
-echo JAVA10_HOME=$JAVA10_HOME
-export JAVA_HOME=$JAVA10_HOME
-export PATH=$JAVA10_HOME/bin:$PATH
+#echo JAVA10_HOME=$JAVA10_HOME
+#export JAVA_HOME=$JAVA10_HOME
+#export PATH=$JAVA10_HOME/bin:$PATH
 java -version
 
 #stop 通用 启动脚本 mainClass 为进程坚持程序 必须唯一且可靠 否则请修改pid获取办法

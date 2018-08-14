@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import ideal.sylph.spi.EtlFlow;
 import ideal.sylph.spi.model.EdgeInfo;
 import ideal.sylph.spi.model.NodeInfo;
 
@@ -20,7 +21,7 @@ import static java.util.Objects.requireNonNull;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public final class YamlFlow
-        implements Flow
+        implements EtlFlow
 {
     private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
 

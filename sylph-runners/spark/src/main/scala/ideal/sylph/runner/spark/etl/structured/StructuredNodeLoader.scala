@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory
 /**
   * Created by ideal on 17-5-8.
   */
-class StructuredPluginLoader(private val pluginManager: PipelinePluginManager) extends NodeLoader[SparkSession, DataFrame] {
+class StructuredNodeLoader(private val pluginManager: PipelinePluginManager) extends NodeLoader[SparkSession, DataFrame] {
   private val logger = LoggerFactory.getLogger(this.getClass)
 
   override def loadSource(spark: SparkSession, config: util.Map[String, Object]): UnaryOperator[DataFrame] = {

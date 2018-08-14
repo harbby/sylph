@@ -1,22 +1,25 @@
 package ideal.sylph.spi.job;
 
+import ideal.sylph.spi.classloader.DirClassLoader;
+
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 
 import java.io.IOException;
-import java.net.URLClassLoader;
 
 public interface JobActuatorHandle
 {
-    @NotNull
-    default JobHandle formJob(String jobId, Flow flow, URLClassLoader jobClassLoader)
+    @Nullable
+    default JobHandle formJob(String jobId, Flow flow, DirClassLoader jobClassLoader)
+            throws IOException
     {
         throw new UnsupportedOperationException("this method have't support!");
     }
 
-    default Flow formFlow(byte[] flowString)
+    default Flow formFlow(byte[] flowBytes)
             throws IOException
     {
-        return YamlFlow.load(flowString);
+        return YamlFlow.load(flowBytes);
     }
 
     default JobContainer createJobContainer(@NotNull Job job, String jobInfo)

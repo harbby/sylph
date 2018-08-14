@@ -1,5 +1,7 @@
 package ideal.sylph.runner.spark;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
@@ -7,12 +9,14 @@ import ideal.sylph.common.jvm.JVMException;
 import ideal.sylph.common.jvm.JVMLauncher;
 import ideal.sylph.common.jvm.JVMLaunchers;
 import ideal.sylph.common.proxy.DynamicProxy;
-import ideal.sylph.runner.spark.etl.structured.StructuredPluginLoader;
+import ideal.sylph.runner.spark.etl.structured.StructuredNodeLoader;
 import ideal.sylph.runner.spark.yarn.SparkAppLauncher;
 import ideal.sylph.runner.spark.yarn.YarnJobContainer;
 import ideal.sylph.spi.App;
+import ideal.sylph.spi.EtlFlow;
 import ideal.sylph.spi.GraphApp;
 import ideal.sylph.spi.NodeLoader;
+import ideal.sylph.spi.classloader.DirClassLoader;
 import ideal.sylph.spi.classloader.ThreadContextClassLoader;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Flow;
@@ -20,7 +24,11 @@ import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuatorHandle;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobHandle;
+import ideal.sylph.spi.model.NodeInfo;
 import ideal.sylph.spi.model.PipelinePluginManager;
+import ideal.sylph.spi.utils.GenericTypeReference;
+import ideal.sylph.spi.utils.JsonTextUtil;
+import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.spark.sql.Dataset;
@@ -29,6 +37,7 @@ import org.apache.spark.sql.SparkSession;
 
 import javax.validation.constraints.NotNull;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Method;
@@ -40,20 +49,36 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
+import static java.util.Objects.requireNonNull;
 
 @Name("Spark_Structured_StreamETL")
 @Description("spark2.x Structured streaming StreamETL")
 public class Stream2EtlActuator
         implements JobActuatorHandle
 {
+    private static final ObjectMapper MAPPER = new ObjectMapper();
     @Inject private YarnClient yarnClient;
     @Inject private SparkAppLauncher appLauncher;
     @Inject private PipelinePluginManager pluginManager;
 
     @NotNull
     @Override
-    public JobHandle formJob(String jobId, Flow flow, URLClassLoader jobClassLoader)
+    public JobHandle formJob(String jobId, Flow inFlow, DirClassLoader jobClassLoader)
+            throws IOException
     {
+        EtlFlow flow = (EtlFlow) inFlow;
+        //---- flow parser depends ----
+        ImmutableSet.Builder<File> builder = ImmutableSet.builder();
+        for (NodeInfo nodeInfo : flow.getNodes()) {
+            String json = JsonTextUtil.readJsonText(nodeInfo.getNodeText());
+            Map<String, Object> nodeConfig = nodeInfo.getNodeConfig();
+            Map<String, Object> config = MAPPER.readValue(json, new GenericTypeReference(Map.class, String.class, Object.class));
+            String driverString = (String) requireNonNull(config.get("driver"), "driver is null");
+            Optional<PipelinePluginManager.PipelinePluginInfo> pluginInfo = pluginManager.findPluginInfo(driverString);
+            pluginInfo.ifPresent(plugin -> FileUtils.listFiles(plugin.getPluginFile(), null, true).forEach(builder::add));
+        }
+        jobClassLoader.addJarFiles(builder.build());
+
         try {
             return new SparkJobHandle<>(buildJob(jobId, flow, jobClassLoader, pluginManager));
         }
@@ -97,7 +122,7 @@ public class Stream2EtlActuator
         return (JobContainer) invocationHandler.getProxy(JobContainer.class);
     }
 
-    private static Supplier<App<SparkSession>> buildJob(String jobId, Flow flow, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
+    private static Supplier<App<SparkSession>> buildJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
     {
         final AtomicBoolean isComplic = new AtomicBoolean(true);
         Supplier<App<SparkSession>> appGetter = (Supplier<App<SparkSession>> & Serializable) () -> new GraphApp<SparkSession, Dataset<Row>>()
@@ -117,7 +142,7 @@ public class Stream2EtlActuator
             @Override
             public NodeLoader<SparkSession, Dataset<Row>> getNodeLoader()
             {
-                return new StructuredPluginLoader(pluginManager)
+                return new StructuredNodeLoader(pluginManager)
                 {
                     @Override
                     public UnaryOperator<Dataset<Row>> loadSink(Map<String, Object> config)
@@ -145,11 +170,14 @@ public class Stream2EtlActuator
         };
 
         try {
+            //AnsiConsole.systemInstall();
             JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
                     .setCallable(() -> {
                         appGetter.get().build();
                         return 1;
                     })
+                    .setConsole(System.err::println)
+                    //.setConsole((line) -> System.out.println(ansi().eraseScreen().render("@|green "+line+"|@").reset()))
                     .addUserURLClassLoader(jobClassLoader)
                     .build();
             launcher.startAndGet(jobClassLoader);
@@ -159,6 +187,9 @@ public class Stream2EtlActuator
         }
         catch (IOException | ClassNotFoundException | JVMException e) {
             throw new SylphException(JOB_BUILD_ERROR, "JOB_BUILD_ERROR", e);
+        }
+        finally {
+            //AnsiConsole.systemUninstall();
         }
     }
 }

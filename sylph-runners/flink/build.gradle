@@ -30,7 +30,5 @@ dependencies {
 
   //--- other----
   compile project(':sylph-parser')
-
-  //----test----
-  runtime group: 'mysql', name: 'mysql-connector-java', version:'5.1.38'
+  compile group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
 }

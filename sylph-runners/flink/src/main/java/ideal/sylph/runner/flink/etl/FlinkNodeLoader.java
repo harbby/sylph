@@ -22,13 +22,13 @@ import java.util.function.UnaryOperator;
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
 import static java.util.Objects.requireNonNull;
 
-public final class FlinkPluginLoaderImpl
+public final class FlinkNodeLoader
         implements NodeLoader<StreamTableEnvironment, DataStream<Row>>
 {
-    private static final Logger logger = LoggerFactory.getLogger(FlinkPluginLoaderImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(FlinkNodeLoader.class);
     private final PipelinePluginManager pluginManager;
 
-    public FlinkPluginLoaderImpl(PipelinePluginManager pluginManager)
+    public FlinkNodeLoader(PipelinePluginManager pluginManager)
     {
         this.pluginManager = pluginManager;
     }

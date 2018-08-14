@@ -31,8 +31,8 @@ $(function () {
         $("input,textarea").val('');
     } else if (type == "edit") {
         $.ajax({
-            url: "/_sys/job_edit?type=edit&jobId=" + getUrlParam("jobId"),
-            type: "post",
+            url: "/_sys/stream_sql/get?jobId=" + getUrlParam("jobId"),
+            type: "get",
             dataType: "json",
             data: {},
             cache: false,
@@ -57,7 +57,7 @@ $(function () {
     $('#submit').click(function () {
         var formData = new FormData($('form')[0]);
         $.ajax({
-            url: '/_sys/job_edit?type=add',
+            url: '/_sys/stream_sql/save',
             type: 'POST',
             cache: false,
             data: formData,

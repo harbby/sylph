@@ -6,7 +6,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLStreamHandlerFactory;
 import java.text.DateFormat;
-import java.util.Collection;
 import java.util.Date;
 
 import static org.apache.commons.lang3.ObjectUtils.firstNonNull;
@@ -41,9 +40,12 @@ public class DirClassLoader
         this.addURL(jarfile);
     }
 
-    public void addJarFile(Collection<URL> jarfiles)
+    public void addJarFiles(Iterable<File> jarFiles)
+            throws MalformedURLException
     {
-        jarfiles.forEach(this::addJarFile);
+        for (File jar : jarFiles) {
+            this.addJarFile(jar);
+        }
     }
 
     public void addJarFile(File jarfile)

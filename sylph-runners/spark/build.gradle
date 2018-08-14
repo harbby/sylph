@@ -18,12 +18,7 @@ dependencies {
     //exclude(group: '*')
   }
 
-  runtime(project(':sylph-spi')){
-    exclude(group: '*')
-  }
-  runtime(project(':ideal-common')){
-    exclude(group: '*')
-  }
+  compile group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
 
   //--- add scala class
   compileOnly files("$sourceSets.main.scala.outputDir")

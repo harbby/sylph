@@ -16,7 +16,7 @@ import org.apache.spark.streaming.dstream.DStream
   * Created by ideal on 17-5-8.
   * spark 1.x spark Streaming
   */
-class StreamPluginLoader(private val pluginManager: PipelinePluginManager) extends NodeLoader[StreamingContext, DStream[Row]] {
+class StreamNodeLoader(private val pluginManager: PipelinePluginManager) extends NodeLoader[StreamingContext, DStream[Row]] {
 
   override def loadSource(spark: StreamingContext, config: java.util.Map[String, Object]): UnaryOperator[DStream[Row]] = {
     val driverClass = pluginManager.loadPluginDriver(config.get("driver").asInstanceOf[String])

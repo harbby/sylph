@@ -76,7 +76,6 @@ public class FlinkRunnerModule
     {
         Configuration hadoopConf = new Configuration();
         hadoopConf.set("fs.hdfs.impl", "org.apache.hadoop.hdfs.DistributedFileSystem");
-
         Stream.of("yarn-site.xml", "core-site.xml").forEach(file -> {
             File site = new File(System.getenv("HADOOP_CONF_DIR"), file);
             if (site.exists() && site.isFile()) {

@@ -15,6 +15,8 @@ import javax.annotation.Nonnull;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -26,6 +28,7 @@ import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static ideal.sylph.main.util.PropertiesUtil.loadProperties;
+import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
 import static ideal.sylph.spi.exception.StandardErrorCode.SAVE_JOB_ERROR;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
@@ -108,8 +111,15 @@ public class LocalJobStore
                         final File typeFile = new File(jobDir, "type.job");
                         checkArgument(typeFile.exists() && typeFile.isFile(), typeFile + " is not exists or isDirectory");
                         Map<String, String> jobProps = loadProperties(typeFile);
-                        Job job = runnerManger.formJobWithDir(jobDir, jobProps);
-                        jobs.put(job.getId(), job);
+                        String jobType = requireNonNull(jobProps.get("type"), "jobProps arg type is null");
+                        try {
+                            byte[] flowBytes = Files.readAllBytes(Paths.get(new File(jobDir, "job.yaml").toURI()));
+                            Job job = runnerManger.formJobWithFlow(jobDir.getName(), flowBytes, jobType);
+                            jobs.put(job.getId(), job);
+                        }
+                        catch (IOException e) {
+                            throw new SylphException(JOB_BUILD_ERROR, "loadding job " + jobDir + " job.yaml fail", e);
+                        }
                     }
                     catch (Exception e) {
                         logger.warn("job {} 加载失败", jobDir, Throwables.getRootCause(e));

@@ -155,8 +155,8 @@ function getAllNodes(instance) {
         var elem = $(element);
         nodes.push({
             nodeId: elem.attr("id"),
-            nodeText: elem.text(),
-            nodeData: elem.data("data"),
+            nodeType: elem.text(),
+            nodeText: elem.data("data"),
             nodeConfig: elem.data("config"),
             nodeX: parseInt(elem.css("left"), 10),
             nodeY: parseInt(elem.css("top"), 10)
@@ -180,7 +180,7 @@ function drawNodesConnections(instance, nodesCon) {
     //节点
     for (var i = 0; i < nodes.length; i++) {
         //节点
-        var node = addNode('flow-panel', nodes[i].nodeId, nodes[i].nodeText, {
+        var node = addNode('flow-panel', nodes[i].nodeId, nodes[i].nodeType, {
             x: nodes[i].nodeX + 'px',
             y: nodes[i].nodeY + 'px'
         });
@@ -188,7 +188,7 @@ function drawNodesConnections(instance, nodesCon) {
         addPorts(instance, node, nodes[i].nodeConfig.in, nodes[i].nodeConfig.out);
         //节点绑定双击事件
         var currentNode = {
-            data: nodes[i].nodeData,
+            data: nodes[i].nodeText,
             config: nodes[i].nodeConfig
         };
         $("#" + nodes[i].nodeId).data(currentNode);
@@ -310,10 +310,10 @@ function getNodeData() {
         nodes: [
             {
                 nodeId: "node1515581337612",
-                nodeText: "transfrom",
+                nodeType: "transfrom",
                 nodeX: 184,
                 nodeY: 137,
-                nodeData: '{a:1}',
+                nodeText: '{a:1}',
                 nodeConfig: {
                     drag: 1,
                     out: 1,
@@ -322,10 +322,10 @@ function getNodeData() {
             },
             {
                 nodeId: "node1515581338897",
-                nodeText: "sink",
+                nodeType: "sink",
                 nodeX: 607,
                 nodeY: 225,
-                nodeData: '{c:1}',
+                nodeText: '{c:1}',
                 nodeConfig: {
                     out: 1,
                     in: 1

@@ -10,7 +10,10 @@ import org.apache.flink.table.sources.TableSource;
 import org.apache.flink.table.util.TableConnectorUtil;
 import org.apache.flink.types.Row;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -32,12 +35,15 @@ public class SylphTableSource
         DataStream<Row> source = inputStream.apply(null);
         TypeInformation<Row> sourceType = source.getType();
         if (sourceType instanceof RowTypeInfo) {
-            //TODO: select -> create table columns
-//            source.map(inRow->{
-//                return inRow.getField(0);
-//            }).print();
+            List<Integer> indexs = Arrays.stream(rowTypeInfo.getFieldNames())
+                    .map(((RowTypeInfo) sourceType)::getFieldIndex)
+                    .collect(Collectors.toList());
+            return source.map(inRow -> Row.of(indexs.stream().map(index -> index == -1 ? null : inRow.getField(index)).toArray()))
+                    .returns(rowTypeInfo);
         }
-        return source;
+        else {
+            throw new RuntimeException("sourceType not is RowTypeInfo");
+        }
     }
 
     @Override

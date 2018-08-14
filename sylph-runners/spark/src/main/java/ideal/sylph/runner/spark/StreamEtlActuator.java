@@ -6,10 +6,12 @@ import ideal.sylph.annotation.Name;
 import ideal.sylph.common.jvm.JVMException;
 import ideal.sylph.common.jvm.JVMLauncher;
 import ideal.sylph.common.jvm.JVMLaunchers;
-import ideal.sylph.runner.spark.etl.sparkstreaming.StreamPluginLoader;
+import ideal.sylph.runner.spark.etl.sparkstreaming.StreamNodeLoader;
 import ideal.sylph.spi.App;
+import ideal.sylph.spi.EtlFlow;
 import ideal.sylph.spi.GraphApp;
 import ideal.sylph.spi.NodeLoader;
+import ideal.sylph.spi.classloader.DirClassLoader;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobHandle;
@@ -24,7 +26,6 @@ import javax.validation.constraints.NotNull;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.net.URLClassLoader;
 import java.util.function.Supplier;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
@@ -38,8 +39,9 @@ public class StreamEtlActuator
 
     @NotNull
     @Override
-    public JobHandle formJob(String jobId, Flow flow, URLClassLoader jobClassLoader)
+    public JobHandle formJob(String jobId, Flow inFlow, DirClassLoader jobClassLoader)
     {
+        EtlFlow flow = (EtlFlow) inFlow;
         final Supplier<App<StreamingContext>> appGetter = (Supplier<App<StreamingContext>> & Serializable) () -> new GraphApp<StreamingContext, DStream<Row>>()
         {
             private final StreamingContext spark = new StreamingContext(new SparkConf(), Seconds.apply(5));
@@ -47,7 +49,7 @@ public class StreamEtlActuator
             @Override
             public NodeLoader<StreamingContext, DStream<Row>> getNodeLoader()
             {
-                return new StreamPluginLoader(pluginManager);
+                return new StreamNodeLoader(pluginManager);
             }
 
             @Override

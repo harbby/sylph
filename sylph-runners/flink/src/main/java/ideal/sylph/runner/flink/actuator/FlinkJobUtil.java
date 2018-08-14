@@ -5,12 +5,12 @@ import ideal.sylph.common.jvm.JVMLauncher;
 import ideal.sylph.common.jvm.JVMLaunchers;
 import ideal.sylph.common.jvm.VmFuture;
 import ideal.sylph.runner.flink.FlinkJobHandle;
-import ideal.sylph.runner.flink.etl.FlinkPluginLoaderImpl;
+import ideal.sylph.runner.flink.etl.FlinkNodeLoader;
 import ideal.sylph.spi.App;
+import ideal.sylph.spi.EtlFlow;
 import ideal.sylph.spi.GraphApp;
 import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.exception.SylphException;
-import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.flink.runtime.jobgraph.JobGraph;
@@ -32,7 +32,7 @@ public final class FlinkJobUtil
 
     private static final Logger logger = LoggerFactory.getLogger(FlinkJobUtil.class);
 
-    public static JobHandle createJob(String jobId, Flow flow, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
+    public static JobHandle createJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
             throws Exception
     {
         //---------编译job-------------
@@ -53,7 +53,7 @@ public final class FlinkJobUtil
     /**
      * 对job 进行编译
      */
-    private static JobGraph compile(String jobId, Flow flow, int parallelism, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
+    private static JobGraph compile(String jobId, EtlFlow flow, int parallelism, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
             throws Exception
     {
         //---- build flow----
@@ -68,7 +68,7 @@ public final class FlinkJobUtil
                         @Override
                         public NodeLoader<StreamTableEnvironment, DataStream<Row>> getNodeLoader()
                         {
-                            return new FlinkPluginLoaderImpl(pluginManager);
+                            return new FlinkNodeLoader(pluginManager);
                         }
 
                         @Override
@@ -87,8 +87,11 @@ public final class FlinkJobUtil
                     app.build();
                     return execEnv.getStreamGraph().getJobGraph();
                 })
+                .setConsole(System.err::println)
+                //.setConsole((line) -> System.out.println(ansi().eraseScreen().fg(GREEN).a(line).reset() ))
                 .addUserURLClassLoader(jobClassLoader)
                 .build();
+
         VmFuture<JobGraph> result = launcher.startAndGet(jobClassLoader);
         return result.get().orElseThrow(() -> new SylphException(JOB_BUILD_ERROR, result.getOnFailure()));
     }

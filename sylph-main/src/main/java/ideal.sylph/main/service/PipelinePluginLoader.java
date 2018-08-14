@@ -56,10 +56,9 @@ public class PipelinePluginLoader
         for (File it : pluginFiles) {
             DirClassLoader dirClassLoader = new DirClassLoader(null, this.getClass().getClassLoader());
             dirClassLoader.addDir(it);
-            Set<Class<?>> plugins = loadPipelinePlugins(dirClassLoader);
-            Set<PipelinePluginManager.PipelinePluginInfo> tmp = plugins.stream().map(driver -> {
+            Set<Class<? extends PipelinePlugin>> plugins = loadPipelinePlugins(dirClassLoader);
+            Set<PipelinePluginManager.PipelinePluginInfo> tmp = plugins.stream().map(javaClass -> {
                 try {
-                    Class<? extends PipelinePlugin> javaClass = (Class<? extends PipelinePlugin>) driver;
                     if (RealTimePipeline.class.isAssignableFrom(javaClass)) {
                         logger.debug("this is RealTimePipeline: {}", javaClass);
                         return getPluginInfo(it, javaClass, true, new TypeArgument[0]);
@@ -81,7 +80,7 @@ public class PipelinePluginLoader
         return pluginsInfo;
     }
 
-    private static Set<Class<?>> loadPipelinePlugins(ClassLoader runnerClassLoader)
+    private static Set<Class<? extends PipelinePlugin>> loadPipelinePlugins(ClassLoader runnerClassLoader)
             throws IOException, NoSuchMethodException, InvocationTargetException, IllegalAccessException
     {
         final String fullName = PREFIX + PipelinePlugin.class.getName();
@@ -89,21 +88,18 @@ public class PipelinePluginLoader
 
         Method method = ServiceLoader.class.getDeclaredMethod("parse", Class.class, URL.class);
         method.setAccessible(true);
-        ImmutableSet.Builder<Class<?>> builder = ImmutableSet.builder();
+        ImmutableSet.Builder<Class<? extends PipelinePlugin>> builder = ImmutableSet.builder();
         while (configs.hasMoreElements()) {
             URL url = configs.nextElement();
             @SuppressWarnings("unchecked") Iterator<String> iterator = (Iterator<String>) method
-                    .invoke(ServiceLoader.load(Object.class), PipelinePlugin.class, url);
+                    .invoke(ServiceLoader.load(PipelinePlugin.class), PipelinePlugin.class, url);
             iterator.forEachRemaining(x -> {
                 Class<?> javaClass = null;
                 try {
                     javaClass = Class.forName(x, false, runnerClassLoader);  // runnerClassLoader.loadClass(x)
                     if (PipelinePlugin.class.isAssignableFrom(javaClass)) {
-                        Name[] names = javaClass.getAnnotationsByType(Name.class);
-                        logger.info("Find PipelinePlugin:{} name is {}", x, Stream.of(names).map(Name::value).collect(Collectors.toSet()));
-
-                        builder.add(javaClass);
-                        //parserDriver(javaClass);
+                        logger.info("Find PipelinePlugin:{}", x);
+                        builder.add((Class<? extends PipelinePlugin>) javaClass);
                     }
                     else {
                         logger.warn("UNKNOWN java class " + javaClass);
@@ -162,7 +158,6 @@ public class PipelinePluginLoader
             TypeArgument[] javaGenerics)
     {
         Name[] names = javaClass.getAnnotationsByType(Name.class);
-
         String[] nameArr = ImmutableSet.<String>builder()
                 .add(javaClass.getName())
                 .add(Stream.of(names).map(Name::value).toArray(String[]::new))

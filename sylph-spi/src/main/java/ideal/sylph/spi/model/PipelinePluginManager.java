@@ -16,6 +16,22 @@ import static java.util.Objects.requireNonNull;
 public interface PipelinePluginManager
         extends Serializable
 {
+    /**
+     * use test
+     */
+    public static PipelinePluginManager getDefault()
+    {
+        return new PipelinePluginManager()
+        {
+            @Override
+            public Class<?> loadPluginDriver(String driverString)
+                    throws ClassNotFoundException
+            {
+                return Class.forName(driverString);
+            }
+        };
+    }
+
     default Set<PipelinePluginInfo> getAllPlugins()
     {
         return ImmutableSet.of();
