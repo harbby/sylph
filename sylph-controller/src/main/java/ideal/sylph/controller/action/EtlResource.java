@@ -2,6 +2,7 @@ package ideal.sylph.controller.action;
 
 import com.google.common.collect.ImmutableMap;
 import ideal.sylph.spi.SylphContext;
+import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,10 +19,10 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import static ideal.sylph.spi.exception.StandardErrorCode.ILLEGAL_OPERATION;
 import static java.util.Objects.requireNonNull;
 
 @javax.inject.Singleton
@@ -82,19 +83,14 @@ public class EtlResource
     public Map getJob(@QueryParam("jobId") String jobId)
     {
         requireNonNull(jobId, "jobId is null");
-        Optional<Job> job = sylphContext.getJob(jobId);
+        Optional<Job> jobOptional = sylphContext.getJob(jobId);
+        Job job = jobOptional.orElseThrow(() -> new SylphException(ILLEGAL_OPERATION, "job " + jobId + " not found"));
 
-        final Map<String, Object> out = new HashMap<>();
-        if (job.isPresent()) {
-            out.put("graph", job.get().getFlow());
-            out.put("msg", "获取任务成功");
-            out.put("status", "ok");
-        }
-        else {
-            out.put("msg", "jobid:" + jobId + "不存在");
-            out.put("status", "error");
-        }
-        out.put("jobId", jobId);
-        return ImmutableMap.copyOf(out);
+        return ImmutableMap.builder()
+                .put("graph", job.getFlow())
+                .put("msg", "获取任务成功")
+                .put("status", "ok")
+                .put("jobId", jobId)
+                .build();
     }
 }

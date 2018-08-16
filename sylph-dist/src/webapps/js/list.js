@@ -98,8 +98,8 @@ $(function () {
     $(document).on("click", ".btn_edit", function () {
         var id = $(this).attr("data-id");
         var type = $(this).attr("data-type");
-        if (type == 'flink_sql') {
-            window.location.href = "edit.html?type=edit&jobId=" + id;
+        if (type == 'StreamSql') {
+            window.location.href = "stream_sql.html?type=edit&jobId=" + id;
         } else {
             window.location.href = "etl.html?jobId=" + id;
         }

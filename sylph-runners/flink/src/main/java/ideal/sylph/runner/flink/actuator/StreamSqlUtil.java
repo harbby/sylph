@@ -11,6 +11,7 @@ import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
+import org.apache.flink.api.java.typeutils.TypeExtractor;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.table.api.Types;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
@@ -81,6 +82,7 @@ public class StreamSqlUtil
             case "varchar":
             case "string":
                 return Types.STRING();
+            case "integer":
             case "int":
                 return Types.INT();
             case "long":
@@ -100,7 +102,7 @@ public class StreamSqlUtil
             case "date":
                 return Types.SQL_DATE();
             case "binary":
-                return Types.OBJECT_ARRAY(Types.BYTE());
+                return TypeExtractor.createTypeInfo(byte[].class); //Types.OBJECT_ARRAY(Types.BYTE());
             default:
                 throw new IllegalArgumentException("this TYPE " + type + " have't support!");
         }

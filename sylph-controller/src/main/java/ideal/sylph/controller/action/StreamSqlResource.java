@@ -2,6 +2,7 @@ package ideal.sylph.controller.action;
 
 import com.google.common.collect.ImmutableMap;
 import ideal.sylph.spi.SylphContext;
+import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Job;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,10 +19,15 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 
-import java.util.HashMap;
+import java.io.File;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+import static ideal.sylph.spi.exception.StandardErrorCode.ILLEGAL_OPERATION;
 import static java.util.Objects.requireNonNull;
 
 @javax.inject.Singleton
@@ -53,6 +59,8 @@ public class StreamSqlResource
         try {
             String jobId = requireNonNull(request.getParameter("jobId"), "job jobId 不能为空");
             String flow = request.getParameter("query");
+            String config = request.getParameter("config");
+
             sylphContext.saveJob(jobId, flow, "StreamSql");
             Map out = ImmutableMap.of(
                     "jobId", jobId,
@@ -61,7 +69,7 @@ public class StreamSqlResource
                     "msg", "编译过程:..."
             );
             logger.info("save job {}", jobId);
-            return ImmutableMap.copyOf(out);
+            return out;
         }
         catch (Exception e) {
             Map out = ImmutableMap.of("type", "save",
@@ -69,7 +77,7 @@ public class StreamSqlResource
                     "msg", "任务创建失败: " + e.toString()
             );
             logger.warn("job 创建失败", e);
-            return ImmutableMap.copyOf(out);
+            return out;
         }
     }
 
@@ -82,19 +90,21 @@ public class StreamSqlResource
     public Map getJob(@QueryParam("jobId") String jobId)
     {
         requireNonNull(jobId, "jobId is null");
-        Optional<Job> job = sylphContext.getJob(jobId);
+        Optional<Job> jobOptional = sylphContext.getJob(jobId);
+        Job job = jobOptional.orElseThrow(() -> new SylphException(ILLEGAL_OPERATION, "job " + jobId + " not found"));
 
-        final Map<String, Object> out = new HashMap<>();
-        if (job.isPresent()) {
-            out.put("graph", job.get().getFlow());
-            out.put("msg", "获取任务成功");
-            out.put("status", "ok");
-        }
-        else {
-            out.put("msg", "jobid:" + jobId + "不存在");
-            out.put("status", "error");
-        }
-        out.put("jobId", jobId);
-        return ImmutableMap.copyOf(out);
+        File userFilesDir = new File(job.getWorkDir(), "files");
+        File[] userFiles = userFilesDir.listFiles();
+        List<String> files = userFilesDir.exists() && userFiles != null ?
+                Arrays.stream(userFiles).map(File::getName).collect(Collectors.toList())
+                : Collections.emptyList();
+
+        return ImmutableMap.of(
+                "graph", job.getFlow(),
+                "msg", "获取任务成功",
+                "status", "ok",
+                "files", files,
+                "jobId", jobId
+        );
     }
 }

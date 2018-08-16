@@ -37,10 +37,8 @@ $(function () {
             data: {},
             cache: false,
             success: function (result) {
-                $("textarea[name=name]").val(result.jobId);
-                $("textarea[name=source]").val(JSON.stringify(result.dag.source, null, 2));
-                $("textarea[name=transform]").val(result.dag.transform);
-                $("textarea[name=sink]").val(result.dag.sink);
+                $("textarea[name=jobId]").val(result.jobId);
+                $("textarea[name=query]").val(result.graph.flowString);
                 var files = result.files;
                 for(var i = 0; i < files.length; i++) {
                     $('#fileList').append(
@@ -64,7 +62,6 @@ $(function () {
             processData: false,
             contentType: false
         }).done(function(data) {
-            var data = JSON.parse(data);
             if (data.status == "ok") {
                 alert("保存成功");
                 window.location.href = "index.html";
