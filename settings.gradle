@@ -16,9 +16,9 @@ project(':sylph-runners:spark').name = 'sylph-runner-spark'
 
 //----
 include 'sylph-etl-api'
-include 'sylph-etl-plugins'
-include 'sylph-etl-plugins:flink-node-plugin'
-include 'sylph-etl-plugins:spark-node-plugin'
+include 'sylph-connectors'
+include 'sylph-connectors:flink-node-plugin'
+include 'sylph-connectors:spark-node-plugin'
 
 //----
 include 'sylph-dist'

@@ -59,8 +59,8 @@ public class LocalJobStore
         job.getId();
         try {
             Flow flow = job.getFlow();
-            File yaml = new File(jobDir, "job.yaml");
-            File typeFile = new File(jobDir, "type.job");
+            File yaml = new File(jobDir, "job.flow");
+            File typeFile = new File(jobDir, "job.type");
 
             //TODO: save?
             String jobType = job.getActuatorName();
@@ -108,17 +108,17 @@ public class LocalJobStore
                 .parallel()
                 .forEach(jobDir -> {
                     try {
-                        final File typeFile = new File(jobDir, "type.job");
+                        final File typeFile = new File(jobDir, "job.type");
                         checkArgument(typeFile.exists() && typeFile.isFile(), typeFile + " is not exists or isDirectory");
                         Map<String, String> jobProps = loadProperties(typeFile);
                         String jobType = requireNonNull(jobProps.get("type"), "jobProps arg type is null");
                         try {
-                            byte[] flowBytes = Files.readAllBytes(Paths.get(new File(jobDir, "job.yaml").toURI()));
+                            byte[] flowBytes = Files.readAllBytes(Paths.get(new File(jobDir, "job.flow").toURI()));
                             Job job = runnerManger.formJobWithFlow(jobDir.getName(), flowBytes, jobType);
                             jobs.put(job.getId(), job);
                         }
                         catch (IOException e) {
-                            throw new SylphException(JOB_BUILD_ERROR, "loadding job " + jobDir + " job.yaml fail", e);
+                            throw new SylphException(JOB_BUILD_ERROR, "loadding job " + jobDir + " job.flow fail", e);
                         }
                     }
                     catch (Exception e) {

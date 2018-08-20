@@ -13,8 +13,42 @@ task copyFiles(type: Copy,dependsOn: copyLibs){
 
 assemble.dependsOn copyFiles
 
-task dist(){
-//  from(configurations.runtime) {
-//    into tarpath+"/lib"
-//  }
+task dist(type: Tar) {
+  baseName = rootProject.getName()
+  classifier = 'bin'
+  extension = 'tgz'
+  compression = Compression.GZIP
+  def tarpath = baseName+"-${rootProject.version}"
+
+  from(configurations.runtime) {
+    into tarpath+"/lib"
+  }
+
+  from(project.files('src/bin')) {
+    into(tarpath+"/bin")
+    fileMode = 0755
+  }
+  from(project.files('src/etc')) {
+    into(tarpath+"/etc")
+  }
+
+  from(project.files('src/jobs')) {
+    into(tarpath+"/jobs")
+  }
+
+  from(project.files('src/webapps')) {
+    into(tarpath+"/webapps")
+  }
+
+  from(project.files('build/modules')){
+    into tarpath+"/modules"
+  }
+
+  from(project.files('build/etl-plugins')) {
+    into(tarpath+"/etl-plugins")
+  }
+}
+
+artifacts {
+  'default' dist
 }
