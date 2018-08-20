@@ -26,6 +26,7 @@ public class JVMLauncherTest
                     return 1;
                 })
                 .addUserjars(Collections.emptyList())
+                .setConsole((msg) -> System.out.println(msg))
                 .build();
 
         VmFuture<Integer> out = launcher.startAndGet();
