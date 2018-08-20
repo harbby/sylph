@@ -51,6 +51,7 @@ public class JVMLaunchers
 
         public JVMLauncher<T> build()
         {
+            requireNonNull(consoleHandler, "setConsole(Consumer<String> consoleHandler) not setting");
             return new JVMLauncher<T>(callable, consoleHandler, tmpJars);
         }
     }
