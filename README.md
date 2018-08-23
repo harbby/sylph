@@ -37,7 +37,7 @@ Sylph comes with sample configuration that should work out-of-the-box for develo
 * VM Options: -Dconfig=etc/sylph/sylph.properties -Dlog4j.file=etc/sylph/sylph-log4j.properties
 * ENV Options: FLINK_HOME=<your flink home>
                HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
-* Working directory: $MODULE_DIR$
+* Working directory: sylph-dist/build
 * Use classpath of module: sylph-main
  
 ## Useful mailing lists
