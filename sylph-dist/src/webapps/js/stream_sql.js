@@ -29,7 +29,7 @@ window.onload = function () {
     if (window.location.href.indexOf('mime=') > -1) {
         mime = window.location.href.substr(window.location.href.indexOf('mime=') + 5);
     }
-    window.editor = CodeMirror.fromTextArea(document.getElementById('code'), {
+    window.editor = CodeMirror.fromTextArea(document.getElementById('query'), {
         mode: mime,
         indentWithTabs: true,
         smartIndent: true,
@@ -43,6 +43,8 @@ window.onload = function () {
                 countries: {name: null, population: null, size: null}
             }
         }
+    }).on('change', editor => {
+        document.getElementById('query').value = editor.getValue();
     });
 
     // window.explanResult = CodeMirror.fromTextArea(document.getElementById('explanResult'), {

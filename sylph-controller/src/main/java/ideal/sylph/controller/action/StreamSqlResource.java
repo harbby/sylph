@@ -27,8 +27,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static ideal.sylph.spi.exception.StandardErrorCode.ILLEGAL_OPERATION;
 import static java.util.Objects.requireNonNull;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 @javax.inject.Singleton
 @Path("/stream_sql")
@@ -60,7 +62,7 @@ public class StreamSqlResource
             String jobId = requireNonNull(request.getParameter("jobId"), "job jobId 不能为空");
             String flow = request.getParameter("query");
             String config = request.getParameter("config");
-
+            checkArgument(isNotBlank(flow), "SQL query IS NULL");
             sylphContext.saveJob(jobId, flow, "StreamSql");
             Map out = ImmutableMap.of(
                     "jobId", jobId,
