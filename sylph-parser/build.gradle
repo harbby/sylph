@@ -7,6 +7,25 @@ dependencies {
 }
 generateGrammarSource.dependsOn 'licenseMain','licenseTest'
 
+//sourceSets {
+//    main {
+//        java {
+//            srcDirs = ['src/main/java', 'src/main/thrift-java']
+//        }
+//        resources {
+//            srcDirs = ['src/main/resources']
+//        }
+//    }
+//    test {
+//        java {
+//            srcDirs = ['src/test/java', 'src/test/thrift']
+//        }
+//        resources {
+//            srcDirs = ['src/test/resources']
+//        }
+//    }
+//}
+
 generateGrammarSource {
     maxHeapSize = "64m"
     arguments += ["-visitor", "-long-messages"]
