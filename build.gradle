@@ -1,3 +1,8 @@
+plugins {
+    id "com.github.hierynomus.license" version "0.14.0"
+    id "com.github.harbby.gradle.serviceloader" version "1.1.2"
+}
+
 allprojects{
     group 'ideal'
     version '0.1.0-SNAPSHOT'
@@ -32,20 +37,12 @@ allprojects{
 }
 
 subprojects{
-    configurations {
-        testCompile.extendsFrom compileOnly
+    if (project != rootProject) {
+        apply plugin: 'com.github.hierynomus.license'
     }
 
-    buildscript {
-        repositories {
-            mavenLocal()
-            //maven { url 'https://harbby.github.io/.m2/repository/' }
-            maven { url "https://plugins.gradle.org/m2/" }
-        }
-        dependencies {
-            //classpath 'com.github.harbby:gradle-serviceloader:1.1.2'
-            classpath "gradle.plugin.com.github.harbby:gradle-serviceloader:1.1.2"
-        }
+    configurations {
+        testCompile.extendsFrom compileOnly
     }
 
     repositories.add(repositories.mavenLocal())
@@ -81,4 +78,28 @@ subprojects{
         resolutionStrategy {  failOnVersionConflict() }
     }
     // ./gradlew sylph-runners:sylph-runner-flink:dependencies
+
+    license {
+        headerDefinitions {  //see: http://code.mycila.com/license-maven-plugin/#supported-comment-types
+            javadoc_style {
+                firstLine = "/*"
+                endLine   = " */"
+                beforeEachLine = " * "
+                afterEachLine = ""
+                firstLineDetectionPattern = "(\\s|\\t)*/\\*.*\$"
+                lastLineDetectionPattern  = ".*\\*/(\\s|\\t)*\$"
+                allowBlankLines = false
+                padLines = false
+                //skipLine = "//"
+                isMultiline = true
+            }
+        }
+        header rootProject.file('src/license/LICENSE-HEADER.txt')
+        strictCheck true
+        excludes(["**/*.properties","**/*.sql"])
+        //include "**/*.java"
+    }
+    assemble.dependsOn 'licenseMain','licenseTest'
+    //licenseMain.includes
+    //license.mapping('javascript', 'JAVADOC_STYLE')
 }

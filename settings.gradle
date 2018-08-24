@@ -1,3 +1,10 @@
+pluginManagement {
+  repositories {
+    mavenLocal()
+    maven { url "https://plugins.gradle.org/m2/" }
+  }
+}
+
 rootProject.name = 'sylph'
 
 include 'sylph-spi'
@@ -23,4 +30,3 @@ include 'sylph-connectors:spark-node-plugin'
 //----
 include 'sylph-dist'
 include 'sylph-parser'
-

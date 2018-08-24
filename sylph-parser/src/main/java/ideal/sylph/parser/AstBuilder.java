@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2018 The Sylph Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ideal.sylph.parser;
 
 import com.google.common.collect.ImmutableList;
@@ -6,6 +21,7 @@ import ideal.sylph.parser.antlr4.SqlBaseLexer;
 import ideal.sylph.parser.antlr4.SqlBaseParser;
 import ideal.sylph.parser.tree.ColumnDefinition;
 import ideal.sylph.parser.tree.CreateStream;
+import ideal.sylph.parser.tree.CreateStreamAsSelect;
 import ideal.sylph.parser.tree.CreateTable;
 import ideal.sylph.parser.tree.Expression;
 import ideal.sylph.parser.tree.Identifier;
@@ -16,6 +32,7 @@ import ideal.sylph.parser.tree.Property;
 import ideal.sylph.parser.tree.QualifiedName;
 import ideal.sylph.parser.tree.StringLiteral;
 import ideal.sylph.parser.tree.TableElement;
+import ideal.sylph.parser.tree.WaterMark;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 
@@ -50,17 +67,66 @@ public class AstBuilder
     @Override
     public Node visitUnquotedIdentifier(SqlBaseParser.UnquotedIdentifierContext context)
     {
+        //create table foo(name varchar)
         return new Identifier(getLocation(context), context.getText(), false);
     }
 
     @Override
     public Node visitQuotedIdentifier(SqlBaseParser.QuotedIdentifierContext context)
     {
+        //create table foo("name" varchar)
         String token = context.getText();
         String identifier = token.substring(1, token.length() - 1)
                 .replace("\"\"", "\"");
 
         return new Identifier(getLocation(context), identifier, true);
+    }
+
+    @Override
+    public Node visitBackQuotedIdentifier(SqlBaseParser.BackQuotedIdentifierContext context)
+    {
+        //create table foo(`name` varchar)
+        String token = context.getText();
+        String identifier = token.substring(1, token.length() - 1)
+                .replace("\"\"", "\"");
+
+        return new Identifier(getLocation(context), identifier, true);
+    }
+
+    @Override
+    public Node visitCreateStreamAsSelect(SqlBaseParser.CreateStreamAsSelectContext context)
+    {
+        Optional<String> comment = Optional.empty();
+        if (context.COMMENT() != null) {
+            comment = Optional.of(((StringLiteral) visit(context.string())).getValue());
+        }
+
+        String viewSql = context.QuerySql().getText().substring(2).trim();
+        return new CreateStreamAsSelect(
+                getLocation(context),
+                getQualifiedName(context.qualifiedName()),
+                context.EXISTS() != null,
+                comment,
+                visitIfPresent(context.watermark(), WaterMark.class),
+                viewSql
+        );
+    }
+
+    @Override
+    public Node visitWatermark(SqlBaseParser.WatermarkContext context)
+    {
+        Identifier field = (Identifier) visit(context.identifier());
+        if (context.SYSTEM_OFFSET() != null) {
+            int offset = Integer.parseInt(context.offset.getText());
+            return new WaterMark(getLocation(context), field, new WaterMark.SystemOffset(offset));
+        }
+        else if (context.ROWMAX_OFFSET() != null) {
+            int offset = Integer.parseInt(context.offset.getText());
+            return new WaterMark(getLocation(context), field, new WaterMark.RowMaxOffset(offset));
+        }
+        else {
+            throw new IllegalArgumentException("Unable to determine Watermark type: " + context.getText());
+        }
     }
 
     @Override
@@ -83,7 +149,8 @@ public class AstBuilder
                 visit(context.tableElement(), TableElement.class),
                 context.EXISTS() != null,
                 properties,
-                comment);
+                comment,
+                visitIfPresent(context.watermark(), WaterMark.class));
     }
 
     @Override
@@ -202,16 +269,15 @@ public class AstBuilder
                 .replace("''", "'");
     }
 
+    private <T> Optional<T> visitIfPresent(ParserRuleContext context, Class<T> clazz)
+    {
+        return Optional.ofNullable(context)
+                .map(this::visit)
+                .map(clazz::cast);
+    }
+
     private <T> List<T> visit(List<? extends ParserRuleContext> contexts, Class<T> clazz)
     {
-//        for(ParserRuleContext context : contexts){
-//            Node node = this.visit(context);
-//            if(clazz == TableElement.class){
-//                System.out.println(clazz);
-//            }
-//            T t = clazz.cast(node);
-//            System.out.println(t);
-//        }
         return contexts.stream()
                 .map(this::visit)
                 .map(clazz::cast)

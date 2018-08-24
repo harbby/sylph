@@ -41,7 +41,11 @@ statement
     | CREATE (SOURCE | SINK) TABLE (IF NOT EXISTS)? qualifiedName
         '(' tableElement (',' tableElement)* ')'
          (COMMENT string)?
-         (WITH properties)?                                            #createStream
+         (WITH properties)?
+         (WATERMARK watermark)?                                        #createStream
+    | CREATE SOURCE TABLE (IF NOT EXISTS)? qualifiedName
+        (COMMENT string)?
+        (WATERMARK watermark)? (QuerySql)?                            #createStreamAsSelect
     | CREATE TABLE (IF NOT EXISTS)? qualifiedName columnAliases?
         (COMMENT string)?
         (WITH properties)? AS (query | '('query')')
@@ -104,6 +108,15 @@ statement
     | DESCRIBE INPUT identifier                                        #describeInput
     | DESCRIBE OUTPUT identifier                                       #describeOutput
     | SET PATH pathSpecification                                       #setPath
+    ;
+
+QuerySql: AS .*? EOF;
+
+watermark
+    : FOR identifier BY (
+      SYSTEM_OFFSET '('offset=INTEGER_VALUE')'
+    | ROWMAX_OFFSET '('offset=INTEGER_VALUE')'
+    )
     ;
 
 query
@@ -552,6 +565,9 @@ FROM: 'FROM';
 SOURCE: 'SOURCE';
 SINK: 'SINK';
 STREAM: 'STREAM';
+SYSTEM_OFFSET: 'SYSTEM_OFFSET';
+ROWMAX_OFFSET: 'ROWMAX_OFFSET';
+WATERMARK: 'WATERMARK';
 FULL: 'FULL';
 FUNCTIONS: 'FUNCTIONS';
 GRANT: 'GRANT';

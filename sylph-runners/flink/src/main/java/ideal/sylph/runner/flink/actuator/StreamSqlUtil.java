@@ -1,9 +1,27 @@
+/*
+ * Copyright (C) 2018 The Sylph Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ideal.sylph.runner.flink.actuator;
 
 import com.google.common.collect.ImmutableMap;
 import ideal.sylph.parser.SqlParser;
 import ideal.sylph.parser.tree.ColumnDefinition;
 import ideal.sylph.parser.tree.CreateStream;
+import ideal.sylph.parser.tree.CreateStreamAsSelect;
+import ideal.sylph.parser.tree.Statement;
+import ideal.sylph.parser.tree.WaterMark;
 import ideal.sylph.runner.flink.etl.FlinkNodeLoader;
 import ideal.sylph.runner.flink.table.SylphTableSink;
 import ideal.sylph.runner.flink.table.SylphTableSource;
@@ -13,9 +31,13 @@ import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.api.java.typeutils.TypeExtractor;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
+import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.table.api.Types;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
+
+import javax.annotation.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -29,8 +51,15 @@ public class StreamSqlUtil
 {
     private StreamSqlUtil() {}
 
-    public static void runCreateTableSql(PipelinePluginManager pluginManager, StreamTableEnvironment tableEnv, SqlParser sqlParser, String sql)
+    public static void createStreamTableBySql(PipelinePluginManager pluginManager, StreamTableEnvironment tableEnv, SqlParser sqlParser, String sql)
     {
+        Statement statement = sqlParser.createStatement(sql);
+        if (statement instanceof CreateStreamAsSelect) {
+            CreateStreamAsSelect createStreamAsSelect = (CreateStreamAsSelect) statement;
+            createStreamAsSelect.getName();
+            createStreamAsSelect.getViewSql();
+        }
+
         CreateStream createStream = (CreateStream) sqlParser.createStatement(sql);
         String tableName = createStream.getName().toString();
 
@@ -50,10 +79,12 @@ public class StreamSqlUtil
         NodeLoader<StreamTableEnvironment, DataStream<Row>> loader = new FlinkNodeLoader(pluginManager);
         RowTypeInfo rowTypeInfo = parserColumns(columns);
         if (SOURCE == createStream.getType()) {  //Source.class.isAssignableFrom(driver)
-            UnaryOperator<DataStream<Row>> inputStream = loader.loadSource(tableEnv, config);
+            DataStream<Row> inputStream = loader.loadSource(tableEnv, config).apply(null);
+            if (createStream.getWatermark().isPresent()) {
+                inputStream = setWaterMark(createStream.getWatermark().get(), rowTypeInfo, inputStream);
+            }
             SylphTableSource tableSource = new SylphTableSource(rowTypeInfo, inputStream);
             tableEnv.registerTableSource(tableName, tableSource);
-//            System.out.println(rowTypeInfo);
         }
         else if (SINK == createStream.getType()) {
             UnaryOperator<DataStream<Row>> outputStream = loader.loadSink(config);
@@ -62,6 +93,64 @@ public class StreamSqlUtil
         }
         else {
             throw new IllegalArgumentException("this driver class " + withConfig.get("type") + " have't support!");
+        }
+    }
+
+    private static DataStream<Row> setWaterMark(
+            WaterMark waterMark,
+            RowTypeInfo rowTypeInfo,
+            DataStream<Row> dataStream)
+    {
+        String field = waterMark.getField();
+        int fieldIndex = rowTypeInfo.getFieldIndex(field);
+
+        if (waterMark.getOffset() instanceof WaterMark.RowMaxOffset) {
+            long offset = ((WaterMark.RowMaxOffset) waterMark.getOffset()).getOffset();
+            return dataStream.assignTimestampsAndWatermarks(new AssignerWithPeriodicWatermarks<Row>()
+            {
+                private final long maxOutOfOrderness = offset;  // 5_000L;//最大允许的乱序时间是5s
+                private long currentMaxTimestamp = Long.MIN_VALUE;
+
+                @Override
+                public long extractTimestamp(Row element, long previousElementTimestamp)
+                {
+                    long time = (long) element.getField(fieldIndex);
+                    this.currentMaxTimestamp = Math.max(currentMaxTimestamp, time);
+                    return time;
+                }
+
+                @Nullable
+                @Override
+                public Watermark getCurrentWatermark()
+                {
+                    // return the watermark as current highest timestamp minus the out-of-orderness bound
+                    return new Watermark(currentMaxTimestamp - maxOutOfOrderness);
+                }
+            }).returns(rowTypeInfo);
+        }
+        else if (waterMark.getOffset() instanceof WaterMark.SystemOffset) {
+            long offset = ((WaterMark.SystemOffset) waterMark.getOffset()).getOffset();
+            return dataStream.assignTimestampsAndWatermarks(new AssignerWithPeriodicWatermarks<Row>()
+            {
+                private final long maxOutOfOrderness = offset;  // 5_000L;//最大允许的乱序时间是5s
+
+                @Override
+                public long extractTimestamp(Row element, long previousElementTimestamp)
+                {
+                    long time = (long) element.getField(fieldIndex);
+                    return time;
+                }
+
+                @Nullable
+                @Override
+                public Watermark getCurrentWatermark()
+                {
+                    return new Watermark(System.currentTimeMillis() - maxOutOfOrderness);
+                }
+            }).returns(rowTypeInfo);
+        }
+        else {
+            throw new UnsupportedOperationException("this " + waterMark + " have't support!");
         }
     }
 

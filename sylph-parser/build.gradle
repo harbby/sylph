@@ -1,11 +1,11 @@
 apply plugin: 'antlr'
 
 dependencies {
-    //compile 'org.antlr:antlr4-runtime:4.6'
     antlr "org.antlr:antlr4:4.6"
 
     compile group: 'com.google.guava', name: 'guava', version: deps.guava
 }
+generateGrammarSource.dependsOn 'licenseMain','licenseTest'
 
 generateGrammarSource {
     maxHeapSize = "64m"
