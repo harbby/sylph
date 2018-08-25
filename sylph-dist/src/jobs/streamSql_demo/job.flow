@@ -1,0 +1,21 @@
+create source table topic1(
+    key varchar,
+    value varchar,
+    server_time bigint
+) with (
+    type = 'ideal.sylph.plugins.flink.source.TestSource'
+);
+
+-- 定义数据流输出位置
+create sink table print_table_sink(
+    a1 varchar,
+    a2 varchar,
+    event_time bigint
+) with (
+    type = 'ideal.sylph.plugins.flink.sink.PrintSink',   -- ideal.sylph.plugins.flink.sink.MysqlSink
+    other = 'demo001'
+);
+
+-- 描述数据流计算过程
+insert into print_table_sink
+select key,`value`,cast(server_time as bigint) from topic1 where key is not null
