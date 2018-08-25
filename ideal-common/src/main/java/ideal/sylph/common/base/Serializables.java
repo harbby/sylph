@@ -18,6 +18,7 @@ package ideal.sylph.common.base;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
@@ -47,6 +48,15 @@ public class Serializables
     {
         try (ByteArrayInputStream bi = new ByteArrayInputStream(bytes);
                 ObjectInputStreamProxy oi = new ObjectInputStreamProxy(bi, classLoader)
+        ) {
+            return oi.readObject();
+        }
+    }
+
+    public static Object byteToObject(InputStream inputStream, ClassLoader classLoader)
+            throws IOException, ClassNotFoundException
+    {
+        try (ObjectInputStreamProxy oi = new ObjectInputStreamProxy(inputStream, classLoader)
         ) {
             return oi.readObject();
         }

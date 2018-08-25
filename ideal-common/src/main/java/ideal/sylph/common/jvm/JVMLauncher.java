@@ -63,15 +63,16 @@ public final class JVMLauncher<R extends Serializable>
     public VmFuture<R> startAndGet(ClassLoader classLoader)
             throws IOException, ClassNotFoundException, JVMException
     {
-        byte[] bytes = startAndGetByte();
-        VmFuture<R> vmFuture = (VmFuture<R>) Serializables.byteToObject(bytes, classLoader);
-        if (!vmFuture.get().isPresent()) {
-            throw new JVMException(vmFuture.getOnFailure());
+        try (InputStream inputStream = startAndGetByte()) {
+            VmFuture<R> vmFuture = (VmFuture<R>) Serializables.byteToObject(inputStream, classLoader);
+            if (!vmFuture.get().isPresent()) {
+                throw new JVMException(vmFuture.getOnFailure());
+            }
+            return vmFuture;
         }
-        return vmFuture;
     }
 
-    private byte[] startAndGetByte()
+    private InputStream startAndGetByte()
             throws IOException
     {
         try (ServerSocket sock = new ServerSocket()) {
@@ -90,14 +91,9 @@ public final class JVMLauncher<R extends Serializable>
                     consoleHandler.accept(line);
                 }
             }
-
-            try (Socket client = sock.accept()) {
-                try (InputStream input = client.getInputStream()) {
-                    byte[] byt = new byte[input.available()];
-                    input.read(byt);
-                    return byt;
-                }
-            }
+            //---return Socket io Stream
+            Socket client = sock.accept();
+            return client.getInputStream();
         }
     }
 
