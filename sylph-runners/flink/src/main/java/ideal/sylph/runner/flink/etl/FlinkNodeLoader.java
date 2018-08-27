@@ -172,12 +172,4 @@ public final class FlinkNodeLoader
             }
         };
     }
-
-    //  /**
-    //    * udf
-    //    **/
-    //  object Local_timestamp extends ScalarFunction {
-    //    //Timestamp
-    //    def eval(time: Any): Timestamp = new Timestamp(time.toString.toLong) //System.currentTimeMillis()
-    //  }
 }

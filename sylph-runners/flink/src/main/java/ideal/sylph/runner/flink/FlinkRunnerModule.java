@@ -91,13 +91,14 @@ public class FlinkRunnerModule
     {
         Configuration hadoopConf = new Configuration();
         hadoopConf.set("fs.hdfs.impl", "org.apache.hadoop.hdfs.DistributedFileSystem");
+
         Stream.of("yarn-site.xml", "core-site.xml", "hdfs-site.xml").forEach(file -> {
-            File site = new File(System.getenv("HADOOP_CONF_DIR"), file);
+            File site = new File(requireNonNull(System.getenv("HADOOP_CONF_DIR"), "ENV HADOOP_CONF_DIR is not setting"), file);
             if (site.exists() && site.isFile()) {
                 hadoopConf.addResource(new org.apache.hadoop.fs.Path(site.toURI()));
             }
             else {
-                throw new SylphException(CONFIG_ERROR, site + "not exists");
+                throw new SylphException(CONFIG_ERROR, site + " not exists");
             }
         });
 

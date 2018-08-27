@@ -18,15 +18,14 @@ package ideal.sylph.runner.flink.actuator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
-import ideal.sylph.annotation.Description;
-import ideal.sylph.annotation.Name;
 import ideal.common.jvm.JVMException;
 import ideal.common.jvm.JVMLauncher;
 import ideal.common.jvm.JVMLaunchers;
 import ideal.common.jvm.VmFuture;
+import ideal.sylph.annotation.Description;
+import ideal.sylph.annotation.Name;
 import ideal.sylph.parser.SqlParser;
 import ideal.sylph.parser.tree.CreateStream;
-import ideal.sylph.parser.tree.Statement;
 import ideal.sylph.runner.flink.FlinkJobHandle;
 import ideal.sylph.runner.flink.yarn.FlinkYarnJobLauncher;
 import ideal.sylph.spi.classloader.DirClassLoader;
@@ -35,6 +34,7 @@ import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableEnvironment;
@@ -47,6 +47,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -99,12 +100,13 @@ public class FlinkStreamSqlActuator
         final String sqlText = flow.getFlowString();
         ImmutableSet.Builder<File> builder = ImmutableSet.builder();
         SqlParser parser = new SqlParser();
-        //TODO: split; and `create`, Insecure, need to use regular expressions
-        for (String sql : sqlText.split(";")) {
-            if (sql.toLowerCase().contains("create ") && sql.toLowerCase().contains(" table ")) {
-                Statement statement = parser.createStatement(sql);
-                if (statement instanceof CreateStream) {
-                    CreateStream createTable = (CreateStream) parser.createStatement(sql);
+        String[] sqlSplit = Stream.of(sqlText.split(";(?=([^\']*\'[^\']*\')*[^\']*$)"))
+                .filter(StringUtils::isNotBlank).toArray(String[]::new);
+        Stream.of(sqlSplit).filter(sql -> sql.toLowerCase().contains("create ") && sql.toLowerCase().contains(" table "))
+                .map(parser::createStatement)
+                .filter(statement -> statement instanceof CreateStream)
+                .forEach(statement -> {
+                    CreateStream createTable = (CreateStream) statement;
                     Map<String, String> withConfig = createTable.getProperties().stream()
                             .collect(Collectors.toMap(
                                     k -> k.getName().getValue(),
@@ -112,14 +114,14 @@ public class FlinkStreamSqlActuator
                             );
                     String driverString = requireNonNull(withConfig.get("type"), "driver is null");
                     Optional<PipelinePluginManager.PipelinePluginInfo> pluginInfo = pluginManager.findPluginInfo(driverString);
-                    pluginInfo.ifPresent(plugin -> FileUtils.listFiles(plugin.getPluginFile(), null, true).forEach(builder::add));
-                }
-            }
-        }
+                    pluginInfo.ifPresent(plugin -> FileUtils
+                            .listFiles(plugin.getPluginFile(), null, true)
+                            .forEach(builder::add));
+                });
         jobClassLoader.addJarFiles(builder.build());
         //----- compile --
         final int parallelism = 2;
-        JobGraph jobGraph = compile(pluginManager, parallelism, sqlText, jobClassLoader);
+        JobGraph jobGraph = compile(pluginManager, parallelism, sqlSplit, jobClassLoader);
         //----------------设置状态----------------
         JobParameter jobParameter = new JobParameter()
                 .queue("default")
@@ -133,7 +135,7 @@ public class FlinkStreamSqlActuator
         return new FlinkJobHandle(jobGraph, jobParameter);
     }
 
-    private static JobGraph compile(PipelinePluginManager pluginManager, int parallelism, String sqlText, DirClassLoader jobClassLoader)
+    private static JobGraph compile(PipelinePluginManager pluginManager, int parallelism, String[] sqlSplit, DirClassLoader jobClassLoader)
     {
         JVMLauncher<JobGraph> launcher = JVMLaunchers.<JobGraph>newJvm()
                 .setConsole(System.out::println)
@@ -143,13 +145,11 @@ public class FlinkStreamSqlActuator
                     execEnv.setParallelism(parallelism);
                     StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(execEnv);
                     SqlParser sqlParser = new SqlParser();
-                    //TODO: split; and `create`, Insecure, need to use regular expressions
-                    for (String sql : sqlText.split(";")) {
+                    for (String sql : sqlSplit) {
                         if (sql.toLowerCase().contains("create ") && sql.toLowerCase().contains(" table ")) {
                             StreamSqlUtil.createStreamTableBySql(pluginManager, tableEnv, sqlParser, sql);
                         }
                         else {
-                            System.out.println(sql);
                             tableEnv.sqlUpdate(sql);
                         }
                     }

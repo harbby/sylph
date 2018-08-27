@@ -18,11 +18,19 @@ package ideal.sylph.runner.flink.actuator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import ideal.common.jvm.JVMLauncher;
+import ideal.common.jvm.JVMLaunchers;
+import ideal.common.jvm.VmFuture;
+import ideal.common.proxy.DynamicProxy;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
-import ideal.common.proxy.DynamicProxy;
+import ideal.sylph.runner.flink.FlinkJobHandle;
+import ideal.sylph.runner.flink.etl.FlinkNodeLoader;
 import ideal.sylph.runner.flink.yarn.FlinkYarnJobLauncher;
+import ideal.sylph.spi.App;
 import ideal.sylph.spi.EtlFlow;
+import ideal.sylph.spi.GraphApp;
+import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.classloader.DirClassLoader;
 import ideal.sylph.spi.classloader.ThreadContextClassLoader;
 import ideal.sylph.spi.exception.SylphException;
@@ -36,6 +44,12 @@ import ideal.sylph.spi.model.PipelinePluginManager;
 import ideal.sylph.spi.utils.GenericTypeReference;
 import ideal.sylph.spi.utils.JsonTextUtil;
 import org.apache.commons.io.FileUtils;
+import org.apache.flink.runtime.jobgraph.JobGraph;
+import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.api.TableEnvironment;
+import org.apache.flink.table.api.java.StreamTableEnvironment;
+import org.apache.flink.types.Row;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +59,7 @@ import javax.validation.constraints.NotNull;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.URLClassLoader;
 import java.util.Map;
 import java.util.Optional;
 
@@ -77,11 +92,24 @@ public class FlinkStreamEtlActuator
             String driverString = (String) requireNonNull(config.get("driver"), "driver is null");
             Optional<PipelinePluginManager.PipelinePluginInfo> pluginInfo = pluginManager.findPluginInfo(driverString);
             //Optional<PipelinePluginManager.PipelinePluginInfo> pluginInfo = runner.getPluginManager().findPluginInfo(driverString);
-            pluginInfo.ifPresent(plugin -> FileUtils.listFiles(plugin.getPluginFile(), null, true).forEach(builder::add));
+            pluginInfo.ifPresent(plugin -> FileUtils.listFiles(plugin.getPluginFile(), null, true)
+                    .forEach(builder::add));
         }
         jobClassLoader.addJarFiles(builder.build());
+        //----------------set job config----------------
+        JobParameter jobParameter = new JobParameter()
+                .queue("default")
+                .taskManagerCount(2) //-yn 注意是executer个数
+                .taskManagerMemoryMb(1024) //1024mb
+                .taskManagerSlots(1) // -ys
+                .jobManagerMemoryMb(1024) //-yjm
+                .appTags(ImmutableSet.of("demo1", "demo2"))
+                .setYarnJobName(jobId);
+
         try {
-            return FlinkJobUtil.createJob(jobId, flow, jobClassLoader, pluginManager);
+            int parallelism = 2;
+            JobGraph jobGraph = compile(jobId, flow, parallelism, jobClassLoader, pluginManager);
+            return new FlinkJobHandle(jobGraph, jobParameter);
         }
         catch (Exception e) {
             throw new SylphException(JOB_BUILD_ERROR, e);
@@ -132,5 +160,48 @@ public class FlinkStreamEtlActuator
                 .add("name", "streamSql")
                 .add("description", ".....")
                 .toString();
+    }
+
+    private static JobGraph compile(String jobId, EtlFlow flow, int parallelism, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
+            throws Exception
+    {
+        //---- build flow----
+        JVMLauncher<JobGraph> launcher = JVMLaunchers.<JobGraph>newJvm()
+                .setCallable(() -> {
+                    System.out.println("************ job start ***************");
+                    StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.createLocalEnvironment();
+                    execEnv.setParallelism(parallelism);
+                    StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(execEnv);
+                    App<StreamTableEnvironment> app = new GraphApp<StreamTableEnvironment, DataStream<Row>>()
+                    {
+                        @Override
+                        public NodeLoader<StreamTableEnvironment, DataStream<Row>> getNodeLoader()
+                        {
+                            return new FlinkNodeLoader(pluginManager);
+                        }
+
+                        @Override
+                        public StreamTableEnvironment getContext()
+                        {
+                            return tableEnv;
+                        }
+
+                        @Override
+                        public void build()
+                                throws Exception
+                        {
+                            this.buildGraph(jobId, flow).run();
+                        }
+                    };
+                    app.build();
+                    return execEnv.getStreamGraph().getJobGraph();
+                })
+                .setConsole(System.err::println)
+                //.setConsole((line) -> System.out.println(ansi().eraseScreen().fg(GREEN).a(line).reset() ))
+                .addUserURLClassLoader(jobClassLoader)
+                .build();
+
+        VmFuture<JobGraph> result = launcher.startAndGet(jobClassLoader);
+        return result.get().orElseThrow(() -> new SylphException(JOB_BUILD_ERROR, result.getOnFailure()));
     }
 }

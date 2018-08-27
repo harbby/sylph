@@ -54,32 +54,23 @@ public class StreamSqlUtil
 {
     private StreamSqlUtil() {}
 
-    public static void createStreamTableBySql(PipelinePluginManager pluginManager, StreamTableEnvironment tableEnv, SqlParser sqlParser, String sql)
+    static void createStreamTableBySql(PipelinePluginManager pluginManager, StreamTableEnvironment tableEnv, SqlParser sqlParser, String sql)
     {
         Statement statement = sqlParser.createStatement(sql);
         if (statement instanceof CreateStreamAsSelect) {
-            CreateStreamAsSelect createStreamAsSelect = (CreateStreamAsSelect) statement;
-            Table table = tableEnv.sqlQuery(createStreamAsSelect.getViewSql());
-            RowTypeInfo rowTypeInfo = (RowTypeInfo) table.getSchema().toRowType();
-
-            createStreamAsSelect.getWatermark().ifPresent(waterMark -> {
-                tableEnv.execEnv().setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-                DataStream<Row> inputStream = buildWaterMark(waterMark, rowTypeInfo, tableEnv.toAppendStream(table, Row.class));
-                String fields = String.join(",", ImmutableList.<String>builder()
-                        .add(rowTypeInfo.getFieldNames())
-                        .add(waterMark.getFieldForName() + ".rowtime")
-                        .build());
-                tableEnv.registerDataStream(createStreamAsSelect.getName(), inputStream, fields);
-            });
-            if (!createStreamAsSelect.getWatermark().isPresent()) {
-                tableEnv.registerTable(createStreamAsSelect.getName(), table);
-            }
-            return;
+            createStreamTableAsSelect(tableEnv, (CreateStreamAsSelect) statement);
         }
+        else if (statement instanceof CreateStream) {
+            createStreamTable(tableEnv, (CreateStream) statement, pluginManager);
+        }
+        else {
+            throw new IllegalArgumentException("this driver class " + statement.getClass() + " have't support!");
+        }
+    }
 
-        CreateStream createStream = (CreateStream) sqlParser.createStatement(sql);
+    private static void createStreamTable(StreamTableEnvironment tableEnv, CreateStream createStream, PipelinePluginManager pluginManager)
+    {
         String tableName = createStream.getName();
-
         List<ColumnDefinition> columns = createStream.getElements().stream().map(ColumnDefinition.class::cast).collect(Collectors.toList());
 
         Map<String, String> withConfig = createStream.getProperties().stream()
@@ -87,11 +78,9 @@ public class StreamSqlUtil
                         k -> k.getName().getValue(),
                         v -> v.getValue().toString().replace("'", ""))
                 );
-
         Map<String, Object> config = ImmutableMap.<String, Object>builder()
                 .putAll(withConfig)
                 .put("driver", withConfig.get("type"))
-                .put("tableName", tableName)
                 .build();
         NodeLoader<StreamTableEnvironment, DataStream<Row>> loader = new FlinkNodeLoader(pluginManager);
         RowTypeInfo rowTypeInfo = parserColumns(columns);
@@ -111,6 +100,25 @@ public class StreamSqlUtil
         }
         else {
             throw new IllegalArgumentException("this driver class " + withConfig.get("type") + " have't support!");
+        }
+    }
+
+    private static void createStreamTableAsSelect(StreamTableEnvironment tableEnv, CreateStreamAsSelect createStreamAsSelect)
+    {
+        Table table = tableEnv.sqlQuery(createStreamAsSelect.getViewSql());
+        RowTypeInfo rowTypeInfo = (RowTypeInfo) table.getSchema().toRowType();
+
+        createStreamAsSelect.getWatermark().ifPresent(waterMark -> {
+            tableEnv.execEnv().setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+            DataStream<Row> inputStream = buildWaterMark(waterMark, rowTypeInfo, tableEnv.toAppendStream(table, Row.class));
+            String fields = String.join(",", ImmutableList.<String>builder()
+                    .add(rowTypeInfo.getFieldNames())
+                    .add(waterMark.getFieldForName() + ".rowtime")
+                    .build());
+            tableEnv.registerDataStream(createStreamAsSelect.getName(), inputStream, fields);
+        });
+        if (!createStreamAsSelect.getWatermark().isPresent()) {
+            tableEnv.registerTable(createStreamAsSelect.getName(), table);
         }
     }
 
