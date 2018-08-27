@@ -29,7 +29,7 @@ public interface JobStore
 
     public Collection<Job> getJobs();
 
-    public Job removeJob(String jobId)
+    public void removeJob(String jobId)
             throws IOException;
 
     public void loadJobs();
