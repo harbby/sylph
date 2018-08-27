@@ -7,14 +7,44 @@ Support for
 * flink stream
 * batch job
 
-## 
+## StreamSql
+```sql
+create source table topic1(
+    key varchar,
+    value varchar,
+    event_time bigint
+) with (
+    type = 'ideal.sylph.plugins.flink.source.TestSource'
+);
 
-## Status
-Experimental stage
+-- Define the data stream output location
+create sink table print_table_sink(
+    key varchar,
+    cnt long,
+    window_time varchar
+) with (
+    type = 'ideal.sylph.plugins.flink.sink.PrintSink',   -- print console
+    other = 'demo001'
+);
 
-## Show
-[![loading...](https://raw.githubusercontent.com/harbby/harbby.github.io/master/logo/sylph/briefing.gif)](https://travis-ci.org/harbby/sylph)
+-- Define WATERMARK, usually you should parse the event_time field from the kafka message
+create view TABLE foo
+WATERMARK event_time FOR rowtime BY ROWMAX_OFFSET(5000)  --event_time Generate time for your real data
+AS 
+with tb1 as (select * from topic1)  --Usually parsing kafka message here
+select * from tb1;
 
+-- Describe the data flow calculation process
+insert into print_table_sink
+with tb2 as (
+    select key,
+    count(1),
+    cast(TUMBLE_START(rowtime,INTERVAL '5' SECOND) as varchar)|| '-->' 
+    || cast(TUMBLE_END(rowtime,INTERVAL '5' SECOND) as varchar) AS window_time
+    from foo where key is not null
+    group by key,TUMBLE(rowtime,INTERVAL '5' SECOND)
+) select * from tb2
+```
 ## Building
 sylph builds use Gradle and requires Java 8.
 ```
@@ -47,7 +77,5 @@ Sylph comes with sample configuration that should work out-of-the-box for develo
 We need more power to improve the view layer. If you are interested, you can contact me by email.
 
 ## Other
-* sylph被设计来处理分布式实时ETL,实时StreamSql指标计算,分布式程序监控和托管以及离线周期任务,您可以拿来实验您的方案和思路.如果可以解决您的场景，还是建议您使用
-阿里云流计算(https://help.aliyun.com/product/45029.html),
-华为流计算等更加成熟可靠的产品来为您的业务保驾护航
-* QQ群 438625067
+* sylph被设计来处理分布式实时ETL,实时StreamSql计算,分布式程序监控和托管以及离线周期任务.
+* 加入QQ群 438625067
