@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Throwables.throwIfUnchecked;
 import static java.util.Objects.requireNonNull;
 
@@ -42,10 +43,8 @@ public class SparkRunnerFactory
     public Runner create(RunnerContext context)
     {
         requireNonNull(context, "context is null");
-        String sparkHome = System.getenv("SPARK_HOME");
-        if (sparkHome == null || !new File(sparkHome).exists()) {
-            throw new IllegalArgumentException("SPARK_HOME not setting");
-        }
+        String sparkHome = requireNonNull(System.getenv("SPARK_HOME"), "SPARK_HOME not setting");
+        checkArgument(new File(sparkHome).exists(), "SPARK_HOME " + sparkHome + " not exists");
 
         ClassLoader classLoader = this.getClass().getClassLoader();
         try {

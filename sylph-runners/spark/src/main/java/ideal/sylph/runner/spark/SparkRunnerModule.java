@@ -20,12 +20,16 @@ import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Provider;
 import com.google.inject.Scopes;
+import ideal.sylph.spi.exception.SylphException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 
 import java.io.File;
 import java.util.stream.Stream;
+
+import static ideal.sylph.spi.exception.StandardErrorCode.CONFIG_ERROR;
+import static java.util.Objects.requireNonNull;
 
 public class SparkRunnerModule
         implements Module
@@ -58,9 +62,12 @@ public class SparkRunnerModule
         hadoopConf.set("fs.hdfs.impl", "org.apache.hadoop.hdfs.DistributedFileSystem");
 
         Stream.of("yarn-site.xml", "core-site.xml", "hdfs-site.xml").forEach(file -> {
-            File site = new File(System.getenv("HADOOP_CONF_DIR"), file);
+            File site = new File(requireNonNull(System.getenv("HADOOP_CONF_DIR"), "ENV HADOOP_CONF_DIR is not setting"), file);
             if (site.exists() && site.isFile()) {
                 hadoopConf.addResource(new org.apache.hadoop.fs.Path(site.toURI()));
+            }
+            else {
+                throw new SylphException(CONFIG_ERROR, site + " not exists");
             }
         });
 

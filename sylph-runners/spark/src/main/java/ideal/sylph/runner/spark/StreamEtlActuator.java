@@ -16,11 +16,11 @@
 package ideal.sylph.runner.spark;
 
 import com.google.inject.Inject;
-import ideal.sylph.annotation.Description;
-import ideal.sylph.annotation.Name;
 import ideal.common.jvm.JVMException;
 import ideal.common.jvm.JVMLauncher;
 import ideal.common.jvm.JVMLaunchers;
+import ideal.sylph.annotation.Description;
+import ideal.sylph.annotation.Name;
 import ideal.sylph.runner.spark.etl.sparkstreaming.StreamNodeLoader;
 import ideal.sylph.spi.App;
 import ideal.sylph.spi.EtlFlow;
