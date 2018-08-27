@@ -13,33 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.common.memory;
+package ideal.common.memory.offheap;
 
-import org.junit.Test;
-
-import java.nio.ByteBuffer;
-
-public class MemoryAllocatorTest
+public class Utils
 {
-    @Test
-    public void allocate()
+    private Utils() {}
+
+    @FunctionalInterface
+    public interface Serialization<T>
     {
-        MemoryBlock block = MemoryAllocator.UNSAFE.allocate(12);
-        block.fill((byte) 1);
-        ByteBuffer byteBuffer = ByteBuffer.allocate(12);
-        byteBuffer.put(new byte[] {});
+        public byte[] apply(T t);
     }
 
-    @Override
-    protected void finalize()
-            throws Throwable
+    @FunctionalInterface
+    public interface Deserialization<T>
     {
-        // 释放堆外内存
-        super.finalize();
-    }
-
-    @Test
-    public void free()
-    {
+        public T apply(byte[] bytes);
     }
 }

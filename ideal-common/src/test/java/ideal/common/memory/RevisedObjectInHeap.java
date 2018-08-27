@@ -15,6 +15,7 @@
  */
 package ideal.common.memory;
 
+import ideal.common.memory.offheap.Platform;
 import sun.misc.Unsafe;
 
 public class RevisedObjectInHeap

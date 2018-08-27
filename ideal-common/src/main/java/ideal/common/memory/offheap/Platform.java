@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.common.memory;
+package ideal.common.memory.offheap;
 
 import sun.misc.Cleaner;
 import sun.misc.Unsafe;
