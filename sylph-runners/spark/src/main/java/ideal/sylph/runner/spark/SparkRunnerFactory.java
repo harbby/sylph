@@ -17,7 +17,7 @@ package ideal.sylph.runner.spark;
 
 import com.google.inject.Injector;
 import com.google.inject.Scopes;
-import ideal.sylph.common.bootstrap.Bootstrap;
+import ideal.common.bootstrap.Bootstrap;
 import ideal.sylph.runner.spark.yarn.SparkAppLauncher;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;

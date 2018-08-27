@@ -20,12 +20,13 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
-import ideal.sylph.common.jvm.JVMException;
-import ideal.sylph.common.jvm.JVMLauncher;
-import ideal.sylph.common.jvm.JVMLaunchers;
-import ideal.sylph.common.jvm.VmFuture;
+import ideal.common.jvm.JVMException;
+import ideal.common.jvm.JVMLauncher;
+import ideal.common.jvm.JVMLaunchers;
+import ideal.common.jvm.VmFuture;
 import ideal.sylph.parser.SqlParser;
 import ideal.sylph.parser.tree.CreateStream;
+import ideal.sylph.parser.tree.Statement;
 import ideal.sylph.runner.flink.FlinkJobHandle;
 import ideal.sylph.runner.flink.yarn.FlinkYarnJobLauncher;
 import ideal.sylph.spi.classloader.DirClassLoader;
@@ -98,17 +99,21 @@ public class FlinkStreamSqlActuator
         final String sqlText = flow.getFlowString();
         ImmutableSet.Builder<File> builder = ImmutableSet.builder();
         SqlParser parser = new SqlParser();
+        //TODO: split; and `create`, Insecure, need to use regular expressions
         for (String sql : sqlText.split(";")) {
             if (sql.toLowerCase().contains("create ") && sql.toLowerCase().contains(" table ")) {
-                CreateStream createTable = (CreateStream) parser.createStatement(sql);
-                Map<String, String> withConfig = createTable.getProperties().stream()
-                        .collect(Collectors.toMap(
-                                k -> k.getName().getValue(),
-                                v -> v.getValue().toString().replace("'", ""))
-                        );
-                String driverString = requireNonNull(withConfig.get("type"), "driver is null");
-                Optional<PipelinePluginManager.PipelinePluginInfo> pluginInfo = pluginManager.findPluginInfo(driverString);
-                pluginInfo.ifPresent(plugin -> FileUtils.listFiles(plugin.getPluginFile(), null, true).forEach(builder::add));
+                Statement statement = parser.createStatement(sql);
+                if (statement instanceof CreateStream) {
+                    CreateStream createTable = (CreateStream) parser.createStatement(sql);
+                    Map<String, String> withConfig = createTable.getProperties().stream()
+                            .collect(Collectors.toMap(
+                                    k -> k.getName().getValue(),
+                                    v -> v.getValue().toString().replace("'", ""))
+                            );
+                    String driverString = requireNonNull(withConfig.get("type"), "driver is null");
+                    Optional<PipelinePluginManager.PipelinePluginInfo> pluginInfo = pluginManager.findPluginInfo(driverString);
+                    pluginInfo.ifPresent(plugin -> FileUtils.listFiles(plugin.getPluginFile(), null, true).forEach(builder::add));
+                }
             }
         }
         jobClassLoader.addJarFiles(builder.build());

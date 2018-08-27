@@ -18,7 +18,7 @@ package ideal.sylph.main;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Injector;
 import com.google.inject.Module;
-import ideal.sylph.common.bootstrap.Bootstrap;
+import ideal.common.bootstrap.Bootstrap;
 import ideal.sylph.controller.ControllerApp;
 import ideal.sylph.main.server.RunnerLoader;
 import ideal.sylph.main.server.ServerMainModule;

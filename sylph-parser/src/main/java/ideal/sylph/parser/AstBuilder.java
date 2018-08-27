@@ -115,7 +115,7 @@ public class AstBuilder
     @Override
     public Node visitWatermark(SqlBaseParser.WatermarkContext context)
     {
-        Identifier field = (Identifier) visit(context.identifier());
+        List<Identifier> field = visit(context.identifier(), Identifier.class);
         if (context.SYSTEM_OFFSET() != null) {
             int offset = Integer.parseInt(context.offset.getText());
             return new WaterMark(getLocation(context), field, new WaterMark.SystemOffset(offset));

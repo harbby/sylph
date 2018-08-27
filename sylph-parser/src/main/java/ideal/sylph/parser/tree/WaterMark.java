@@ -22,24 +22,35 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 public class WaterMark
         extends Node
 {
-    private final Identifier field;
+    private final List<Identifier> identifiers;
+    private final Identifier fieldName;
+    private final Identifier fieldForName;
     private final Object offset;
 
-    public WaterMark(NodeLocation location, Identifier field, Object offset)
+    public WaterMark(NodeLocation location, List<Identifier> field, Object offset)
     {
         super(Optional.of(location));
-        this.field = requireNonNull(field, "field is null");
         this.offset = requireNonNull(offset, "offset is null");
+        this.identifiers = requireNonNull(field, "field is null");
+        checkArgument(field.size() == 2, "field size must is 2,but is " + field);
+        this.fieldName = field.get(0);
+        this.fieldForName = field.get(1);
     }
 
-    public String getField()
+    public String getFieldName()
     {
-        return field.getValue();
+        return fieldName.getValue().replaceAll("`", "").replaceAll("\"", "");
+    }
+
+    public String getFieldForName()
+    {
+        return fieldForName.getValue().replaceAll("`", "").replaceAll("\"", "");
     }
 
     public Object getOffset()
@@ -57,14 +68,14 @@ public class WaterMark
     public List<? extends Node> getChildren()
     {
         return ImmutableList.<Node>builder()
-                .add(field)
+                .addAll(identifiers)
                 .build();
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(field, offset);
+        return Objects.hash(identifiers, offset);
     }
 
     @Override
@@ -77,7 +88,7 @@ public class WaterMark
             return false;
         }
         WaterMark o = (WaterMark) obj;
-        return Objects.equals(field, o.field) &&
+        return Objects.equals(identifiers, o.identifiers) &&
                 Objects.equals(offset, o.offset);
     }
 
@@ -85,7 +96,7 @@ public class WaterMark
     public String toString()
     {
         return toStringHelper(this)
-                .add("field", field)
+                .add("identifiers", identifiers)
                 .add("offset", offset)
                 .toString();
     }

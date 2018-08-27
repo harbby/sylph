@@ -16,10 +16,10 @@
 package ideal.sylph.runner.flink.jvm;
 
 import com.google.common.collect.ImmutableList;
-import ideal.sylph.common.jvm.JVMException;
-import ideal.sylph.common.jvm.JVMLauncher;
-import ideal.sylph.common.jvm.JVMLaunchers;
-import ideal.sylph.common.jvm.VmFuture;
+import ideal.common.jvm.JVMException;
+import ideal.common.jvm.JVMLauncher;
+import ideal.common.jvm.JVMLaunchers;
+import ideal.common.jvm.VmFuture;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,6 +48,7 @@ public class JVMLauncherTest
                     System.out.println("vm stop...");
                     return 1;
                 })
+                .setConsole(System.out::println)
                 .addUserjars(ImmutableList.of())
                 .build();
 

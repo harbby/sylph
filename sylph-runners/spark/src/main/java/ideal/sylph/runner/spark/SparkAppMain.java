@@ -15,7 +15,7 @@
  */
 package ideal.sylph.runner.spark;
 
-import ideal.sylph.common.base.Serializables;
+import ideal.common.base.Serializables;
 import ideal.sylph.spi.App;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.streaming.StreamingContext;

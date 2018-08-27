@@ -15,7 +15,7 @@
  */
 package ideal.sylph.controller;
 
-import ideal.sylph.common.base.Throwables;
+import ideal.common.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

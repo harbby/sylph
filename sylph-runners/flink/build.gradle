@@ -31,4 +31,7 @@ dependencies {
   //--- other----
   compile project(':sylph-parser')
   compile group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
+
+
+  testCompile project(':sylph-connectors:flink-node-plugin')
 }

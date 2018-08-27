@@ -54,9 +54,9 @@ public class CreateStreamAsSelect
         return watermark;
     }
 
-    public QualifiedName getName()
+    public String getName()
     {
-        return name;
+        return name.getParts().get(name.getParts().size() - 1);
     }
 
     public String getViewSql()

@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
-import ideal.sylph.common.base.Throwables;
+import ideal.common.base.Throwables;
 import ideal.sylph.spi.SylphContext;
 import ideal.sylph.spi.job.JobContainer;
 import org.slf4j.Logger;

@@ -17,7 +17,7 @@ package ideal.sylph.runner.flink;
 
 import com.google.inject.Injector;
 import com.google.inject.Scopes;
-import ideal.sylph.common.bootstrap.Bootstrap;
+import ideal.common.bootstrap.Bootstrap;
 import ideal.sylph.runner.flink.actuator.FlinkStreamEtlActuator;
 import ideal.sylph.runner.flink.actuator.FlinkStreamSqlActuator;
 import ideal.sylph.runner.flink.yarn.FlinkYarnJobLauncher;

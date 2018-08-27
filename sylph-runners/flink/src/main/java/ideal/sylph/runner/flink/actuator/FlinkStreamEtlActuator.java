@@ -20,7 +20,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
-import ideal.sylph.common.proxy.DynamicProxy;
+import ideal.common.proxy.DynamicProxy;
 import ideal.sylph.runner.flink.yarn.FlinkYarnJobLauncher;
 import ideal.sylph.spi.EtlFlow;
 import ideal.sylph.spi.classloader.DirClassLoader;

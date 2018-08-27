@@ -17,7 +17,7 @@ package ideal.sylph.runner.spark.yarn;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
-import ideal.sylph.common.base.Serializables;
+import ideal.common.base.Serializables;
 import ideal.sylph.runner.spark.SparkJobHandle;
 import ideal.sylph.spi.job.Job;
 import org.apache.commons.lang3.StringUtils;

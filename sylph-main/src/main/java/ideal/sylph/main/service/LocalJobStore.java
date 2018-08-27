@@ -17,7 +17,7 @@ package ideal.sylph.main.service;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import ideal.sylph.common.base.Throwables;
+import ideal.common.base.Throwables;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;

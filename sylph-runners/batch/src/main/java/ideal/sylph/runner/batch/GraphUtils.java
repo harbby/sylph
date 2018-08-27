@@ -15,8 +15,8 @@
  */
 package ideal.sylph.runner.batch;
 
-import ideal.sylph.common.graph.Graph;
-import ideal.sylph.common.graph.impl.DagNode;
+import ideal.common.graph.Graph;
+import ideal.common.graph.impl.DagNode;
 import ideal.sylph.spi.EtlFlow;
 import ideal.sylph.spi.job.Flow;
 

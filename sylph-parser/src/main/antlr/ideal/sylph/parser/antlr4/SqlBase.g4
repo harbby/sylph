@@ -45,7 +45,7 @@ statement
          (COMMENT string)?
          (WITH properties)?
          (WATERMARK watermark)?                                        #createStream
-    | CREATE SOURCE TABLE (IF NOT EXISTS)? qualifiedName
+    | CREATE VIEW TABLE (IF NOT EXISTS)? qualifiedName
         (COMMENT string)?
         (WATERMARK watermark)? (QuerySql)?                            #createStreamAsSelect
     | CREATE TABLE (IF NOT EXISTS)? qualifiedName columnAliases?
@@ -115,7 +115,7 @@ statement
 QuerySql: AS .*? EOF;
 
 watermark
-    : FOR identifier BY (
+    : identifier FOR identifier BY (
       SYSTEM_OFFSET '('offset=INTEGER_VALUE')'
     | ROWMAX_OFFSET '('offset=INTEGER_VALUE')'
     )

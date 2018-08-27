@@ -16,9 +16,9 @@
 package ideal.sylph.runner.flink.actuator;
 
 import com.google.common.collect.ImmutableSet;
-import ideal.sylph.common.jvm.JVMLauncher;
-import ideal.sylph.common.jvm.JVMLaunchers;
-import ideal.sylph.common.jvm.VmFuture;
+import ideal.common.jvm.JVMLauncher;
+import ideal.common.jvm.JVMLaunchers;
+import ideal.common.jvm.VmFuture;
 import ideal.sylph.runner.flink.FlinkJobHandle;
 import ideal.sylph.runner.flink.etl.FlinkNodeLoader;
 import ideal.sylph.spi.App;

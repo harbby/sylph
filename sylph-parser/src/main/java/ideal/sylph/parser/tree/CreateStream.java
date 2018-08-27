@@ -68,9 +68,9 @@ public class CreateStream
         this.watermark = requireNonNull(watermark, "watermark is null");
     }
 
-    public QualifiedName getName()
+    public String getName()
     {
-        return name;
+        return name.getParts().get(name.getParts().size() - 1);
     }
 
     public List<TableElement> getElements()

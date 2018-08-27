@@ -16,8 +16,8 @@
 package ideal.sylph.spi;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import ideal.sylph.common.graph.Graph;
-import ideal.sylph.common.graph.impl.DagNode;
+import ideal.common.graph.Graph;
+import ideal.common.graph.impl.DagNode;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.model.EdgeInfo;
 import ideal.sylph.spi.model.NodeInfo;

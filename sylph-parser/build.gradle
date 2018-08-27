@@ -7,6 +7,11 @@ dependencies {
 }
 generateGrammarSource.dependsOn 'licenseMain','licenseTest'
 
+license {
+    excludes(["**/*.g4","**/*.tokens"])
+}
+licenseMain.source = fileTree(dir: "build/generated-src").exclude("**/*.java")
+
 //sourceSets {
 //    main {
 //        java {

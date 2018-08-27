@@ -15,8 +15,8 @@
  */
 package ideal.sylph.graph;
 
-import ideal.sylph.common.graph.Graph;
-import ideal.sylph.common.graph.impl.DemoNode;
+import ideal.common.graph.Graph;
+import ideal.common.graph.impl.DemoNode;
 import org.junit.Test;
 
 public class GraphxTest

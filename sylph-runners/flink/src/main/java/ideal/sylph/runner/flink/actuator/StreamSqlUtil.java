@@ -15,6 +15,7 @@
  */
 package ideal.sylph.runner.flink.actuator;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import ideal.sylph.parser.SqlParser;
 import ideal.sylph.parser.tree.ColumnDefinition;
@@ -30,9 +31,11 @@ import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.api.java.typeutils.TypeExtractor;
+import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
 import org.apache.flink.streaming.api.watermark.Watermark;
+import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.Types;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
@@ -56,12 +59,26 @@ public class StreamSqlUtil
         Statement statement = sqlParser.createStatement(sql);
         if (statement instanceof CreateStreamAsSelect) {
             CreateStreamAsSelect createStreamAsSelect = (CreateStreamAsSelect) statement;
-            createStreamAsSelect.getName();
-            createStreamAsSelect.getViewSql();
+            Table table = tableEnv.sqlQuery(createStreamAsSelect.getViewSql());
+            RowTypeInfo rowTypeInfo = (RowTypeInfo) table.getSchema().toRowType();
+
+            createStreamAsSelect.getWatermark().ifPresent(waterMark -> {
+                tableEnv.execEnv().setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+                DataStream<Row> inputStream = buildWaterMark(waterMark, rowTypeInfo, tableEnv.toAppendStream(table, Row.class));
+                String fields = String.join(",", ImmutableList.<String>builder()
+                        .add(rowTypeInfo.getFieldNames())
+                        .add(waterMark.getFieldForName() + ".rowtime")
+                        .build());
+                tableEnv.registerDataStream(createStreamAsSelect.getName(), inputStream, fields);
+            });
+            if (!createStreamAsSelect.getWatermark().isPresent()) {
+                tableEnv.registerTable(createStreamAsSelect.getName(), table);
+            }
+            return;
         }
 
         CreateStream createStream = (CreateStream) sqlParser.createStatement(sql);
-        String tableName = createStream.getName().toString();
+        String tableName = createStream.getName();
 
         List<ColumnDefinition> columns = createStream.getElements().stream().map(ColumnDefinition.class::cast).collect(Collectors.toList());
 
@@ -81,7 +98,8 @@ public class StreamSqlUtil
         if (SOURCE == createStream.getType()) {  //Source.class.isAssignableFrom(driver)
             DataStream<Row> inputStream = loader.loadSource(tableEnv, config).apply(null);
             if (createStream.getWatermark().isPresent()) {
-                inputStream = setWaterMark(createStream.getWatermark().get(), rowTypeInfo, inputStream);
+                tableEnv.execEnv().setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+                inputStream = buildWaterMark(createStream.getWatermark().get(), rowTypeInfo, inputStream);
             }
             SylphTableSource tableSource = new SylphTableSource(rowTypeInfo, inputStream);
             tableEnv.registerTableSource(tableName, tableSource);
@@ -96,13 +114,13 @@ public class StreamSqlUtil
         }
     }
 
-    private static DataStream<Row> setWaterMark(
+    private static DataStream<Row> buildWaterMark(
             WaterMark waterMark,
             RowTypeInfo rowTypeInfo,
             DataStream<Row> dataStream)
     {
-        String field = waterMark.getField();
-        int fieldIndex = rowTypeInfo.getFieldIndex(field);
+        String fieldName = waterMark.getFieldName();
+        int fieldIndex = rowTypeInfo.getFieldIndex(fieldName);
 
         if (waterMark.getOffset() instanceof WaterMark.RowMaxOffset) {
             long offset = ((WaterMark.RowMaxOffset) waterMark.getOffset()).getOffset();
