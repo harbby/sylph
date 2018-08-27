@@ -19,6 +19,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -34,7 +35,8 @@ public class OffHeapMapTest
     {
         final Map<String, String> offHeapMap = new OffHeapMap<>(
                 (String str) -> str.getBytes(UTF_8),
-                (byte[] bytes) -> new String(bytes, UTF_8)
+                (byte[] bytes) -> new String(bytes, UTF_8),
+                ConcurrentHashMap.class
         );
         offHeapMap.put("a1", msg);
         Assert.assertEquals(offHeapMap.get("a1"), msg);
