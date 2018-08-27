@@ -18,6 +18,7 @@ package ideal.sylph.main.service;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import ideal.common.base.Throwables;
+import ideal.common.memory.offheap.collection.OffHeapMap;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;
@@ -26,7 +27,7 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
+import javax.validation.constraints.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -56,6 +57,11 @@ public class LocalJobStore
     private final RunnerManager runnerManger;
 
     private final ConcurrentMap<String, Job> jobs = new ConcurrentHashMap<>();
+    private final Map<String, String> buildJobLogs = new OffHeapMap<>(
+            (String str) -> str.getBytes(UTF_8),
+            (byte[] bytes) -> new String(bytes, UTF_8),
+            ConcurrentHashMap.class
+    );
 
     @Inject
     public LocalJobStore(
@@ -68,16 +74,14 @@ public class LocalJobStore
     }
 
     @Override
-    public void saveJob(@Nonnull Job job)
+    public void saveJob(@NotNull Job job)
     {
         File jobDir = job.getWorkDir();
-        job.getId();
         try {
             Flow flow = job.getFlow();
             File yaml = new File(jobDir, "job.flow");
             File typeFile = new File(jobDir, "job.type");
 
-            //TODO: save?
             String jobType = job.getActuatorName();
             FileUtils.writeStringToFile(yaml, flow.toString(), UTF_8);
             FileUtils.writeStringToFile(typeFile, "type=" + jobType, UTF_8);
@@ -103,12 +107,11 @@ public class LocalJobStore
     }
 
     @Override
-    public Job removeJob(String jobId)
+    public void removeJob(String jobId)
             throws IOException
     {
         Job job = requireNonNull(jobs.remove(jobId), jobId + " is not exists");
-        FileUtils.deleteDirectory(job.getWorkDir());  //先删除然后在复制
-        return job;
+        FileUtils.deleteDirectory(job.getWorkDir());  //delete job dir
     }
 
     /**

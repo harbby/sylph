@@ -39,7 +39,7 @@ public class RunnerLoader
 {
     private static final ImmutableList<String> SPI_PACKAGES = ImmutableList.<String>builder()
             .add("ideal.sylph.spi.")
-            .add("ideal.sylph.common.")
+            .add("ideal.common.")
             .add("ideal.sylph.annotation.")
             .add("ideal.sylph.etl.")  // etl api ?
             //-------------------------------------------------
