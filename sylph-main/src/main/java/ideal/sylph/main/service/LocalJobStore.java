@@ -43,6 +43,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static ideal.sylph.main.util.PropertiesUtil.loadProperties;
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
 import static ideal.sylph.spi.exception.StandardErrorCode.SAVE_JOB_ERROR;
@@ -121,6 +122,9 @@ public class LocalJobStore
     public void loadJobs()
     {
         File jobsDir = new File("jobs");
+        if (!jobsDir.exists() || jobsDir.isFile()) {
+            checkState(jobsDir.mkdirs(), "The working directory does not exist and an attempt to create failed");
+        }
         List<File> errorJob = new ArrayList<>();
         Stream.of(requireNonNull(jobsDir.listFiles(), "jobs Dir is not exists"))
                 .parallel()
