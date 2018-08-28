@@ -26,13 +26,10 @@ node {
   nodeModulesDir = file("${project.projectDir}/src/main/docs")
 }
 
-task clean_docs(type:NpmTask){
-  args = [ 'run', 'clean' ]
+task clean_docs(type: Delete){
+  delete file("${project.projectDir}/src/main/docs/node_modules"),file("${project.projectDir}/src/main/docs/public")
 }
-task clean_node_modules(type: Delete,dependsOn: clean_docs){
-  delete file("${project.projectDir}/src/main/docs/node_modules")
-}
-clean.dependsOn 'clean_docs', 'clean_node_modules'
+clean.dependsOn 'clean_docs'
 
 task build_docs(type:NpmTask, dependsOn: npmInstall){
   //只安装快递包

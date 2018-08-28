@@ -7,7 +7,7 @@
   "scripts": {
     "build_docs": "hexo clean && hexo g",
     "clean": "hexo clean",
-    "server": "hexo s"
+    "server": "hexo clean && hexo s"
   },
   "dependencies": {
     "hexo": "^3.2.0",
