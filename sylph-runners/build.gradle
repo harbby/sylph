@@ -13,7 +13,11 @@ subprojects {
   }
 
   def modules = project(':sylph-dist').buildDir.path + "/modules/${name}"
-  task buildModules(type: Copy) {
+  task copyConf(type: Copy){
+    from('conf')
+    into modules + "/conf"
+  }
+  task buildModules(type: Copy,dependsOn: copyConf) {
     from(configurations.runtime)
     from(jar)
     into modules + "/lib"
