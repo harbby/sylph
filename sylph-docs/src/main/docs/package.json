@@ -1,0 +1,26 @@
+{
+  "name": "hexo-site-kit",
+  "version": "0.0.1",
+  "hexo": {
+    "version": "3.7.1"
+  },
+  "scripts": {
+    "build_docs": "hexo clean && hexo g",
+    "clean": "hexo clean",
+    "server": "hexo s"
+  },
+  "dependencies": {
+    "hexo": "^3.2.0",
+    "hexo-deployer-git": "^0.3.1",
+    "hexo-generator-index": "^0.2.0",
+    "hexo-generator-tag": "^0.2.0",
+    "hexo-renderer-less": "^0.2.0",
+    "hexo-renderer-marked": "^0.2.10",
+    "hexo-renderer-stylus": "^0.3.1",
+    "hexo-server": "^0.2.0",
+    "lunr": "^0.6.0",
+    "markdown-it": "^8.2.2",
+    "markdown-it-replace-link": "^1.0.0",
+    "markdown-it-toc-and-anchor": "^4.1.1"
+  }
+}
