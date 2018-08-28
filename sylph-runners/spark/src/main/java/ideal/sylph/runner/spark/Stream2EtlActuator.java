@@ -18,19 +18,12 @@ package ideal.sylph.runner.spark;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
-import ideal.common.jvm.JVMException;
-import ideal.common.jvm.JVMLauncher;
-import ideal.common.jvm.JVMLaunchers;
 import ideal.common.proxy.DynamicProxy;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
-import ideal.sylph.runner.spark.etl.structured.StructuredNodeLoader;
 import ideal.sylph.runner.spark.yarn.SparkAppLauncher;
 import ideal.sylph.runner.spark.yarn.YarnJobContainer;
-import ideal.sylph.spi.App;
 import ideal.sylph.spi.EtlFlow;
-import ideal.sylph.spi.GraphApp;
-import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.classloader.DirClassLoader;
 import ideal.sylph.spi.classloader.ThreadContextClassLoader;
 import ideal.sylph.spi.exception.SylphException;
@@ -46,22 +39,14 @@ import ideal.sylph.spi.utils.JsonTextUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.client.api.YarnClient;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SparkSession;
 
 import javax.validation.constraints.NotNull;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
 import java.lang.reflect.Method;
-import java.net.URLClassLoader;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
 import static java.util.Objects.requireNonNull;
@@ -95,7 +80,7 @@ public class Stream2EtlActuator
         jobClassLoader.addJarFiles(builder.build());
 
         try {
-            return new SparkJobHandle<>(buildJob(jobId, flow, jobClassLoader, pluginManager));
+            return JobHelper.build2xJob(jobId, flow, jobClassLoader, pluginManager);
         }
         catch (Exception e) {
             throw new SylphException(JOB_BUILD_ERROR, e);
@@ -135,76 +120,5 @@ public class Stream2EtlActuator
         };
 
         return (JobContainer) invocationHandler.getProxy(JobContainer.class);
-    }
-
-    private static Supplier<App<SparkSession>> buildJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
-    {
-        final AtomicBoolean isComplic = new AtomicBoolean(true);
-        Supplier<App<SparkSession>> appGetter = (Supplier<App<SparkSession>> & Serializable) () -> new GraphApp<SparkSession, Dataset<Row>>()
-        {
-            private final SparkSession spark = getSparkSession();
-
-            private SparkSession getSparkSession()
-            {
-                System.out.println("========create spark SparkSession mode isComplic = " + isComplic.get() + "============");
-                return isComplic.get() ? SparkSession.builder()
-                        .appName("streamLoadTest")
-                        .master("local[*]")
-                        .getOrCreate()
-                        : SparkSession.builder().getOrCreate();
-            }
-
-            @Override
-            public NodeLoader<SparkSession, Dataset<Row>> getNodeLoader()
-            {
-                return new StructuredNodeLoader(pluginManager)
-                {
-                    @Override
-                    public UnaryOperator<Dataset<Row>> loadSink(Map<String, Object> config)
-                    {
-                        return isComplic.get() ? (stream) -> {
-                            super.loadSinkWithComplic(config).apply(stream);
-                            return null;
-                        } : super.loadSink(config);
-                    }
-                };
-            }
-
-            @Override
-            public SparkSession getContext()
-            {
-                return spark;
-            }
-
-            @Override
-            public void build()
-                    throws Exception
-            {
-                this.buildGraph(jobId, flow).run();
-            }
-        };
-
-        try {
-            //AnsiConsole.systemInstall();
-            JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
-                    .setCallable(() -> {
-                        appGetter.get().build();
-                        return 1;
-                    })
-                    .setConsole(System.err::println)
-                    //.setConsole((line) -> System.out.println(ansi().eraseScreen().render("@|green "+line+"|@").reset()))
-                    .addUserURLClassLoader(jobClassLoader)
-                    .build();
-            launcher.startAndGet(jobClassLoader);
-
-            isComplic.set(false);
-            return appGetter;
-        }
-        catch (IOException | ClassNotFoundException | JVMException e) {
-            throw new SylphException(JOB_BUILD_ERROR, "JOB_BUILD_ERROR", e);
-        }
-        finally {
-            //AnsiConsole.systemUninstall();
-        }
     }
 }

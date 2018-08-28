@@ -10,6 +10,14 @@ tasks.compileJava.dependsOn compileScala
 tasks.compileScala.dependsOn.remove("compileJava")
 
 dependencies {
+  runtime(project(':sylph-spi')){
+    exclude(module: '*')
+  }
+
+  runtime(project(':ideal-common')){
+    exclude(module: '*')
+  }
+
   compileOnly group: 'org.apache.spark', name: 'spark-sql_2.11', version: deps.spark
   compileOnly group: 'org.apache.spark', name: 'spark-streaming_2.11', version: deps.spark
   compileOnly "org.apache.spark:spark-yarn_2.11:$deps.spark"
@@ -17,7 +25,6 @@ dependencies {
   compileOnly (group: 'org.apache.spark', name: 'spark-streaming-kafka-0-10_2.11', version: deps.spark){
     //exclude(group: '*')
   }
-
   compile group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
 
   //--- add scala class

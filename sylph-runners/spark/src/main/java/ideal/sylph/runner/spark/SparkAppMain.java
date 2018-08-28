@@ -15,14 +15,14 @@
  */
 package ideal.sylph.runner.spark;
 
-import ideal.common.base.Serializables;
 import ideal.sylph.spi.App;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.streaming.StreamingContext;
 
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
@@ -39,9 +39,8 @@ public final class SparkAppMain
     {
         System.out.println("spark on yarn app starting...");
 
-        byte[] bytes = Files.readAllBytes(Paths.get(new File("job_handle.byt").toURI()));
         @SuppressWarnings("unchecked")
-        SparkJobHandle<App<?>> sparkJobHandle = (SparkJobHandle<App<?>>) Serializables.byteToObject(bytes);
+        SparkJobHandle<App<?>> sparkJobHandle = (SparkJobHandle<App<?>>) byteToObject(new FileInputStream("job_handle.byt"));
 
         App<?> app = requireNonNull(sparkJobHandle, "sparkJobHandle is null").getApp().get();
         app.build();
@@ -53,6 +52,15 @@ public final class SparkAppMain
         else if (appContext instanceof StreamingContext) {
             ((StreamingContext) appContext).start();
             ((StreamingContext) appContext).awaitTermination();
+        }
+    }
+
+    private static Object byteToObject(InputStream inputStream)
+            throws IOException, ClassNotFoundException
+    {
+        try (ObjectInputStream oi = new ObjectInputStream(inputStream)
+        ) {
+            return oi.readObject();
         }
     }
 }
