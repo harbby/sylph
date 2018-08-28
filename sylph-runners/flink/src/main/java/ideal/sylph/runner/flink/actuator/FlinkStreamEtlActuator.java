@@ -51,6 +51,7 @@ import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
+import org.fusesource.jansi.Ansi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,6 +67,8 @@ import java.util.Optional;
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
 import static java.util.Objects.requireNonNull;
+import static org.fusesource.jansi.Ansi.Color.GREEN;
+import static org.fusesource.jansi.Ansi.Color.YELLOW;
 
 @Name("StreamETL")
 @Description("this is stream etl Actuator")
@@ -196,8 +199,7 @@ public class FlinkStreamEtlActuator
                     app.build();
                     return execEnv.getStreamGraph().getJobGraph();
                 })
-                .setConsole(System.err::println)
-                //.setConsole((line) -> System.out.println(ansi().eraseScreen().fg(GREEN).a(line).reset() ))
+                .setConsole((line) -> System.out.println(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
                 .addUserURLClassLoader(jobClassLoader)
                 .build();
 

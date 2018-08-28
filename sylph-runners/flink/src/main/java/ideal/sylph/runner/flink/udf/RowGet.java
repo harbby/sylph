@@ -13,21 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.runner.spark;
+package ideal.sylph.runner.flink.udf;
 
-import ideal.sylph.spi.job.Flow;
-import ideal.sylph.spi.job.JobHandle;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.common.typeinfo.Types;
+import org.apache.flink.table.functions.ScalarFunction;
+import org.apache.flink.types.Row;
 
-public class SparkJob
-        implements JobHandle
+/**
+ * udf
+ */
+public final class RowGet
+        extends ScalarFunction
 {
-    public String getId()
+    public String eval(Row row, int i)
     {
-        return null;
+        Object value = row.getField(i);
+        return value == null ? null : value.toString();
     }
 
-    public Flow getFlow()
+    @Override
+    public TypeInformation<?> getResultType(Class<?>[] signature)
     {
-        return null;
+        return Types.STRING;
     }
 }

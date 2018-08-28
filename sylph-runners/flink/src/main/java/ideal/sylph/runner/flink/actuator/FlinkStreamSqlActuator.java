@@ -39,11 +39,13 @@ import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
+import org.fusesource.jansi.Ansi;
 
 import javax.validation.constraints.NotNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -52,6 +54,8 @@ import java.util.stream.Stream;
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
+import static org.fusesource.jansi.Ansi.Color.GREEN;
+import static org.fusesource.jansi.Ansi.Color.YELLOW;
 
 @Name("StreamSql")
 @Description("this is flink stream sql etl Actuator")
@@ -121,7 +125,7 @@ public class FlinkStreamSqlActuator
         jobClassLoader.addJarFiles(builder.build());
         //----- compile --
         final int parallelism = 2;
-        JobGraph jobGraph = compile(pluginManager, parallelism, sqlSplit, jobClassLoader);
+        JobGraph jobGraph = compile(jobId, pluginManager, parallelism, sqlSplit, jobClassLoader);
         //----------------设置状态----------------
         JobParameter jobParameter = new JobParameter()
                 .queue("default")
@@ -135,24 +139,22 @@ public class FlinkStreamSqlActuator
         return new FlinkJobHandle(jobGraph, jobParameter);
     }
 
-    private static JobGraph compile(PipelinePluginManager pluginManager, int parallelism, String[] sqlSplit, DirClassLoader jobClassLoader)
+    private static JobGraph compile(
+            String jobId,
+            PipelinePluginManager pluginManager,
+            int parallelism,
+            String[] sqlSplit,
+            DirClassLoader jobClassLoader)
     {
         JVMLauncher<JobGraph> launcher = JVMLaunchers.<JobGraph>newJvm()
-                .setConsole(System.out::println)
+                .setConsole((line) -> System.out.println(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
                 .setCallable(() -> {
                     System.out.println("************ job start ***************");
                     StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.createLocalEnvironment();
                     execEnv.setParallelism(parallelism);
                     StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(execEnv);
-                    SqlParser sqlParser = new SqlParser();
-                    for (String sql : sqlSplit) {
-                        if (sql.toLowerCase().contains("create ") && sql.toLowerCase().contains(" table ")) {
-                            StreamSqlUtil.createStreamTableBySql(pluginManager, tableEnv, sqlParser, sql);
-                        }
-                        else {
-                            tableEnv.sqlUpdate(sql);
-                        }
-                    }
+                    StreamSqlBuilder streamSqlBuilder = new StreamSqlBuilder(tableEnv, pluginManager, new SqlParser());
+                    Arrays.stream(sqlSplit).forEach(streamSqlBuilder::buildStreamBySql);
                     return execEnv.getStreamGraph().getJobGraph();
                 })
                 .addUserURLClassLoader(jobClassLoader)
