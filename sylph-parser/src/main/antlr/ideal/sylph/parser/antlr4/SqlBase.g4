@@ -40,14 +40,15 @@ statement
         (WITH properties)?                                             #createSchema
     | DROP SCHEMA (IF EXISTS)? qualifiedName (CASCADE | RESTRICT)?     #dropSchema
     | ALTER SCHEMA qualifiedName RENAME TO identifier                  #renameSchema
+    | CREATE FUNCTION identifier AS (string)?                          #createFunction
     | CREATE (SOURCE | SINK) TABLE (IF NOT EXISTS)? qualifiedName
         '(' tableElement (',' tableElement)* ')'
          (COMMENT string)?
          (WITH properties)?
          (WATERMARK watermark)?                                        #createStream
     | CREATE VIEW TABLE (IF NOT EXISTS)? qualifiedName
-        (COMMENT string)?
-        (WATERMARK watermark)? (QuerySql)?                            #createStreamAsSelect
+        (WATERMARK watermark)?
+        AS (query | '('query')')                                       #createStreamAsSelect
     | CREATE TABLE (IF NOT EXISTS)? qualifiedName columnAliases?
         (COMMENT string)?
         (WITH properties)? AS (query | '('query')')
@@ -112,14 +113,18 @@ statement
     | SET PATH pathSpecification                                       #setPath
     ;
 
-QuerySql: AS .*? EOF;
-
 watermark
     : identifier FOR identifier BY (
       SYSTEM_OFFSET '('offset=INTEGER_VALUE')'
     | ROWMAX_OFFSET '('offset=INTEGER_VALUE')'
     )
     ;
+
+/*
+QuerySql
+    : AS (.*?) EOF
+    ;
+*/
 
 query
     :  with? queryNoWith
@@ -566,7 +571,7 @@ FORMAT: 'FORMAT';
 FROM: 'FROM';
 SOURCE: 'SOURCE';
 SINK: 'SINK';
-STREAM: 'STREAM';
+FUNCTION: 'FUNCTION';
 SYSTEM_OFFSET: 'SYSTEM_OFFSET';
 ROWMAX_OFFSET: 'ROWMAX_OFFSET';
 WATERMARK: 'WATERMARK';

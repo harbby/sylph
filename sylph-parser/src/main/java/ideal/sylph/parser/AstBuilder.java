@@ -20,6 +20,7 @@ import ideal.sylph.parser.antlr4.SqlBaseBaseVisitor;
 import ideal.sylph.parser.antlr4.SqlBaseLexer;
 import ideal.sylph.parser.antlr4.SqlBaseParser;
 import ideal.sylph.parser.tree.ColumnDefinition;
+import ideal.sylph.parser.tree.CreateFunction;
 import ideal.sylph.parser.tree.CreateStream;
 import ideal.sylph.parser.tree.CreateStreamAsSelect;
 import ideal.sylph.parser.tree.CreateTable;
@@ -35,6 +36,7 @@ import ideal.sylph.parser.tree.TableElement;
 import ideal.sylph.parser.tree.WaterMark;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.misc.Interval;
 
 import java.util.List;
 import java.util.Optional;
@@ -94,14 +96,24 @@ public class AstBuilder
     }
 
     @Override
+    public Node visitCreateFunction(SqlBaseParser.CreateFunctionContext context)
+    {
+        Identifier functionName = visit(context.identifier(), Identifier.class);
+        StringLiteral classString = visit(context.string(), StringLiteral.class);
+
+        return new CreateFunction(getLocation(context), functionName, classString);
+    }
+
+    @Override
     public Node visitCreateStreamAsSelect(SqlBaseParser.CreateStreamAsSelectContext context)
     {
         Optional<String> comment = Optional.empty();
-        if (context.COMMENT() != null) {
-            comment = Optional.of(((StringLiteral) visit(context.string())).getValue());
-        }
+        SqlBaseParser.QueryContext queryContext = context.query();
+        int a = queryContext.start.getStartIndex();
+        int b = queryContext.stop.getStopIndex();
+        Interval interval = new Interval(a, b);
+        String viewSql = context.start.getInputStream().getText(interval);
 
-        String viewSql = context.QuerySql().getText().substring(2).trim();
         return new CreateStreamAsSelect(
                 getLocation(context),
                 getQualifiedName(context.qualifiedName()),
@@ -282,6 +294,11 @@ public class AstBuilder
                 .map(this::visit)
                 .map(clazz::cast)
                 .collect(toList());
+    }
+
+    private <T> T visit(ParserRuleContext context, Class<T> clazz)
+    {
+        return clazz.cast(visit(context));
     }
 
     public static NodeLocation getLocation(ParserRuleContext parserRuleContext)
