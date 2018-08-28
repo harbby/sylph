@@ -45,6 +45,13 @@ with tb2 as (
     group by key,TUMBLE(rowtime,INTERVAL '5' SECOND)
 ) select * from tb2
 ```
+
+## UDF UDAF UDTF
+The registration of the custom function is consistent with the hive
+```sql
+create function json_parser as 'ideal.sylph.runner.flink.udf.JsonParser';
+```
+
 ## Building
 sylph builds use Gradle and requires Java 8.
 ```
