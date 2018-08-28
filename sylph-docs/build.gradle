@@ -4,10 +4,10 @@ plugins {
 
 node {
   // Version of node to use.
-  version = '8.11.3'
+  version = '8.11.4'
 
   // Version of npm to use.
-  npmVersion = '6.3.0'
+  npmVersion = '6.4.0'
 
   // Base URL for fetching node distributions (change if you have a mirror).
   distBaseUrl = 'https://nodejs.org/dist'
