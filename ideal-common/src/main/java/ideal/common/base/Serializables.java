@@ -43,6 +43,12 @@ public class Serializables
         return byteToObject(bytes, null);
     }
 
+    public static Object byteToObject(InputStream inputStream)
+            throws IOException, ClassNotFoundException
+    {
+        return byteToObject(inputStream, null);
+    }
+
     public static Object byteToObject(byte[] bytes, ClassLoader classLoader)
             throws IOException, ClassNotFoundException
     {
