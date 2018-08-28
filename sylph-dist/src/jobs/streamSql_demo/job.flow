@@ -1,3 +1,5 @@
+create function json_parser as 'ideal.sylph.runner.flink.udf.JsonParser';
+
 create source table topic1(
     key varchar,
     value varchar,
@@ -19,7 +21,7 @@ create sink table print_table_sink(
 -- 定义 WATERMARK,通常您应该从kafka message中解析出event_time字段
 create view TABLE foo
 WATERMARK event_time FOR rowtime BY ROWMAX_OFFSET(5000)  --event_time 为您的真实数据产生时间
-AS 
+AS
 with tb1 as (select * from topic1)  --通常这里解析kafka message
 select * from tb1;
 
