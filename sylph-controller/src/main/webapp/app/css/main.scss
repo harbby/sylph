@@ -1,0 +1,136 @@
+html, body, div {
+  box-sizing: border-box !important;
+}
+
+body {
+  padding: 50px 10px 40px 20px;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.flow-fluid {
+  position: absolute;
+  width: 100%;
+  height: 80%;
+
+  .row, .col-md-3, .col-md-8, .col-md-1 {
+    height: 100%;
+  }
+
+  .panel-block {
+    position: relative;
+    height: 100%;
+    margin: 2px;
+  }
+  .panel-body {
+    height: 100%;
+    overflow-y: auto;
+  }
+  .flow-btn {
+    position: absolute;
+    bottom: 0;
+  }
+}
+
+.panel-body {
+  padding: 20px;
+}
+/*按钮*/
+.btn-blue {
+  background: #61CDB5;
+  color: #fff;
+}
+
+.btn-blue:hover, .btn-blue:focus {
+  background: #00CD9F;
+  color: #fff;
+}
+
+.btn-red{
+  background-color: #FF697F;
+  color: #fff;
+}
+.btn-red:hover, .btn-red:focus {
+  background: #FF4B65;
+  color: #fff;
+}
+
+/*编辑模态框*/
+.edit_modal {
+  .modal_textarea {
+    width: 100%;
+  }
+
+}
+
+/*左侧节点树*/
+.panel-left {
+  .flow-nodrag {
+    color: #AFAFAF;
+  }
+  .modal-dialog {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) !important;
+    width: 700px;
+    margin: 0 !important;
+  }
+}
+
+/*右侧面板*/
+.panel-middle {
+  .panel-body {
+    padding: 0;
+  }
+  .node_img {
+    position: absolute;
+    top: -12px;
+    right: 0;
+    cursor: pointer
+  }
+  .label_input_text {
+    color: #444;
+    border: none;
+    height: 20px !important;
+  }
+}
+
+/*底部*/
+.footer {
+  .footer-text {
+    width: 100%;
+    height: 20px;
+    color: #999999;
+  }
+  .footer-square {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #999999;
+    display: inline-block;
+    margin-right: 10px;
+  }
+}
+/*删除模态框*/
+.delete_modal{
+  .modal-dialog {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) !important;
+    width: 500px;
+    margin: 0 !important;
+  }
+}
+.task_title{
+  position: absolute;
+  top:0;
+  left:10px;
+}
+.task_input{
+  margin-top: 15px;
+  margin-bottom: 10px;
+}

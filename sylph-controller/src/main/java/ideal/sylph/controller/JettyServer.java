@@ -22,15 +22,11 @@ import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.servlet.DefaultServlet;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.eclipse.jetty.webapp.WebAppContext;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.MultipartConfigElement;
-
-import java.io.File;
-import java.util.Arrays;
 
 import static java.util.Objects.requireNonNull;
 
@@ -78,8 +74,7 @@ public final class JettyServer
         ServletHolder servlet = new ServletHolder(new ServletContainer(new WebApplication()));
         servlet.getRegistration().setMultipartConfig(new MultipartConfigElement("data/tmp", 1048576, 1048576, 262144));
 
-        //--------------------全局的----------------------
-        //selvet
+        //--------------------plblic----------------------
         ServletContextHandler contextHandler = new ServletContextHandler(
                 ServletContextHandler.NO_SESSIONS);
         contextHandler.setContextPath("/");
@@ -87,8 +82,6 @@ public final class JettyServer
 
         //-------add jersey--------
         contextHandler.addServlet(servlet, "/_sys/*");
-        //contextHandler.addServlet(JobMangerSerlvet.class, "/_sys/job_manger/*");
-        //contextHandler.addServlet(new SylphServletHolder(new ETLJobServlet()), "/_sys/job_graph_edit/*");
         contextHandler.addServlet(WebAppProxyServlet.class, "/proxy/*");
 
         final ServletHolder staticServlet = new ServletHolder(new DefaultServlet());
@@ -98,24 +91,8 @@ public final class JettyServer
         contextHandler.addServlet(staticServlet, "/fonts/*");
         contextHandler.addServlet(staticServlet, "/favicon.ico");
         contextHandler.addServlet(staticServlet, "/");
-        contextHandler.setResourceBase("webapps");
+        contextHandler.setResourceBase("webapp");
 
-        //-----------------加载所有app的-路由------------------
-        //runnerLoader.loadAppHandlers(handlers, contextHandler);
-
-        //----selvet--结束--
-        String mainHome = System.getProperty("user.dir");
-        File[] webs = new File(mainHome + "/webapps").listFiles();
-        if (webs != null) {
-            Arrays.stream(webs).forEach(file -> {
-                if (file.isDirectory()) {
-                    WebAppContext webapp = new WebAppContext();
-                    webapp.setContextPath("/_web/" + file.getName().toLowerCase()); //_web/postman
-                    webapp.setResourceBase(file.getAbsolutePath());
-                    handlers.addHandler(webapp);
-                }
-            });
-        }
         handlers.addHandler(contextHandler);
         return handlers;
     }

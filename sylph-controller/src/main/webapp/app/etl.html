@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>TA Flow Builder</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gang Tao">
+
+    <link rel="stylesheet" type="text/css" href="libs/bootstrap/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" type="text/css" href="libs/bootstrap-treeview/dist/bootstrap-treeview.min.css"/>
+    <link rel="stylesheet" type="text/css" href="libs/jsplumb/dist/css/jsplumb.css"/>
+    <link rel="stylesheet" type="text/css" href="./css/main.css"/>
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <script type='text/javascript'></script>
+    <script type="text/javascript" src="libs/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="libs/jquery-ui/ui/minified/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="libs/d3/d3.min.js"></script>
+    <script type="text/javascript" src="libs/bootstrap/dist/js/bootstrap.min.js"></script>
+    <!--tree view源码有改动,请不要随意替换-->
+    <script type="text/javascript" src="js/bootstrap-treeview.js"></script>
+    <!--<script type="text/javascript" src="libs/bootstrap-treeview/dist/bootstrap-treeview.min.js"></script>-->
+
+    <script type="text/javascript" src="libs/json2/json2.js"></script>
+    <script type="text/javascript" src="libs/jsplumb/dist/js/jquery.jsPlumb-1.7.2-min.js"></script>
+    <script type="text/javascript" src="libs/biltong/src/biltong-0.2.js"></script>
+    <script type="text/javascript" src="libs/jsBezier/js/jsbezier.js"></script> <!-- 0.6 -->
+
+    <script type="text/javascript" src="js/public.js"></script>
+    <script type="text/javascript" src="js/etl.js"></script>
+</head>
+<body>
+<div class="task_title">
+    <div class="task_input">
+        <input type="text" class="form-control" id="task_name" placeholder="请输入名称">
+    </div>
+    <!--<h3>任务名称</h3>-->
+</div>
+<div class="operate_area">
+    <div class="extraIcon">
+        执行引擎
+        <select id="actuators_select">
+            <option value ="volvo">none</option>
+        </select>
+    </div>
+    <div class="extraIcon">
+        <span class="glyphicon glyphicon-file" aria-hidden="true" onclick="$('#upload_file_modal').modal('show');"></span>
+        <span class="glyphicon glyphicon-cog" aria-hidden="true" onclick="$('#config_modal').modal('show');"></span>
+    </div>
+    <div style="float: left;margin-top: -15px;margin-left: 10px;">
+        <button class="btn btn-primary" id="flow_save">保存</button>
+        <button class="btn btn-primary" onclick='window.location.href="index.html"'>返回</button>
+    </div>
+</div>
+<div class="flow-fluid">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="panel panel-default panel-block panel-left">
+                <div class="panel-body">
+                    <div id="control-panel">
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="panel panel-default panel-block panel-middle">
+                <div class="panel-body">
+                    <div id="flow-panel" class='col-md-12' style="position:absolute;height:100%">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr>
+    <div class="footer">
+        <div class="footer-text"><div class="footer-square"></div>灰色节点不可拖动</div>
+        <div class="footer-text"><div class="footer-square"></div>双击节点或连接线文字，可修改内容</div>
+    </div>
+</div>
+<!--编辑模态框-->
+<div class="modal fade edit_modal" data-backdrop="static"  id="flow_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                    &times;
+                </button>
+                <h4 class="modal-title" id="modal_title"></h4>
+            </div>
+            <div class="modal-body">
+                <textarea rows="20" class="modal_textarea">
+
+                </textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-blue" id="flow_confirm">确认修改</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!--删除模态框-->
+<div class="modal fade delete_modal" id="delete_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                    &times;
+                </button>
+                <h4 class="modal-title">警告</h4>
+            </div>
+            <div class="modal-body">
+                确认删除 <span class="delete_text"></span> 节点,数据以及连接线吗？
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-red" id="delete_confirm">确认删除</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!--文件上传框-->
+<div class="modal fade upload_file_modal" data-backdrop="static" id="upload_file_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title">附加文件上传</h4>
+            </div>
+            <div class="modal-body">
+                <input type="file" name="file" id="select_file" multiple="multiple" style="display: none"/>
+                <div id="fileList" class="upload-file-list"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="$('input[name=file]').click();">选择文件</button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal">完成</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!--高级配置框-->
+<div class="modal fade config_modal" data-backdrop="static" id="config_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title">高级配置</h4>
+            </div>
+            <div class="modal-body">
+                <textarea rows="15" class="config_modal_textarea"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">完成</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!--保存-->
+<div class="modal fade save_modal" id="save_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                    &times;
+                </button>
+                <h4 class="modal-title">警告</h4>
+            </div>
+            <div class="modal-body">
+                确认删除 <span class="delete_text"></span> 节点及其数据吗？
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-red" id="delete_confirm">确认删除</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
