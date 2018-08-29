@@ -7,8 +7,11 @@
 java -version
 
 ./gradlew -v
+cd /home/admin/sylph/ && git pull origin dev_20180829_merger
+#sh /home/admin/sylph/sylph-dist/build/bin/launcher stop
 
 ./gradlew clean checkstyle assemble test "$@"
 
+sh /home/admin/sylph/sylph-dist/build/bin/launcher restart
 
 #./gradlew clean assemble install
