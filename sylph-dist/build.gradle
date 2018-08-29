@@ -36,8 +36,8 @@ task dist(type: Tar) {
     into(tarpath+"/jobs")
   }
 
-  from(project.files('src/webapps')) {
-    into(tarpath+"/webapps")
+  from(project.files('build/webapp')) {
+    into(tarpath+"/webapp")
   }
 
   from(project.files('build/modules')){
