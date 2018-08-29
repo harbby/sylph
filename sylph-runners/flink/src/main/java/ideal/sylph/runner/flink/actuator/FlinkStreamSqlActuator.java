@@ -123,10 +123,6 @@ public class FlinkStreamSqlActuator
                             .forEach(builder::add));
                 });
 
-
-
-
-
         jobClassLoader.addJarFiles(builder.build());
         //----- compile --
         final int parallelism = 2;
