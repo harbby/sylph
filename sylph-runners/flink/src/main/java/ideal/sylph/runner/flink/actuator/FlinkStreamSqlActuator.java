@@ -122,6 +122,9 @@ public class FlinkStreamSqlActuator
                             .listFiles(plugin.getPluginFile(), null, true)
                             .forEach(builder::add));
                 });
+
+
+
         jobClassLoader.addJarFiles(builder.build());
         //----- compile --
         final int parallelism = 2;

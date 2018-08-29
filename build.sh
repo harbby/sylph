@@ -9,3 +9,6 @@ java -version
 ./gradlew -v
 
 ./gradlew clean checkstyle assemble test "$@"
+
+
+#./gradlew clean assemble install
