@@ -1,6 +1,6 @@
 plugins {
     id "com.github.hierynomus.license" version "0.14.0"
-    id "com.github.harbby.gradle.serviceloader" version "1.1.2"
+    id "com.github.harbby.gradle.serviceloader" version "1.1.5"
 }
 
 allprojects{
