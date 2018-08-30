@@ -33,7 +33,7 @@
     "backbone": "1.1.2",
     "json2": "",
     "jsBezier": "jsplumb/jsBezier#0.9.1",
-    "biltong": "sporritt/biltong#",
+    "biltong": "jsplumb/biltong#0.4.0",
     "katavorio": "jsplumb/katavorio#0.4",
     "mottle": "jsplumb/mottle#0.4"
   }

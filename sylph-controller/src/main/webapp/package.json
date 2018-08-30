@@ -4,16 +4,14 @@
   "description": "sylph web ui",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prep": "typings install && copyfiles analytics.js dist && catw  node_modules/material-design-lite/material.min.js node_modules/d3/d3.min.js> dist/lib.js",
     "build": "bower install --allow-root && exit 0",
-    "serve": "http-server ./"
+    "clear": "rm app/libs -rf && rm node_modules -rf"
   },
   "keywords": [],
   "author": "yezhixinghai@gmail.com",
   "license": "Apache-2.0",
   "devDependencies": {
-    "bower": "^1.8.4",
-    "http-server": "^0.9.0"
+    "bower": "^1.8.4"
   },
   "dependencies": {}
 }

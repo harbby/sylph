@@ -5,8 +5,8 @@
     "version": "3.7.1"
   },
   "scripts": {
-    "build_docs": "hexo clean && hexo g",
-    "clean": "hexo clean",
+    "build": "hexo clean && hexo g",
+    "clear": "rm public -rf && rm node_modules -rf",
     "server": "hexo clean && hexo s"
   },
   "dependencies": {
