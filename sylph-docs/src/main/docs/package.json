@@ -6,7 +6,6 @@
   },
   "scripts": {
     "build": "hexo clean && hexo g",
-    "clear": "rm public -rf && rm node_modules -rf",
     "server": "hexo clean && hexo s"
   },
   "dependencies": {

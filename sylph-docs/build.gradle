@@ -32,8 +32,9 @@ node {
   nodeModulesDir = file("${project.projectDir}/src/main/docs")
 }
 
-task clear(type:YarnTask){
-  args = [ 'run', 'clear' ]
+task clear(type: Delete){
+  delete file("${project.projectDir}/src/main/docs/node_modules"),
+          file("${project.projectDir}/src/main/docs/public")
 }
 clean.dependsOn 'clear'
 

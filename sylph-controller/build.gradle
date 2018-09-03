@@ -32,9 +32,12 @@ node {
   nodeModulesDir = file("${project.projectDir}/src/main/webapp")
 }
 
-task clear(type:YarnTask){
-  args = [ 'run', 'clear' ]
+
+task clear(type: Delete){
+  delete file("${project.projectDir}/src/main/webapp/node_modules"),
+          file("${project.projectDir}/src/main/webapp/app/libs")
 }
+
 clean.dependsOn 'clear'
 
 task build_package(type:YarnTask, dependsOn: yarn_install){

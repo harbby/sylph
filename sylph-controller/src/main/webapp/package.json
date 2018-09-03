@@ -4,8 +4,7 @@
   "description": "sylph web ui",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "bower install --allow-root && exit 0",
-    "clear": "rm app/libs -rf && rm node_modules -rf"
+    "build": "bower install --allow-root && exit 0"
   },
   "keywords": [],
   "author": "yezhixinghai@gmail.com",
