@@ -18,11 +18,11 @@ package ideal.sylph.runner.spark;
 import com.google.inject.Injector;
 import com.google.inject.Scopes;
 import ideal.common.bootstrap.Bootstrap;
+import ideal.common.classloader.DirClassLoader;
 import ideal.sylph.runner.spark.yarn.SparkAppLauncher;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.RunnerFactory;
-import ideal.sylph.spi.classloader.DirClassLoader;
 import ideal.sylph.spi.model.PipelinePluginManager;
 import sun.reflect.generics.tree.ClassTypeSignature;
 

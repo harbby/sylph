@@ -27,6 +27,7 @@ import javax.validation.constraints.NotNull;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.SYSTEM_ERROR;
@@ -47,13 +48,13 @@ public class SylphContextImpl
     }
 
     @Override
-    public void saveJob(@NotNull String jobId, @NotNull String flowString, @NotNull String actuatorName)
+    public void saveJob(@NotNull String jobId, @NotNull String flowString, @NotNull Map jobConfig)
             throws Exception
     {
         requireNonNull(jobId, "jobId is null");
         requireNonNull(flowString, "flowString is null");
-        requireNonNull(actuatorName, "actuatorName is null");
-        Job job = runnerManger.formJobWithFlow(jobId, flowString.getBytes(UTF_8), actuatorName);
+        requireNonNull(jobConfig, "jobConfig is null");
+        Job job = runnerManger.formJobWithFlow(jobId, flowString.getBytes(UTF_8), jobConfig);
         jobManager.saveJob(job);
     }
 

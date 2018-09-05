@@ -18,12 +18,15 @@ package ideal.sylph.runner.flink.actuator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import ideal.common.classloader.ThreadContextClassLoader;
+import ideal.common.jvm.JVMException;
 import ideal.common.jvm.JVMLauncher;
 import ideal.common.jvm.JVMLaunchers;
 import ideal.common.jvm.VmFuture;
 import ideal.common.proxy.DynamicProxy;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
+import ideal.sylph.runner.flink.FlinkJobConfig;
 import ideal.sylph.runner.flink.FlinkJobHandle;
 import ideal.sylph.runner.flink.etl.FlinkNodeLoader;
 import ideal.sylph.runner.flink.yarn.FlinkYarnJobLauncher;
@@ -31,12 +34,11 @@ import ideal.sylph.spi.App;
 import ideal.sylph.spi.EtlFlow;
 import ideal.sylph.spi.GraphApp;
 import ideal.sylph.spi.NodeLoader;
-import ideal.sylph.spi.classloader.DirClassLoader;
-import ideal.sylph.spi.classloader.ThreadContextClassLoader;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuatorHandle;
+import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.model.NodeInfo;
@@ -55,12 +57,14 @@ import org.fusesource.jansi.Ansi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URLClassLoader;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 
@@ -82,7 +86,15 @@ public class FlinkStreamEtlActuator
 
     @NotNull
     @Override
-    public JobHandle formJob(String jobId, Flow inFlow, DirClassLoader jobClassLoader)
+    public Class<? extends JobConfig> getConfigParser()
+            throws IOException
+    {
+        return FlinkJobConfig.class;
+    }
+
+    @Nullable
+    @Override
+    public Collection<File> parserFlowDepends(Flow inFlow)
             throws IOException
     {
         EtlFlow flow = (EtlFlow) inFlow;
@@ -94,29 +106,22 @@ public class FlinkStreamEtlActuator
             Map<String, Object> config = MAPPER.readValue(json, new GenericTypeReference(Map.class, String.class, Object.class));
             String driverString = (String) requireNonNull(config.get("driver"), "driver is null");
             Optional<PipelinePluginManager.PipelinePluginInfo> pluginInfo = pluginManager.findPluginInfo(driverString);
-            //Optional<PipelinePluginManager.PipelinePluginInfo> pluginInfo = runner.getPluginManager().findPluginInfo(driverString);
             pluginInfo.ifPresent(plugin -> FileUtils.listFiles(plugin.getPluginFile(), null, true)
                     .forEach(builder::add));
         }
-        jobClassLoader.addJarFiles(builder.build());
-        //----------------set job config----------------
-        JobParameter jobParameter = new JobParameter()
-                .queue("default")
-                .taskManagerCount(2) //-yn 注意是executer个数
-                .taskManagerMemoryMb(1024) //1024mb
-                .taskManagerSlots(1) // -ys
-                .jobManagerMemoryMb(1024) //-yjm
-                .appTags(ImmutableSet.of("demo1", "demo2"))
-                .setYarnJobName(jobId);
+        return builder.build();
+    }
 
-        try {
-            int parallelism = 2;
-            JobGraph jobGraph = compile(jobId, flow, parallelism, jobClassLoader, pluginManager);
-            return new FlinkJobHandle(jobGraph, jobParameter);
-        }
-        catch (Exception e) {
-            throw new SylphException(JOB_BUILD_ERROR, e);
-        }
+    @NotNull
+    @Override
+    public JobHandle formJob(String jobId, Flow inFlow, JobConfig jobConfig, URLClassLoader jobClassLoader)
+            throws IOException
+    {
+        EtlFlow flow = (EtlFlow) inFlow;
+
+        final int parallelism = ((FlinkJobConfig) jobConfig).getConfig().getParallelism();
+        JobGraph jobGraph = compile(jobId, flow, parallelism, jobClassLoader, pluginManager);
+        return new FlinkJobHandle(jobGraph);
     }
 
     @Override
@@ -166,7 +171,6 @@ public class FlinkStreamEtlActuator
     }
 
     private static JobGraph compile(String jobId, EtlFlow flow, int parallelism, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
-            throws Exception
     {
         //---- build flow----
         JVMLauncher<JobGraph> launcher = JVMLaunchers.<JobGraph>newJvm()
@@ -203,7 +207,12 @@ public class FlinkStreamEtlActuator
                 .addUserURLClassLoader(jobClassLoader)
                 .build();
 
-        VmFuture<JobGraph> result = launcher.startAndGet(jobClassLoader);
-        return result.get().orElseThrow(() -> new SylphException(JOB_BUILD_ERROR, result.getOnFailure()));
+        try {
+            VmFuture<JobGraph> result = launcher.startAndGet(jobClassLoader);
+            return result.get().orElseThrow(() -> new SylphException(JOB_BUILD_ERROR, result.getOnFailure()));
+        }
+        catch (IOException | ClassNotFoundException | JVMException e) {
+            throw new SylphException(JOB_BUILD_ERROR, e);
+        }
     }
 }

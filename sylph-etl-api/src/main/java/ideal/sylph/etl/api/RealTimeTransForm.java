@@ -15,6 +15,7 @@
  */
 package ideal.sylph.etl.api;
 
+import ideal.sylph.etl.Collector;
 import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.etl.Row;
 
@@ -24,7 +25,7 @@ public interface RealTimeTransForm
     /**
      * line 级别的 需要注意线程安全问题
      **/
-    Row[] process(Row value);
+    void process(Row value, Collector<Row> collector);
 
     /**
      * driver 上运行

@@ -42,6 +42,9 @@ public interface Job
     JobHandle getJobHandle();
 
     @NotNull
+    JobConfig getConfig();
+
+    @NotNull
     Flow getFlow();
 
     public enum Status

@@ -18,18 +18,18 @@ package ideal.sylph.runner.spark;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import ideal.common.classloader.ThreadContextClassLoader;
 import ideal.common.proxy.DynamicProxy;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.runner.spark.yarn.SparkAppLauncher;
 import ideal.sylph.runner.spark.yarn.YarnJobContainer;
 import ideal.sylph.spi.EtlFlow;
-import ideal.sylph.spi.classloader.DirClassLoader;
-import ideal.sylph.spi.classloader.ThreadContextClassLoader;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuatorHandle;
+import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.model.NodeInfo;
@@ -40,11 +40,14 @@ import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.URLClassLoader;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 
@@ -61,9 +64,9 @@ public class Stream2EtlActuator
     @Inject private SparkAppLauncher appLauncher;
     @Inject private PipelinePluginManager pluginManager;
 
-    @NotNull
+    @Nullable
     @Override
-    public JobHandle formJob(String jobId, Flow inFlow, DirClassLoader jobClassLoader)
+    public Collection<File> parserFlowDepends(Flow inFlow)
             throws IOException
     {
         EtlFlow flow = (EtlFlow) inFlow;
@@ -75,12 +78,19 @@ public class Stream2EtlActuator
             Map<String, Object> config = MAPPER.readValue(json, new GenericTypeReference(Map.class, String.class, Object.class));
             String driverString = (String) requireNonNull(config.get("driver"), "driver is null");
             Optional<PipelinePluginManager.PipelinePluginInfo> pluginInfo = pluginManager.findPluginInfo(driverString);
-            pluginInfo.ifPresent(plugin -> FileUtils.listFiles(plugin.getPluginFile(), null, true).forEach(builder::add));
+            pluginInfo.ifPresent(plugin -> FileUtils.listFiles(plugin.getPluginFile(), null, true)
+                    .forEach(builder::add));
         }
-        jobClassLoader.addJarFiles(builder.build());
+        return builder.build();
+    }
 
+    @NotNull
+    @Override
+    public JobHandle formJob(String jobId, Flow inFlow, JobConfig jobConfig, URLClassLoader jobClassLoader)
+            throws IOException
+    {
         try {
-            return JobHelper.build2xJob(jobId, flow, jobClassLoader, pluginManager);
+            return JobHelper.build2xJob(jobId, (EtlFlow) inFlow, jobClassLoader, pluginManager);
         }
         catch (Exception e) {
             throw new SylphException(JOB_BUILD_ERROR, e);

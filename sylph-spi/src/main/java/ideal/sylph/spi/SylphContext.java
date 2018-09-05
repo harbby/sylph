@@ -22,11 +22,12 @@ import ideal.sylph.spi.job.JobContainer;
 import javax.validation.constraints.NotNull;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 
 public interface SylphContext
 {
-    void saveJob(@NotNull String jobId, @NotNull String flow, @NotNull String actuatorName)
+    void saveJob(@NotNull String jobId, @NotNull String flow, @NotNull Map jobConfig)
             throws Exception;
 
     void stopJob(@NotNull String jobId);

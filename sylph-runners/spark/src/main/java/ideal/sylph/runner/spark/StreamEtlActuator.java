@@ -19,12 +19,14 @@ import com.google.inject.Inject;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.spi.EtlFlow;
-import ideal.sylph.spi.classloader.DirClassLoader;
 import ideal.sylph.spi.job.Flow;
+import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.model.PipelinePluginManager;
 
 import javax.validation.constraints.NotNull;
+
+import java.net.URLClassLoader;
 
 @Name("Spark_StreamETL")
 @Description("spark1.x spark streaming StreamETL")
@@ -35,7 +37,7 @@ public class StreamEtlActuator
 
     @NotNull
     @Override
-    public JobHandle formJob(String jobId, Flow flow, DirClassLoader jobClassLoader)
+    public JobHandle formJob(String jobId, Flow flow, JobConfig jobConfig, URLClassLoader jobClassLoader)
     {
         return JobHelper.build1xJob(jobId, (EtlFlow) flow, jobClassLoader, pluginManager);
     }

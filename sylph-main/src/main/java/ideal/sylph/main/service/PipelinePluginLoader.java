@@ -17,12 +17,12 @@ package ideal.sylph.main.service;
 
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableSet;
+import ideal.common.classloader.DirClassLoader;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.annotation.Version;
 import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.etl.api.RealTimePipeline;
-import ideal.sylph.spi.classloader.DirClassLoader;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.model.PipelinePluginManager;
 import org.slf4j.Logger;

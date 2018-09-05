@@ -15,7 +15,9 @@
  */
 package ideal.sylph.runner.spark.etl
 
+import ideal.sylph.etl
 import ideal.sylph.etl.api.RealTimeTransForm
+import ideal.sylph.etl.impl.ListCollector
 import org.apache.spark.TaskContext
 import org.apache.spark.sql.Row
 
@@ -23,14 +25,20 @@ object SparkUtil {
   val transFunction = (partition: Iterator[Row], realTimeTransForm: RealTimeTransForm) => {
     var errorOrNull: Exception = null
     val schema = realTimeTransForm.getRowSchema
+    val list: java.util.List[ideal.sylph.etl.Row] = new java.util.ArrayList[etl.Row]()
+    val collector = new ListCollector(list)
     try {
       val partitionId = TaskContext.getPartitionId()
-      if (realTimeTransForm.open(partitionId, 0))
+      if (realTimeTransForm.open(partitionId, 0)) {
         partition.flatMap(row => {
           //TODO: SparkRow.parserRow(x) with schema ?
-          realTimeTransForm.process(SparkRow.make(row)).map(x => SparkRow.parserRow(x))
+          realTimeTransForm.process(SparkRow.make(row), collector)
+          import collection.JavaConverters._
+          list.asScala.map(x => SparkRow.parserRow(x))
         })
-      else Iterator.empty
+      } else {
+        Iterator.empty
+      }
     }
     catch {
       case e: Exception => errorOrNull = e

@@ -13,24 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.spi.classloader;
+package ideal.sylph.etl;
 
-import java.io.Closeable;
-
-public class ThreadContextClassLoader
-        implements Closeable
+/**
+ * Collects a record and forwards it. The collector is the "push" counterpart of the
+ * {@link java.util.Iterator}, which "pulls" data in.
+ */
+public interface Collector<T>
 {
-    private final ClassLoader originalThreadContextClassLoader;
+    /**
+     * Emits a record.
+     *
+     * @param record The record to collect.
+     */
+    void collect(T record);
 
-    public ThreadContextClassLoader(ClassLoader newThreadContextClassLoader)
-    {
-        this.originalThreadContextClassLoader = Thread.currentThread().getContextClassLoader();
-        Thread.currentThread().setContextClassLoader(newThreadContextClassLoader);
-    }
-
-    @Override
-    public void close()
-    {
-        Thread.currentThread().setContextClassLoader(originalThreadContextClassLoader);
-    }
+    /**
+     * Closes the collector. If any data was buffered, that data will be flushed.
+     */
+    void close();
 }

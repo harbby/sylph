@@ -15,15 +15,20 @@
  */
 package ideal.sylph.runner.flink.actuator;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableSet;
 
 import java.util.Objects;
 import java.util.Set;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class JobParameter
 {
+    private int parallelism = 4;
+
     @JsonProperty("queue")
     private String queue = "default";
 
@@ -31,52 +36,62 @@ public class JobParameter
     private int taskManagerCount = 2;
     private int taskManagerSlots = 2;
     private int jobManagerMemoryMb = 1024;
-    private Set<String> appTags;
-    private String yarnJobName;
+    private Set<String> appTags = ImmutableSet.of("sylph", "flink");
 
-    public JobParameter()
+    public JobParameter() {}
+
+    public void setQueue(String queue)
     {
+        this.queue = queue;
     }
 
-    public JobParameter setYarnJobName(String yarnJobName)
-    {
-        this.yarnJobName = yarnJobName;
-        return this;
-    }
-
-    public String getYarnJobName()
-    {
-        return yarnJobName;
-    }
-
-    public JobParameter taskManagerCount(int taskManagerCount)
+    public void setTaskManagerCount(int taskManagerCount)
     {
         this.taskManagerCount = taskManagerCount;
-        return this;
     }
 
-    public JobParameter taskManagerMemoryMb(int taskManagerMemoryMb)
+    public void setTaskManagerMemoryMb(int taskManagerMemoryMb)
     {
         this.taskManagerMemoryMb = taskManagerMemoryMb;
-        return this;
     }
 
-    public JobParameter taskManagerSlots(int taskManagerSlots)
+    public void setTaskManagerSlots(int taskManagerSlots)
     {
         this.taskManagerSlots = taskManagerSlots;
-        return this;
     }
 
-    public JobParameter jobManagerMemoryMb(int jobManagerMemoryMb)
+    public void setJobManagerMemoryMb(int jobManagerMemoryMb)
     {
         this.jobManagerMemoryMb = jobManagerMemoryMb;
-        return this;
     }
 
-    public JobParameter appTags(Set<String> appTags)
+    @JsonProperty("appTags")
+    public void setAppTags(String... appTags)
     {
-        this.appTags = appTags;
-        return this;
+        this.appTags = ImmutableSet.copyOf(appTags);
+    }
+
+    @JsonProperty("parallelism")
+    public void setParallelism(int parallelism)
+    {
+        this.parallelism = parallelism;
+    }
+
+    @JsonProperty("parallelism")
+    public int getParallelism()
+    {
+        return parallelism;
+    }
+
+    /**
+     * The name of the queue to which the application should be submitted
+     *
+     * @return queue
+     **/
+    @JsonProperty("queue")
+    public String getQueue()
+    {
+        return queue;
     }
 
     public Set<String> getAppTags()
@@ -102,28 +117,6 @@ public class JobParameter
     public int getTaskManagerMemoryMb()
     {
         return taskManagerMemoryMb;
-    }
-
-    public JobParameter queue(String queue)
-    {
-        this.queue = queue;
-        return this;
-    }
-
-    /**
-     * The name of the queue to which the application should be submitted
-     *
-     * @return queue
-     **/
-    @JsonProperty("queue")
-    public String getQueue()
-    {
-        return queue;
-    }
-
-    public void setQueue(String queue)
-    {
-        this.queue = queue;
     }
 
     @Override
@@ -153,19 +146,7 @@ public class JobParameter
         return toStringHelper(this)
                 .add("queue", queue)
                 .add("memory", taskManagerMemoryMb)
-                .add("vCores", taskManagerCount)
+                .add("vCores", taskManagerSlots)
                 .toString();
-    }
-
-    /**
-     * Convert the given object to string with each line indented by 4 spaces
-     * (except the first line).
-     */
-    private String toIndentedString(Object o)
-    {
-        if (o == null) {
-            return "null";
-        }
-        return o.toString().replace("\n", "\n    ");
     }
 }

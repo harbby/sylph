@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.main.server;
+package ideal.common.classloader;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import ideal.sylph.spi.classloader.DirClassLoader;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;

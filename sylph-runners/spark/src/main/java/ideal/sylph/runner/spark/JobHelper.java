@@ -62,16 +62,16 @@ final class JobHelper
 
     static SparkJobHandle<App<SparkSession>> build2xJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
     {
-        final AtomicBoolean isComplic = new AtomicBoolean(true);
+        final AtomicBoolean isCompile = new AtomicBoolean(true);
         Supplier<App<SparkSession>> appGetter = (Supplier<App<SparkSession>> & Serializable) () -> new GraphApp<SparkSession, Dataset<Row>>()
         {
             private final SparkSession spark = getSparkSession();
 
             private SparkSession getSparkSession()
             {
-                logger.info("========create spark SparkSession mode isComplic = " + isComplic.get() + "============");
-                return isComplic.get() ? SparkSession.builder()
-                        .appName("streamLoadTest")
+                logger.info("========create spark SparkSession mode isCompile = " + isCompile.get() + "============");
+                return isCompile.get() ? SparkSession.builder()
+                        .appName("sparkCompile")
                         .master("local[*]")
                         .getOrCreate()
                         : SparkSession.builder().getOrCreate();
@@ -85,7 +85,7 @@ final class JobHelper
                     @Override
                     public UnaryOperator<Dataset<Row>> loadSink(Map<String, Object> config)
                     {
-                        return isComplic.get() ? (stream) -> {
+                        return isCompile.get() ? (stream) -> {
                             super.loadSinkWithComplic(config).apply(stream);
                             return null;
                         } : super.loadSink(config);
@@ -117,7 +117,7 @@ final class JobHelper
                     .addUserURLClassLoader(jobClassLoader)
                     .build();
             launcher.startAndGet(jobClassLoader);
-            isComplic.set(false);
+            isCompile.set(false);
             return new SparkJobHandle<>(appGetter);
         }
         catch (IOException | ClassNotFoundException | JVMException e) {

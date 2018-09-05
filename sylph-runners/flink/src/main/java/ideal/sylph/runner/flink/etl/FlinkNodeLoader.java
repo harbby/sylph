@@ -57,8 +57,10 @@ public final class FlinkNodeLoader
             final Source<StreamTableEnvironment, DataStream<Row>> source = clazz.newInstance();
 
             source.driverInit(tableEnv, config);
-            logger.info("source {} schema:{}", clazz, source.getSource().getType());
-            return (stream) -> source.getSource();
+            return (stream) -> {
+                logger.info("source {} schema:{}", clazz, source.getSource().getType());
+                return source.getSource();
+            };
         }
         catch (IllegalAccessException | InstantiationException | ClassNotFoundException e) {
             throw new SylphException(JOB_BUILD_ERROR, e);
@@ -155,7 +157,8 @@ public final class FlinkNodeLoader
             @Override
             public DataStream<Row> transform(DataStream<Row> stream)
             {
-                final SingleOutputStreamOperator<Row> tmp = stream.flatMap(new FlinkTransFrom(realTimeTransForm, stream.getType()));
+                final SingleOutputStreamOperator<Row> tmp = stream
+                        .flatMap(new FlinkTransFrom(realTimeTransForm, stream.getType()));
                 // schema必须要在driver上面指定
                 ideal.sylph.etl.Row.Schema schema = realTimeTransForm.getRowSchema();
                 if (schema != null) {

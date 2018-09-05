@@ -26,7 +26,7 @@ public class YarnClusterConfiguration
     /**
      * The configuration used by YARN (i.e., <pre>yarn-site.xml</pre>).
      */
-    private final YarnConfiguration conf;
+    private final YarnConfiguration yarnConf;
 
     /**
      * The home directory of all job where all the temporary files for each jobs are stored.
@@ -55,15 +55,15 @@ public class YarnClusterConfiguration
             Path flinkJar,
             Set<Path> resourcesToLocalize)
     {
-        this.conf = conf;
+        this.yarnConf = conf;
         this.appRootDir = appRootDir;
         this.flinkJar = flinkJar;
         this.resourcesToLocalize = resourcesToLocalize;
     }
 
-    YarnConfiguration conf()
+    YarnConfiguration yarnConf()
     {
-        return conf;
+        return yarnConf;
     }
 
     public String appRootDir()

@@ -15,27 +15,27 @@
  */
 package ideal.common.graph.impl;
 
+import ideal.common.graph.GraphBuilder;
 import ideal.common.graph.Node;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.function.UnaryOperator;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
 public class DagNode<T>
-        implements Node<T>
+        extends Node<T>
 {
     private final String id;
-    private List<Node<T>> nextNodes = new ArrayList<>();
+    private final String name;
+    private final UnaryOperator<T> nodeFunc;
+
     private transient T outData;
 
-    private UnaryOperator<T> nodeFunc;
-
-    public DagNode(String id, UnaryOperator<T> nodeFunc)
+    public DagNode(String id, String name, UnaryOperator<T> nodeFunc)
     {
         this.id = requireNonNull(id, "node id is null");
+        this.name = requireNonNull(name, "node name is null");
         this.nodeFunc = requireNonNull(nodeFunc, "nodeFunc is null");
     }
 
@@ -45,6 +45,11 @@ public class DagNode<T>
         return id;
     }
 
+    public String getName()
+    {
+        return name;
+    }
+
     @Override
     public T getOutput()
     {
@@ -52,26 +57,22 @@ public class DagNode<T>
     }
 
     @Override
-    public Collection<Node<T>> nextNodes()
-    {
-        return nextNodes;
-    }
-
-    @Override
-    public void addNextNode(Node<T> node)
-    {
-        this.nextNodes.add(node);
-    }
-
-    @Override
     public void action(Node<T> parentNode)
     {
-        if (parentNode == null) { //根节点
+        if (parentNode instanceof GraphBuilder.RootNode) { //根节点
             this.outData = nodeFunc.apply(null);  //进行变换
         }
         else {  //叶子节点
             T parentOutput = requireNonNull(parentNode.getOutput(), parentNode.getId() + " return is null");
             this.outData = nodeFunc.apply(parentOutput);  //进行变换
         }
+    }
+
+    @Override
+    public String toString()
+    {
+        return toStringHelper(this)
+                .add("id", getId())
+                .toString();
     }
 }

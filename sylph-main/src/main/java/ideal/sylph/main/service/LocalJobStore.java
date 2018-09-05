@@ -42,10 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
-import static ideal.sylph.main.util.PropertiesUtil.loadProperties;
-import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
 import static ideal.sylph.spi.exception.StandardErrorCode.SAVE_JOB_ERROR;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
@@ -83,9 +80,8 @@ public class LocalJobStore
             File yaml = new File(jobDir, "job.flow");
             File typeFile = new File(jobDir, "job.type");
 
-            String jobType = job.getActuatorName();
             FileUtils.writeStringToFile(yaml, flow.toString(), UTF_8);
-            FileUtils.writeStringToFile(typeFile, "type=" + jobType, UTF_8);
+            FileUtils.writeStringToFile(typeFile, job.getConfig().toString(), UTF_8);
 
             jobs.put(job.getId(), job);
             logger.info("save job {} ok", job.getId());
@@ -130,20 +126,12 @@ public class LocalJobStore
                 .parallel()
                 .forEach(jobDir -> {
                     try {
-                        final File typeFile = new File(jobDir, "job.type");
-                        checkArgument(typeFile.exists() && typeFile.isFile(), typeFile + " is not exists or isDirectory");
-                        Map<String, String> jobProps = loadProperties(typeFile);
-                        String jobType = requireNonNull(jobProps.get("type"), "jobProps arg type is null");
-                        try {
-                            byte[] flowBytes = Files.readAllBytes(Paths.get(new File(jobDir, "job.flow").toURI()));
-                            Job job = runnerManger.formJobWithFlow(jobDir.getName(), flowBytes, jobType);
-                            jobs.put(job.getId(), job);
-                        }
-                        catch (IOException e) {
-                            throw new SylphException(JOB_BUILD_ERROR, "loadding job " + jobDir + " job.flow fail", e);
-                        }
+                        byte[] flowBytes = Files.readAllBytes(Paths.get(new File(jobDir, "job.flow").toURI()));
+                        byte[] configBytes = Files.readAllBytes(Paths.get(new File(jobDir, "job.type").toURI()));
+                        Job job = runnerManger.formJobWithFlow(jobDir.getName(), flowBytes, configBytes);
+                        jobs.put(job.getId(), job);
                     }
-                    catch (Exception e) {
+                    catch (IOException e) {
                         logger.warn("job {} 加载失败", jobDir, Throwables.getRootCause(e));
                         errorJob.add(jobDir);
                     }

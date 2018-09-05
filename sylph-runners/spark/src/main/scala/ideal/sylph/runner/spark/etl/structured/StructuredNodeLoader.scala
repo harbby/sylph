@@ -44,11 +44,12 @@ class StructuredNodeLoader(private val pluginManager: PipelinePluginManager) ext
         .load()
     }
 
-    logger.info("source {} schema:", driver)
-    source.printSchema()
-
     new UnaryOperator[DataFrame] {
-      override def apply(stream: DataFrame): DataFrame = source
+      override def apply(stream: DataFrame): DataFrame = {
+        logger.info("source {} schema:", driver)
+        source.printSchema()
+        source
+      }
     }
   }
 

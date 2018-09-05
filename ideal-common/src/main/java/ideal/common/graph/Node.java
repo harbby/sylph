@@ -15,23 +15,37 @@
  */
 package ideal.common.graph;
 
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.List;
 
-public interface Node<E>
+public abstract class Node<E>
 {
-    String getId();
+    private List<Node<E>> nextNodes = new ArrayList<>();
+
+    public abstract String getId();
+
+    public abstract String getName();
 
     /**
      * 获取当前节点的临时数据
      */
-    E getOutput();
+    public abstract E getOutput();
+
+    public abstract void action(Node<E> parentNode);
 
     /**
      * 获取当前节点的所有子节点
      */
-    Collection<Node<E>> nextNodes();
+    public List<Node<E>> nextNodes()
+    {
+        return nextNodes;
+    }
 
-    void addNextNode(Node<E> node);
+    public void addNextNode(Node<E> node)
+    {
+        this.nextNodes.add(node);
+    }
 
-    void action(Node<E> parentNode);
+    @Override
+    public abstract String toString();
 }

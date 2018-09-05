@@ -15,62 +15,42 @@
  */
 package ideal.sylph.spi.job;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import ideal.sylph.spi.EtlFlow;
 import ideal.sylph.spi.exception.SylphException;
-import ideal.sylph.spi.model.EdgeInfo;
-import ideal.sylph.spi.model.NodeInfo;
+
+import javax.validation.constraints.NotNull;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
+import java.util.Map;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.CONFIG_ERROR;
 import static java.util.Objects.requireNonNull;
 
-/**
- * default flow model
- */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class YamlFlow
-        extends EtlFlow
+public class JobConfig
 {
-    private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
+    protected static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
+    private final String type;
 
-    private final List<NodeInfo> nodes;
-    private final List<EdgeInfo> edges;
-
-    @JsonCreator
-    public YamlFlow(
-            @JsonProperty("nodes") List<NodeInfo> nodes,
-            @JsonProperty("edges") List<EdgeInfo> edges
-    )
+    public JobConfig(@JsonProperty("type") String type)
     {
-        this.nodes = requireNonNull(nodes, "nodes must not null");
-        this.edges = requireNonNull(edges, "edges must not null");
+        this.type = requireNonNull(type, "type is null");
     }
 
-    @Override
+    @NotNull
     @JsonProperty
-    public List<EdgeInfo> getEdges()
+    public final String getType()
     {
-        return edges;
+        return type;
     }
 
     @Override
-    @JsonProperty
-    public List<NodeInfo> getNodes()
-    {
-        return nodes;
-    }
-
-    @Override
-    public String toString()
+    public final String toString()
     {
         try {
             return MAPPER.writeValueAsString(this);
@@ -81,23 +61,29 @@ public final class YamlFlow
     }
 
     /**
-     * 加载yaml
+     * parser yaml config
      */
-    public static Flow load(File file)
+    public static JobConfig load(File file)
             throws IOException
     {
-        return MAPPER.readValue(file, YamlFlow.class);
+        return MAPPER.readValue(file, JobConfig.class);
     }
 
-    public static Flow load(String dag)
+    public static JobConfig load(String string)
             throws IOException
     {
-        return MAPPER.readValue(dag, YamlFlow.class);
+        return MAPPER.readValue(string, JobConfig.class);
     }
 
-    public static Flow load(byte[] dag)
+    public static JobConfig load(byte[] bytes)
             throws IOException
     {
-        return MAPPER.readValue(dag, YamlFlow.class);
+        return MAPPER.readValue(bytes, JobConfig.class);
+    }
+
+    public static JobConfig load(Map map)
+            throws IOException
+    {
+        return MAPPER.convertValue(map, JobConfig.class);
     }
 }

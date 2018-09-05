@@ -15,17 +15,21 @@
  */
 package ideal.sylph.main.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import ideal.common.classloader.DirClassLoader;
+import ideal.common.classloader.ThreadContextClassLoader;
 import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.RunnerFactory;
-import ideal.sylph.spi.classloader.DirClassLoader;
-import ideal.sylph.spi.classloader.ThreadContextClassLoader;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuator;
+import ideal.sylph.spi.job.JobActuatorHandle;
+import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobHandle;
 import org.slf4j.Logger;
@@ -52,6 +56,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class RunnerManager
 {
+    protected static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
     private static final Logger logger = LoggerFactory.getLogger(RunnerManager.class);
     private final Map<String, JobActuator> jobActuatorMap = new HashMap<>();
     private final Map<String, Runner> runnerMap = new HashMap<>();
@@ -96,19 +101,32 @@ public class RunnerManager
         }
     }
 
-    public Job formJobWithFlow(String jobId, byte[] flowBytes, String actuatorName)
+    public Job formJobWithFlow(String jobId, byte[] flowBytes, Map configBytes)
             throws IOException
     {
-        requireNonNull(actuatorName, "job actuatorName is null");
+        String actuatorName = JobConfig.load(configBytes).getType();
         Runner runner = runnerMap.get(actuatorName);
         JobActuator jobActuator = jobActuatorMap.get(actuatorName);
         checkArgument(jobActuator != null, "job [" + jobId + "] loading error! JobActuator:[" + actuatorName + "] not find,only " + jobActuatorMap.keySet());
         checkArgument(runner != null, "Unable to find runner for " + actuatorName);
+
+        JobConfig jobConfig = MAPPER.convertValue(configBytes, jobActuator.getHandle().getConfigParser());
+        return formJobWithFlow(jobId, flowBytes, jobActuator, jobConfig);
+    }
+
+    private static Job formJobWithFlow(String jobId, byte[] flowBytes, JobActuator jobActuator, JobConfig jobConfig)
+            throws IOException
+    {
+        JobActuatorHandle jobActuatorHandle = jobActuator.getHandle();
+        String actuatorName = jobConfig.getType();
+
         File jobDir = new File("jobs/" + jobId);
         try (DirClassLoader jobClassLoader = new DirClassLoader(null, jobActuator.getHandleClassLoader())) {
             jobClassLoader.addDir(jobDir);
-            Flow flow = jobActuator.getHandle().formFlow(flowBytes);
-            JobHandle jobHandle = jobActuator.getHandle().formJob(jobId, flow, jobClassLoader);
+
+            Flow flow = jobActuatorHandle.formFlow(flowBytes);
+            jobClassLoader.addJarFiles(jobActuatorHandle.parserFlowDepends(flow));
+            JobHandle jobHandle = jobActuatorHandle.formJob(jobId, flow, jobConfig, jobClassLoader);
             Collection<URL> dependFiles = getJobDependFiles(jobClassLoader);
             return new Job()
             {
@@ -147,12 +165,32 @@ public class RunnerManager
 
                 @NotNull
                 @Override
+                public JobConfig getConfig()
+                {
+                    return jobConfig;
+                }
+
+                @NotNull
+                @Override
                 public Flow getFlow()
                 {
                     return flow;
                 }
             };
         }
+    }
+
+    public Job formJobWithFlow(String jobId, byte[] flowBytes, byte[] configBytes)
+            throws IOException
+    {
+        String actuatorName = JobConfig.load(configBytes).getType();
+        Runner runner = runnerMap.get(actuatorName);
+        JobActuator jobActuator = jobActuatorMap.get(actuatorName);
+        checkArgument(jobActuator != null, "job [" + jobId + "] loading error! JobActuator:[" + actuatorName + "] not find,only " + jobActuatorMap.keySet());
+        checkArgument(runner != null, "Unable to find runner for " + actuatorName);
+
+        JobConfig jobConfig = MAPPER.readValue(configBytes, jobActuator.getHandle().getConfigParser());
+        return formJobWithFlow(jobId, flowBytes, jobActuator, jobConfig);
     }
 
     public Collection<JobActuator.ActuatorInfo> getAllActuatorsInfo()

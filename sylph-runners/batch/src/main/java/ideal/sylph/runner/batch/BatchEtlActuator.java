@@ -19,10 +19,10 @@ import com.google.inject.Inject;
 import ideal.common.graph.Graph;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
-import ideal.sylph.spi.classloader.DirClassLoader;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuatorHandle;
+import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobContainerAbs;
 import ideal.sylph.spi.job.JobHandle;
@@ -40,6 +40,7 @@ import org.quartz.TriggerBuilder;
 
 import javax.validation.constraints.NotNull;
 
+import java.net.URLClassLoader;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
@@ -53,7 +54,7 @@ public class BatchEtlActuator
     @Inject private Scheduler batchJobScheduler;
 
     @Override
-    public JobHandle formJob(String jobId, Flow flow, DirClassLoader jobClassLoader)
+    public JobHandle formJob(String jobId, Flow flow, JobConfig jobConfig, URLClassLoader jobClassLoader)
     {
         return new JobHandle() {};
     }

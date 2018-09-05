@@ -15,7 +15,6 @@
  */
 package ideal.sylph.runner.flink.actuator;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import ideal.common.jvm.JVMException;
@@ -26,11 +25,11 @@ import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.parser.SqlParser;
 import ideal.sylph.parser.tree.CreateStream;
+import ideal.sylph.runner.flink.FlinkJobConfig;
 import ideal.sylph.runner.flink.FlinkJobHandle;
-import ideal.sylph.runner.flink.yarn.FlinkYarnJobLauncher;
-import ideal.sylph.spi.classloader.DirClassLoader;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Flow;
+import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.commons.io.FileUtils;
@@ -41,11 +40,14 @@ import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.fusesource.jansi.Ansi;
 
+import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URLClassLoader;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -62,8 +64,7 @@ import static org.fusesource.jansi.Ansi.Color.YELLOW;
 public class FlinkStreamSqlActuator
         extends FlinkStreamEtlActuator
 {
-    private static final ObjectMapper MAPPER = new ObjectMapper();
-    @Inject private FlinkYarnJobLauncher jobLauncher;
+    private static final String SQL_REGEX = ";(?=([^\']*\'[^\']*\')*[^\']*$)";
     @Inject private PipelinePluginManager pluginManager;
 
     @Override
@@ -73,38 +74,15 @@ public class FlinkStreamSqlActuator
         return new SqlFlow(flowBytes);
     }
 
-    public static class SqlFlow
-            extends Flow
-    {
-        private final String flowString;
-
-        SqlFlow(byte[] flowBytes)
-        {
-            this.flowString = new String(flowBytes, UTF_8);
-        }
-
-        public String getFlowString()
-        {
-            return flowString;
-        }
-
-        @Override
-        public String toString()
-        {
-            return flowString;
-        }
-    }
-
-    @NotNull
+    @Nullable
     @Override
-    public JobHandle formJob(String jobId, Flow inFlow, DirClassLoader jobClassLoader)
-            throws IOException
+    public Collection<File> parserFlowDepends(Flow inFlow)
     {
         SqlFlow flow = (SqlFlow) inFlow;
         final String sqlText = flow.getFlowString();
         ImmutableSet.Builder<File> builder = ImmutableSet.builder();
         SqlParser parser = new SqlParser();
-        String[] sqlSplit = Stream.of(sqlText.split(";(?=([^\']*\'[^\']*\')*[^\']*$)"))
+        String[] sqlSplit = Stream.of(sqlText.split(SQL_REGEX))
                 .filter(StringUtils::isNotBlank).toArray(String[]::new);
         Stream.of(sqlSplit).filter(sql -> sql.toLowerCase().contains("create ") && sql.toLowerCase().contains(" table "))
                 .map(parser::createStatement)
@@ -122,21 +100,22 @@ public class FlinkStreamSqlActuator
                             .listFiles(plugin.getPluginFile(), null, true)
                             .forEach(builder::add));
                 });
-        jobClassLoader.addJarFiles(builder.build());
-        //----- compile --
-        final int parallelism = 2;
-        JobGraph jobGraph = compile(jobId, pluginManager, parallelism, sqlSplit, jobClassLoader);
-        //----------------设置状态----------------
-        JobParameter jobParameter = new JobParameter()
-                .queue("default")
-                .taskManagerCount(2) //-yn 注意是executer个数
-                .taskManagerMemoryMb(1024) //1024mb
-                .taskManagerSlots(1) // -ys
-                .jobManagerMemoryMb(1024) //-yjm
-                .appTags(ImmutableSet.of("demo1", "demo2"))
-                .setYarnJobName(jobId);
+        return builder.build();
+    }
 
-        return new FlinkJobHandle(jobGraph, jobParameter);
+    @NotNull
+    @Override
+    public JobHandle formJob(String jobId, Flow inFlow, JobConfig jobConfig, URLClassLoader jobClassLoader)
+            throws IOException
+    {
+        SqlFlow flow = (SqlFlow) inFlow;
+        final String sqlText = flow.getFlowString();
+        String[] sqlSplit = Stream.of(sqlText.split(SQL_REGEX))
+                .filter(StringUtils::isNotBlank).toArray(String[]::new);
+        //----- compile --
+        final int parallelism = ((FlinkJobConfig) jobConfig).getConfig().getParallelism();
+        JobGraph jobGraph = compile(jobId, pluginManager, parallelism, sqlSplit, jobClassLoader);
+        return new FlinkJobHandle(jobGraph);
     }
 
     private static JobGraph compile(
@@ -144,7 +123,7 @@ public class FlinkStreamSqlActuator
             PipelinePluginManager pluginManager,
             int parallelism,
             String[] sqlSplit,
-            DirClassLoader jobClassLoader)
+            URLClassLoader jobClassLoader)
     {
         JVMLauncher<JobGraph> launcher = JVMLaunchers.<JobGraph>newJvm()
                 .setConsole((line) -> System.out.println(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
@@ -167,6 +146,28 @@ public class FlinkStreamSqlActuator
         }
         catch (IOException | JVMException | ClassNotFoundException e) {
             throw new RuntimeException("StreamSql job build failed", e);
+        }
+    }
+
+    public static class SqlFlow
+            extends Flow
+    {
+        private final String flowString;
+
+        SqlFlow(byte[] flowBytes)
+        {
+            this.flowString = new String(flowBytes, UTF_8);
+        }
+
+        public String getFlowString()
+        {
+            return flowString;
+        }
+
+        @Override
+        public String toString()
+        {
+            return flowString;
         }
     }
 }

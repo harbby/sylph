@@ -57,9 +57,20 @@ public class FlinkTransFrom
     public void flatMap(Row row, Collector<Row> collector)
             throws Exception
     {
-        ideal.sylph.etl.Row[] rows = realTimeTransForm.process(new FlinkRow(row, typeInformation));
-        for (ideal.sylph.etl.Row outRow : rows) {
-            collector.collect(FlinkRow.parserRow(outRow));
-        }
+        ideal.sylph.etl.Collector<ideal.sylph.etl.Row> rowCollector = new ideal.sylph.etl.Collector<ideal.sylph.etl.Row>()
+        {
+            @Override
+            public void collect(ideal.sylph.etl.Row record)
+            {
+                collector.collect(FlinkRow.parserRow(record));
+            }
+
+            @Override
+            public void close()
+            {
+                collector.close();
+            }
+        };
+        realTimeTransForm.process(new FlinkRow(row, typeInformation), rowCollector);
     }
 }

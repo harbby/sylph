@@ -17,6 +17,7 @@ package ideal.sylph.spi;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ideal.common.graph.Graph;
+import ideal.common.graph.GraphBuilder;
 import ideal.common.graph.impl.DagNode;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.model.EdgeInfo;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
+import static java.util.Objects.requireNonNull;
 
 public interface GraphApp<T, R>
         extends App<T>
@@ -40,7 +42,7 @@ public interface GraphApp<T, R>
     default Graph<R> buildGraph(String jobId, EtlFlow flow)
     {
         final T context = getContext();
-        final Graph<R> graphx = Graph.newGraph(jobId);
+        final GraphBuilder<R> graphx = Graph.<R>builder().name(jobId);
         final List<NodeInfo> nodes = flow.getNodes();
         final List<EdgeInfo> edges = flow.getEdges();
 
@@ -49,17 +51,19 @@ public interface GraphApp<T, R>
             try {
                 String json = JsonTextUtil.readJsonText(nodeInfo.getNodeText());
                 final Map<String, Object> config = MAPPER.readValue(json, new GenericTypeReference(Map.class, String.class, Object.class));
+
+                String driverString = (String) requireNonNull(config.get("driver"), "driver class IS NULL");
                 String id = nodeInfo.getNodeId();
 
                 switch (nodeInfo.getNodeType()) {
                     case "source":
-                        graphx.addNode(new DagNode<>(id, loader.loadSource(context, config)));
+                        graphx.addNode(new DagNode<>(id, driverString, loader.loadSource(context, config)));
                         break;
                     case "transfrom":
-                        graphx.addNode(new DagNode<>(id, loader.loadTransform(config)));
+                        graphx.addNode(new DagNode<>(id, driverString, loader.loadTransform(config)));
                         break;
                     case "sink":
-                        graphx.addNode(new DagNode<>(id, loader.loadSink(config)));
+                        graphx.addNode(new DagNode<>(id, driverString, loader.loadSink(config)));
                         break;
                     default:
                         System.out.println("错误的类型算子");
@@ -76,6 +80,6 @@ public interface GraphApp<T, R>
                 edgeInfo.getOutNodeId().split("-")[0]
         ));
 
-        return graphx;
+        return graphx.build();
     }
 }

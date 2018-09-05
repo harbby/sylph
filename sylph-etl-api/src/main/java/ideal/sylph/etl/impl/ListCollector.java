@@ -13,23 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.common.graph;
+package ideal.sylph.etl.impl;
 
-public interface Graph<E>
+import ideal.sylph.etl.Collector;
+import ideal.sylph.etl.Row;
+
+import java.util.List;
+
+import static java.util.Objects.requireNonNull;
+
+public class ListCollector
+        implements Collector<Row>
 {
-    String getName();
+    private final List<Row> list;
 
-    void show()
-            throws Exception;
-
-    void run()
-            throws Exception;
-
-    void run(boolean parallel)
-            throws Exception;
-
-    static <E> GraphBuilder<E> builder()
+    public ListCollector(List<Row> list)
     {
-        return new GraphBuilder<E>();
+        this.list = requireNonNull(list, "list is null");
+    }
+
+    @Override
+    public void collect(Row record)
+    {
+        list.add(record);
+    }
+
+    @Override
+    public void close()
+    {
     }
 }

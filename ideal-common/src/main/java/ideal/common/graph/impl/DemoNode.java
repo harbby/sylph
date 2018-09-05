@@ -17,16 +17,10 @@ package ideal.common.graph.impl;
 
 import ideal.common.graph.Node;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
 public class DemoNode
-        implements Node<Void>
+        extends Node<Void>
 {
     private final String id;
-    private List<Node<Void>> nextNodes = new ArrayList<>();
-
     public DemoNode(String id)
     {
         this.id = id;
@@ -39,21 +33,15 @@ public class DemoNode
     }
 
     @Override
+    public String getName()
+    {
+        return getId();
+    }
+
+    @Override
     public Void getOutput()
     {
         return null;
-    }
-
-    @Override
-    public Collection<Node<Void>> nextNodes()
-    {
-        return this.nextNodes;
-    }
-
-    @Override
-    public void addNextNode(Node<Void> node)
-    {
-        this.nextNodes.add(node);
     }
 
     @Override

@@ -15,8 +15,8 @@
  */
 package ideal.sylph.plugins.flink.transform
 
-import ideal.sylph.etl.Row
 import ideal.sylph.etl.api.RealTimeTransForm
+import ideal.sylph.etl.{Collector, Row}
 
 
 class TestTrans extends RealTimeTransForm {
@@ -28,8 +28,8 @@ class TestTrans extends RealTimeTransForm {
   /**
     * line 级别的 需要注意线程安全问题
     **/
-  override def process(value: Row): Array[Row] = {
-    Array(value)
+  override def process(value: Row, collector: Collector[Row]): Unit = {
+    collector.collect(value)
   }
 
   /**

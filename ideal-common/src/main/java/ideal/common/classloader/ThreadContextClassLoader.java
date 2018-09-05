@@ -13,23 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.common.graph;
+package ideal.common.classloader;
 
-public interface Graph<E>
+import java.io.Closeable;
+
+public class ThreadContextClassLoader
+        implements Closeable
 {
-    String getName();
+    private final ClassLoader originalThreadContextClassLoader;
 
-    void show()
-            throws Exception;
-
-    void run()
-            throws Exception;
-
-    void run(boolean parallel)
-            throws Exception;
-
-    static <E> GraphBuilder<E> builder()
+    public ThreadContextClassLoader(ClassLoader newThreadContextClassLoader)
     {
-        return new GraphBuilder<E>();
+        this.originalThreadContextClassLoader = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(newThreadContextClassLoader);
+    }
+
+    @Override
+    public void close()
+    {
+        Thread.currentThread().setContextClassLoader(originalThreadContextClassLoader);
     }
 }
