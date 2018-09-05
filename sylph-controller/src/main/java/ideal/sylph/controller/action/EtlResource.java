@@ -37,6 +37,7 @@ import javax.ws.rs.core.UriInfo;
 import java.util.Map;
 import java.util.Optional;
 
+import static ideal.sylph.controller.action.StreamSqlResource.parserJobConfig;
 import static ideal.sylph.spi.exception.StandardErrorCode.ILLEGAL_OPERATION;
 import static java.util.Objects.requireNonNull;
 
@@ -69,7 +70,9 @@ public class EtlResource
         try {
             String jobId = requireNonNull(request.getParameter("jobId"), "job jobId 不能为空");
             String flow = request.getParameter("graph");
-            sylphContext.saveJob(jobId, flow, "StreamETL");
+            String configString = request.getParameter("config");
+
+            sylphContext.saveJob(jobId, flow, ImmutableMap.of("type", "StreamETL", "config", parserJobConfig(configString)));
             Map out = ImmutableMap.of(
                     "jobId", jobId,
                     "type", "save",
@@ -103,6 +106,7 @@ public class EtlResource
 
         return ImmutableMap.builder()
                 .put("graph", job.getFlow())
+                .put("config", job.getConfig())
                 .put("msg", "获取任务成功")
                 .put("status", "ok")
                 .put("jobId", jobId)

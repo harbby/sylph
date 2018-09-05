@@ -34,16 +34,20 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static ideal.sylph.spi.exception.StandardErrorCode.ILLEGAL_OPERATION;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -76,9 +80,10 @@ public class StreamSqlResource
         try {
             String jobId = requireNonNull(request.getParameter("jobId"), "job jobId 不能为空");
             String flow = request.getParameter("query");
-            String config = request.getParameter("config");
+            String configString = request.getParameter("config");
+
             checkArgument(isNotBlank(flow), "SQL query IS NULL");
-            sylphContext.saveJob(jobId, flow, "StreamSql");
+            sylphContext.saveJob(jobId, flow, ImmutableMap.of("type", "StreamSql", "config", parserJobConfig(configString)));
             Map out = ImmutableMap.of(
                     "jobId", jobId,
                     "type", "save",
@@ -116,12 +121,27 @@ public class StreamSqlResource
                 Arrays.stream(userFiles).map(File::getName).collect(Collectors.toList())
                 : Collections.emptyList();
 
-        return ImmutableMap.of(
-                "graph", job.getFlow(),
-                "msg", "获取任务成功",
-                "status", "ok",
-                "files", files,
-                "jobId", jobId
-        );
+        return ImmutableMap.builder()
+                .put("query", job.getFlow())
+                .put("config", job.getConfig())
+                .put("msg", "获取任务成功")
+                .put("status", "ok")
+                .put("files", files)
+                .put("jobId", jobId)
+                .build();
+    }
+
+    static Map parserJobConfig(String configString)
+            throws IOException
+    {
+        Properties properties = new Properties();
+        properties.load(new ByteArrayInputStream(configString.getBytes(UTF_8)));
+        String appTags = properties.getProperty("appTags", null);
+        if (appTags != null) {
+            String[] tags = appTags.split(",");
+            properties.put("appTags", tags);
+        }
+
+        return ImmutableMap.copyOf(properties);
     }
 }
