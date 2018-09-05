@@ -1,6 +1,7 @@
 /**
  * Created by Polar on 2017/12/14.
  */
+
 /*获取URL中的参数值*/
 function getUrlParam(paramName) {
     var arrSource = [];
@@ -38,14 +39,20 @@ $(function () {
             cache: false,
             success: function (result) {
                 $("textarea[name=jobId]").val(result.jobId);
-                $("textarea[name=query]").val(result.graph.flowString);
+                $("textarea[name=query]").val(result.query.flowString);
+                var congfigString = ""
+                $.each(result.config.config, function (key, value) {
+                    congfigString += key + "= " + value + "\n"
+                });
+                $("textarea[name=config]").val(congfigString);   //JSON.stringify(result.config.config)
+
                 var files = result.files;
-                for(var i = 0; i < files.length; i++) {
+                for (var i = 0; i < files.length; i++) {
                     $('#fileList').append(
                         '<div class="file_row" id="file_' + files[i] + '">' +
                         '<input type="hidden" name="selectFile" value="' + files[i] + '" />' +
                         '<i class="fa fa-trash" onclick="deleteFile(this)"></i>' +
-                        '<span class="file_name">'+files[i]+'</span>' +
+                        '<span class="file_name">' + files[i] + '</span>' +
                         '</div>');
                 }
             }
@@ -61,27 +68,27 @@ $(function () {
             data: formData,
             processData: false,
             contentType: false
-        }).done(function(data) {
+        }).done(function (data) {
             if (data.status == "ok") {
                 alert("保存成功");
                 window.location.href = "index.html";
             } else {
                 alert(data.msg);
             }
-        }).fail(function(data) {
+        }).fail(function (data) {
             alert(data.msg);
         });
     });
 
-    $('input[name=file]').change(function(){
+    $('input[name=file]').change(function () {
         $('#fileList').children().remove();
         var files = $(this).prop('files');
-        for(var i = 0; i < files.length; i++) {
+        for (var i = 0; i < files.length; i++) {
             $('#fileList').append(
                 '<div class="file_row" id="file_' + files[i].name + '">' +
                 '<input type="hidden" name="selectFile" value="' + files[i].name + '" />' +
                 '<i class="fa fa-trash" onclick="deleteFile(this)"></i>' +
-                '<span class="file_name">'+files[i].name+'</span>' +
+                '<span class="file_name">' + files[i].name + '</span>' +
                 '</div>');
         }
     });
@@ -92,13 +99,28 @@ function deleteFile(obj) {
 }
 
 var UploadFilesLayer;
-function openUploadFilesLayer() {
-    UploadFilesLayer = layer.open({type: 1,area: ['500px', '360px'],title: '文件上传',shade: 0.6,maxmin: false,
-        anim: 1,content: $('#upload-files')  });
-}
 
-var ConfigSetLayer;
+function openUploadFilesLayer() {
+    UploadFilesLayer = layer.open({
+        type: 1, area: ['500px', '360px'], title: '文件上传', shade: 0.6, maxmin: false,
+        anim: 1, content: $('#upload-files')
+    });
+};
+
 function openConfigSetLayer() {
-    ConfigSetLayer = layer.open({type: 1,area: ['500px', '360px'],title: '高级配置',shade: 0.6,maxmin: false,
-        anim: 1,content: $('#config-set')  });
+    var configSetLayer = layer.open({
+        type: 1, area: ['500px', '360px'], title: '高级配置', shade: 0.6, maxmin: false,
+        anim: 1, content: $('#config-set'),
+        success: function (layero, index) {
+            CodeMirror.fromTextArea(document.getElementById("config"), {
+                mode: 'properties',
+                lineNumbers: true,
+                styleActiveLine: true,
+                matchBrackets: true
+            }).on('change', editor => {
+                document.getElementById('query').value = editor.getValue();
+                console.log('change up value:' + editor.getValue());
+            });
+        }
+    });
 }

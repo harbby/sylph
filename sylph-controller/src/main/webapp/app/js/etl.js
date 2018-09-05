@@ -461,6 +461,11 @@ jsPlumb.ready(function () {
                 if(result.graph && result.graph!=""){
                     drawNodesConnections(instance,result.graph);
                 }
+                var congfigString = ""
+                $.each(result.config.config, function (key, value) {
+                    congfigString += key + "= " + value + "\n"
+                });
+                $("textarea[name=config]").val(congfigString);   //JSON.stringify(result.config.config)
             },
             error: function (result) {
                 alert("接口拉取失败");
@@ -499,7 +504,7 @@ jsPlumb.ready(function () {
         for (var i = 0; i < element.length; i++) {
             formData.append('file', element[i]);
         }
-        formData.append('config', $('.config_modal_textarea').val());
+        formData.append('config', $("textarea[name=config]").val());
         $.ajax({
             url: '/_sys/etl_builder/save',
             type: 'POST',

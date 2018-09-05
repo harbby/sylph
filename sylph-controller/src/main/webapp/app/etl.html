@@ -30,14 +30,21 @@
 
     <script type="text/javascript" src="libs/json2/json2.js"></script>
     <script type="text/javascript" src="libs/jsplumb/dist/js/jquery.jsPlumb-1.7.2-min.js"></script>
-    <script type="text/javascript" src="libs/biltong/src/biltong-0.2.js"></script>
+    <script type="text/javascript" src="libs/biltong/src/biltong.js"></script>
     <script type="text/javascript" src="libs/jsBezier/js/jsbezier.js"></script> <!-- 0.6 -->
 
     <script type="text/javascript" src="js/public.js"></script>
     <script type="text/javascript" src="js/etl.js"></script>
+
+    <!-- CodeMirror includes -->
+    <link rel="stylesheet" href="libs/codemirror/lib/codemirror.css">
+    <script src="libs/codemirror/lib/codemirror.js"></script>
+    <script src="libs/codemirror/mode/properties/properties.js"></script>
+    <script src="libs/codemirror/addon/selection/active-line.js"></script>
+    <script src="libs/codemirror/addon/edit/matchbrackets.js"></script>
 </head>
 <body>
-<div class="task_title">
+<div class="task_title">xian ba dwa
     <div class="task_input">
         <input type="text" class="form-control" id="task_name" placeholder="请输入名称">
     </div>
@@ -155,7 +162,7 @@
                 <h4 class="modal-title">高级配置</h4>
             </div>
             <div class="modal-body">
-                <textarea rows="15" class="config_modal_textarea"></textarea>
+                <textarea rows="15" class="config_modal_textarea" name="config" id="config"></textarea>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary" data-dismiss="modal">完成</button>
@@ -185,4 +192,17 @@
 </div>
 
 </body>
+
+<script>
+$('#config_modal').on('shown.bs.modal', function (e) {
+    CodeMirror.fromTextArea(document.getElementById("config"), {
+        mode: 'properties',
+        lineNumbers: true,
+        styleActiveLine: true,
+        matchBrackets: true
+    }).on('change', editor => {
+        document.getElementById('config').value = editor.getValue();
+    });
+});
+</script>
 </html>

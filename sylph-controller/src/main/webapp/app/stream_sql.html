@@ -11,12 +11,10 @@
 <!-- CodeMirror includes -->
 <link rel="stylesheet" href="libs/codemirror/lib/codemirror.css">
 <script src="libs/codemirror/lib/codemirror.js"></script>
-<script src="libs/codemirror/mode/javascript/javascript.js"></script>
+<script src="libs/codemirror/mode/properties/properties.js"></script>
 <script src="libs/codemirror/mode/sql/sql.js"></script>
 <script src="libs/codemirror/addon/selection/active-line.js"></script>
 <script src="libs/codemirror/addon/edit/matchbrackets.js"></script>
-
-
 
 <!-- AngularJS -->
 <script src="libs/angular/angular.min.js"></script>
@@ -61,7 +59,7 @@
             <div class="col-sm-2"></div>
             <div class="col-sm-4" style="font-size: 20px;">
                 <i class="fa fa-folder" onclick="openUploadFilesLayer();"></i>
-                <i class="fa fa-cog" onclick="openConfigSetLayer();"></i>
+                <i class="fa fa-cog" id="setting" onclick="openConfigSetLayer();"></i>
             </div>
             <div class="col-sm-2">
                 <button id="submit" type="button" class="btn btn-primary">Save</button>
@@ -77,7 +75,7 @@
             </div>
         </div>
         <div id="config-set" style="display: none">
-            <div><textarea style="width: 100%;height: 265px;" name="config"></textarea></div>
+            <div><textarea style="width: 100%;height: 265px;" name="config" id="config"></textarea></div>
             <div style="text-align: right;margin-right: 10px;">
                 <button type="button" class="btn btn-primary" onclick="layer.close(ConfigSetLayer);">确定</button>
             </div>
@@ -87,15 +85,16 @@
 </body>
 <script>
 window.onload = function () {
-    var editor = CodeMirror.fromTextArea(document.getElementById("query"), {
+    CodeMirror.fromTextArea(document.getElementById("query"), {
         mode: 'text/x-sql',
         lineNumbers: true,
         styleActiveLine: true,
         matchBrackets: true
-    });
-    editor.on('change', editor => {
+    }).on('change', editor => {
         document.getElementById('query').value = editor.getValue();
+        console.log('change up value:'+ editor.getValue());
     });
-}
+};
+
 </script>
 </html>
