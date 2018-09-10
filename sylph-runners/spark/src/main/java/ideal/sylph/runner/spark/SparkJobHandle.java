@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 public class SparkJobHandle<T>
         implements JobHandle, Serializable
 {
+    private static final long serialVersionUID = 2L;
     private final Supplier<T> supplier;
 
     SparkJobHandle(Supplier<T> supplier)

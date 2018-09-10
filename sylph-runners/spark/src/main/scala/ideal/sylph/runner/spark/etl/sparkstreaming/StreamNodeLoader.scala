@@ -59,7 +59,7 @@ class StreamNodeLoader(private val pluginManager: PipelinePluginManager) extends
 
     new UnaryOperator[DStream[Row]] {
       override def apply(stream: DStream[Row]): DStream[Row] = {
-        DStreamUtil.DstreamParser(stream, sink) //这里处理偏移量提交问题
+        DStreamUtil.dstreamParser(stream, sink) //这里处理偏移量提交问题
         null
       }
     }
@@ -94,14 +94,7 @@ class StreamNodeLoader(private val pluginManager: PipelinePluginManager) extends
         try {
           val partitionId = TaskContext.getPartitionId()
           val openOK = realTimeSink.open(partitionId, 0) //初始化 返回是否正常 如果正常才处理数据
-          if (openOK) partition.foreach(row => {
-            try {
-              realTimeSink.process(SparkRow.make(row))
-            } catch {
-              case e: Exception => //忽略出错的这一行
-            }
-          })
-
+          if (openOK) partition.foreach(row => realTimeSink.process(SparkRow.make(row)))
         } catch {
           case e: Exception => errorOrNull = e //open出错了
         } finally {

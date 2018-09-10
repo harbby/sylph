@@ -19,11 +19,12 @@ import java.io.Serializable;
 
 /**
  * Let java like scala use lazy freely
- * google guava {@link com.google.common.base.Suppliers::memoize}
+ * google guava {@link com.google.common.base.Suppliers#memoize}
  */
 public class LazyReference<T>
         implements Serializable
 {
+    private static final long serialVersionUID = 0L;
     private final Supplier<T> supplier;
     private transient volatile T instance;
 

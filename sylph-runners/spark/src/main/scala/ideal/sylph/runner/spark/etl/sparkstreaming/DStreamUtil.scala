@@ -34,7 +34,7 @@ object DStreamUtil {
   def getFristRdd(rdd: RDD[_]): RDD[_] = if (rdd.dependencies.isEmpty) rdd
   else getFristRdd(rdd.dependencies.head.rdd)
 
-  def DstreamParser(stream: DStream[Row], sink: Sink[RDD[Row]]): Unit = {
+  def dstreamParser(stream: DStream[Row], sink: Sink[RDD[Row]]): Unit = {
     val fristDStream = getFristDStream(stream.map(x => x))
     logger.info("数据源驱动:{}", fristDStream.getClass.getName)
 

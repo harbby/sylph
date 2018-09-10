@@ -64,12 +64,11 @@ import static org.fusesource.jansi.Ansi.Color.YELLOW;
 public class FlinkStreamSqlActuator
         extends FlinkStreamEtlActuator
 {
-    private static final String SQL_REGEX = ";(?=([^\']*\'[^\']*\')*[^\']*$)";
     @Inject private PipelinePluginManager pluginManager;
 
+    @NotNull
     @Override
     public Flow formFlow(byte[] flowBytes)
-            throws IOException
     {
         return new SqlFlow(flowBytes);
     }
@@ -79,12 +78,10 @@ public class FlinkStreamSqlActuator
     public Collection<File> parserFlowDepends(Flow inFlow)
     {
         SqlFlow flow = (SqlFlow) inFlow;
-        final String sqlText = flow.getFlowString();
         ImmutableSet.Builder<File> builder = ImmutableSet.builder();
         SqlParser parser = new SqlParser();
-        String[] sqlSplit = Stream.of(sqlText.split(SQL_REGEX))
-                .filter(StringUtils::isNotBlank).toArray(String[]::new);
-        Stream.of(sqlSplit).filter(sql -> sql.toLowerCase().contains("create ") && sql.toLowerCase().contains(" table "))
+
+        Stream.of(flow.getSqlSplit()).filter(sql -> sql.toLowerCase().contains("create ") && sql.toLowerCase().contains(" table "))
                 .map(parser::createStatement)
                 .filter(statement -> statement instanceof CreateStream)
                 .forEach(statement -> {
@@ -106,15 +103,11 @@ public class FlinkStreamSqlActuator
     @NotNull
     @Override
     public JobHandle formJob(String jobId, Flow inFlow, JobConfig jobConfig, URLClassLoader jobClassLoader)
-            throws IOException
     {
         SqlFlow flow = (SqlFlow) inFlow;
-        final String sqlText = flow.getFlowString();
-        String[] sqlSplit = Stream.of(sqlText.split(SQL_REGEX))
-                .filter(StringUtils::isNotBlank).toArray(String[]::new);
         //----- compile --
         final int parallelism = ((FlinkJobConfig) jobConfig).getConfig().getParallelism();
-        JobGraph jobGraph = compile(jobId, pluginManager, parallelism, sqlSplit, jobClassLoader);
+        JobGraph jobGraph = compile(jobId, pluginManager, parallelism, flow.getSqlSplit(), jobClassLoader);
         return new FlinkJobHandle(jobGraph);
     }
 
@@ -149,25 +142,29 @@ public class FlinkStreamSqlActuator
         }
     }
 
-    public static class SqlFlow
+    private static class SqlFlow
             extends Flow
     {
-        private final String flowString;
+        private final String[] sqlSplit;
+        private final String sqlText;
 
         SqlFlow(byte[] flowBytes)
         {
-            this.flowString = new String(flowBytes, UTF_8);
+            final String SQL_REGEX = ";(?=([^\']*\'[^\']*\')*[^\']*$)";
+            this.sqlText = new String(flowBytes, UTF_8);
+            this.sqlSplit = Stream.of(sqlText.split(SQL_REGEX))
+                    .filter(StringUtils::isNotBlank).toArray(String[]::new);
         }
 
-        public String getFlowString()
+        String[] getSqlSplit()
         {
-            return flowString;
+            return sqlSplit;
         }
 
         @Override
         public String toString()
         {
-            return flowString;
+            return sqlText;
         }
     }
 }

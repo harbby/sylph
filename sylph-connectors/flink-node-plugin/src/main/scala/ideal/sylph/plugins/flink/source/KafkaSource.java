@@ -96,7 +96,7 @@ public class KafkaSource
         return loadStream.get();
     }
 
-    private class RowDeserializer
+    private static class RowDeserializer
             implements KeyedDeserializationSchema<Row>
     {
         @Override

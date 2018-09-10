@@ -15,6 +15,8 @@
  */
 package ideal.sylph.plugins.spark.source
 
+import java.util.Objects
+
 import ideal.sylph.annotation.{Description, Name, Version}
 import ideal.sylph.etl.api.{Sink, Source, TransForm}
 import org.apache.spark.api.java.JavaRDD
@@ -45,7 +47,7 @@ class SocketSource extends Source[StreamingContext, DStream[Row]] {
   }
 
   private lazy val loadStream: DStream[Row] = {
-    val socketLoad = props.get("socketLoad").asInstanceOf[String]
+    val socketLoad = Objects.requireNonNull(props.get("socketLoad").asInstanceOf[String], "socketLoad is not setting")
 
     val schema: StructType = StructType(Array(
       StructField("host", StringType, nullable = true),
