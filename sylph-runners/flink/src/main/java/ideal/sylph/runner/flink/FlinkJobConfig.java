@@ -21,9 +21,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import ideal.sylph.runner.flink.actuator.JobParameter;
 import ideal.sylph.spi.job.JobConfig;
 
-import java.io.File;
-import java.io.IOException;
-
 import static java.util.Objects.requireNonNull;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
