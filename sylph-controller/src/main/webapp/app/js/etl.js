@@ -123,7 +123,7 @@ function drawNodesConnections(instance, _addEndpoints, nodesCon) {
             y: nodes[i].nodeY + 'px'
         });
         //锚点8
-        addPorts(_addEndpoints, node, nodes[i].nodeConfig.out,  nodes[i].nodeConfig.in);
+        addPorts(_addEndpoints, node, nodes[i].nodeConfig.in, nodes[i].nodeConfig.out);
         //节点绑定双击事件
         var currentNode = {
             data: nodes[i].nodeText,
@@ -329,7 +329,7 @@ jsPlumb.ready(function () {
     });
 
     // the definition of source endpoints (the small blue ones)
-    var sourceEndpoint = {
+    var targetEndpoint= {
             paintStyle: {
                 stroke: "#7AB02C",
                 fillStyle: "#FF8891",
@@ -341,7 +341,7 @@ jsPlumb.ready(function () {
             maxConnections: -1
         },
         // the definition of target endpoints (will appear when the user drags a connection)
-        targetEndpoint = {
+        sourceEndpoint = {
             endpoint: "Dot",
             //paintStyle: {radius: 5, fillStyle: '#D4FFD6'},
             paintStyle: { fillStyle: "#7AB02C", radius: 7 },
@@ -353,13 +353,15 @@ jsPlumb.ready(function () {
     var _addEndpoints = function (toId, sourceAnchors, targetAnchors) {
         for (var i = 0; i < sourceAnchors.length; i++) {
             var sourceUUID = toId + "-" + sourceAnchors[i];
-            instance.addEndpoint(toId, sourceEndpoint, {
+            var endpoint = instance.addEndpoint(toId, sourceEndpoint, {
                 anchor: sourceAnchors[i], uuid: sourceUUID
             });
+            $(endpoint.canvas).data("uuid",sourceUUID);
         }
         for (var j = 0; j < targetAnchors.length; j++) {
             var targetUUID = toId + "-" + targetAnchors[j];
-            instance.addEndpoint(toId, targetEndpoint, { anchor: targetAnchors[j], uuid: targetUUID });
+            var endpoint = instance.addEndpoint(toId, targetEndpoint, { anchor: targetAnchors[j], uuid: targetUUID });
+            $(endpoint.canvas).data("uuid",targetUUID);
         }
     };
     jsPlumb.fire("jsPlumbDemoLoaded", instance);
@@ -511,12 +513,12 @@ jsPlumb.ready(function () {
  */
 function addPorts(_addEndpoints, node, in_num, out_num) {
     var sourceAnchors = [];
-    if(in_num === 1){
-        sourceAnchors = ["RightMiddle"]
+    if(in_num == 1){
+        sourceAnchors = ["LeftMiddle"]
     }
     var targetAnchors = [];
-    if(out_num === 1){
-        targetAnchors = ["LeftMiddle"]
+    if(out_num == 1){
+        targetAnchors = ["RightMiddle"]
     }
     var nodeId=node.getAttribute("id");
     _addEndpoints(nodeId , sourceAnchors, targetAnchors)
