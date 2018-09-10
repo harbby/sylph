@@ -64,6 +64,7 @@ public class SparkRunnerFactory
                         .in(Scopes.SINGLETON);
             });
             Injector injector = app.strictConfig()
+                    .name(this.getClass().getSimpleName())
                     .setRequiredConfigurationProperties(Collections.emptyMap())
                     .initialize();
             return injector.getInstance(SparkRunner.class);

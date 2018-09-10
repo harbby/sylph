@@ -1,6 +1,6 @@
 
 dependencies {
-  compile ('io.airlift:configuration:0.171'){
+  compile ('io.airlift:configuration:0.172'){
     exclude(module: 'guice')
     exclude(module: 'guava')
     exclude(module: "guice-multibindings")

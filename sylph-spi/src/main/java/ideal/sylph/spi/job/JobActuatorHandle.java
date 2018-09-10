@@ -36,7 +36,7 @@ public interface JobActuatorHandle
     default Flow formFlow(byte[] flowBytes)
             throws IOException
     {
-        return YamlFlow.load(flowBytes);
+        return EtlFlow.load(flowBytes);
     }
 
     @NotNull

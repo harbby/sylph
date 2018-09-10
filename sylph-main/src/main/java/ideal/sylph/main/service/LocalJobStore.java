@@ -19,6 +19,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import ideal.common.base.Throwables;
 import ideal.common.memory.offheap.collection.OffHeapMap;
+import ideal.sylph.main.server.ServerMainConfig;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;
@@ -51,7 +52,7 @@ public class LocalJobStore
         implements JobStore
 {
     private static final Logger logger = LoggerFactory.getLogger(LocalJobStore.class);
-    private final JobStoreConfig config;
+    private final ServerMainConfig config;
     private final RunnerManager runnerManger;
 
     private final ConcurrentMap<String, Job> jobs = new ConcurrentHashMap<>();
@@ -63,11 +64,12 @@ public class LocalJobStore
 
     @Inject
     public LocalJobStore(
-            JobStoreConfig config,
-            RunnerManager runnerManger
+            ServerMainConfig config,
+            RunnerManager runnerManger,
+            JobStoreConfig jobStoreConfig
     )
     {
-        this.config = requireNonNull(config, "JobStore config is null");
+        this.config = requireNonNull(config, "server config is null");
         this.runnerManger = requireNonNull(runnerManger, "runnerManger config is null");
     }
 
@@ -117,7 +119,7 @@ public class LocalJobStore
     @Override
     public void loadJobs()
     {
-        File jobsDir = new File("jobs");
+        File jobsDir = new File(config.getJobWorkDir());
         if (!jobsDir.exists() || jobsDir.isFile()) {
             checkState(jobsDir.mkdirs(), "The working directory does not exist and an attempt to create failed");
         }

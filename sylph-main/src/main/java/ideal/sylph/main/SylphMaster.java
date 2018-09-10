@@ -53,7 +53,11 @@ public final class SylphMaster
 
         /*2 Initialize Guice Injector */
         try {
-            Injector injector = new Bootstrap(modules).strictConfig().requireExplicitBindings(false).initialize();
+            Injector injector = new Bootstrap(modules)
+                    .name(SylphMaster.class.getSimpleName())
+                    .strictConfig()
+                    .requireExplicitBindings(false)
+                    .initialize();
             injector.getInstance(PipelinePluginLoader.class).loadPlugins();
             injector.getInstance(RunnerLoader.class).loadPlugins();
             injector.getInstance(JobStore.class).loadJobs();

@@ -20,6 +20,7 @@ import ideal.common.graph.Graph;
 import ideal.common.graph.GraphBuilder;
 import ideal.common.graph.impl.DagNode;
 import ideal.sylph.spi.exception.SylphException;
+import ideal.sylph.spi.job.EtlFlow;
 import ideal.sylph.spi.model.EdgeInfo;
 import ideal.sylph.spi.model.NodeInfo;
 import ideal.sylph.spi.utils.GenericTypeReference;

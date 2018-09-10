@@ -34,7 +34,7 @@ import static java.util.Objects.requireNonNull;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class JobConfig
 {
-    protected static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
+    private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
     private final String type;
 
     public JobConfig(@JsonProperty("type") String type)
@@ -82,7 +82,6 @@ public class JobConfig
     }
 
     public static JobConfig load(Map map)
-            throws IOException
     {
         return MAPPER.convertValue(map, JobConfig.class);
     }

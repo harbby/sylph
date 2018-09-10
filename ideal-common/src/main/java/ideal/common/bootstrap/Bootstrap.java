@@ -24,12 +24,14 @@ import com.google.inject.Module;
 import com.google.inject.Stage;
 import com.google.inject.spi.Message;
 import io.airlift.configuration.ConfigurationFactory;
+import io.airlift.configuration.ConfigurationInspector;
 import io.airlift.configuration.ConfigurationLoader;
 import io.airlift.configuration.ConfigurationModule;
 import io.airlift.configuration.ValidationErrorModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -43,6 +45,7 @@ public final class Bootstrap
     private Map<String, String> optionalConfigurationProperties;
     private Map<String, String> requiredConfigurationProperties;
     private boolean requireExplicitBindings = true;
+    private String name = "";
 
     public Bootstrap(Module... modules)
     {
@@ -52,6 +55,12 @@ public final class Bootstrap
     public Bootstrap(Iterable<? extends Module> modules)
     {
         this.modules = ImmutableList.copyOf(modules);
+    }
+
+    public Bootstrap name(String name)
+    {
+        this.name = name;
+        return this;
     }
 
     /**
@@ -97,7 +106,7 @@ public final class Bootstrap
     public Injector initialize()
             throws Exception
     {
-        logger.info("=========Bootstrap initialize...========");
+        logger.info("========={} Bootstrap initialize...========", name);
         ConfigurationLoader loader = new ConfigurationLoader();
 
         Map<String, String> requiredProperties = new TreeMap<>();
@@ -117,6 +126,10 @@ public final class Bootstrap
         List<Message> messages = configurationFactory.validateRegisteredConfigurationProvider(); //对config进行装配
         TreeMap<String, String> unusedProperties = new TreeMap<>(requiredProperties);
         unusedProperties.keySet().removeAll(configurationFactory.getUsedProperties());
+
+        // Log effective configuration
+        logConfiguration(configurationFactory, unusedProperties);
+
         //----
         ImmutableList.Builder<Module> moduleList = ImmutableList.builder();
         moduleList.add(new ConfigurationModule(configurationFactory));
@@ -140,5 +153,42 @@ public final class Bootstrap
 
         moduleList.addAll(this.modules);
         return Guice.createInjector(Stage.PRODUCTION, moduleList.build());
+    }
+
+    private void logConfiguration(ConfigurationFactory configurationFactory, Map<String, String> unusedProperties)
+    {
+        ColumnPrinter columnPrinter = makePrinterForConfiguration(configurationFactory);
+
+        try (PrintWriter out = new PrintWriter(new LoggingWriter(logger))) {
+            columnPrinter.print(out);
+        }
+
+        // Warn about unused properties
+        if (!unusedProperties.isEmpty()) {
+            logger.warn("UNUSED PROPERTIES");
+            for (String unusedProperty : unusedProperties.keySet()) {
+                logger.warn("{}", unusedProperty);
+            }
+            logger.warn("");
+        }
+    }
+
+    private static ColumnPrinter makePrinterForConfiguration(ConfigurationFactory configurationFactory)
+    {
+        ConfigurationInspector configurationInspector = new ConfigurationInspector();
+
+        ColumnPrinter columnPrinter = new ColumnPrinter(
+                "PROPERTY", "DEFAULT", "RUNTIME", "DESCRIPTION");
+
+        for (ConfigurationInspector.ConfigRecord<?> record : configurationInspector.inspect(configurationFactory)) {
+            for (ConfigurationInspector.ConfigAttribute attribute : record.getAttributes()) {
+                columnPrinter.addValues(
+                        attribute.getPropertyName(),
+                        attribute.getDefaultValue(),
+                        attribute.getCurrentValue(),
+                        attribute.getDescription());
+            }
+        }
+        return columnPrinter;
     }
 }

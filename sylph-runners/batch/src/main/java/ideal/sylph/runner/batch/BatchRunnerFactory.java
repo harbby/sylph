@@ -45,6 +45,7 @@ public class BatchRunnerFactory
                 binder.bind(Scheduler.class).toProvider(this::getBatchJobScheduler).in(Scopes.SINGLETON);
             });
             Injector injector = app.strictConfig()
+                    .name(this.getClass().getSimpleName())
                     .setRequiredConfigurationProperties(Collections.emptyMap())
                     .initialize();
             return injector.getInstance(BatchRunner.class);

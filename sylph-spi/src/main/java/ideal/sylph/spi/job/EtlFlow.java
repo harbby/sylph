@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import ideal.sylph.spi.EtlFlow;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.model.EdgeInfo;
 import ideal.sylph.spi.model.NodeInfo;
@@ -37,8 +36,8 @@ import static java.util.Objects.requireNonNull;
  * default flow model
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public final class YamlFlow
-        extends EtlFlow
+public final class EtlFlow
+        extends Flow
 {
     private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
 
@@ -46,7 +45,7 @@ public final class YamlFlow
     private final List<EdgeInfo> edges;
 
     @JsonCreator
-    public YamlFlow(
+    public EtlFlow(
             @JsonProperty("nodes") List<NodeInfo> nodes,
             @JsonProperty("edges") List<EdgeInfo> edges
     )
@@ -55,14 +54,12 @@ public final class YamlFlow
         this.edges = requireNonNull(edges, "edges must not null");
     }
 
-    @Override
     @JsonProperty
     public List<EdgeInfo> getEdges()
     {
         return edges;
     }
 
-    @Override
     @JsonProperty
     public List<NodeInfo> getNodes()
     {
@@ -86,18 +83,18 @@ public final class YamlFlow
     public static Flow load(File file)
             throws IOException
     {
-        return MAPPER.readValue(file, YamlFlow.class);
+        return MAPPER.readValue(file, EtlFlow.class);
     }
 
     public static Flow load(String dag)
             throws IOException
     {
-        return MAPPER.readValue(dag, YamlFlow.class);
+        return MAPPER.readValue(dag, EtlFlow.class);
     }
 
     public static Flow load(byte[] dag)
             throws IOException
     {
-        return MAPPER.readValue(dag, YamlFlow.class);
+        return MAPPER.readValue(dag, EtlFlow.class);
     }
 }

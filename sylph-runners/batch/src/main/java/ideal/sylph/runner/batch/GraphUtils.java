@@ -18,7 +18,7 @@ package ideal.sylph.runner.batch;
 import ideal.common.graph.Graph;
 import ideal.common.graph.GraphBuilder;
 import ideal.common.graph.impl.DagNode;
-import ideal.sylph.spi.EtlFlow;
+import ideal.sylph.spi.job.EtlFlow;
 import ideal.sylph.spi.job.Flow;
 
 public class GraphUtils

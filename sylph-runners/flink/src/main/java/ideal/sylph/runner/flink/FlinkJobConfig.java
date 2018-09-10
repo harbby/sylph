@@ -47,25 +47,4 @@ public class FlinkJobConfig
     {
         return config;
     }
-
-    /**
-     * parser yaml config
-     */
-    public static FlinkJobConfig load(File file)
-            throws IOException
-    {
-        return MAPPER.readValue(file, FlinkJobConfig.class);
-    }
-
-    public static FlinkJobConfig load(String string)
-            throws IOException
-    {
-        return MAPPER.readValue(string, FlinkJobConfig.class);
-    }
-
-    public static FlinkJobConfig load(byte[] bytes)
-            throws IOException
-    {
-        return MAPPER.readValue(bytes, FlinkJobConfig.class);
-    }
 }

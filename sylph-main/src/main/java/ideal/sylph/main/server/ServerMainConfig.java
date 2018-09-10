@@ -23,6 +23,7 @@ import javax.validation.constraints.NotNull;
 public class ServerMainConfig
 {
     private String metadataPath;
+    private String jobWorkDir;
 
     @Config("server.metadata.path")
     @ConfigDescription("server.metadata.path location")
@@ -36,5 +37,18 @@ public class ServerMainConfig
     public String getMetadataPath()
     {
         return metadataPath;
+    }
+
+    @Config("server.jobstore.workpath")
+    @ConfigDescription("server.jobstore.workpath is job local working dir")
+    public void setJobWorkDir(String jobWorkDir)
+    {
+        this.jobWorkDir = jobWorkDir;
+    }
+
+    @NotNull(message = "server.jobstore.workpath not setting")
+    public String getJobWorkDir()
+    {
+        return jobWorkDir;
     }
 }

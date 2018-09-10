@@ -68,6 +68,7 @@ public class FlinkRunnerFactory
                         .in(Scopes.SINGLETON);
             });
             Injector injector = app.strictConfig()
+                    .name(this.getClass().getSimpleName())
                     .setRequiredConfigurationProperties(Collections.emptyMap())
                     .initialize();
             return injector.getInstance(FlinkRunner.class);
