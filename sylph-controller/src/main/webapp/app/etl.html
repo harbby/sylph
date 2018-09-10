@@ -12,12 +12,6 @@
     <link rel="stylesheet" type="text/css" href="libs/jsplumb/dist/css/jsplumb.css"/>
     <link rel="stylesheet" type="text/css" href="./css/main.css"/>
 
-    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-    <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-    <![endif]-->
 
     <script type='text/javascript'></script>
     <script type="text/javascript" src="libs/jquery/dist/jquery.min.js"></script>
@@ -43,16 +37,31 @@
     <script src="libs/codemirror/addon/selection/active-line.js"></script>
     <script src="libs/codemirror/addon/edit/matchbrackets.js"></script>
 </head>
+
+<style>
+    .window {
+        background-color: #eeeeef;
+        text-align:center;
+        line-height: 30px;
+        z-index:24;
+        cursor:pointer;
+        box-shadow: 2px 2px 19px #aaa;
+        -o-box-shadow: 2px 2px 19px #aaa;
+        -webkit-box-shadow: 2px 2px 19px #aaa;
+        -moz-box-shadow: 2px 2px 19px #aaa;
+    }
+</style>
+
 <body>
 <div class="task_title">
-    <div class="task_input">
+    <div class="task_input" style="margin-left: 50px;">
         <input type="text" class="form-control" id="task_name" placeholder="请输入名称">
     </div>
     <!--<h3>任务名称</h3>-->
 </div>
 <div class="operate_area">
     <div class="extraIcon">
-        执行引擎
+        <label>执行引擎:</label>
         <select id="actuators_select">
             <option value ="volvo">none</option>
         </select>

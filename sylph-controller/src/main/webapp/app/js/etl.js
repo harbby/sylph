@@ -7,78 +7,16 @@
  */
 function addNode(parentId, nodeId, nodeLable, position) {
     var panel = d3.select("#" + parentId);
-    panel.append('div').style('width', '120px').style('height', '50px')
+    panel.append('div')
+        .style('width', '100px').style('height', '50px')
         .style('position', 'absolute')
         .style('top', position.y).style('left', position.x)
-        .style('border', '2px #9DFFCA solid').attr('align', 'center')
+        //.style('border', '2px #9DFFCA solid').attr('align', 'center')  //设置 方块边框颜色
+        .attr('class',"window")
         .attr('id', nodeId).classed('node', true)
         .text(nodeLable);
 
     return jsPlumb.getSelector('#' + nodeId)[0];
-}
-
-
-/**
- * 添加节点(in out)
- * @param {*daw} instance
- * @param {*dwa} node
- * @param {*daw} ports
- * @param {*dwad} type
- */
-function addPorts2(instance, node, ports, type) {
-    //Assume horizental layout
-    var number_of_ports = ports.length;
-    var i = 0;
-    var height = $(node).height();  //Note, jquery does not include border for height
-    var y_offset = 1 / ( number_of_ports + 1);
-    var y = 0;
-
-    for (; i < number_of_ports; i++) {
-        var anchor = [0, 0, 0, 0];
-        var paintStyle = {radius: 5, fillStyle: '#FF8891'};
-        var isSource = false, isTarget = false;
-        if (type === 'output') {
-            anchor[0] = 1;
-            paintStyle.fillStyle = '#D4FFD6';
-            isSource = true;
-        } else {
-            isTarget = true;
-        }
-
-        anchor[1] = y + y_offset;
-        y = anchor[1];
-        var uuid=node.getAttribute("id") + "-" + ports[i];
-        var endpoint=instance.addEndpoint(node, {
-            uuid: uuid,
-            paintStyle: paintStyle,
-            anchor: anchor,
-            maxConnections: -1,
-            isSource: isSource,
-            isTarget: isTarget
-        });
-        $(endpoint.canvas).data("uuid",uuid);
-    }
-}
-
-/**
- * 给方块添加点
- * @param {*} instance
- * @param {*} node
- * @param {*} in_num
- * @param {*} out_num
- */
-function addPorts(instance, node, in_num, out_num) {
-    var get_ports = function (x, num) {
-        var ports = [];
-        for (var i = 1; i <= num; i++) {
-            ports.push(x + i);
-        }
-        return ports;
-    };
-    var out_ports = get_ports('out', out_num);
-    var in_ports = get_ports('in', in_num);
-    addPorts2(instance, node, out_ports, 'output');
-    addPorts2(instance, node, in_ports, 'input');
 }
 
 /*
@@ -174,7 +112,7 @@ function getAllNodes(instance) {
  * 绘制节点及其连接线
  *
  * */
-function drawNodesConnections(instance, nodesCon) {
+function drawNodesConnections(instance, _addEndpoints, nodesCon) {
     var edges = nodesCon.edges;
     var nodes = nodesCon.nodes;
     //节点
@@ -185,7 +123,7 @@ function drawNodesConnections(instance, nodesCon) {
             y: nodes[i].nodeY + 'px'
         });
         //锚点8
-        addPorts(instance, node, nodes[i].nodeConfig.in, nodes[i].nodeConfig.out);
+        addPorts(_addEndpoints, node, nodes[i].nodeConfig.out,  nodes[i].nodeConfig.in);
         //节点绑定双击事件
         var currentNode = {
             data: nodes[i].nodeText,
@@ -197,7 +135,7 @@ function drawNodesConnections(instance, nodesCon) {
         //删除
         bindDeleteNode(instance, nodes[i].nodeId);
         //可拖动
-        instance.draggable($(node));
+        instance.draggable($(node),{containment: 'parent'});
     }
     //连接线
     for (var j = 0; j < edges.length; j++) {
@@ -205,7 +143,9 @@ function drawNodesConnections(instance, nodesCon) {
             uuids: edges[j].uuids
         });
         if(typeof connect!=="undefined"){
-            connect.getOverlays(connect.id)[1].setLabel(edges[j].labelText);
+            //connect.getOverlays(connect.id)[1].setLabel(edges[j].labelText);
+        }else {
+            console.error("edgs create error " + edges[j].uuids)
         }
     }
 }
@@ -338,18 +278,14 @@ function getNodeData() {
 
 /*等待DOM和jsPlumb初始化完毕*/
 jsPlumb.ready(function () {
-    //初始化左侧节点树
-    $('#control-panel').treeview(
-        {
-            data: getTreeData()
-        });
-    //初始化JsPlumb配置参数
     var color = "#E8C870";
-    //创建jsPlumb实例
     var instance = jsPlumb.getInstance({
-        Connector: ["Bezier", {curviness: 50}],   //基本连接线类型 使用Bezier曲线
-        DragOptions: {cursor: "pointer", zIndex: 2000},
+        //Connector: ["Bezier", {curviness: 50}],   //基本连接线类型 使用Bezier曲线
+        Connector: ['Flowchart', { gap: 8, cornerRadius: 5, alwaysRespectStubs: true }],  // 连接线的样式种类有[Bezier],[Flowchart],[StateMachine ],[Straight ]
         PaintStyle: {strokeStyle: color, lineWidth: 2},  //线条样式
+        HoverPaintStyle: {strokeStyle: "#7073EB"},
+
+        DragOptions: {cursor: "pointer", zIndex: 2000},
         EndpointStyle: {radius: 5, fillStyle: color},
         //叠加层
         ConnectionOverlays: [
@@ -360,7 +296,7 @@ jsPlumb.ready(function () {
                 foldback: 0.9
             }],
             ["Label", {
-                label: "Default", id: "label", cssClass: "aLabel",
+                label: "", id: "label", cssClass: "aLabel",
                 events: {
                     dblclick: function (labelOverlay, originalEvent) {
                         //双击修改文字
@@ -388,10 +324,52 @@ jsPlumb.ready(function () {
                 }
             }]//这个是鼠标拉出来的线的属性
         ],
-        HoverPaintStyle: {strokeStyle: "#7073EB"},
         EndpointHoverStyle: {fillStyle: "#7073EB"},
         Container: "flow-panel"
     });
+
+    // the definition of source endpoints (the small blue ones)
+    var sourceEndpoint = {
+            paintStyle: {
+                stroke: "#7AB02C",
+                fillStyle: "#FF8891",
+                radius: 7,
+                strokeWidth: 1
+            },
+            //paintStyle: {radius: 5, fillStyle: '#FF8891'},
+            isSource: true,
+            maxConnections: -1
+        },
+        // the definition of target endpoints (will appear when the user drags a connection)
+        targetEndpoint = {
+            endpoint: "Dot",
+            //paintStyle: {radius: 5, fillStyle: '#D4FFD6'},
+            paintStyle: { fillStyle: "#7AB02C", radius: 7 },
+            maxConnections: -1,
+            isTarget: true
+        };
+
+
+    var _addEndpoints = function (toId, sourceAnchors, targetAnchors) {
+        for (var i = 0; i < sourceAnchors.length; i++) {
+            var sourceUUID = toId + "-" + sourceAnchors[i];
+            instance.addEndpoint(toId, sourceEndpoint, {
+                anchor: sourceAnchors[i], uuid: sourceUUID
+            });
+        }
+        for (var j = 0; j < targetAnchors.length; j++) {
+            var targetUUID = toId + "-" + targetAnchors[j];
+            instance.addEndpoint(toId, targetEndpoint, { anchor: targetAnchors[j], uuid: targetUUID });
+        }
+    };
+    jsPlumb.fire("jsPlumbDemoLoaded", instance);
+
+
+    //初始化左侧节点树
+    $('#control-panel').treeview(
+        {
+            data: getTreeData()
+        });
 
     /**
      * 拖拽出控件
@@ -415,7 +393,7 @@ jsPlumb.ready(function () {
         //节点
         var node = addNode('flow-panel', node_id, text, {x: mx, y: my});
         //锚点
-        addPorts(instance, node, config.in, config.out);
+        addPorts(_addEndpoints, node, config.in, config.out);
         //节点绑定双击事件
         var currentNode = {
             data: data,
@@ -427,27 +405,11 @@ jsPlumb.ready(function () {
         //删除
         bindDeleteNode(instance, node_id);
         //在面板中可拖动
-        instance.draggable($(node));
+        instance.draggable($(node),{containment: 'parent'});
     }).on('dragover', function (ev) {
         ev.preventDefault();
         console.log('on drag over');
     });
-
-    instance.doWhileSuspended(function () {
-
-        // declare some common values:
-        var arrowCommon = {foldback: 0.8, fillStyle: color, width: 5},
-            // use three-arg spec to create two different arrows with the common values:
-            overlays = [
-                ["Arrow", {location: 0.8}, arrowCommon],
-                ["Arrow", {location: 0.2, direction: -1}, arrowCommon]
-            ];
-        instance.draggable($('.node'));
-    });
-
-    //立即生效
-    jsPlumb.fire("jsFlowLoaded", instance);
-
 
     var job_id = getUrlParam("jobId");
     if (job_id != '') {
@@ -459,13 +421,19 @@ jsPlumb.ready(function () {
             data: {},
             success: function (result) {
                 if(result.graph && result.graph!=""){
-                    drawNodesConnections(instance,result.graph);
+                    drawNodesConnections(instance, _addEndpoints, result.graph);
                 }
                 var congfigString = ""
                 $.each(result.config.config, function (key, value) {
                     congfigString += key + "= " + value + "\n"
                 });
                 $("textarea[name=config]").val(congfigString);   //JSON.stringify(result.config.config)
+
+                //renderer = jsPlumbToolkit.Support.ingest({ jsPlumb:instance });
+                // renderer.storePositionsInModel();
+                //var toolkit = renderer.getToolkit();
+                // bind to the node added event and tell the renderer to ingest each one
+                //instance.bind("jsPlumbDemoNodeAdded", function(el) {renderer.ingest(el);  });
             },
             error: function (result) {
                 alert("接口拉取失败");
@@ -532,8 +500,27 @@ jsPlumb.ready(function () {
                 '<div class="file-row" id="file_'+files[i].name+'">' + files[i].name + '</div>');
         }
     });
-
 });
+
+/**
+ * 给方块添加点
+ * @param {*} instance
+ * @param {*} node
+ * @param {*} in_num
+ * @param {*} out_num
+ */
+function addPorts(_addEndpoints, node, in_num, out_num) {
+    var sourceAnchors = [];
+    if(in_num === 1){
+        sourceAnchors = ["RightMiddle"]
+    }
+    var targetAnchors = [];
+    if(out_num === 1){
+        targetAnchors = ["LeftMiddle"]
+    }
+    var nodeId=node.getAttribute("id");
+    _addEndpoints(nodeId , sourceAnchors, targetAnchors)
+}
 
 /*获取URL中的参数值*/
 function getUrlParam(paramName) {
