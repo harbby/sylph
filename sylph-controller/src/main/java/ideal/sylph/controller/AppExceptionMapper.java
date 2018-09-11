@@ -32,6 +32,7 @@ public class AppExceptionMapper
     @Override
     public Response toResponse(Exception ex)
     {
+        logger.warn("", ex);
         return Response.status(404).entity(Throwables.getStackTraceAsString(ex)).type("text/plain").build();
     }
 }

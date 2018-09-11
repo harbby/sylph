@@ -15,6 +15,7 @@
  */
 package ideal.sylph.runner.flink.actuator;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import ideal.common.jvm.JVMException;
@@ -142,7 +143,7 @@ public class FlinkStreamSqlActuator
         }
     }
 
-    private static class SqlFlow
+    public static class SqlFlow
             extends Flow
     {
         private final String[] sqlSplit;
@@ -156,6 +157,7 @@ public class FlinkStreamSqlActuator
                     .filter(StringUtils::isNotBlank).toArray(String[]::new);
         }
 
+        @JsonIgnore
         String[] getSqlSplit()
         {
             return sqlSplit;

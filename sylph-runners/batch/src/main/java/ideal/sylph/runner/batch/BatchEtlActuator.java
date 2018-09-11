@@ -45,7 +45,6 @@ import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
-@Name("BatchEtl123")
 @Name("BatchEtl")
 @Description("batch Etl job")
 public class BatchEtlActuator

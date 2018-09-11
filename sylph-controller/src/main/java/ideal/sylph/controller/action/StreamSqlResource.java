@@ -122,7 +122,7 @@ public class StreamSqlResource
                 : Collections.emptyList();
 
         return ImmutableMap.builder()
-                .put("query", job.getFlow())
+                .put("query", job.getFlow().toString())
                 .put("config", job.getConfig())
                 .put("msg", "获取任务成功")
                 .put("status", "ok")

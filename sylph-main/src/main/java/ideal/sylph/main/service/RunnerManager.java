@@ -79,14 +79,13 @@ public class RunnerManager
         logger.info("Runner: {} starts loading {}", runner.getClass().getName(), PipelinePlugin.class.getName());
         runner.getJobActuators().forEach(jobActuatorHandle -> {
             JobActuator jobActuator = new JobActuatorImpl(jobActuatorHandle);
-            for (String name : jobActuator.getInfo().getName()) {
-                if (jobActuatorMap.containsKey(name)) {
-                    throw new IllegalArgumentException(String.format("Multiple entries with same key: %s=%s and %s=%s", name, jobActuatorMap.get(name), name, jobActuator));
-                }
-                else {
-                    jobActuatorMap.put(name, jobActuator);
-                    runnerMap.put(name, runner);
-                }
+            String name = jobActuator.getInfo().getName();
+            if (jobActuatorMap.containsKey(name)) {
+                throw new IllegalArgumentException(String.format("Multiple entries with same key: %s=%s and %s=%s", name, jobActuatorMap.get(name), name, jobActuator));
+            }
+            else {
+                jobActuatorMap.put(name, jobActuator);
+                runnerMap.put(name, runner);
             }
         });
     }

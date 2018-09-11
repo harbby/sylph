@@ -39,7 +39,7 @@ $(function () {
             cache: false,
             success: function (result) {
                 $("textarea[name=jobId]").val(result.jobId);
-                $("textarea[name=query]").val(result.query.flowString);
+                $("textarea[name=query]").val(result.query);
                 var congfigString = ""
                 $.each(result.config.config, function (key, value) {
                     congfigString += key + "= " + value + "\n"

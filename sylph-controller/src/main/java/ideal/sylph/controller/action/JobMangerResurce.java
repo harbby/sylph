@@ -72,7 +72,7 @@ public class JobMangerResurce
     public List<String> getAllActuators(@QueryParam("name") String name)
     {
         //test Object a1 = uriInfo.getQueryParameters();
-        List<String> names = sylphContext.getAllActuatorsInfo().stream().flatMap(x -> Arrays.stream(x.getName())).collect(Collectors.toList());
+        List<String> names = sylphContext.getAllActuatorsInfo().stream().map(x -> x.getName()).collect(Collectors.toList());
         return names;
     }
 

@@ -33,7 +33,7 @@ public class JobActuatorImpl
     private final JobActuator.ActuatorInfo info;
     private final JobActuatorHandle jobActuatorHandle;
 
-    private final String[] name;
+    private final String name;
     private final String description;
 
     JobActuatorImpl(JobActuatorHandle jobActuatorHandle)
@@ -44,7 +44,7 @@ public class JobActuatorImpl
         this.info = new JobActuator.ActuatorInfo()
         {
             @Override
-            public String[] getName()
+            public String getName()
             {
                 return name;
             }
@@ -87,16 +87,13 @@ public class JobActuatorImpl
         return (URLClassLoader) jobActuatorHandle.getClass().getClassLoader();
     }
 
-    private String[] buildName(JobActuatorHandle jobActuator)
+    private String buildName(JobActuatorHandle jobActuator)
     {
         String errorMessage = jobActuator.getClass().getName() + " Missing @Name annotation";
-        //Name actuatorName = jobActuator.getClass().getAnnotation(Name.class);
-        Name[] actuatorNames = jobActuator.getClass().getAnnotationsByType(Name.class);  //多重注解
-        String[] names = Stream.of(requireNonNull(actuatorNames, errorMessage))
-                .map(Name::value).distinct()
-                .toArray(String[]::new);
-        checkState(names.length > 0, errorMessage);
-        return names;
+        Name actuatorName = jobActuator.getClass().getAnnotation(Name.class);
+        String name = requireNonNull(actuatorName, errorMessage).value();
+        checkState(name.length() > 0, errorMessage);
+        return name;
     }
 
     private String buildDescription(JobActuatorHandle jobActuator)

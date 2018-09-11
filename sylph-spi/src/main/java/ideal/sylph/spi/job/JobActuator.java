@@ -27,7 +27,7 @@ public interface JobActuator
 
     interface ActuatorInfo
     {
-        String[] getName();
+        String getName();
 
         String getDescription();
 
