@@ -33,6 +33,7 @@ public class JVMLaunchers
     public static class VmBuilder<T extends Serializable>
     {
         private VmCallable<T> callable;
+        private boolean depThisJvm = true;
         private Consumer<String> consoleHandler;
         private final List<URL> tmpJars = new ArrayList<>();
 
@@ -45,6 +46,12 @@ public class JVMLaunchers
         public VmBuilder<T> setConsole(Consumer<String> consoleHandler)
         {
             this.consoleHandler = requireNonNull(consoleHandler, "consoleHandler is null");
+            return this;
+        }
+
+        public VmBuilder<T> notDepThisJvmClassPath()
+        {
+            depThisJvm = false;
             return this;
         }
 
@@ -67,7 +74,7 @@ public class JVMLaunchers
         public JVMLauncher<T> build()
         {
             requireNonNull(consoleHandler, "setConsole(Consumer<String> consoleHandler) not setting");
-            return new JVMLauncher<T>(callable, consoleHandler, tmpJars);
+            return new JVMLauncher<T>(callable, consoleHandler, tmpJars, depThisJvm);
         }
     }
 

@@ -25,6 +25,7 @@ import ideal.sylph.parser.tree.CreateStreamAsSelect;
 import ideal.sylph.parser.tree.Statement;
 import ideal.sylph.runner.flink.etl.FlinkNodeLoader;
 import ideal.sylph.runner.flink.table.SylphTableSink;
+import ideal.sylph.spi.Binds;
 import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -130,10 +131,17 @@ class StreamSqlBuilder
                 .put("driver", withConfig.get("type"))
                 .build();
 
-        NodeLoader<StreamTableEnvironment, DataStream<Row>> loader = new FlinkNodeLoader(pluginManager);
+        Binds binds = Binds.builder()
+                .put(org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.class, tableEnv.execEnv())
+                .put(org.apache.flink.table.api.StreamTableEnvironment.class, tableEnv)
+                .put(org.apache.flink.table.api.java.StreamTableEnvironment.class, tableEnv)
+                //.put(org.apache.flink.streaming.api.scala.StreamExecutionEnvironment.class, null) // execEnv
+                //.put(org.apache.flink.table.api.scala.StreamTableEnvironment.class, null)  // tableEnv
+                .build();
+        NodeLoader<DataStream<Row>> loader = new FlinkNodeLoader(pluginManager, binds);
         RowTypeInfo tableTypeInfo = parserColumns(columns);
         if (SOURCE == createStream.getType()) {  //Source.class.isAssignableFrom(driver)
-            DataStream<Row> inputStream = checkStream(loader.loadSource(tableEnv, config).apply(null), tableTypeInfo);
+            DataStream<Row> inputStream = checkStream(loader.loadSource(config).apply(null), tableTypeInfo);
             //---------------------------------------------------
             createStream.getWatermark().ifPresent(waterMark -> {
                 logger.info("createStreamTable Watermark is {}", waterMark);

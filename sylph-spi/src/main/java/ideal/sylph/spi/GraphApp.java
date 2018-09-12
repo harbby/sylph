@@ -38,16 +38,15 @@ public interface GraphApp<T, R>
 {
     ObjectMapper MAPPER = new ObjectMapper();
 
-    NodeLoader<T, R> getNodeLoader();
+    NodeLoader<R> getNodeLoader();
 
     default Graph<R> buildGraph(String jobId, EtlFlow flow)
     {
-        final T context = getContext();
         final GraphBuilder<R> graphx = Graph.<R>builder().name(jobId);
         final List<NodeInfo> nodes = flow.getNodes();
         final List<EdgeInfo> edges = flow.getEdges();
 
-        final NodeLoader<T, R> loader = getNodeLoader();
+        final NodeLoader<R> loader = getNodeLoader();
         nodes.forEach(nodeInfo -> {
             try {
                 String json = JsonTextUtil.readJsonText(nodeInfo.getNodeText());
@@ -58,7 +57,7 @@ public interface GraphApp<T, R>
 
                 switch (nodeInfo.getNodeType()) {
                     case "source":
-                        graphx.addNode(new DagNode<>(id, driverString, loader.loadSource(context, config)));
+                        graphx.addNode(new DagNode<>(id, driverString, loader.loadSource(config)));
                         break;
                     case "transfrom":
                         graphx.addNode(new DagNode<>(id, driverString, loader.loadTransform(config)));

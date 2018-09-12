@@ -38,14 +38,14 @@ public class SparkSubmitActuator
     public Flow formFlow(byte[] flowBytes)
             throws IOException
     {
-        return null;
+        throw new UnsupportedOperationException("this method have't support!");
     }
 
     @NotNull
     @Override
     public JobHandle formJob(String jobId, Flow flow, JobConfig jobConfig, URLClassLoader jobClassLoader)
     {
-        return new JobHandle() {};
+        throw new UnsupportedOperationException("this method have't support!");
     }
 
     @Override

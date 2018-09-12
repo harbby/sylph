@@ -18,6 +18,7 @@ package ideal.sylph.plugins.spark.source
 import java.util.Objects
 
 import ideal.sylph.annotation.{Description, Name, Version}
+import ideal.sylph.etl.PluginConfig
 import ideal.sylph.etl.api.{Sink, Source, TransForm}
 import org.apache.spark.api.java.JavaRDD
 import org.apache.spark.sql.Row
@@ -33,21 +34,10 @@ import org.apache.spark.streaming.dstream.DStream
 @Version("1.0.0")
 @Description("this spark socket source inputStream")
 @SerialVersionUID(1L)
-class SocketSource extends Source[StreamingContext, DStream[Row]] {
-
-  private var ssc: StreamingContext = _
-  private var props: java.util.Map[String, Object] = _
-
-  /**
-    * 初始化(driver阶段执行)
-    **/
-  override def driverInit(ssc: StreamingContext, props: java.util.Map[String, Object]): Unit = {
-    this.ssc = ssc
-    this.props = props
-  }
+class SocketSource(@transient private val ssc: StreamingContext, private val config: SocketSourceConfig) extends Source[DStream[Row]] {
 
   private lazy val loadStream: DStream[Row] = {
-    val socketLoad = Objects.requireNonNull(props.get("socketLoad").asInstanceOf[String], "socketLoad is not setting")
+    val socketLoad = Objects.requireNonNull(config.hosts, "socketLoad is not setting")
 
     val schema: StructType = StructType(Array(
       StructField("host", StringType, nullable = true),
@@ -74,4 +64,10 @@ class SocketSource extends Source[StreamingContext, DStream[Row]] {
   }
 
   override def getSource: DStream[Row] = loadStream
+}
+
+@SerialVersionUID(2L)
+private[this] class SocketSourceConfig extends PluginConfig {
+  @Name("socket_hosts")
+  @Description("this is socket_hosts list") val hosts: String = null
 }

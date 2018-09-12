@@ -11,9 +11,13 @@ tasks.compileScala.dependsOn.remove("compileJava")
 
 dependencies {
   runtime(project(':sylph-spi')){
-    exclude(module: '*')
+    exclude(group: 'com.fasterxml.jackson.dataformat')
+    exclude(group: 'com.fasterxml.jackson.core')
+    exclude(module: 'guava')
+    exclude(module: 'validation-api')
+    exclude(module: 'commons-io')
+    exclude(module: 'ideal-common')
   }
-
   runtime(project(':ideal-common')){
     exclude(module: '*')
   }

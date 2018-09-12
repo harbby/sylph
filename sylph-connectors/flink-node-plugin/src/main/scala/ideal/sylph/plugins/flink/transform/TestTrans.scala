@@ -37,9 +37,6 @@ class TestTrans extends RealTimeTransForm {
     **/
   override def close(errorOrNull: Throwable): Unit = {}
 
-  override def driverInit(optionMap: java.util.Map[String, Object]): Unit = {
-  }
-
   /**
     * driver 上运行
     */

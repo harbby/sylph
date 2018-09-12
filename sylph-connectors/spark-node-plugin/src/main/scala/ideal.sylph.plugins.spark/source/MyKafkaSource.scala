@@ -16,6 +16,7 @@
 package ideal.sylph.plugins.spark.source
 
 import ideal.sylph.annotation.{Description, Name, Version}
+import ideal.sylph.etl.PluginConfig
 import ideal.sylph.etl.api.Source
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.StringDeserializer
@@ -36,27 +37,16 @@ import org.apache.spark.streaming.kafka010.LocationStrategies.PreferConsistent
 @Version("1.0.0")
 @Description("this spark kafka source inputStream")
 @SerialVersionUID(1L)
-class MyKafkaSource extends Source[StreamingContext, DStream[Row]] {
-  //private var kafkaParams: Map[String, Object] = _
-  private var ssc: StreamingContext = _
-  private var props: java.util.Map[String, Object] = _
-
-  /**
-    * 初始化(driver阶段执行)
-    **/
-  override def driverInit(ssc: StreamingContext, props: java.util.Map[String, Object]): Unit = {
-    this.ssc = ssc
-    this.props = props
-  }
+class MyKafkaSource(@transient private val ssc: StreamingContext, private val config: KafkaSourceConfig) extends Source[DStream[Row]] {
 
   /**
     * load stream
     **/
   private lazy val kafkaStream: InputDStream[ConsumerRecord[String, String]] = {
-    val topics = props.get("kafka_topic").asInstanceOf[String]
-    val brokers = props.get("kafka_broker") //需要把集群的host 配置到程序所在机器
-    val groupid = props.get("kafka_group_id") //消费者的名字
-    val offset = props.get("auto.offset.reset") //
+    val topics = config.topics
+    val brokers = config.brokers //需要把集群的host 配置到程序所在机器
+    val groupid = config.groupid //消费者的名字
+    val offset = config.offsetMode //
 
     val kafkaParams = Map[String, Object](
       "bootstrap.servers" -> brokers,
@@ -85,4 +75,16 @@ class MyKafkaSource extends Source[StreamingContext, DStream[Row]] {
       new GenericRowWithSchema(Array(record.topic(), record.value(), record.key()), schema)
     ).asInstanceOf[DStream[Row]] //.window(Duration(10 * 1000))
   }
+}
+
+@SerialVersionUID(2L)
+private[this] class KafkaSourceConfig extends PluginConfig {
+  @Name("kafka_topic")
+  @Description("this is kafka topic list") val topics: String = null
+  @Name("kafka_broker")
+  @Description("this is kafka broker list") val brokers: String = null
+  @Name("kafka_group_id")
+  @Description("this is kafka_group_id") val groupid: String = null
+  @Name("auto.offset.reset")
+  @Description("this is auto.offset.reset mode") var offsetMode = "latest"
 }

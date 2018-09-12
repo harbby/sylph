@@ -99,7 +99,7 @@ subprojects{
         excludes(["**/*.properties","**/*.sql"])
         //include "**/*.java"
     }
-    assemble.dependsOn 'licenseMain','licenseTest'
+    //assemble.dependsOn 'licenseMain','licenseTest'
     //licenseMain.includes
     //license.mapping('javascript', 'JAVADOC_STYLE')
 }

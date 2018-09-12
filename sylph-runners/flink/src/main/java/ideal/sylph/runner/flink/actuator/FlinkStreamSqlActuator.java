@@ -134,7 +134,6 @@ public class FlinkStreamSqlActuator
                 .build();
 
         try {
-            launcher.startAndGet(jobClassLoader);
             VmFuture<JobGraph> result = launcher.startAndGet(jobClassLoader);
             return result.get().orElseThrow(() -> new SylphException(JOB_BUILD_ERROR, result.getOnFailure()));
         }
@@ -151,9 +150,9 @@ public class FlinkStreamSqlActuator
 
         SqlFlow(byte[] flowBytes)
         {
-            final String SQL_REGEX = ";(?=([^\']*\'[^\']*\')*[^\']*$)";
+            final String sqlRegex = ";(?=([^\']*\'[^\']*\')*[^\']*$)";
             this.sqlText = new String(flowBytes, UTF_8);
-            this.sqlSplit = Stream.of(sqlText.split(SQL_REGEX))
+            this.sqlSplit = Stream.of(sqlText.split(sqlRegex))
                     .filter(StringUtils::isNotBlank).toArray(String[]::new);
         }
 

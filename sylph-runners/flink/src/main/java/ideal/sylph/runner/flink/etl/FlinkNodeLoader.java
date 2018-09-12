@@ -20,13 +20,13 @@ import ideal.sylph.etl.api.RealTimeTransForm;
 import ideal.sylph.etl.api.Sink;
 import ideal.sylph.etl.api.Source;
 import ideal.sylph.etl.api.TransForm;
+import ideal.sylph.spi.Binds;
 import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
-import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,31 +38,32 @@ import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
 import static java.util.Objects.requireNonNull;
 
 public final class FlinkNodeLoader
-        implements NodeLoader<StreamTableEnvironment, DataStream<Row>>
+        implements NodeLoader<DataStream<Row>>
 {
     private static final Logger logger = LoggerFactory.getLogger(FlinkNodeLoader.class);
     private final PipelinePluginManager pluginManager;
+    private final Binds binds;
 
-    public FlinkNodeLoader(PipelinePluginManager pluginManager)
+    public FlinkNodeLoader(PipelinePluginManager pluginManager, Binds binds)
     {
-        this.pluginManager = pluginManager;
+        this.pluginManager = requireNonNull(pluginManager, "binds is null");
+        this.binds = requireNonNull(binds, "binds is null");
     }
 
     @Override
-    public UnaryOperator<DataStream<Row>> loadSource(final StreamTableEnvironment tableEnv, final Map<String, Object> config)
+    public UnaryOperator<DataStream<Row>> loadSource(final Map<String, Object> config)
     {
         try {
             final String driverStr = (String) config.get("driver");
-            final Class<? extends Source> clazz = (Class<? extends Source>) pluginManager.loadPluginDriver(driverStr);
-            final Source<StreamTableEnvironment, DataStream<Row>> source = clazz.newInstance();
+            final Class<? extends Source<DataStream<Row>>> driverClass = (Class<? extends Source<DataStream<Row>>>) pluginManager.loadPluginDriver(driverStr);
+            final Source<DataStream<Row>> source = getInstance(driverClass, config);
 
-            source.driverInit(tableEnv, config);
             return (stream) -> {
-                logger.info("source {} schema:{}", clazz, source.getSource().getType());
+                logger.info("source {} schema:{}", driverClass, source.getSource().getType());
                 return source.getSource();
             };
         }
-        catch (IllegalAccessException | InstantiationException | ClassNotFoundException e) {
+        catch (Exception e) {
             throw new SylphException(JOB_BUILD_ERROR, e);
         }
     }
@@ -73,9 +74,10 @@ public final class FlinkNodeLoader
         final Object driver;
         try {
             final String driverStr = (String) config.get("driver");
-            driver = pluginManager.loadPluginDriver(driverStr).newInstance();
+            Class<?> driverClass = pluginManager.loadPluginDriver(driverStr);
+            driver = getInstance(driverClass, config);
         }
-        catch (IllegalAccessException | InstantiationException | ClassNotFoundException e) {
+        catch (Exception e) {
             throw new SylphException(JOB_BUILD_ERROR, e);
         }
 
@@ -90,12 +92,17 @@ public final class FlinkNodeLoader
             throw new SylphException(JOB_BUILD_ERROR, "NOT SUPPORTED Sink:" + driver);
         }
 
-        sink.driverInit(config); //传入参数
         return (stream) -> {
             requireNonNull(stream, "Sink find input stream is null");
             sink.run(stream);
             return null;
         };
+    }
+
+    @Override
+    public Binds getBinds()
+    {
+        return binds;
     }
 
     /**
@@ -107,9 +114,10 @@ public final class FlinkNodeLoader
         final Object driver;
         try {
             String driverStr = (String) config.get("driver");
-            driver = pluginManager.loadPluginDriver(driverStr).newInstance();
+            Class<?> driverClass = pluginManager.loadPluginDriver(driverStr);
+            driver = getInstance(driverClass, config);
         }
-        catch (IllegalAccessException | InstantiationException | ClassNotFoundException e) {
+        catch (Exception e) {
             throw new SylphException(JOB_BUILD_ERROR, e);
         }
 
@@ -123,7 +131,7 @@ public final class FlinkNodeLoader
         else {
             throw new SylphException(JOB_BUILD_ERROR, "NOT SUPPORTED TransForm:" + driver);
         }
-        transform.driverInit(config);
+
         return (stream) -> {
             requireNonNull(stream, "Transform find input stream is null");
             DataStream<Row> dataStream = transform.transform(stream);
@@ -134,45 +142,21 @@ public final class FlinkNodeLoader
 
     private static Sink<DataStream<Row>> loadRealTimeSink(RealTimeSink realTimeSink)
     {
-        return new Sink<DataStream<Row>>()
-        {
-            @Override
-            public void run(DataStream<Row> stream)
-            {
-                stream.addSink(new FlinkSink(realTimeSink, stream.getType()));
-            }
-
-            @Override
-            public void driverInit(Map<String, Object> optionMap)
-            {
-                realTimeSink.driverInit(optionMap);
-            }
-        };
+        return (Sink<DataStream<Row>>) stream -> stream.addSink(new FlinkSink(realTimeSink, stream.getType()));
     }
 
     private static TransForm<DataStream<Row>> loadRealTimeTransForm(RealTimeTransForm realTimeTransForm)
     {
-        return new TransForm<DataStream<Row>>()
-        {
-            @Override
-            public DataStream<Row> transform(DataStream<Row> stream)
-            {
-                final SingleOutputStreamOperator<Row> tmp = stream
-                        .flatMap(new FlinkTransFrom(realTimeTransForm, stream.getType()));
-                // schema必须要在driver上面指定
-                ideal.sylph.etl.Row.Schema schema = realTimeTransForm.getRowSchema();
-                if (schema != null) {
-                    RowTypeInfo outPutStreamType = FlinkRow.parserRowType(schema);
-                    return tmp.returns(outPutStreamType);
-                }
-                return tmp;
+        return (TransForm<DataStream<Row>>) stream -> {
+            final SingleOutputStreamOperator<Row> tmp = stream
+                    .flatMap(new FlinkTransFrom(realTimeTransForm, stream.getType()));
+            // schema必须要在driver上面指定
+            ideal.sylph.etl.Row.Schema schema = realTimeTransForm.getRowSchema();
+            if (schema != null) {
+                RowTypeInfo outPutStreamType = FlinkRow.parserRowType(schema);
+                return tmp.returns(outPutStreamType);
             }
-
-            @Override
-            public void driverInit(Map<String, Object> optionMap)
-            {
-                realTimeTransForm.driverInit(optionMap);
-            }
+            return tmp;
         };
     }
 }

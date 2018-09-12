@@ -21,7 +21,6 @@ import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobActuatorHandle;
 
 import java.net.URLClassLoader;
-import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;

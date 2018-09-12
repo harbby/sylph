@@ -21,6 +21,7 @@ import ideal.common.jvm.JVMLaunchers;
 import ideal.sylph.runner.spark.etl.sparkstreaming.StreamNodeLoader;
 import ideal.sylph.runner.spark.etl.structured.StructuredNodeLoader;
 import ideal.sylph.spi.App;
+import ideal.sylph.spi.Binds;
 import ideal.sylph.spi.GraphApp;
 import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.exception.SylphException;
@@ -78,9 +79,12 @@ final class JobHelper
             }
 
             @Override
-            public NodeLoader<SparkSession, Dataset<Row>> getNodeLoader()
+            public NodeLoader<Dataset<Row>> getNodeLoader()
             {
-                return new StructuredNodeLoader(pluginManager)
+                Binds binds = Binds.builder()
+                        .put(SparkSession.class, spark)
+                        .build();
+                return new StructuredNodeLoader(pluginManager, binds)
                 {
                     @Override
                     public UnaryOperator<Dataset<Row>> loadSink(Map<String, Object> config)
@@ -115,6 +119,7 @@ final class JobHelper
                     })
                     .setConsole((line) -> System.out.println(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
                     .addUserURLClassLoader(jobClassLoader)
+                    .notDepThisJvmClassPath()
                     .build();
             launcher.startAndGet(jobClassLoader);
             isCompile.set(false);
@@ -127,14 +132,28 @@ final class JobHelper
 
     static SparkJobHandle<App<StreamingContext>> build1xJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
     {
+        final AtomicBoolean isCompile = new AtomicBoolean(true);
         final Supplier<App<StreamingContext>> appGetter = (Supplier<App<StreamingContext>> & Serializable) () -> new GraphApp<StreamingContext, DStream<Row>>()
         {
-            private final StreamingContext spark = new StreamingContext(new SparkConf(), Seconds.apply(5));
+            private final StreamingContext spark = getStreamingContext();
+
+            private StreamingContext getStreamingContext()
+            {
+                logger.info("========create spark StreamingContext mode isCompile = " + isCompile.get() + "============");
+                SparkConf sparkConf = isCompile.get() ?
+                        new SparkConf().setMaster("local[*]").setAppName("sparkCompile")
+                        : new SparkConf();
+                //todo: 5s is default
+                return new StreamingContext(sparkConf, Seconds.apply(5));
+            }
 
             @Override
-            public NodeLoader<StreamingContext, DStream<Row>> getNodeLoader()
+            public NodeLoader<DStream<Row>> getNodeLoader()
             {
-                return new StreamNodeLoader(pluginManager);
+                Binds binds = Binds.builder()
+                        .put(StreamingContext.class, spark)
+                        .build();
+                return new StreamNodeLoader(pluginManager, binds);
             }
 
             @Override
@@ -159,8 +178,10 @@ final class JobHelper
                     })
                     .setConsole((line) -> System.out.println(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
                     .addUserURLClassLoader(jobClassLoader)
+                    .notDepThisJvmClassPath()
                     .build();
             launcher.startAndGet(jobClassLoader);
+            isCompile.set(false);
             return new SparkJobHandle<>(appGetter);
         }
         catch (IOException | ClassNotFoundException | JVMException e) {

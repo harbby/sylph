@@ -42,16 +42,23 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 public final class JVMLauncher<R extends Serializable>
 {
-    private VmCallable<R> callable;
-    private Process process;
-    private Collection<URL> userJars;
-    private Consumer<String> consoleHandler;
+    private final VmCallable<R> callable;
+    private final Collection<URL> userJars;
+    private final Consumer<String> consoleHandler;
+    private final boolean depThisJvm;
 
-    public JVMLauncher(VmCallable<R> callable, Consumer<String> consoleHandler, Collection<URL> userJars)
+    private Process process;
+
+    public JVMLauncher(
+            VmCallable<R> callable,
+            Consumer<String> consoleHandler,
+            Collection<URL> userJars,
+            boolean depThisJvm)
     {
         this.callable = callable;
         this.userJars = userJars;
         this.consoleHandler = consoleHandler;
+        this.depThisJvm = depThisJvm;
     }
 
     public VmFuture<R> startAndGet()
@@ -113,7 +120,12 @@ public final class JVMLauncher<R extends Serializable>
         ops.add("-classpath");
         //ops.add(System.getProperty("java.class.path"));
         String userSdkJars = getUserAddClasspath(); //编译时还需要 用户的额外jar依赖
-        ops.add(System.getProperty("java.class.path") + ":" + userSdkJars);
+        if (depThisJvm) {
+            ops.add(System.getProperty("java.class.path") + ":" + userSdkJars);
+        }
+        else {
+            ops.add(userSdkJars);
+        }
 
         String javaLibPath = System.getProperty("java.library.path");
         if (javaLibPath != null) {
@@ -131,8 +143,8 @@ public final class JVMLauncher<R extends Serializable>
         VmFuture<? extends Serializable> future;
 
         try (ObjectInputStreamProxy ois = new ObjectInputStreamProxy(System.in)) {
-            VmCallable<? extends Serializable> callable = (VmCallable<? extends Serializable>) ois.readObject();
             System.out.println("vm start init ok ...");
+            VmCallable<? extends Serializable> callable = (VmCallable<? extends Serializable>) ois.readObject();
             future = new VmFuture<>(callable.call());
         }
         catch (Throwable e) {

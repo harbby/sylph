@@ -133,7 +133,7 @@ public class LocalJobStore
                         Job job = runnerManger.formJobWithFlow(jobDir.getName(), flowBytes, configBytes);
                         jobs.put(job.getId(), job);
                     }
-                    catch (IOException e) {
+                    catch (Exception e) {
                         logger.warn("job {} 加载失败", jobDir, Throwables.getRootCause(e));
                         errorJob.add(jobDir);
                     }

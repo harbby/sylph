@@ -20,7 +20,7 @@ import java.util.function.UnaryOperator
 
 import ideal.sylph.etl.api.{RealTimeSink, RealTimeTransForm, Sink, TransForm}
 import ideal.sylph.runner.spark.etl.{SparkRow, SparkUtil}
-import ideal.sylph.spi.NodeLoader
+import ideal.sylph.spi.{Binds, NodeLoader}
 import ideal.sylph.spi.model.PipelinePluginManager
 import org.apache.spark.sql.streaming.{DataStreamWriter, Trigger}
 import org.apache.spark.sql.types._
@@ -30,10 +30,11 @@ import org.slf4j.LoggerFactory
 /**
   * Created by ideal on 17-5-8.
   */
-class StructuredNodeLoader(private val pluginManager: PipelinePluginManager) extends NodeLoader[SparkSession, DataFrame] {
+class StructuredNodeLoader(private val pluginManager: PipelinePluginManager, private val binds: Binds) extends NodeLoader[DataFrame] {
   private val logger = LoggerFactory.getLogger(this.getClass)
 
-  override def loadSource(spark: SparkSession, config: util.Map[String, Object]): UnaryOperator[DataFrame] = {
+  override def loadSource(config: util.Map[String, Object]): UnaryOperator[DataFrame] = {
+    val spark: SparkSession = binds.get(classOf[SparkSession])
     val driver = config.get("driver").asInstanceOf[String]
     import collection.JavaConverters._
     val source: DataFrame = driver match {
@@ -66,12 +67,10 @@ class StructuredNodeLoader(private val pluginManager: PipelinePluginManager) ext
 
   def loadSinkWithComplic(config: util.Map[String, Object]): DataFrame => DataStreamWriter[Row] = {
     val driverClass = pluginManager.loadPluginDriver(config.get("driver").asInstanceOf[String])
-    val driver: Any = driverClass.newInstance()
+    val driver: Any = getInstance(driverClass, config)
     val sink: Sink[DataStreamWriter[Row]] = driver match {
-      case realTimeSink: RealTimeSink => realTimeSink.driverInit(config) //传入这个模块的参数
-        loadRealTimeSink(realTimeSink)
-      case a2: Sink[DataStreamWriter[Row]] => a2.driverInit(config)
-        a2
+      case realTimeSink: RealTimeSink => loadRealTimeSink(realTimeSink)
+      case a2: Sink[DataStreamWriter[Row]] => a2
       case _ => throw new RuntimeException("未知的sink插件:" + driver)
     }
 
@@ -102,11 +101,8 @@ class StructuredNodeLoader(private val pluginManager: PipelinePluginManager) ext
     val driver: Any = driverClass.newInstance()
 
     val transform: TransForm[DataFrame] = driver match {
-      case realTimeTransForm: RealTimeTransForm =>
-        realTimeTransForm.driverInit(config) //传入这个模块的参数
-        loadRealTimeTransForm(realTimeTransForm)
-      case a2: TransForm[DataFrame] => a2.driverInit(config)
-        a2
+      case realTimeTransForm: RealTimeTransForm => loadRealTimeTransForm(realTimeTransForm)
+      case a2: TransForm[DataFrame] => a2
       case _ => throw new RuntimeException("未知的TransForm插件:" + driver)
     }
     new UnaryOperator[DataFrame] {
@@ -129,12 +125,6 @@ class StructuredNodeLoader(private val pluginManager: PipelinePluginManager) ext
         override def open(partitionId: Long, version: Long): Boolean = realTimeSink.open(partitionId, version)
       })
     }
-
-    /**
-      * 初始化(driver阶段执行)
-      * 需要注意序列化问题
-      **/
-    override def driverInit(optionMap: util.Map[String, AnyRef]): Unit = realTimeSink.driverInit(optionMap)
   }
 
   private[structured] def loadRealTimeTransForm(realTimeTransForm: RealTimeTransForm) = new TransForm[Dataset[Row]]() {
@@ -160,11 +150,7 @@ class StructuredNodeLoader(private val pluginManager: PipelinePluginManager) ext
       //transStream.repartition(10)
       transStream
     }
-
-    /**
-      * 初始化(driver阶段执行)
-      * 需要注意序列化问题
-      **/
-    override def driverInit(optionMap: util.Map[String, AnyRef]): Unit = realTimeTransForm.driverInit(optionMap)
   }
+
+  override def getBinds: Binds = binds
 }

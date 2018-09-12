@@ -53,7 +53,7 @@ public class MysqlSink
         String sql = "insert into mysql_table_sink values(?,?,?)";
         try {
             Class.forName("com.mysql.jdbc.Driver");
-            this.connection = DriverManager.getConnection(config.getJdbcUrl(), config.getUser(), config.getPassword());
+            this.connection = DriverManager.getConnection(config.jdbcUrl, config.user, config.password);
             this.statement = connection.prepareStatement(sql);
         }
         catch (SQLException | ClassNotFoundException e) {
@@ -103,33 +103,25 @@ public class MysqlSink
     }
 
     public static class MysqlConfig
-            implements PluginConfig
+            extends PluginConfig
     {
-        @Name("jdbc.url")
+        @Name("url")
         @Description("this is mysql jdbc url")
-        private String jdbcUrl;
+        private final String jdbcUrl;
 
-        @Name("jdbc.user")
+        @Name("userName")
         @Description("this is mysql userName")
-        private String user;
+        private final String user;
 
-        @Name("jdbc.password")
-        @Description("this is mysql userName")
-        private String password;
+        @Name("password")
+        @Description("this is mysql password")
+        private final String password;
 
-        public String getJdbcUrl()
+        private MysqlConfig(String jdbcUrl, String user, String password)
         {
-            return jdbcUrl;
-        }
-
-        public String getPassword()
-        {
-            return password;
-        }
-
-        public String getUser()
-        {
-            return user;
+            this.jdbcUrl = jdbcUrl;
+            this.user = user;
+            this.password = password;
         }
     }
 }

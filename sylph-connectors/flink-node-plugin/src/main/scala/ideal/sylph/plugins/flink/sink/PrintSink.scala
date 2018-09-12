@@ -35,7 +35,4 @@ class PrintSink extends RealTimeSink {
     * partition级别的资源释放
     **/
   override def close(errorOrNull: Throwable): Unit = {}
-
-  override def driverInit(optionMap: java.util.Map[String, Object]): Unit = {
-  }
 }

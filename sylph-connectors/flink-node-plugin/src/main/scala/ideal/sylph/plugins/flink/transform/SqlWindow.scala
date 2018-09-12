@@ -57,7 +57,4 @@ class SqlWindow extends TransForm[DataStream[Row]] {
 
     tableEnv.toAppendStream(result2, classOf[Row])
   }
-
-  override def driverInit(optionMap: java.util.Map[String, Object]): Unit = {
-  }
 }

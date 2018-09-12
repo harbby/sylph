@@ -52,23 +52,6 @@ public interface PipelinePluginManager
         return ImmutableSet.of();
     }
 
-    /**
-     * get runner public Pipeline Plugin
-     * demo : RealTimeSink and RealTimeTransForm
-     */
-    default Set<PipelinePluginInfo> getPublicPlugins()
-    {
-        return ImmutableSet.of();
-    }
-
-    /**
-     * get runner Private Pipeline Plugin
-     */
-    default Set<PipelinePluginInfo> getPrivatePlugins()
-    {
-        return ImmutableSet.of();
-    }
-
     default Class<?> loadPluginDriver(String driverString)
             throws ClassNotFoundException
     {

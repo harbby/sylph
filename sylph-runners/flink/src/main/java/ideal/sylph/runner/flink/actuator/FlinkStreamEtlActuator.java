@@ -31,6 +31,7 @@ import ideal.sylph.runner.flink.FlinkJobHandle;
 import ideal.sylph.runner.flink.etl.FlinkNodeLoader;
 import ideal.sylph.runner.flink.yarn.FlinkYarnJobLauncher;
 import ideal.sylph.spi.App;
+import ideal.sylph.spi.Binds;
 import ideal.sylph.spi.GraphApp;
 import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.exception.SylphException;
@@ -182,9 +183,16 @@ public class FlinkStreamEtlActuator
                     App<StreamTableEnvironment> app = new GraphApp<StreamTableEnvironment, DataStream<Row>>()
                     {
                         @Override
-                        public NodeLoader<StreamTableEnvironment, DataStream<Row>> getNodeLoader()
+                        public NodeLoader<DataStream<Row>> getNodeLoader()
                         {
-                            return new FlinkNodeLoader(pluginManager);
+                            Binds binds = Binds.builder()
+                                    .put(org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.class, execEnv)
+                                    .put(org.apache.flink.table.api.StreamTableEnvironment.class, tableEnv)
+                                    .put(org.apache.flink.table.api.java.StreamTableEnvironment.class, tableEnv)
+                                    //.put(org.apache.flink.streaming.api.scala.StreamExecutionEnvironment.class, null) // execEnv
+                                    //.put(org.apache.flink.table.api.scala.StreamTableEnvironment.class, null)  // tableEnv
+                                    .build();
+                            return new FlinkNodeLoader(pluginManager, binds);
                         }
 
                         @Override

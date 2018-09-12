@@ -15,7 +15,6 @@
  */
 package ideal.sylph.plugins.flink.source
 
-import java.util
 import java.util.Random
 import java.util.concurrent.TimeUnit
 
@@ -37,28 +36,12 @@ import scala.util.parsing.json.JSONObject
 @Description("this flink test source inputStream")
 @Version("1.0.0")
 @SerialVersionUID(2L) //使用注解来制定序列化id
-class TestSource extends Source[StreamTableEnvironment, DataStream[Row]] {
-
-  @transient private var optionMap: java.util.Map[String, Object] = _
-  @transient private var tableEnv: StreamTableEnvironment = _
+class TestSource(@transient private val tableEnv: StreamTableEnvironment) extends Source[DataStream[Row]] {
 
   @transient private lazy val loadStream: DataStream[Row] = {
-    val stream = FlinkEnvUtil.getFlinkEnv(tableEnv).addSource(new MyDataSource)
-    val tableName = optionMap.getOrDefault("table_name", null).asInstanceOf[String]
-    if (tableName != null) {
-      tableEnv.registerDataStream(tableName, stream)
-    }
-    stream
+    FlinkEnvUtil.getFlinkEnv(tableEnv).addSource(new MyDataSource)
   }
 
-  /**
-    * 初始化(driver阶段执行)
-    **/
-  override def driverInit(tableEnv: StreamTableEnvironment,
-                          optionMap: util.Map[String, Object]): Unit = {
-    this.optionMap = optionMap
-    this.tableEnv = tableEnv
-  }
 
   override def getSource(): DataStream[Row] = loadStream
 

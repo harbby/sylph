@@ -1,8 +1,9 @@
 ext.moduleName = 'ideal.sylph.spi'
 
 dependencies {
+    compile(project(':sylph-etl-api'))
     compile project(':ideal-common')
-
+    compile group: 'org.javassist', name: 'javassist', version: '3.22.0-GA'
     compile group: 'commons-io', name: 'commons-io', version: '2.6'
 
     compile group: 'com.google.guava', name: 'guava', version: deps.guava

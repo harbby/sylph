@@ -84,7 +84,7 @@ public class FlinkRunnerFactory
         Set<String> keyword = Stream.of(
                 org.apache.flink.table.api.StreamTableEnvironment.class,
                 org.apache.flink.table.api.java.StreamTableEnvironment.class,
-                org.apache.flink.table.api.scala.StreamTableEnvironment.class,
+//                org.apache.flink.table.api.scala.StreamTableEnvironment.class,
                 org.apache.flink.streaming.api.datastream.DataStream.class
         ).map(Class::getName).collect(Collectors.toSet());
 

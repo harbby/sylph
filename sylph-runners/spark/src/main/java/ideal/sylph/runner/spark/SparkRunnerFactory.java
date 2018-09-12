@@ -79,8 +79,8 @@ public class SparkRunnerFactory
     {
         Set<String> keyword = Stream.of(
                 org.apache.spark.streaming.StreamingContext.class,
-                org.apache.spark.streaming.dstream.DStream.class,
                 org.apache.spark.sql.SparkSession.class,
+                org.apache.spark.streaming.dstream.DStream.class,
                 org.apache.spark.sql.Dataset.class
         ).map(Class::getName).collect(Collectors.toSet());
 
