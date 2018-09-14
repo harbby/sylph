@@ -6,7 +6,7 @@ dist: trusty
 services:
 - docker
 
-script: "./gradlew clean assemble --no-daemon"
+script: "./gradlew clean checkstyle licenseMain licenseTest assemble --no-daemon"
 
 before_deploy:
 - echo build start... sylph
