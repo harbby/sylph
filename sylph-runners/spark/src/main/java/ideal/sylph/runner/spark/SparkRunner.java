@@ -15,44 +15,94 @@
  */
 package ideal.sylph.runner.spark;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.inject.Inject;
+import com.google.inject.Injector;
+import com.google.inject.Scopes;
+import ideal.common.bootstrap.Bootstrap;
+import ideal.common.classloader.DirClassLoader;
+import ideal.sylph.runner.spark.yarn.SparkAppLauncher;
 import ideal.sylph.spi.Runner;
+import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.JobActuatorHandle;
 import ideal.sylph.spi.model.PipelinePluginManager;
+import sun.reflect.generics.tree.ClassTypeSignature;
 
+import java.io.File;
+import java.util.Collections;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Throwables.throwIfUnchecked;
+import static java.util.Objects.requireNonNull;
 
 public class SparkRunner
         implements Runner
 {
-    private final Set<JobActuatorHandle> jobActuators;
-
-    @Inject private PipelinePluginManager pluginManager;
-
-    @Inject
-    public SparkRunner(
-            StreamEtlActuator streamEtlActuator,
-            Stream2EtlActuator stream2EtlActuator,
-            SparkSubmitActuator submitActuator
-    )
+    @Override
+    public Set<JobActuatorHandle> create(RunnerContext context)
     {
-        this.jobActuators = ImmutableSet.<JobActuatorHandle>builder()
-                .add(stream2EtlActuator)
-                .add(streamEtlActuator)
-                .add(submitActuator)
-                .build();
+        requireNonNull(context, "context is null");
+        String sparkHome = requireNonNull(System.getenv("SPARK_HOME"), "SPARK_HOME not setting");
+        checkArgument(new File(sparkHome).exists(), "SPARK_HOME " + sparkHome + " not exists");
+
+        ClassLoader classLoader = this.getClass().getClassLoader();
+        try {
+            if (classLoader instanceof DirClassLoader) {
+                ((DirClassLoader) classLoader).addDir(new File(sparkHome, "jars"));
+            }
+
+            Bootstrap app = new Bootstrap(new SparkRunnerModule(), binder -> {
+                binder.bind(StreamEtlActuator.class).in(Scopes.SINGLETON);
+                binder.bind(Stream2EtlActuator.class).in(Scopes.SINGLETON);
+                binder.bind(SparkSubmitActuator.class).in(Scopes.SINGLETON);
+                binder.bind(SparkAppLauncher.class).in(Scopes.SINGLETON);
+                //------------------------
+                binder.bind(PipelinePluginManager.class)
+                        .toProvider(() -> createPipelinePluginManager(context))
+                        .in(Scopes.SINGLETON);
+            });
+            Injector injector = app.strictConfig()
+                    .name(this.getClass().getSimpleName())
+                    .setRequiredConfigurationProperties(Collections.emptyMap())
+                    .initialize();
+
+            return Stream.of(StreamEtlActuator.class, Stream2EtlActuator.class, SparkSubmitActuator.class)
+                    .map(injector::getInstance).collect(Collectors.toSet());
+        }
+        catch (Exception e) {
+            throwIfUnchecked(e);
+            throw new RuntimeException(e);
+        }
     }
 
-    @Override
-    public Set<JobActuatorHandle> getJobActuators()
+    private static PipelinePluginManager createPipelinePluginManager(RunnerContext context)
     {
-        return jobActuators;
-    }
+        Set<String> keyword = Stream.of(
+                org.apache.spark.streaming.StreamingContext.class,
+                org.apache.spark.sql.SparkSession.class,
+                org.apache.spark.streaming.dstream.DStream.class,
+                org.apache.spark.sql.Dataset.class
+        ).map(Class::getName).collect(Collectors.toSet());
 
-    @Override
-    public PipelinePluginManager getPluginManager()
-    {
-        return pluginManager;
+        Set<PipelinePluginManager.PipelinePluginInfo> flinkPlugin = context.getFindPlugins().stream().filter(it -> {
+            if (it.getRealTime()) {
+                return true;
+            }
+            if (it.getJavaGenerics().length == 0) {
+                return false;
+            }
+            ClassTypeSignature typeSignature = (ClassTypeSignature) it.getJavaGenerics()[0];
+            String typeName = typeSignature.getPath().get(0).getName();
+            return keyword.contains(typeName);
+        }).collect(Collectors.toSet());
+        return new PipelinePluginManager()
+        {
+            @Override
+            public Set<PipelinePluginInfo> getAllPlugins()
+            {
+                return flinkPlugin;
+            }
+        };
     }
 }

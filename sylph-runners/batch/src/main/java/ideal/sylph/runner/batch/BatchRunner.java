@@ -15,36 +15,59 @@
  */
 package ideal.sylph.runner.batch;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.inject.Inject;
+import com.google.common.collect.Sets;
+import com.google.inject.Injector;
+import com.google.inject.Scopes;
+import ideal.common.bootstrap.Bootstrap;
 import ideal.sylph.spi.Runner;
+import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.JobActuatorHandle;
-import ideal.sylph.spi.model.PipelinePluginManager;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.SchedulerFactory;
+import org.quartz.impl.StdSchedulerFactory;
 
+import java.util.Collections;
 import java.util.Set;
+
+import static com.google.common.base.Throwables.throwIfUnchecked;
+import static java.util.Objects.requireNonNull;
 
 public class BatchRunner
         implements Runner
 {
-    private final Set<JobActuatorHandle> jobActuators;
-
-    @Inject
-    BatchRunner(
-            BatchEtlActuator batchEtlActuator
-    )
+    @Override
+    public Set<JobActuatorHandle> create(RunnerContext context)
     {
-        this.jobActuators = ImmutableSet.of(batchEtlActuator);
+        requireNonNull(context, "context is null");
+        try {
+            Bootstrap app = new Bootstrap(binder -> {
+                binder.bind(BatchEtlActuator.class).in(Scopes.SINGLETON);
+                binder.bind(Scheduler.class).toProvider(this::getBatchJobScheduler).in(Scopes.SINGLETON);
+            });
+            Injector injector = app.strictConfig()
+                    .name(this.getClass().getSimpleName())
+                    .setRequiredConfigurationProperties(Collections.emptyMap())
+                    .initialize();
+
+            return Sets.newHashSet(injector.getInstance(BatchEtlActuator.class));
+        }
+        catch (Exception e) {
+            throwIfUnchecked(e);
+            throw new RuntimeException(e);
+        }
     }
 
-    @Override
-    public Set<JobActuatorHandle> getJobActuators()
+    private Scheduler getBatchJobScheduler()
     {
-        return jobActuators;
-    }
-
-    @Override
-    public PipelinePluginManager getPluginManager()
-    {
-        return new PipelinePluginManager() {};
+        SchedulerFactory schedulerFactory = new StdSchedulerFactory();
+        try {
+            Scheduler scheduler = schedulerFactory.getScheduler();
+            scheduler.start();
+            return scheduler;
+        }
+        catch (SchedulerException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

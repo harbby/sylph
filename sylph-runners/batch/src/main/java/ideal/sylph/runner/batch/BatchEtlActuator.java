@@ -40,6 +40,7 @@ import org.quartz.TriggerBuilder;
 
 import javax.validation.constraints.NotNull;
 
+import java.io.IOException;
 import java.net.URLClassLoader;
 import java.util.Optional;
 
@@ -118,7 +119,15 @@ public class BatchEtlActuator
         };
     }
 
-    private class QuartzJob
+    @NotNull
+    @Override
+    public Flow formFlow(byte[] flowBytes)
+            throws IOException
+    {
+        return null;
+    }
+
+    private static class QuartzJob
             implements org.quartz.Job
     {
         @Override

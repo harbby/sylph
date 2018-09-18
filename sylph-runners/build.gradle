@@ -2,7 +2,7 @@
 subprojects {
   apply plugin: 'com.github.harbby.gradle.serviceloader'
   serviceLoader {
-    serviceInterface 'ideal.sylph.spi.RunnerFactory'
+    serviceInterface 'ideal.sylph.spi.Runner'
     serviceInterface 'ideal.sylph.etl.PipelinePlugin'
   }
 

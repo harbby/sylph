@@ -21,7 +21,6 @@ import ideal.common.classloader.PluginClassLoader;
 import ideal.common.classloader.ThreadContextClassLoader;
 import ideal.sylph.main.service.RunnerManager;
 import ideal.sylph.spi.Runner;
-import ideal.sylph.spi.RunnerFactory;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,16 +102,16 @@ public class RunnerLoader
 
     private void loadPlugin(URLClassLoader pluginClassLoader)
     {
-        ServiceLoader<RunnerFactory> serviceLoader = ServiceLoader.load(RunnerFactory.class, pluginClassLoader);
-        List<RunnerFactory> plugins = ImmutableList.copyOf(serviceLoader);
+        ServiceLoader<Runner> serviceLoader = ServiceLoader.load(Runner.class, pluginClassLoader);
+        List<Runner> plugins = ImmutableList.copyOf(serviceLoader);
 
         if (plugins.isEmpty()) {
             logger.warn("No service providers of type {}", Runner.class.getName());
         }
 
-        for (RunnerFactory factory : plugins) {
-            logger.info("Installing runner {} with dir{}", factory.getClass().getName(), factory);
-            runnerManager.createRunner(factory);
+        for (Runner runner : plugins) {
+            logger.info("Installing runner {} with dir{}", runner.getClass().getName(), runner);
+            runnerManager.createRunner(runner);
         }
     }
 }

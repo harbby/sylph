@@ -25,7 +25,6 @@ import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.main.server.ServerMainConfig;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
-import ideal.sylph.spi.RunnerFactory;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuator;
@@ -60,7 +59,6 @@ public class RunnerManager
     private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
     private static final Logger logger = LoggerFactory.getLogger(RunnerManager.class);
     private final Map<String, JobActuator> jobActuatorMap = new HashMap<>();
-    private final Map<String, Runner> runnerMap = new HashMap<>();
     private final PipelinePluginLoader pluginLoader;
     private final ServerMainConfig config;
 
@@ -71,13 +69,12 @@ public class RunnerManager
         this.config = requireNonNull(config, "config is null");
     }
 
-    public void createRunner(RunnerFactory factory)
+    public void createRunner(final Runner runner)
     {
         RunnerContext runnerContext = pluginLoader::getPluginsInfo;
 
-        final Runner runner = factory.create(runnerContext);
         logger.info("Runner: {} starts loading {}", runner.getClass().getName(), PipelinePlugin.class.getName());
-        runner.getJobActuators().forEach(jobActuatorHandle -> {
+        runner.create(runnerContext).forEach(jobActuatorHandle -> {
             JobActuator jobActuator = new JobActuatorImpl(jobActuatorHandle);
             String name = jobActuator.getInfo().getName();
             if (jobActuatorMap.containsKey(name)) {
@@ -85,7 +82,6 @@ public class RunnerManager
             }
             else {
                 jobActuatorMap.put(name, jobActuator);
-                runnerMap.put(name, runner);
             }
         });
     }
@@ -107,10 +103,8 @@ public class RunnerManager
             throws IOException
     {
         String actuatorName = JobConfig.load(configBytes).getType();
-        Runner runner = runnerMap.get(actuatorName);
         JobActuator jobActuator = jobActuatorMap.get(actuatorName);
         checkArgument(jobActuator != null, "job [" + jobId + "] loading error! JobActuator:[" + actuatorName + "] not find,only " + jobActuatorMap.keySet());
-        checkArgument(runner != null, "Unable to find runner for " + actuatorName);
 
         JobConfig jobConfig = MAPPER.convertValue(configBytes, jobActuator.getHandle().getConfigParser());
         return formJobWithFlow(jobId, flowBytes, jobActuator, jobConfig);
@@ -120,10 +114,8 @@ public class RunnerManager
             throws IOException
     {
         String actuatorName = JobConfig.load(configBytes).getType();
-        Runner runner = runnerMap.get(actuatorName);
         JobActuator jobActuator = jobActuatorMap.get(actuatorName);
         checkArgument(jobActuator != null, "job [" + jobId + "] loading error! JobActuator:[" + actuatorName + "] not find,only " + jobActuatorMap.keySet());
-        checkArgument(runner != null, "Unable to find runner for " + actuatorName);
 
         JobConfig jobConfig = MAPPER.readValue(configBytes, jobActuator.getHandle().getConfigParser());
         return formJobWithFlow(jobId, flowBytes, jobActuator, jobConfig);
