@@ -108,7 +108,8 @@ public class AstBuilder
     public Node visitCreateStreamAsSelect(SqlBaseParser.CreateStreamAsSelectContext context)
     {
         Optional<String> comment = Optional.empty();
-        SqlBaseParser.QueryContext queryContext = context.query();
+        // 词法分析后 获取原始输入字符串
+        SqlBaseParser.QueryStreamContext queryContext = context.queryStream();
         int a = queryContext.start.getStartIndex();
         int b = queryContext.stop.getStopIndex();
         Interval interval = new Interval(a, b);

@@ -48,7 +48,7 @@ statement
          (WATERMARK watermark)?                                        #createStream
     | CREATE VIEW TABLE (IF NOT EXISTS)? qualifiedName
         (WATERMARK watermark)?
-        AS (query | '('query')')                                       #createStreamAsSelect
+        AS queryStream                                                 #createStreamAsSelect
     | CREATE TABLE (IF NOT EXISTS)? qualifiedName columnAliases?
         (COMMENT string)?
         (WITH properties)? AS (query | '('query')')
@@ -120,9 +120,13 @@ watermark
     )
     ;
 
+queryStream
+    :((WITH | SELECT) (.*?) EOF | '('(WITH | SELECT) (.*?)')')
+    ;
+
 /*
-QuerySql
-    : AS (.*?) EOF
+queryStream
+    : (WITH | SELECT) (.*?) EOF
     ;
 */
 
