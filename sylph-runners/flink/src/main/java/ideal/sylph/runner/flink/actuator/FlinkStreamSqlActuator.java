@@ -145,14 +145,20 @@ public class FlinkStreamSqlActuator
     public static class SqlFlow
             extends Flow
     {
+        /*
+         *   use regex split sqlText
+         *
+         *  '  ---->        ;(?=([^']*'[^']*')*[^']*$)
+         *  ' and "" ---->  ;(?=([^']*'[^']*')*[^']*$)(?=([^"]*"[^"]*")*[^"]*$)
+         * */
+        public static final String SQL_REGEX = ";(?=([^\"]*\"[^\"]*\")*[^\"]*$)(?=([^']*'[^']*')*[^']*$)";
         private final String[] sqlSplit;
         private final String sqlText;
 
         SqlFlow(byte[] flowBytes)
         {
-            final String sqlRegex = ";(?=([^\']*\'[^\']*\')*[^\']*$)";
             this.sqlText = new String(flowBytes, UTF_8);
-            this.sqlSplit = Stream.of(sqlText.split(sqlRegex))
+            this.sqlSplit = Stream.of(sqlText.split(SQL_REGEX))
                     .filter(StringUtils::isNotBlank).toArray(String[]::new);
         }
 
