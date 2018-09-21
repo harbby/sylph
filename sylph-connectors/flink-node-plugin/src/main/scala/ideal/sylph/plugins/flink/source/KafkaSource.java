@@ -27,7 +27,7 @@ import org.apache.flink.api.java.typeutils.TypeExtractor;
 import org.apache.flink.calcite.shaded.com.google.common.base.Supplier;
 import org.apache.flink.calcite.shaded.com.google.common.base.Suppliers;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer011;
 import org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
@@ -73,7 +73,7 @@ public class KafkaSource
 
             List<String> topicSets = Arrays.asList(topics.split(","));
             //org.apache.flink.streaming.api.checkpoint.CheckpointedFunction
-            DataStream<Row> stream = FlinkEnvUtil.getFlinkEnv(tableEnv).addSource(new FlinkKafkaConsumer010<Row>(
+            DataStream<Row> stream = FlinkEnvUtil.getFlinkEnv(tableEnv).addSource(new FlinkKafkaConsumer011<Row>(
                     topicSets,
                     new RowDeserializer(),
                     properties)
