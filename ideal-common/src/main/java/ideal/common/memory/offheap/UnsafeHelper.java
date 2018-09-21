@@ -22,9 +22,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 
-public final class Platform
+public final class UnsafeHelper
 {
-    private Platform() {}
+    private UnsafeHelper() {}
 
     private static final Unsafe _UNSAFE;
 

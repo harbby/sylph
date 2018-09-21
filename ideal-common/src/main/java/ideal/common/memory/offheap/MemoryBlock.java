@@ -20,7 +20,7 @@ import sun.misc.Unsafe;
 public final class MemoryBlock
         implements AutoCloseable
 {
-    private static final Unsafe unsafe = Platform.getUnsafe();
+    private static final Unsafe unsafe = UnsafeHelper.getUnsafe();
     private final long address;
     private final int maxOffset;
     private volatile boolean isFree = false;

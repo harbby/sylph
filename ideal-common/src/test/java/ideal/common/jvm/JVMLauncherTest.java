@@ -92,7 +92,7 @@ public class JVMLauncherTest
             throws NoSuchMethodException, InvocationTargetException, IllegalAccessException
     {
         Class<?> class1 = java.io.ObjectInputStream.class;
-        Method method = class1.getDeclaredMethod("latestUserDefinedLoader", null);
+        Method method = class1.getDeclaredMethod("latestUserDefinedLoader");
         method.setAccessible(true);  //必须要加这个才能
         Object a1 = method.invoke(null);
         Assert.assertTrue(a1 instanceof ClassLoader);

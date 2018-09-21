@@ -15,14 +15,14 @@
  */
 package ideal.common.memory;
 
-import ideal.common.memory.offheap.Platform;
+import ideal.common.memory.offheap.UnsafeHelper;
 import sun.misc.Unsafe;
 
 public class RevisedObjectInHeap
 {
     private long address = 0;
 
-    private Unsafe unsafe = Platform.getUnsafe();
+    private Unsafe unsafe = UnsafeHelper.getUnsafe();
 
     // 让对象占用堆内存,触发[Full GC
     private byte[] bytes = null;
