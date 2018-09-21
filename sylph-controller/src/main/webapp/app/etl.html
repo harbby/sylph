@@ -27,24 +27,25 @@
     <script type="text/javascript" src="libs/biltong/src/biltong.js"></script>
     <script type="text/javascript" src="libs/jsBezier/js/jsbezier.js"></script> <!-- 0.6 -->
 
-    <script type="text/javascript" src="js/public.js"></script>
-    <script type="text/javascript" src="js/etl.js"></script>
-
     <!-- CodeMirror includes -->
     <link rel="stylesheet" href="libs/codemirror/lib/codemirror.css">
     <script src="libs/codemirror/lib/codemirror.js"></script>
     <script src="libs/codemirror/mode/properties/properties.js"></script>
     <script src="libs/codemirror/addon/selection/active-line.js"></script>
     <script src="libs/codemirror/addon/edit/matchbrackets.js"></script>
+
+    <!-- user -->
+    <script type="text/javascript" src="js/public.js"></script>
+    <script type="text/javascript" src="js/etl.js"></script>
 </head>
 
 <style>
     .window {
         background-color: #eeeeef;
-        text-align:center;
+        text-align: center;
         line-height: 30px;
-        z-index:24;
-        cursor:pointer;
+        z-index: 24;
+        cursor: pointer;
         box-shadow: 2px 2px 19px #aaa;
         -o-box-shadow: 2px 2px 19px #aaa;
         -webkit-box-shadow: 2px 2px 19px #aaa;
@@ -63,7 +64,7 @@
     <div class="extraIcon">
         <label>执行引擎:</label>
         <select id="actuators_select">
-            <option value ="volvo">none</option>
+            <option value="volvo">none</option>
         </select>
     </div>
     <div class="extraIcon">
@@ -97,12 +98,18 @@
     </div>
     <hr>
     <div class="footer">
-        <div class="footer-text"><div class="footer-square"></div>灰色节点不可拖动</div>
-        <div class="footer-text"><div class="footer-square"></div>双击节点或连接线文字，可修改内容</div>
+        <div class="footer-text">
+            <div class="footer-square"></div>
+            灰色节点不可拖动
+        </div>
+        <div class="footer-text">
+            <div class="footer-square"></div>
+            双击节点或连接线文字，可修改内容
+        </div>
     </div>
 </div>
 <!--编辑模态框-->
-<div class="modal fade edit_modal" data-backdrop="static"  id="flow_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal fade edit_modal" data-backdrop="static" id="flow_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -112,7 +119,7 @@
                 <h4 class="modal-title" id="modal_title"></h4>
             </div>
             <div class="modal-body">
-                <textarea rows="20" class="modal_textarea">
+                <textarea rows="20" class="modal_textarea" id="nodeText">
 
                 </textarea>
             </div>
@@ -202,16 +209,36 @@
 
 </body>
 
+
 <script>
-$('#config_modal').on('shown.bs.modal', function (e) {
-    CodeMirror.fromTextArea(document.getElementById("config"), {
+window.onload = function () {
+    var editor = CodeMirror.fromTextArea(document.getElementById("config"), {
         mode: 'properties',
         lineNumbers: true,
         styleActiveLine: true,
         matchBrackets: true
-    }).on('change', editor => {
+    });
+    editor.on('change', editor => {
         document.getElementById('config').value = editor.getValue();
     });
-});
+
+    $('#config_modal').on('shown.bs.modal', function (e) {
+        editor.setValue(document.getElementById("config").value);
+    });
+
+
+    var nodeTextEditor = CodeMirror.fromTextArea(document.getElementById("nodeText"), {
+        mode: 'properties',
+        lineNumbers: true,
+        styleActiveLine: true,
+        matchBrackets: true
+    });
+    nodeTextEditor.on('change', editor => {
+        document.getElementById('nodeText').value = editor.getValue();
+    });
+    $('#flow_modal').on('shown.bs.modal', function (e) {
+        nodeTextEditor.setValue(document.getElementById("nodeText").value);
+    });
+};
 </script>
 </html>

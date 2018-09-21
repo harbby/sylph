@@ -107,20 +107,22 @@ function openUploadFilesLayer() {
     });
 };
 
+var editor = CodeMirror.fromTextArea(document.getElementById("config"), {
+    mode: 'properties',
+    lineNumbers: true,
+    styleActiveLine: true,
+    matchBrackets: true
+});
+editor.on('change', editor => {
+    document.getElementById('config').value = editor.getValue();
+    console.log('change up value:' + editor.getValue());
+});
 function openConfigSetLayer() {
     var configSetLayer = layer.open({
         type: 1, area: ['500px', '360px'], title: '高级配置', shade: 0.6, maxmin: false,
         anim: 1, content: $('#config-set'),
-        success: function (layero, index) {
-            CodeMirror.fromTextArea(document.getElementById("config"), {
-                mode: 'properties',
-                lineNumbers: true,
-                styleActiveLine: true,
-                matchBrackets: true
-            }).on('change', editor => {
-                document.getElementById('query').value = editor.getValue();
-                console.log('change up value:' + editor.getValue());
-            });
+        success: function (layero, index) { //弹窗完成后 进行语法渲染
+            editor.setValue(document.getElementById('config').value)
         }
     });
 }

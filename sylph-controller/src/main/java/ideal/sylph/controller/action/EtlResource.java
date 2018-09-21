@@ -47,14 +47,12 @@ public class EtlResource
 {
     private static final Logger logger = LoggerFactory.getLogger(EtlResource.class);
 
-    private final UriInfo uriInfo;
     private final SylphContext sylphContext;
 
     public EtlResource(
             @Context ServletContext servletContext,
             @Context UriInfo uriInfo)
     {
-        this.uriInfo = uriInfo;
         this.sylphContext = (SylphContext) servletContext.getAttribute("sylphContext");
     }
 

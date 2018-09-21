@@ -27,11 +27,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
@@ -41,7 +39,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static ideal.sylph.spi.job.Job.Status.STOP;
 import static java.util.Objects.requireNonNull;
@@ -63,16 +60,6 @@ public class JobMangerResurce
         this.servletContext = servletContext;
         this.uriInfo = uriInfo;
         this.sylphContext = (SylphContext) servletContext.getAttribute("sylphContext");
-    }
-
-    @Path("/get_all_actuators")
-    @GET
-    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
-    public List<String> getAllActuators(@QueryParam("name") String name)
-    {
-        //test Object a1 = uriInfo.getQueryParameters();
-        List<String> names = sylphContext.getAllActuatorsInfo().stream().map(x -> x.getName()).collect(Collectors.toList());
-        return names;
     }
 
     @POST

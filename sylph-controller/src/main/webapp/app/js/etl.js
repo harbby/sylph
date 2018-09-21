@@ -11,8 +11,8 @@ function addNode(parentId, nodeId, nodeLable, position) {
         .style('width', '100px').style('height', '50px')
         .style('position', 'absolute')
         .style('top', position.y).style('left', position.x)
-        //.style('border', '2px #9DFFCA solid').attr('align', 'center')  //设置 方块边框颜色
-        .attr('class',"window")
+    //.style('border', '2px #9DFFCA solid').attr('align', 'center')  //设置 方块边框颜色
+        .attr('class', "window")
         .attr('id', nodeId).classed('node', true)
         .text(nodeLable);
 
@@ -30,15 +30,16 @@ function doubleClickData(node) {
         $("#modal_title").html(self.text());
         $(".modal_textarea").val(self.data("data"));
         $("#flow_modal").modal('show');
-        $("#flow_confirm").attr("data-id",self.attr("id"));
+        $("#flow_confirm").attr("data-id", self.attr("id"));
     });
 }
+
 /*
 * 保存节点数据
 * */
-$("#flow_confirm").click(function(){
-    var node_id=$(this).attr("data-id");
-    $("#"+node_id).data("data",$(".modal_textarea").val());
+$("#flow_confirm").click(function () {
+    var node_id = $(this).attr("data-id");
+    $("#" + node_id).data("data", $(".modal_textarea").val());
     $("#flow_modal").modal('hide');
 });
 
@@ -80,10 +81,10 @@ function getAllNodes(instance) {
     var edges = [];
     $.each(instance.getAllConnections(), function (idx, connection) {
         var label = connection.getOverlays(connection.id)[1].getLabel();
-        var sourceUuid=$(connection.endpoints[0].canvas).data("uuid");
-        var targetUuid=$(connection.endpoints[1].canvas).data("uuid");
+        var sourceUuid = $(connection.endpoints[0].canvas).data("uuid");
+        var targetUuid = $(connection.endpoints[1].canvas).data("uuid");
         edges.push({
-            uuids:[sourceUuid,targetUuid],
+            uuids: [sourceUuid, targetUuid],
             labelText: label
         });
     });
@@ -91,6 +92,8 @@ function getAllNodes(instance) {
     var nodes = [];
     $("#flow-panel").find(".node").each(function (idx, element) {
         var elem = $(element);
+        var nodeText = JSON.parse(elem.data("data"))
+
         nodes.push({
             nodeId: elem.attr("id"),
             nodeType: elem.text(),
@@ -107,6 +110,7 @@ function getAllNodes(instance) {
     };
     return node_json;
 }
+
 /*
  *
  * 绘制节点及其连接线
@@ -135,16 +139,17 @@ function drawNodesConnections(instance, _addEndpoints, nodesCon) {
         //删除
         bindDeleteNode(instance, nodes[i].nodeId);
         //可拖动
-        instance.draggable($(node),{containment: 'parent'});
+        instance.draggable($(node), {containment: 'parent'});
     }
     //连接线
     for (var j = 0; j < edges.length; j++) {
-        var connect=instance.connect({
+        var connect = instance.connect({
             uuids: edges[j].uuids
         });
-        if(typeof connect!=="undefined"){
+        if (typeof connect !== "undefined") {
             //connect.getOverlays(connect.id)[1].setLabel(edges[j].labelText);
-        }else {
+        }
+        else {
             console.error("edgs create error " + edges[j].uuids)
         }
     }
@@ -154,126 +159,66 @@ function drawNodesConnections(instance, _addEndpoints, nodesCon) {
 /**
  * 交互式创建节点 控件工具箱(左侧区域的)
  */
-function getTreeData() {
-    var tree = [
-        {
-            text: "系统工具箱",
-            nodes: [
+function initAllTrees() {
+    var actuator = document.getElementById("actuators_select").value;   //job 执行引擎
+    $.ajax({
+        url: "/_sys/plugin/list/?actuator=" + actuator,
+        type: "get",
+        data: {},
+        success: function (result) {
+            var tree = [
                 {
-                    text: "source",
-                    data: {
-                        a: 1,
-                        b: 2
-                    },
-                    config: {
-                        in: 0,
-                        out: 1,
-                        drag: 1  //是否可拖动
-                    }
-                },
-                {
-                    text: "transfrom",
-                    //携带的数据
-                    data: {},
-                    //业务定义 kv
-                    config: {
-                        in: 1,
-                        out: 1,
-                        //是否可拖动
-                        drag: 1
-                    }
-                },
-                {
-                    text: "sink",
-                    //携带的数据
-                    data: {
-                        a: 1,
-                        b: 2
-                    },
-                    //业务定义 kv
-                    config: {
-                        in: 1,
-                        out: 0,
-                        //是否可拖动
-                        drag: 1
-                    }
+                    text: "工具箱",
+                    nodes: []
                 }
             ]
-        },
-        {
-            text: "用户自定义插件",
-            nodes: [
-                {
-                    text: "某标签1",
-                    //携带的数据,
-                    data: {},
-                    //业务定义 kv
-                    config: {
-                        in: 1,
-                        out: 1,
-                        //是否可拖动
-                        drag: 1
-                    }
-                },
-                {
-                    text: "实时uv",
-                    data: {},
-                    config: {
-                        in: 1,
-                        out: 1,
-                        //是否可拖动
-                        drag: 1
-                    }
-                }
-            ]
-        }
-    ];
 
-    return tree;
-}
-/**
- * 交互式创建节点 控件工具箱(左侧区域的)
- */
-function getNodeData() {
-    var node_json = {
-        connection: [{
-            connectionId: "con_10",
-            sourceId: "node1515581337612",
-            targetId: "node1515581338897",
-            sourcePoint: "ep_2",
-            targetPoint: "ep_6",
-            sourceAnchor: '',
-            targetAnchor: '',
-            labelText: ''
-        }],
-        nodes: [
-            {
-                nodeId: "node1515581337612",
-                nodeType: "transfrom",
-                nodeX: 184,
-                nodeY: 137,
-                nodeText: '{a:1}',
-                nodeConfig: {
-                    drag: 1,
-                    out: 1,
-                    in: 1
-                }
-            },
-            {
-                nodeId: "node1515581338897",
-                nodeType: "sink",
-                nodeX: 607,
-                nodeY: 225,
-                nodeText: '{c:1}',
-                nodeConfig: {
-                    out: 1,
-                    in: 1
-                }
+            for (var type in result) {
+                var nodes = []
+                var plugins = result[type]
+                plugins.forEach(function (plugin) {
+                    var node = {
+                        text: plugin.name[0].split(".").pop(),
+                        data: plugin    //plugin.config
+                    };
+                    switch (type) {
+                        case "source":
+                            node.config = {
+                                in: 0, out: 1, drag: 1  //是否可拖动
+                            };
+                            break
+                        case "transform":
+                            node.config = {
+                                in: 1, out: 1, drag: 1  //是否可拖动
+                            };
+                            break
+                        case "sink":
+                            node.config = {
+                                in: 1, out: 0, drag: 1  //是否可拖动
+                            };
+                            break
+                        default:
+                            alert("error type " + type)
+                    }
+
+                    console.log(node)
+                    nodes.push(node)
+                })
+
+                tree.push({text: type, nodes: nodes})
             }
-        ]
-    };
 
-    return node_json;
+
+            //初始化左侧节点树
+            $('#control-panel').treeview(
+                {
+                    data: tree
+                });
+        },
+        error: function (result) {
+            alert("接口拉取失败");
+        }
+    });
 }
 
 /*等待DOM和jsPlumb初始化完毕*/
@@ -281,7 +226,7 @@ jsPlumb.ready(function () {
     var color = "#E8C870";
     var instance = jsPlumb.getInstance({
         //Connector: ["Bezier", {curviness: 50}],   //基本连接线类型 使用Bezier曲线
-        Connector: ['Flowchart', { gap: 8, cornerRadius: 5, alwaysRespectStubs: true }],  // 连接线的样式种类有[Bezier],[Flowchart],[StateMachine ],[Straight ]
+        Connector: ['Flowchart', {gap: 8, cornerRadius: 5, alwaysRespectStubs: true}],  // 连接线的样式种类有[Bezier],[Flowchart],[StateMachine ],[Straight ]
         PaintStyle: {strokeStyle: color, lineWidth: 2},  //线条样式
         HoverPaintStyle: {strokeStyle: "#7073EB"},
 
@@ -313,7 +258,8 @@ jsPlumb.ready(function () {
                                 if (e.which == 13) {
                                     labelOverlay.setLabel(self.find("input[type='text']").val());
                                 }
-                            } else {
+                            }
+                            else {
                                 //其他浏览器
                                 if (event.keyCode == 13) {
                                     labelOverlay.setLabel(self.find("input[type='text']").val());
@@ -329,7 +275,7 @@ jsPlumb.ready(function () {
     });
 
     // the definition of source endpoints (the small blue ones)
-    var targetEndpoint= {
+    var targetEndpoint = {
             paintStyle: {
                 stroke: "#7AB02C",
                 fillStyle: "#FF8891",
@@ -344,7 +290,7 @@ jsPlumb.ready(function () {
         sourceEndpoint = {
             endpoint: "Dot",
             //paintStyle: {radius: 5, fillStyle: '#D4FFD6'},
-            paintStyle: { fillStyle: "#7AB02C", radius: 7 },
+            paintStyle: {fillStyle: "#7AB02C", radius: 7},
             maxConnections: -1,
             isTarget: true
         };
@@ -356,22 +302,43 @@ jsPlumb.ready(function () {
             var endpoint = instance.addEndpoint(toId, sourceEndpoint, {
                 anchor: sourceAnchors[i], uuid: sourceUUID
             });
-            $(endpoint.canvas).data("uuid",sourceUUID);
+            $(endpoint.canvas).data("uuid", sourceUUID);
         }
         for (var j = 0; j < targetAnchors.length; j++) {
             var targetUUID = toId + "-" + targetAnchors[j];
-            var endpoint = instance.addEndpoint(toId, targetEndpoint, { anchor: targetAnchors[j], uuid: targetUUID });
-            $(endpoint.canvas).data("uuid",targetUUID);
+            var endpoint = instance.addEndpoint(toId, targetEndpoint, {anchor: targetAnchors[j], uuid: targetUUID});
+            $(endpoint.canvas).data("uuid", targetUUID);
         }
     };
     jsPlumb.fire("jsPlumbDemoLoaded", instance);
 
+    //加载所有的执行引擎
+    $.ajax({
+        url: "/_sys/plugin/actuators?type=",
+        type: "get",
+        data: {},
+        success: function (result) {
+            $("#actuators_select :last").remove()
+            result.forEach(function (value) {
+                $("#actuators_select").append("<option value='"+value+"'>" + value + "</option>")
+            })
+
+            //初始化左侧节点树
+            document.getElementById("actuators_select").onchange = function (value) {
+                initAllTrees()
+            }
+            initAllTrees();
+        },
+        error: function (result) {
+            alert("执行引擎 actuators获取失败");
+        }
+    });
 
     //初始化左侧节点树
-    $('#control-panel').treeview(
-        {
-            data: getTreeData()
-        });
+    // $('#control-panel').treeview(
+    //     {
+    //         data: getTreeData()
+    //     });
 
     /**
      * 拖拽出控件
@@ -387,7 +354,7 @@ jsPlumb.ready(function () {
         var my = '' + ev.originalEvent.offsetY + 'px';
 
         var text = ev.originalEvent.dataTransfer.getData('text'); //文本
-        var data = ev.originalEvent.dataTransfer.getData('data'); //携带的内容(json字符串)
+        var nodeInfo = JSON.parse(ev.originalEvent.dataTransfer.getData('data')); //携带的内容(json字符串)
         var config = JSON.parse(ev.originalEvent.dataTransfer.getData('config')); //业务定义
 
         var uid = new Date().getTime();
@@ -397,8 +364,12 @@ jsPlumb.ready(function () {
         //锚点
         addPorts(_addEndpoints, node, config.in, config.out);
         //节点绑定双击事件
+        var userConfig = nodeInfo.config
+        userConfig.driver = nodeInfo.driver
+        userConfig.name = text+"_"+uid
+        userConfig.type = nodeInfo.type
         var currentNode = {
-            data: data,
+            data: JSON.stringify(userConfig, null, 2),
             config: config
         };
         $("#" + node_id).data(currentNode);
@@ -407,7 +378,7 @@ jsPlumb.ready(function () {
         //删除
         bindDeleteNode(instance, node_id);
         //在面板中可拖动
-        instance.draggable($(node),{containment: 'parent'});
+        instance.draggable($(node), {containment: 'parent'});
     }).on('dragover', function (ev) {
         ev.preventDefault();
         console.log('on drag over');
@@ -418,11 +389,11 @@ jsPlumb.ready(function () {
         $('#task_name').val(job_id);
         //页面加载获取流程图
         $.ajax({
-            url: "/_sys/etl_builder/get/?jobId="+job_id,
+            url: "/_sys/etl_builder/get/?jobId=" + job_id,
             type: "get",
             data: {},
             success: function (result) {
-                if(result.graph && result.graph!=""){
+                if (result.graph && result.graph != "") {
                     drawNodesConnections(instance, _addEndpoints, result.graph);
                 }
                 var congfigString = ""
@@ -443,34 +414,17 @@ jsPlumb.ready(function () {
         });
     }
 
-    //加载所有的执行引擎
-    $.ajax({
-        url: "/_sys/job_manger/get_all_actuators",
-        type: "get",
-        data: {},
-        success: function (result) {
-            $("#actuators_select :last").remove()
-            result.forEach(function (value) {
-                $("#actuators_select").append("<option value='Value'>"+value+"</option>")
-            })
-        },
-        error: function (result) {
-            alert("执行引擎 actuators获取失败");
-        }
-    });
-
-
     /*点击保存*/
     $("#flow_save").click(function () {
-        var task=$("#task_name").val();
-        if(task==""){
+        var task = $("#task_name").val();
+        if (task == "") {
             alert("任务名称不能为空");
             return;
         }
         var formData = new FormData();
         formData.append("jobId", task);
         formData.append("graph", JSON.stringify(getAllNodes(instance)));
-        var element=$('#select_file')[0].files;
+        var element = $('#select_file')[0].files;
         for (var i = 0; i < element.length; i++) {
             formData.append('file', element[i]);
         }
@@ -482,24 +436,25 @@ jsPlumb.ready(function () {
             data: formData,
             processData: false,
             contentType: false
-        }).done(function(result) {
+        }).done(function (result) {
             if (result.status == "ok") {
                 alert("保存成功");
                 window.location.href = "index.html";
-            } else {
+            }
+            else {
                 alert(result.msg);
             }
-        }).fail(function(data) {
+        }).fail(function (data) {
             alert("接口请求失败");
         });
     });
 
-    $('input[name=file]').change(function(){
+    $('input[name=file]').change(function () {
         $('#fileList').children().remove();
         var files = $(this).prop('files');
-        for(var i = 0; i < files.length; i++) {
+        for (var i = 0; i < files.length; i++) {
             $('#fileList').append(
-                '<div class="file-row" id="file_'+files[i].name+'">' + files[i].name + '</div>');
+                '<div class="file-row" id="file_' + files[i].name + '">' + files[i].name + '</div>');
         }
     });
 });
@@ -513,15 +468,15 @@ jsPlumb.ready(function () {
  */
 function addPorts(_addEndpoints, node, in_num, out_num) {
     var sourceAnchors = [];
-    if(in_num == 1){
+    if (in_num == 1) {
         sourceAnchors = ["LeftMiddle"]
     }
     var targetAnchors = [];
-    if(out_num == 1){
+    if (out_num == 1) {
         targetAnchors = ["RightMiddle"]
     }
-    var nodeId=node.getAttribute("id");
-    _addEndpoints(nodeId , sourceAnchors, targetAnchors)
+    var nodeId = node.getAttribute("id");
+    _addEndpoints(nodeId, sourceAnchors, targetAnchors)
 }
 
 /*获取URL中的参数值*/
