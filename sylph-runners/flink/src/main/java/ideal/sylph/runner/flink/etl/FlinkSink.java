@@ -16,43 +16,53 @@
 package ideal.sylph.runner.flink.etl;
 
 import ideal.sylph.etl.api.RealTimeSink;
+import org.apache.flink.api.common.io.OutputFormat;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
 import org.apache.flink.types.Row;
 
+import java.io.IOException;
+
+import static java.util.Objects.requireNonNull;
+
+/**
+ * RichSinkFunction or OutputFormat
+ */
 public final class FlinkSink
-        extends RichSinkFunction<Row>
+        implements OutputFormat<Row>
 {
     private final RealTimeSink realTimeSink;
     private final TypeInformation<Row> typeInformation;
 
     public FlinkSink(RealTimeSink realTimeSink, TypeInformation<Row> typeInformation)
     {
-        this.realTimeSink = realTimeSink;
-        this.typeInformation = typeInformation;
+        this.realTimeSink = requireNonNull(realTimeSink, "realTimeSink is null");
+        this.typeInformation = requireNonNull(typeInformation, "typeInformation is null");
     }
 
     @Override
-    public void invoke(Row value, Context context)
-            throws Exception
+    public void configure(Configuration parameters)
     {
-        realTimeSink.process(new FlinkRow(value, typeInformation));
     }
 
     @Override
-    public void open(Configuration parameters)
-            throws Exception
+    public void open(int taskNumber, int numTasks)
+            throws IOException
     {
-        realTimeSink.open(0, 0);
-        super.open(parameters);
+        realTimeSink.open(taskNumber, numTasks);
+    }
+
+    @Override
+    public void writeRecord(Row record)
+            throws IOException
+    {
+        realTimeSink.process(new FlinkRow(record, typeInformation));
     }
 
     @Override
     public void close()
-            throws Exception
+            throws IOException
     {
         realTimeSink.close(null);
-        super.close();
     }
 }

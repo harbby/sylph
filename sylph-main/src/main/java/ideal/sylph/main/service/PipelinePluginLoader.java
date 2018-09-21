@@ -23,6 +23,11 @@ import ideal.sylph.annotation.Name;
 import ideal.sylph.annotation.Version;
 import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.etl.api.RealTimePipeline;
+import ideal.sylph.etl.api.RealTimeSink;
+import ideal.sylph.etl.api.RealTimeTransForm;
+import ideal.sylph.etl.api.Sink;
+import ideal.sylph.etl.api.Source;
+import ideal.sylph.etl.api.TransForm;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.model.PipelinePluginManager;
 import org.slf4j.Logger;
@@ -48,7 +53,6 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.LOAD_MODULE_ERROR;
 import static java.util.Objects.requireNonNull;
@@ -96,23 +100,24 @@ public class PipelinePluginLoader
         return pluginsInfo;
     }
 
-    private static Set<Class<? extends PipelinePlugin>> loadPipelinePlugins(ClassLoader runnerClassLoader)
+    @SuppressWarnings("unchecked")
+    private static Set<Class<? extends PipelinePlugin>> loadPipelinePlugins(ClassLoader pluginClassLoader)
             throws IOException, NoSuchMethodException, InvocationTargetException, IllegalAccessException
     {
         final String fullName = PREFIX + PipelinePlugin.class.getName();
-        final Enumeration<URL> configs = runnerClassLoader.getResources(fullName);
+        final Enumeration<URL> configs = pluginClassLoader.getResources(fullName);
 
         Method method = ServiceLoader.class.getDeclaredMethod("parse", Class.class, URL.class);
         method.setAccessible(true);
         ImmutableSet.Builder<Class<? extends PipelinePlugin>> builder = ImmutableSet.builder();
         while (configs.hasMoreElements()) {
             URL url = configs.nextElement();
-            @SuppressWarnings("unchecked") Iterator<String> iterator = (Iterator<String>) method
+            Iterator<String> iterator = (Iterator<String>) method
                     .invoke(ServiceLoader.load(PipelinePlugin.class), PipelinePlugin.class, url);
             iterator.forEachRemaining(x -> {
                 Class<?> javaClass = null;
                 try {
-                    javaClass = Class.forName(x, false, runnerClassLoader);  // runnerClassLoader.loadClass(x)
+                    javaClass = Class.forName(x, false, pluginClassLoader);  // pluginClassLoader.loadClass(x)
                     if (PipelinePlugin.class.isAssignableFrom(javaClass)) {
                         logger.info("Find PipelinePlugin:{}", x);
                         builder.add((Class<? extends PipelinePlugin>) javaClass);
@@ -156,7 +161,7 @@ public class PipelinePluginLoader
             throw new RuntimeException(e);
         }
 
-//        Type type = javaClass.getGenericInterfaces()[0];  //获取多个范行信息 //直接获取会报出 ClassNotFoundException
+//        Type type = javaClass.getGenericInterfaces()[0];  //获取多个泛型信息 //直接获取会报出 ClassNotFoundException
 //        if (type instanceof ParameterizedType) {
 //            ParameterizedType parameterizedType = (ParameterizedType) type;
 //            Type[] types = parameterizedType.getActualTypeArguments();
@@ -174,10 +179,9 @@ public class PipelinePluginLoader
             boolean realTime,   //is realTime ?
             TypeArgument[] javaGenerics)
     {
-        Name[] names = javaClass.getAnnotationsByType(Name.class);
+        Name name = javaClass.getAnnotation(Name.class);
         String[] nameArr = ImmutableSet.<String>builder()
-                .add(javaClass.getName())
-                .add(Stream.of(names).map(Name::value).toArray(String[]::new))
+                .add(name == null ? javaClass.getName() : name.value())
                 .build().toArray(new String[0]);
 
         String isRealTime = realTime ? "RealTime" : "Not RealTime";
@@ -193,7 +197,24 @@ public class PipelinePluginLoader
                 realTime,
                 javaClass.getName(),
                 javaGenerics,
-                pluginFile
+                pluginFile,
+                parserDriverType(javaClass)
         );
+    }
+
+    private static PipelinePlugin.PipelineType parserDriverType(Class<? extends PipelinePlugin> javaClass)
+    {
+        if (Source.class.isAssignableFrom(javaClass)) {
+            return PipelinePlugin.PipelineType.source;
+        }
+        else if (TransForm.class.isAssignableFrom(javaClass) || RealTimeTransForm.class.isAssignableFrom(javaClass)) {
+            return PipelinePlugin.PipelineType.transform;
+        }
+        else if (Sink.class.isAssignableFrom(javaClass) || RealTimeSink.class.isAssignableFrom(javaClass)) {
+            return PipelinePlugin.PipelineType.sink;
+        }
+        else {
+            throw new IllegalArgumentException("Unknown type " + javaClass.getName());
+        }
     }
 }

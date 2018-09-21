@@ -15,6 +15,8 @@
  */
 package ideal.sylph.spi.job;
 
+import ideal.sylph.spi.model.PipelinePluginManager;
+
 import javax.validation.constraints.NotNull;
 
 import java.io.File;
@@ -51,6 +53,11 @@ public interface JobActuatorHandle
             throws IOException
     {
         return JobConfig.class;
+    }
+
+    default PipelinePluginManager getPluginManager()
+    {
+        return new PipelinePluginManager() {};
     }
 
     default JobContainer createJobContainer(@NotNull Job job, String jobInfo)

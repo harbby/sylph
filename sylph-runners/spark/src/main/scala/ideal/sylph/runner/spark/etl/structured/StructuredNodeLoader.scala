@@ -20,8 +20,8 @@ import java.util.function.UnaryOperator
 
 import ideal.sylph.etl.api.{RealTimeSink, RealTimeTransForm, Sink, TransForm}
 import ideal.sylph.runner.spark.etl.{SparkRow, SparkUtil}
-import ideal.sylph.spi.{Binds, NodeLoader}
 import ideal.sylph.spi.model.PipelinePluginManager
+import ideal.sylph.spi.{Binds, NodeLoader}
 import org.apache.spark.sql.streaming.{DataStreamWriter, Trigger}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Dataset, ForeachWriter, Row, SparkSession}
@@ -70,7 +70,7 @@ class StructuredNodeLoader(private val pluginManager: PipelinePluginManager, pri
     val driver: Any = getInstance(driverClass, config)
     val sink: Sink[DataStreamWriter[Row]] = driver match {
       case realTimeSink: RealTimeSink => loadRealTimeSink(realTimeSink)
-      case a2: Sink[DataStreamWriter[Row]] => a2
+      case sink: Sink[_] => sink.asInstanceOf[Sink[DataStreamWriter[Row]]]
       case _ => throw new RuntimeException("未知的sink插件:" + driver)
     }
 
@@ -102,7 +102,7 @@ class StructuredNodeLoader(private val pluginManager: PipelinePluginManager, pri
 
     val transform: TransForm[DataFrame] = driver match {
       case realTimeTransForm: RealTimeTransForm => loadRealTimeTransForm(realTimeTransForm)
-      case a2: TransForm[DataFrame] => a2
+      case transform: TransForm[_] => transform.asInstanceOf[TransForm[DataFrame]]
       case _ => throw new RuntimeException("未知的TransForm插件:" + driver)
     }
     new UnaryOperator[DataFrame] {

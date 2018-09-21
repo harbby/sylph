@@ -80,19 +80,19 @@ public final class EtlFlow
     /**
      * 加载yaml
      */
-    public static Flow load(File file)
+    public static EtlFlow load(File file)
             throws IOException
     {
         return MAPPER.readValue(file, EtlFlow.class);
     }
 
-    public static Flow load(String dag)
+    public static EtlFlow load(String dag)
             throws IOException
     {
         return MAPPER.readValue(dag, EtlFlow.class);
     }
 
-    public static Flow load(byte[] dag)
+    public static EtlFlow load(byte[] dag)
             throws IOException
     {
         return MAPPER.readValue(dag, EtlFlow.class);

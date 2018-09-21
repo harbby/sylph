@@ -15,6 +15,10 @@
  */
 package ideal.sylph.spi.job;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.net.URLClassLoader;
 
 public interface JobActuator
@@ -34,5 +38,27 @@ public interface JobActuator
         long getCreateTime();
 
         String getVersion();
+
+        ModeType getMode();
+    }
+
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.RUNTIME)
+    public static @interface Mode
+    {
+        ModeType value();
+    }
+
+    public static enum ModeType
+    {
+        STREAM_ETL(1),
+        OTHER(2);
+
+        private final int code;
+
+        ModeType(int code)
+        {
+            this.code = code;
+        }
     }
 }

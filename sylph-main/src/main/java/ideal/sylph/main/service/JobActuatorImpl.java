@@ -40,6 +40,8 @@ public class JobActuatorImpl
         this.jobActuatorHandle = requireNonNull(jobActuatorHandle, "jobActuatorHandle is null");
         this.name = buildName(jobActuatorHandle);
         this.description = buildDescription(jobActuatorHandle);
+        JobActuator.Mode mode = jobActuatorHandle.getClass().getAnnotation(JobActuator.Mode.class);
+
         this.info = new JobActuator.ActuatorInfo()
         {
             @Override
@@ -64,6 +66,12 @@ public class JobActuatorImpl
             public String getVersion()
             {
                 return "none";
+            }
+
+            @Override
+            public ModeType getMode()
+            {
+                return mode != null ? mode.value() : ModeType.OTHER;
             }
         };
     }

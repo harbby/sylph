@@ -38,6 +38,7 @@ import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.EtlFlow;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;
+import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobActuatorHandle;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobContainer;
@@ -77,6 +78,7 @@ import static org.fusesource.jansi.Ansi.Color.YELLOW;
 
 @Name("StreamETL")
 @Description("this is stream etl Actuator")
+@JobActuator.Mode(JobActuator.ModeType.STREAM_ETL)
 public class FlinkStreamEtlActuator
         implements JobActuatorHandle
 {
@@ -103,9 +105,9 @@ public class FlinkStreamEtlActuator
         ImmutableSet.Builder<File> builder = ImmutableSet.builder();
         for (NodeInfo nodeInfo : flow.getNodes()) {
             String json = JsonTextUtil.readJsonText(nodeInfo.getNodeText());
-            Map<String, Object> nodeConfig = nodeInfo.getNodeConfig();
+
             Map<String, Object> config = MAPPER.readValue(json, new GenericTypeReference(Map.class, String.class, Object.class));
-            String driverString = (String) requireNonNull(config.get("driver"), "driver is null");
+            String driverString = (String) requireNonNull(config.get("driver"), "config key driver is not setting");
             Optional<PipelinePluginManager.PipelinePluginInfo> pluginInfo = pluginManager.findPluginInfo(driverString);
             pluginInfo.ifPresent(plugin -> FileUtils.listFiles(plugin.getPluginFile(), null, true)
                     .forEach(builder::add));
@@ -160,6 +162,12 @@ public class FlinkStreamEtlActuator
         };
 
         return (JobContainer) invocationHandler.getProxy(JobContainer.class);
+    }
+
+    @Override
+    public PipelinePluginManager getPluginManager()
+    {
+        return pluginManager;
     }
 
     @Override

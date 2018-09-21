@@ -19,8 +19,8 @@ import java.util.function.UnaryOperator
 
 import ideal.sylph.etl.api._
 import ideal.sylph.runner.spark.etl.{SparkRow, SparkUtil}
-import ideal.sylph.spi.{Binds, NodeLoader}
 import ideal.sylph.spi.model.PipelinePluginManager
+import ideal.sylph.spi.{Binds, NodeLoader}
 import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
@@ -49,8 +49,8 @@ class StreamNodeLoader(private val pluginManager: PipelinePluginManager, private
     val sink: Sink[RDD[Row]] = driver match {
       case realTimeSink: RealTimeSink =>
         loadRealTimeSink(realTimeSink)
-      case a2: Sink[RDD[Row]] => a2
-      case _ => throw new RuntimeException("未知的sink插件:" + driver)
+      case sink: Sink[_] => sink.asInstanceOf[Sink[RDD[Row]]]
+      case _ => throw new RuntimeException("unknown sink type:" + driver)
     }
 
     new UnaryOperator[DStream[Row]] {
@@ -71,7 +71,7 @@ class StreamNodeLoader(private val pluginManager: PipelinePluginManager, private
     val transform: TransForm[DStream[Row]] = driver match {
       case realTimeTransForm: RealTimeTransForm =>
         loadRealTimeTransForm(realTimeTransForm)
-      case a2: TransForm[DStream[Row]] => a2
+      case transform: TransForm[_] => transform.asInstanceOf[TransForm[DStream[Row]]]
       case _ => throw new RuntimeException("未知的Transform插件:" + driver)
     }
     new UnaryOperator[DStream[Row]] {

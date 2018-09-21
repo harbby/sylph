@@ -20,6 +20,7 @@ import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.spi.job.EtlFlow;
 import ideal.sylph.spi.job.Flow;
+import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.model.PipelinePluginManager;
@@ -30,6 +31,7 @@ import java.net.URLClassLoader;
 
 @Name("Spark_StreamETL")
 @Description("spark1.x spark streaming StreamETL")
+@JobActuator.Mode(JobActuator.ModeType.STREAM_ETL)
 public class StreamEtlActuator
         extends Stream2EtlActuator
 {

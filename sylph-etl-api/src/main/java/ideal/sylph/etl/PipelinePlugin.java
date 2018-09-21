@@ -20,4 +20,17 @@ import java.io.Serializable;
 public interface PipelinePlugin
         extends Serializable
 {
+    public static enum PipelineType
+    {
+        source(1),
+        transform(2),
+        sink(3);
+
+        private final int code;
+
+        PipelineType(int i)
+        {
+            this.code = i;
+        }
+    }
 }

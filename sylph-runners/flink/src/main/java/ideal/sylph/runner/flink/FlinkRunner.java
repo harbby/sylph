@@ -19,6 +19,7 @@ import com.google.inject.Injector;
 import com.google.inject.Scopes;
 import ideal.common.bootstrap.Bootstrap;
 import ideal.common.classloader.DirClassLoader;
+import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.runner.flink.actuator.FlinkStreamEtlActuator;
 import ideal.sylph.runner.flink.actuator.FlinkStreamSqlActuator;
 import ideal.sylph.runner.flink.yarn.FlinkYarnJobLauncher;
@@ -31,7 +32,11 @@ import org.slf4j.LoggerFactory;
 import sun.reflect.generics.tree.ClassTypeSignature;
 
 import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -89,17 +94,40 @@ public class FlinkRunner
                 org.apache.flink.streaming.api.datastream.DataStream.class
         ).map(Class::getName).collect(Collectors.toSet());
 
-        Set<PipelinePluginManager.PipelinePluginInfo> flinkPlugin = context.getFindPlugins().stream().filter(it -> {
-            if (it.getRealTime()) {
-                return true;
-            }
-            if (it.getJavaGenerics().length == 0) {
-                return false;
-            }
-            ClassTypeSignature typeSignature = (ClassTypeSignature) it.getJavaGenerics()[0];
-            String typeName = typeSignature.getPath().get(0).getName();
-            return keyword.contains(typeName);
-        }).collect(Collectors.toSet());
+        Set<PipelinePluginManager.PipelinePluginInfo> flinkPlugin = context.getFindPlugins().stream()
+                .filter(it -> {
+                    if (it.getRealTime()) {
+                        return true;
+                    }
+                    if (it.getJavaGenerics().length == 0) {
+                        return false;
+                    }
+                    ClassTypeSignature typeSignature = (ClassTypeSignature) it.getJavaGenerics()[0];
+                    String typeName = typeSignature.getPath().get(0).getName();
+                    return keyword.contains(typeName);
+                })
+                .collect(Collectors.groupingBy(k -> k.getPluginFile()))
+                .entrySet().stream()
+                .flatMap(it -> {
+                    try (DirClassLoader classLoader = new DirClassLoader(FlinkRunner.class.getClassLoader())) {
+                        classLoader.addDir(it.getKey());
+                        for (PipelinePluginManager.PipelinePluginInfo info : it.getValue()) {
+                            try {
+                                List<Map> config = PipelinePluginManager.parserDriverConfig((Class<? extends PipelinePlugin>) classLoader.loadClass(info.getDriverClass()));
+                                Field field = PipelinePluginManager.PipelinePluginInfo.class.getDeclaredField("pluginConfig");
+                                field.setAccessible(true);
+                                field.set(info, config);
+                            }
+                            catch (Exception e) {
+                                logger.warn("parser driver config failed,with {}/{}", info.getPluginFile(), info.getDriverClass(), e);
+                            }
+                        }
+                    }
+                    catch (IOException e) {
+                        logger.error("Plugins {} access failed, no plugin details will be available", it.getKey(), e);
+                    }
+                    return it.getValue().stream();
+                }).collect(Collectors.toSet());
         return new PipelinePluginManager()
         {
             @Override

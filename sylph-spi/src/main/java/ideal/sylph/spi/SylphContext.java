@@ -18,10 +18,12 @@ package ideal.sylph.spi;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobContainer;
+import ideal.sylph.spi.model.PipelinePluginManager;
 
 import javax.validation.constraints.NotNull;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -49,4 +51,8 @@ public interface SylphContext
      * get all Actuator Names
      */
     Collection<JobActuator.ActuatorInfo> getAllActuatorsInfo();
+
+    List<PipelinePluginManager.PipelinePluginInfo> getPlugins();
+
+    List<PipelinePluginManager.PipelinePluginInfo> getPlugins(String actuator);
 }

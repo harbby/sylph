@@ -18,6 +18,7 @@ package ideal.sylph.main.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import ideal.common.classloader.DirClassLoader;
 import ideal.common.classloader.ThreadContextClassLoader;
@@ -32,6 +33,7 @@ import ideal.sylph.spi.job.JobActuatorHandle;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobHandle;
+import ideal.sylph.spi.model.PipelinePluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,6 +47,7 @@ import java.net.URLClassLoader;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -129,6 +132,21 @@ public class RunnerManager
                 .collect(Collectors.toList());
     }
 
+    public List<PipelinePluginManager.PipelinePluginInfo> getPlugins()
+    {
+        return jobActuatorMap.values()
+                .stream()
+                .flatMap(x -> x.getHandle().getPluginManager().getAllPlugins().stream())
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    public List<PipelinePluginManager.PipelinePluginInfo> getPlugins(String actuator)
+    {
+        JobActuator jobActuator = jobActuatorMap.get(actuator);
+        return Lists.newArrayList(jobActuator.getHandle().getPluginManager().getAllPlugins());
+    }
+
     private Job formJobWithFlow(String jobId, byte[] flowBytes, JobActuator jobActuator, JobConfig jobConfig)
             throws IOException
     {
@@ -197,7 +215,7 @@ public class RunnerManager
 
     private static Collection<URL> getJobDependFiles(final ClassLoader jobClassLoader)
     {
-        ImmutableList.Builder<URL> builder = ImmutableList.builder();
+        ImmutableList.Builder<URL> builder = ImmutableList.<URL>builder();
         if (jobClassLoader instanceof URLClassLoader) {
             builder.add(((URLClassLoader) jobClassLoader).getURLs());
 

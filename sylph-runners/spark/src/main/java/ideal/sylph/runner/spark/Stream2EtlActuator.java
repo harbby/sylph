@@ -28,6 +28,7 @@ import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.EtlFlow;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;
+import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobActuatorHandle;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobContainer;
@@ -56,6 +57,7 @@ import static java.util.Objects.requireNonNull;
 
 @Name("Spark_Structured_StreamETL")
 @Description("spark2.x Structured streaming StreamETL")
+@JobActuator.Mode(JobActuator.ModeType.STREAM_ETL)
 public class Stream2EtlActuator
         implements JobActuatorHandle
 {
@@ -74,7 +76,7 @@ public class Stream2EtlActuator
         ImmutableSet.Builder<File> builder = ImmutableSet.builder();
         for (NodeInfo nodeInfo : flow.getNodes()) {
             String json = JsonTextUtil.readJsonText(nodeInfo.getNodeText());
-            Map<String, Object> nodeConfig = nodeInfo.getNodeConfig();
+
             Map<String, Object> config = MAPPER.readValue(json, new GenericTypeReference(Map.class, String.class, Object.class));
             String driverString = (String) requireNonNull(config.get("driver"), "driver is null");
             Optional<PipelinePluginManager.PipelinePluginInfo> pluginInfo = pluginManager.findPluginInfo(driverString);
@@ -130,5 +132,11 @@ public class Stream2EtlActuator
         };
 
         return (JobContainer) invocationHandler.getProxy(JobContainer.class);
+    }
+
+    @Override
+    public PipelinePluginManager getPluginManager()
+    {
+        return pluginManager;
     }
 }
