@@ -35,6 +35,11 @@ public class DirClassLoader
         super(firstNonNull(urls, new URL[0]), parent);
     }
 
+    public DirClassLoader(ClassLoader parent)
+    {
+        super(new URL[0], parent);
+    }
+
     public DirClassLoader(URL[] urls)
     {
         super(urls);
