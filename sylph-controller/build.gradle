@@ -40,12 +40,18 @@ task clear(type: Delete){
 
 clean.dependsOn 'clear'
 
-task build_package(type:YarnTask, dependsOn: yarn_install){
+//default yarn_install
+task package_install(type: YarnTask) {
+  // add the express package only
+  args = ['install', '--modules-folder', './node_modules/libs']
+}
+task build_package(type:YarnTask, dependsOn: package_install){
   //只安装快递包
   args = [ 'run', 'build' ]
 }
 task build_webapp(type: Copy, dependsOn: build_package){
   from('src/main/webapp/app')
+  from('src/main/webapp/node_modules')
   into project(':sylph-dist').buildDir.path+ '/webapp'
 }
 assemble.dependsOn 'build_webapp'

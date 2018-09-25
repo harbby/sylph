@@ -2,6 +2,84 @@
 # yarn lockfile v1
 
 
+angular-animate@1.2.28:
+  version "1.2.28"
+  resolved "http://registry.npmjs.org/angular-animate/-/angular-animate-1.2.28.tgz#91e4528026df3eeec8de8d5b74f61b9a78d6b7cf"
+
+angular-sanitize@1.2.28:
+  version "1.2.28"
+  resolved "http://registry.npmjs.org/angular-sanitize/-/angular-sanitize-1.2.28.tgz#88ee3c3edcd17175a2f977f14c7e2a823c929105"
+
+angular@1.2.28:
+  version "1.2.28"
+  resolved "http://registry.npmjs.org/angular/-/angular-1.2.28.tgz#fdedc6d5d7d714fa374b6be7b292333462623818"
+
+backbone@1.1.2:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/backbone/-/backbone-1.1.2.tgz#c2c04c66bf87268fb82c177acebeff7d37ba6f2d"
+  dependencies:
+    underscore ">=1.5.0"
+
+biltong@jsplumb/biltong#0.4.0:
+  version "0.4.0"
+  resolved "https://codeload.github.com/jsplumb/biltong/tar.gz/cbf53284def90097a740d4edee226c7767978141"
+
+bootstrap@3.3.7:
+  version "3.3.7"
+  resolved "https://registry.yarnpkg.com/bootstrap/-/bootstrap-3.3.7.tgz#5a389394549f23330875a3b150656574f8a9eb71"
+
 bower@^1.8.4:
   version "1.8.4"
   resolved "https://registry.yarnpkg.com/bower/-/bower-1.8.4.tgz#e7876a076deb8137f7d06525dc5e8c66db82f28a"
+
+codemirror@5.0.0:
+  version "5.0.0"
+  resolved "http://registry.npmjs.org/codemirror/-/codemirror-5.0.0.tgz#97945cdc26866f882ad964173e110f24aeba4bbf"
+
+d3@mbostock-bower/d3-bower#5.0.0:
+  version "0.0.0"
+  resolved "https://codeload.github.com/mbostock-bower/d3-bower/tar.gz/940a7978acad59aacb11c81cd00e1be683eaccaa"
+
+fontawesome@4.7.0:
+  version "4.7.0"
+  resolved "https://registry.yarnpkg.com/fontawesome/-/fontawesome-4.7.0.tgz#039a48639219f0905e890f97af7efa70c4700404"
+
+jquery-ui@components/jqueryui#1.9.2:
+  version "1.9.2"
+  resolved "https://codeload.github.com/components/jqueryui/tar.gz/c683d0746b5fb73dc758ec9b72e69d917c9d5009"
+
+jquery@1.11.1:
+  version "1.11.1"
+  resolved "https://registry.yarnpkg.com/jquery/-/jquery-1.11.1.tgz#b6ec928590112ebed69e1e49cbfd0025ccd60ddb"
+
+jsBezier@jsplumb/jsBezier#0.9.1:
+  version "0.9.1"
+  resolved "https://codeload.github.com/jsplumb/jsBezier/tar.gz/0b1402fcb0e25fb6687e67a73dc867542013bf27"
+
+json2@douglascrockford/JSON-js#:
+  version "0.0.0"
+  resolved "https://codeload.github.com/douglascrockford/JSON-js/tar.gz/03157639c7a7cddd2e9f032537f346f1a87c0f6d"
+
+jsplumb@jsplumb/jsplumb#1.7.2:
+  version "1.7.2"
+  resolved "https://codeload.github.com/jsplumb/jsplumb/tar.gz/3940881a63e86f54207f3a037260871930fb6928"
+
+katavorio@jsplumb/katavorio#0.4:
+  version "0.0.0"
+  resolved "https://codeload.github.com/jsplumb/katavorio/tar.gz/4fa6df74f5e3e94556b702fdae1c02c49e0cbc96"
+
+layer@sentsin/layer#3.1.1:
+  version "3.1.1"
+  resolved "https://codeload.github.com/sentsin/layer/tar.gz/0018e1a54fbfb455d7b30d5a2901294dd0ab52c5"
+
+mottle@jsplumb/mottle#0.4:
+  version "0.0.0"
+  resolved "https://codeload.github.com/jsplumb/mottle/tar.gz/008c2ace367c56df56c40f576ddad721b445c785"
+
+underscore@1.7.0:
+  version "1.7.0"
+  resolved "https://registry.yarnpkg.com/underscore/-/underscore-1.7.0.tgz#6bbaf0877500d36be34ecaa584e0db9fef035209"
+
+underscore@>=1.5.0:
+  version "1.9.1"
+  resolved "https://registry.yarnpkg.com/underscore/-/underscore-1.9.1.tgz#06dce34a0e68a7babc29b365b8e74b8925203961"
