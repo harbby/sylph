@@ -28,10 +28,6 @@ bootstrap@3.3.7:
   version "3.3.7"
   resolved "https://registry.yarnpkg.com/bootstrap/-/bootstrap-3.3.7.tgz#5a389394549f23330875a3b150656574f8a9eb71"
 
-bower@^1.8.4:
-  version "1.8.4"
-  resolved "https://registry.yarnpkg.com/bower/-/bower-1.8.4.tgz#e7876a076deb8137f7d06525dc5e8c66db82f28a"
-
 codemirror@5.0.0:
   version "5.0.0"
   resolved "http://registry.npmjs.org/codemirror/-/codemirror-5.0.0.tgz#97945cdc26866f882ad964173e110f24aeba4bbf"
