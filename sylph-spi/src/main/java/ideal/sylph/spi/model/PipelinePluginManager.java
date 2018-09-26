@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
+import static ideal.sylph.spi.NodeLoader.getPipeConfigInstance;
 import static java.util.Objects.requireNonNull;
 
 public interface PipelinePluginManager
@@ -207,21 +208,38 @@ public interface PipelinePluginManager
         }
     }
 
-    static List<Map> parserDriverConfig(Class<? extends PipelinePlugin> javaClass)
+    /**
+     * "This method can only be called by the runner, otherwise it will report an error No classFound"
+     */
+    static List<Map> parserDriverConfig(Class<? extends PipelinePlugin> javaClass, ClassLoader classLoader)
     {
         for (Constructor<?> constructor : javaClass.getConstructors()) {
             for (Class<?> argmentType : constructor.getParameterTypes()) {
                 if (PluginConfig.class.isAssignableFrom(argmentType)) {
-                    return Arrays.stream(argmentType.getDeclaredFields())
-                            .filter(field -> field.getAnnotation(Name.class) != null)
-                            .map(field -> {
-                                Name name = field.getAnnotation(Name.class);
-                                Description description = field.getAnnotation(Description.class);
-                                return ImmutableMap.of(
-                                        "key", name.value(),
-                                        "description", description == null ? "" : description.value()
-                                );
-                            }).collect(Collectors.toList());
+                    try {
+                        PluginConfig pluginConfig = getPipeConfigInstance(argmentType.asSubclass(PluginConfig.class), classLoader);
+                        return Arrays.stream(argmentType.getDeclaredFields())
+                                .filter(field -> field.getAnnotation(Name.class) != null)
+                                .map(field -> {
+                                    Name name = field.getAnnotation(Name.class);
+                                    Description description = field.getAnnotation(Description.class);
+                                    field.setAccessible(true);
+                                    try {
+                                        Object defaultValue = field.get(pluginConfig);
+                                        return ImmutableMap.of(
+                                                "key", name.value(),
+                                                "description", description == null ? "" : description.value(),
+                                                "default", defaultValue == null ? "" : defaultValue
+                                        );
+                                    }
+                                    catch (IllegalAccessException e) {
+                                        throw new IllegalArgumentException(e);
+                                    }
+                                }).collect(Collectors.toList());
+                    }
+                    catch (Exception e) {
+                        throw new IllegalArgumentException(argmentType + " Unable to be instantiated", e);
+                    }
                 }
             }
         }

@@ -50,11 +50,10 @@ public class MysqlSink
     @Override
     public boolean open(long partitionId, long version)
     {
-        String sql = "insert into mysql_table_sink values(?,?,?)";
         try {
             Class.forName("com.mysql.jdbc.Driver");
             this.connection = DriverManager.getConnection(config.jdbcUrl, config.user, config.password);
-            this.statement = connection.prepareStatement(sql);
+            this.statement = connection.prepareStatement(config.insertQuery);
         }
         catch (SQLException | ClassNotFoundException e) {
             throw new RuntimeException("MysqlSink open fail", e);
@@ -107,21 +106,18 @@ public class MysqlSink
     {
         @Name("url")
         @Description("this is mysql jdbc url")
-        private final String jdbcUrl;
+        private final String jdbcUrl = "jdbc:mysql://localhost:3306/pop?characterEncoding=utf-8&useSSL=false";
 
         @Name("userName")
         @Description("this is mysql userName")
-        private final String user;
+        private final String user = "demo";
 
         @Name("password")
         @Description("this is mysql password")
-        private final String password;
+        private final String password = "demo";
 
-        private MysqlConfig(String jdbcUrl, String user, String password)
-        {
-            this.jdbcUrl = jdbcUrl;
-            this.user = user;
-            this.password = password;
-        }
+        @Name("insert.query")
+        @Description("this is mysql insert.query")
+        private final String insertQuery = "insert into mysql_table_sink values(?,?,?)";
     }
 }

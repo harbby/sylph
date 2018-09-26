@@ -31,7 +31,8 @@ public abstract class PluginConfig
                 .collect(Collectors.toMap(Field::getName, field -> {
                     field.setAccessible(true);
                     try {
-                        return field.get(this);
+                        Object value = field.get(this);
+                        return value == null ? "" : value;
                     }
                     catch (IllegalAccessException e) {
                         throw new RuntimeException("PluginConfig " + this.getClass() + " Serializable failed", e);

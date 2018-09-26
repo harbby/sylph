@@ -22,6 +22,7 @@ import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtNewConstructor;
+import javassist.LoaderClassPath;
 import javassist.NotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +47,9 @@ public interface NodeLoader<R>
 
     public UnaryOperator<R> loadSink(final Map<String, Object> pluginConfig);
 
+    /**
+     * This method will generate the instance object by injecting the PipeLine interface.
+     */
     default <T> T getInstance(Class<T> driver, Map<String, Object> config)
             throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException, CannotCompileException, NoSuchFieldException, NotFoundException
     {
@@ -63,53 +67,10 @@ public interface NodeLoader<R>
         ImmutableList.Builder<Object> builder = ImmutableList.builder();
         for (Class<?> type : constructor.getParameterTypes()) {
             if (PluginConfig.class.isAssignableFrom(type)) { //config injection
-                if (type.isInterface() || Modifier.isAbstract(type.getModifiers())) {
-                    throw new IllegalArgumentException(type + " is Interface or Abstract, unable to inject");
-                }
-
-                //Ignore the constructor in the configuration class
-                try {
-                    Constructor pluginConfigConstructor = type.getDeclaredConstructor();
-                    logger.info("[PluginConfig] find 'no parameter' constructor with [{}]", type);
-                    pluginConfigConstructor.setAccessible(true);
-                    PluginConfig pluginConfig = (PluginConfig) pluginConfigConstructor.newInstance();
-                    injectConfig(pluginConfig, config);
-                    builder.add(pluginConfig);
-                }
-                catch (NoSuchMethodException e) {
-                    logger.warn("[PluginConfig] not find 'no parameter' constructor, use javassist inject with [{}]", type);
-                    ClassPool classPool = ClassPool.getDefault();
-                    CtClass ctClass = classPool.get(type.getName());
-
-                    ctClass.addConstructor(CtNewConstructor.defaultConstructor(ctClass));
-                    ctClass.setName("javassist." + type.getName());
-                    Class<?> proxyClass = ctClass.toClass();
-                    PluginConfig proxy = (PluginConfig) proxyClass.newInstance();
-
-                    //--- inject map config
-                    injectConfig(proxy, config);
-                    // copy proxyConfig field value to pluginConfig ...
-                    Constructor superCons = Object.class.getConstructor();
-                    ReflectionFactory reflFactory = ReflectionFactory.getReflectionFactory();
-                    Constructor c = reflFactory.newConstructorForSerialization(type, superCons);
-                    // or use unsafe, demo: PluginConfig pluginConfig = (PluginConfig) unsafe.allocateInstance(type)
-                    PluginConfig pluginConfig = (PluginConfig) c.newInstance();
-                    for (Field field : type.getDeclaredFields()) {
-                        field.setAccessible(true);
-                        Field proxyField = proxyClass.getDeclaredField(field.getName());
-                        proxyField.setAccessible(true);
-
-                        if (Modifier.isStatic(field.getModifiers())) {
-                            //&& Modifier.isFinal(field.getModifiers())  Can not set static final
-                            //field.set(null, proxyField.get(null));
-                        }
-                        else {
-                            field.set(pluginConfig, proxyField.get(proxy));
-                        }
-                    }
-                    logger.info("copied  proxyClass to {}, obj is {}", type, pluginConfig);
-                    builder.add(pluginConfig);
-                }
+                PluginConfig pluginConfig = getPipeConfigInstance(type.asSubclass(PluginConfig.class), this.getClass().getClassLoader());
+                //--- inject map config
+                injectConfig(pluginConfig, config);
+                builder.add(pluginConfig);
             }
             else {
                 Object value = getBinds().get(type);
@@ -120,6 +81,57 @@ public interface NodeLoader<R>
             }
         }
         return constructor.newInstance(builder.build().toArray());
+    }
+
+    static PluginConfig getPipeConfigInstance(Class<? extends PluginConfig> type, ClassLoader classLoader)
+            throws IllegalAccessException, InvocationTargetException, InstantiationException, NotFoundException, CannotCompileException, NoSuchMethodException, NoSuchFieldException
+    {
+        if (type.isInterface() || Modifier.isAbstract(type.getModifiers())) {
+            throw new IllegalArgumentException(type + " is Interface or Abstract, unable to inject");
+        }
+
+        //Ignore the constructor in the configuration class
+        try {
+            Constructor pluginConfigConstructor = type.getDeclaredConstructor();
+            logger.info("[PluginConfig] find 'no parameter' constructor with [{}]", type);
+            pluginConfigConstructor.setAccessible(true);
+            PluginConfig pluginConfig = (PluginConfig) pluginConfigConstructor.newInstance();
+            return pluginConfig;
+        }
+        catch (NoSuchMethodException e) {
+            logger.warn("[PluginConfig] not find 'no parameter' constructor, use javassist inject with [{}]", type);
+            ClassPool classPool = new ClassPool();
+            classPool.appendClassPath(new LoaderClassPath(classLoader));
+
+            CtClass ctClass = classPool.get(type.getName());
+
+            ctClass.addConstructor(CtNewConstructor.defaultConstructor(ctClass));  //add 'no parameter' constructor
+            ctClass.setName("javassist." + type.getName());
+            Class<?> proxyClass = ctClass.toClass();
+            PluginConfig proxy = (PluginConfig) proxyClass.newInstance();
+
+            // copy proxyConfig field value to pluginConfig ...
+            Constructor superCons = Object.class.getConstructor();
+            ReflectionFactory reflFactory = ReflectionFactory.getReflectionFactory();
+            Constructor c = reflFactory.newConstructorForSerialization(type, superCons);
+            // or use unsafe, demo: PluginConfig pluginConfig = (PluginConfig) unsafe.allocateInstance(type)
+            PluginConfig pluginConfig = (PluginConfig) c.newInstance();
+            for (Field field : type.getDeclaredFields()) {
+                field.setAccessible(true);
+                Field proxyField = proxyClass.getDeclaredField(field.getName());
+                proxyField.setAccessible(true);
+
+                if (Modifier.isStatic(field.getModifiers())) {
+                    //&& Modifier.isFinal(field.getModifiers())  Can not set static final
+                    //field.set(null, proxyField.get(null));
+                }
+                else {
+                    field.set(pluginConfig, proxyField.get(proxy));
+                }
+            }
+            logger.info("copied  proxyClass to {}, obj is {}", type, pluginConfig);
+            return pluginConfig;
+        }
     }
 
     static void injectConfig(PluginConfig pluginConfig, Map config)

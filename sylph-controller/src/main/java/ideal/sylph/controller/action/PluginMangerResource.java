@@ -75,7 +75,7 @@ public class PluginMangerResource
             Map config = pluginInfo.getPluginConfig().stream()
                     .collect(Collectors.toMap(
                             //todo: default value is ?
-                            k -> k.get("key"), v -> ""));
+                            k -> k.get("key"), v -> v.get("default")));
 
             return ImmutableMap.<String, Object>builder()
                     .put("name", pluginInfo.getNames())

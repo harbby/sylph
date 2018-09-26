@@ -113,7 +113,7 @@ public class FlinkRunner
                         classLoader.addDir(it.getKey());
                         for (PipelinePluginManager.PipelinePluginInfo info : it.getValue()) {
                             try {
-                                List<Map> config = PipelinePluginManager.parserDriverConfig((Class<? extends PipelinePlugin>) classLoader.loadClass(info.getDriverClass()));
+                                List<Map> config = PipelinePluginManager.parserDriverConfig(classLoader.loadClass(info.getDriverClass()).asSubclass(PipelinePlugin.class), classLoader);
                                 Field field = PipelinePluginManager.PipelinePluginInfo.class.getDeclaredField("pluginConfig");
                                 field.setAccessible(true);
                                 field.set(info, config);
