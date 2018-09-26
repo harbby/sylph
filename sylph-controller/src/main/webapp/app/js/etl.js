@@ -364,10 +364,10 @@ jsPlumb.ready(function () {
         //锚点
         addPorts(_addEndpoints, node, config.in, config.out);
         //节点绑定双击事件
-        var userConfig = nodeInfo.config
-        userConfig.driver = nodeInfo.driver
-        userConfig.name = text+"_"+uid
-        userConfig.type = nodeInfo.type
+        var userConfig = nodeInfo.config;
+        userConfig.driver = nodeInfo.name[0];
+        userConfig.name = text+"_"+uid;
+        userConfig.type = nodeInfo.type;
         var currentNode = {
             data: JSON.stringify(userConfig, null, 2),
             config: config
