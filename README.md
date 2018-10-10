@@ -52,6 +52,12 @@ The registration of the custom function is consistent with the hive
 create function json_parser as 'ideal.sylph.runner.flink.udf.JsonParser';
 ```
 
+## StreamETL 
+Support `flink-stream` `spark-streaming` `spark-structured-streaming(spark2.2x)`
+
+[![loading...](https://raw.githubusercontent.com/harbby/harbby.github.io/master/logo/sylph/job_flow.png)](https://travis-ci.org/harbby/sylph)
+
+
 ## Building
 sylph builds use Gradle and requires Java 8.
 ```
