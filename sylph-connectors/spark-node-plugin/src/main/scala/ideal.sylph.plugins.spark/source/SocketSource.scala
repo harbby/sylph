@@ -69,5 +69,6 @@ class SocketSource(@transient private val ssc: StreamingContext, private val con
 @SerialVersionUID(2L)
 private[this] class SocketSourceConfig extends PluginConfig {
   @Name("socket_hosts")
-  @Description("this is socket_hosts list") val hosts: String = null
+  @Description("this is socket_hosts list")
+  var hosts: String = "localhost:9999"
 }

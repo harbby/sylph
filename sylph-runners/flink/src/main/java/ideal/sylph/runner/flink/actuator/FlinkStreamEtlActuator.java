@@ -15,8 +15,6 @@
  */
 package ideal.sylph.runner.flink.actuator;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import ideal.common.classloader.ThreadContextClassLoader;
 import ideal.common.jvm.JVMException;
@@ -36,18 +34,14 @@ import ideal.sylph.spi.GraphApp;
 import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.EtlFlow;
+import ideal.sylph.spi.job.EtlJobActuatorHandle;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuator;
-import ideal.sylph.spi.job.JobActuatorHandle;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobHandle;
-import ideal.sylph.spi.model.NodeInfo;
 import ideal.sylph.spi.model.PipelinePluginManager;
-import ideal.sylph.spi.utils.GenericTypeReference;
-import ideal.sylph.spi.utils.JsonTextUtil;
-import org.apache.commons.io.FileUtils;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -59,20 +53,15 @@ import org.fusesource.jansi.Ansi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URLClassLoader;
-import java.util.Collection;
-import java.util.Map;
 import java.util.Optional;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
-import static java.util.Objects.requireNonNull;
 import static org.fusesource.jansi.Ansi.Color.GREEN;
 import static org.fusesource.jansi.Ansi.Color.YELLOW;
 
@@ -80,9 +69,8 @@ import static org.fusesource.jansi.Ansi.Color.YELLOW;
 @Description("this is stream etl Actuator")
 @JobActuator.Mode(JobActuator.ModeType.STREAM_ETL)
 public class FlinkStreamEtlActuator
-        implements JobActuatorHandle
+        extends EtlJobActuatorHandle
 {
-    private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final Logger logger = LoggerFactory.getLogger(FlinkStreamEtlActuator.class);
     @Inject private FlinkYarnJobLauncher jobLauncher;
     @Inject private PipelinePluginManager pluginManager;
@@ -93,26 +81,6 @@ public class FlinkStreamEtlActuator
             throws IOException
     {
         return FlinkJobConfig.class;
-    }
-
-    @Nullable
-    @Override
-    public Collection<File> parserFlowDepends(Flow inFlow)
-            throws IOException
-    {
-        EtlFlow flow = (EtlFlow) inFlow;
-        //---- flow parser depends ----
-        ImmutableSet.Builder<File> builder = ImmutableSet.builder();
-        for (NodeInfo nodeInfo : flow.getNodes()) {
-            String json = JsonTextUtil.readJsonText(nodeInfo.getNodeText());
-
-            Map<String, Object> config = MAPPER.readValue(json, new GenericTypeReference(Map.class, String.class, Object.class));
-            String driverString = (String) requireNonNull(config.get("driver"), "config key driver is not setting");
-            Optional<PipelinePluginManager.PipelinePluginInfo> pluginInfo = pluginManager.findPluginInfo(driverString);
-            pluginInfo.ifPresent(plugin -> FileUtils.listFiles(plugin.getPluginFile(), null, true)
-                    .forEach(builder::add));
-        }
-        return builder.build();
     }
 
     @NotNull

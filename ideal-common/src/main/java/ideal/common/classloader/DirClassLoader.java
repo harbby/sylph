@@ -23,7 +23,7 @@ import java.net.URLStreamHandlerFactory;
 import java.text.DateFormat;
 import java.util.Date;
 
-import static org.apache.commons.lang3.ObjectUtils.firstNonNull;
+import static com.google.common.base.MoreObjects.firstNonNull;
 
 public class DirClassLoader
         extends URLClassLoader

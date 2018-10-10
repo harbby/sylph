@@ -51,10 +51,9 @@ public final class FlinkNodeLoader
     }
 
     @Override
-    public UnaryOperator<DataStream<Row>> loadSource(final Map<String, Object> config)
+    public UnaryOperator<DataStream<Row>> loadSource(String driverStr, final Map<String, Object> config)
     {
         try {
-            final String driverStr = (String) config.get("driver");
             final Class<? extends Source<DataStream<Row>>> driverClass = (Class<? extends Source<DataStream<Row>>>) pluginManager.loadPluginDriver(driverStr);
             final Source<DataStream<Row>> source = getInstance(driverClass, config);
 
@@ -69,11 +68,10 @@ public final class FlinkNodeLoader
     }
 
     @Override
-    public UnaryOperator<DataStream<Row>> loadSink(final Map<String, Object> config)
+    public UnaryOperator<DataStream<Row>> loadSink(String driverStr, final Map<String, Object> config)
     {
         final Object driver;
         try {
-            final String driverStr = (String) config.get("driver");
             Class<?> driverClass = pluginManager.loadPluginDriver(driverStr);
             driver = getInstance(driverClass, config);
         }
@@ -109,11 +107,10 @@ public final class FlinkNodeLoader
      * transform api
      **/
     @Override
-    public final UnaryOperator<DataStream<Row>> loadTransform(final Map<String, Object> config)
+    public final UnaryOperator<DataStream<Row>> loadTransform(String driverStr, final Map<String, Object> config)
     {
         final Object driver;
         try {
-            String driverStr = (String) config.get("driver");
             Class<?> driverClass = pluginManager.loadPluginDriver(driverStr);
             driver = getInstance(driverClass, config);
         }

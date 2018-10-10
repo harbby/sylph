@@ -129,19 +129,19 @@ public class KafkaSource
 
         @Name("kafka_topic")
         @Description("this is kafka topic list")
-        private final String topics = "test1";
+        private String topics = "test1";
 
         @Name("kafka_broker")
         @Description("this is kafka broker list")
-        private final String brokers = "localhost:9092";
+        private String brokers = "localhost:9092";
 
         @Name("kafka_group_id")
         @Description("this is kafka_group_id")
-        private final String groupid = "sylph_streamSql_test1";
+        private String groupid = "sylph_streamSql_test1";
 
         @Name("auto.offset.reset")
         @Description("this is auto.offset.reset mode")
-        private final String offsetMode = "latest";
+        private String offsetMode = "latest";
 
         private KafkaSourceConfig() {}
     }

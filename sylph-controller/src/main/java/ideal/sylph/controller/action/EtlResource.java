@@ -63,14 +63,15 @@ public class EtlResource
     @Path("save")
     @Consumes({MediaType.MULTIPART_FORM_DATA, MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Map saveJob(@Context HttpServletRequest request)
+    public Map saveJob(@Context HttpServletRequest request, @QueryParam("actuator") String actuator)
     {
+        requireNonNull(actuator, "actuator is null");
         try {
             String jobId = requireNonNull(request.getParameter("jobId"), "job jobId 不能为空");
             String flow = request.getParameter("graph");
             String configString = request.getParameter("config");
 
-            sylphContext.saveJob(jobId, flow, ImmutableMap.of("type", "StreamETL", "config", parserJobConfig(configString)));
+            sylphContext.saveJob(jobId, flow, ImmutableMap.of("type", actuator, "config", parserJobConfig(configString)));
             Map out = ImmutableMap.of(
                     "jobId", jobId,
                     "type", "save",

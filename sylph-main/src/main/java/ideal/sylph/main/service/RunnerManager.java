@@ -143,7 +143,7 @@ public class RunnerManager
 
     public List<PipelinePluginManager.PipelinePluginInfo> getPlugins(String actuator)
     {
-        JobActuator jobActuator = jobActuatorMap.get(actuator);
+        JobActuator jobActuator = requireNonNull(jobActuatorMap.get(actuator), "job actuator [" + actuator + "] not exists");
         return Lists.newArrayList(jobActuator.getHandle().getPluginManager().getAllPlugins());
     }
 

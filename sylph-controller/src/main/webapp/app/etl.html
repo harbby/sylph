@@ -31,19 +31,16 @@
     <link rel="stylesheet" href="libs/codemirror/lib/codemirror.css">
     <script src="libs/codemirror/lib/codemirror.js"></script>
     <script src="libs/codemirror/mode/properties/properties.js"></script>
+    <script src="libs/codemirror/mode/javascript/javascript.js"></script>
     <script src="libs/codemirror/addon/selection/active-line.js"></script>
     <script src="libs/codemirror/addon/edit/matchbrackets.js"></script>
-
-    <!-- user -->
-    <script type="text/javascript" src="js/public.js"></script>
-    <script type="text/javascript" src="js/etl.js"></script>
 </head>
 
 <style>
     .window {
         background-color: #eeeeef;
         text-align: center;
-        line-height: 30px;
+        line-height: 800%;
         z-index: 24;
         cursor: pointer;
         box-shadow: 2px 2px 19px #aaa;
@@ -228,7 +225,7 @@ window.onload = function () {
 
 
     var nodeTextEditor = CodeMirror.fromTextArea(document.getElementById("nodeText"), {
-        mode: 'properties',
+        mode: 'javascript',
         lineNumbers: true,
         styleActiveLine: true,
         matchBrackets: true
@@ -241,4 +238,9 @@ window.onload = function () {
     });
 };
 </script>
+
+<!-- user -->
+<script type="text/javascript" src="js/public.js"></script>
+<script type="text/javascript" src="js/etl.js"></script>
+
 </html>

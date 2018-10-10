@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+/*
+*
+* Template source: https://github.com/prestodb/presto/tree/master/presto-parser/src/main/antlr4/com/facebook/presto/sql/parser
+*
+*/
+
 grammar SqlBase;
 
 @header {

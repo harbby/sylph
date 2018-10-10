@@ -32,7 +32,7 @@ import scala.util.parsing.json.JSONObject
 /**
   * test source
   **/
-@Name("test")
+@Name("flink_test_source")
 @Description("this flink test source inputStream")
 @Version("1.0.0")
 @SerialVersionUID(2L) //使用注解来制定序列化id

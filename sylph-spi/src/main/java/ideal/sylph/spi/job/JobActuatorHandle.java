@@ -35,11 +35,8 @@ public interface JobActuatorHandle
     }
 
     @NotNull
-    default Flow formFlow(byte[] flowBytes)
-            throws IOException
-    {
-        return EtlFlow.load(flowBytes);
-    }
+    Flow formFlow(byte[] flowBytes)
+            throws IOException;
 
     @NotNull
     default Collection<File> parserFlowDepends(Flow flow)

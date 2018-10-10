@@ -15,6 +15,8 @@
  */
 package ideal.sylph.spi.utils;
 
+import com.google.common.base.CharMatcher;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,7 +24,6 @@ import java.util.Arrays;
 import java.util.stream.Stream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.commons.lang3.StringUtils.countMatches;
 
 public final class JsonTextUtil
 {
@@ -61,5 +62,11 @@ public final class JsonTextUtil
             }).orElse("");
         }).filter(x -> !x.trim().equals("")).forEach(x -> text.append(x).append("\n"));
         return text.toString();
+    }
+
+    private static int countMatches(String sequence, String seq)
+    {
+        int cnt = CharMatcher.anyOf(seq).countIn(sequence);
+        return cnt;
     }
 }

@@ -33,40 +33,40 @@ import org.slf4j.LoggerFactory
 class StructuredNodeLoader(private val pluginManager: PipelinePluginManager, private val binds: Binds) extends NodeLoader[DataFrame] {
   private val logger = LoggerFactory.getLogger(this.getClass)
 
-  override def loadSource(config: util.Map[String, Object]): UnaryOperator[DataFrame] = {
+  override def loadSource(driverStr: String, config: util.Map[String, Object]): UnaryOperator[DataFrame] = {
     val spark: SparkSession = binds.get(classOf[SparkSession])
-    val driver = config.get("driver").asInstanceOf[String]
+
     import collection.JavaConverters._
-    val source: DataFrame = driver match {
+    val source: DataFrame = driverStr match {
       case "kafka" => KafkaSourceUtil.getSource(spark, config)
       case _ => spark.readStream
-        .format(driver)
+        .format(driverStr)
         .options(config.asScala.map(x => (x._1, x._2.toString)))
         .load()
     }
 
     new UnaryOperator[DataFrame] {
       override def apply(stream: DataFrame): DataFrame = {
-        logger.info("source {} schema:", driver)
+        logger.info("source {} schema:", driverStr)
         source.printSchema()
         source
       }
     }
   }
 
-  override def loadSink(config: util.Map[String, Object]): UnaryOperator[DataFrame] = {
+  override def loadSink(driverStr: String, config: util.Map[String, Object]): UnaryOperator[DataFrame] = {
     new UnaryOperator[DataFrame] {
       override def apply(stream: DataFrame): DataFrame = {
         //-------启动job-------
-        val streamingQuery = loadSinkWithComplic(config).apply(stream).start() //start job
+        val streamingQuery = loadSinkWithComplic(driverStr, config).apply(stream).start() //start job
         //streamingQuery.stop()
         null
       }
     }
   }
 
-  def loadSinkWithComplic(config: util.Map[String, Object]): DataFrame => DataStreamWriter[Row] = {
-    val driverClass = pluginManager.loadPluginDriver(config.get("driver").asInstanceOf[String])
+  def loadSinkWithComplic(driverStr: String, config: util.Map[String, Object]): DataFrame => DataStreamWriter[Row] = {
+    val driverClass = pluginManager.loadPluginDriver(driverStr)
     val driver: Any = getInstance(driverClass, config)
     val sink: Sink[DataStreamWriter[Row]] = driver match {
       case realTimeSink: RealTimeSink => loadRealTimeSink(realTimeSink)
@@ -96,8 +96,8 @@ class StructuredNodeLoader(private val pluginManager: PipelinePluginManager, pri
   /**
     * transform api 尝试中
     **/
-  override def loadTransform(config: util.Map[String, Object]): UnaryOperator[DataFrame] = {
-    val driverClass = pluginManager.loadPluginDriver(config.get("driver").asInstanceOf[String])
+  override def loadTransform(driverStr: String, config: util.Map[String, Object]): UnaryOperator[DataFrame] = {
+    val driverClass = pluginManager.loadPluginDriver(driverStr)
     val driver: Any = driverClass.newInstance()
 
     val transform: TransForm[DataFrame] = driver match {

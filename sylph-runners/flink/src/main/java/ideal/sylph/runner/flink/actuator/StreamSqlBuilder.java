@@ -119,19 +119,17 @@ class StreamSqlBuilder
 
     private void createStreamTable(CreateStream createStream)
     {
-        String tableName = createStream.getName();
-        List<ColumnDefinition> columns = createStream.getElements().stream().map(ColumnDefinition.class::cast).collect(Collectors.toList());
+        final String tableName = createStream.getName();
+        final List<ColumnDefinition> columns = createStream.getElements().stream().map(ColumnDefinition.class::cast).collect(Collectors.toList());
 
-        Map<String, String> withConfig = createStream.getProperties().stream()
+        final Map<String, String> withConfig = createStream.getProperties().stream()
                 .collect(Collectors.toMap(
                         k -> k.getName().getValue(),
                         v -> v.getValue().toString().replace("'", "")));
-        Map<String, Object> config = ImmutableMap.<String, Object>builder()
-                .putAll(withConfig)
-                .put("driver", withConfig.get("type"))
-                .build();
+        final Map<String, Object> config = ImmutableMap.copyOf(withConfig);
+        final String driverClass = withConfig.get("type");
 
-        Binds binds = Binds.builder()
+        final Binds binds = Binds.builder()
                 .put(org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.class, tableEnv.execEnv())
                 .put(org.apache.flink.table.api.StreamTableEnvironment.class, tableEnv)
                 .put(org.apache.flink.table.api.java.StreamTableEnvironment.class, tableEnv)
@@ -141,7 +139,7 @@ class StreamSqlBuilder
         NodeLoader<DataStream<Row>> loader = new FlinkNodeLoader(pluginManager, binds);
         RowTypeInfo tableTypeInfo = parserColumns(columns);
         if (SOURCE == createStream.getType()) {  //Source.class.isAssignableFrom(driver)
-            DataStream<Row> inputStream = checkStream(loader.loadSource(config).apply(null), tableTypeInfo);
+            DataStream<Row> inputStream = checkStream(loader.loadSource(driverClass, config).apply(null), tableTypeInfo);
             //---------------------------------------------------
             createStream.getWatermark().ifPresent(waterMark -> {
                 logger.info("createStreamTable Watermark is {}", waterMark);
@@ -158,7 +156,7 @@ class StreamSqlBuilder
             }
         }
         else if (SINK == createStream.getType()) {
-            UnaryOperator<DataStream<Row>> outputStream = loader.loadSink(config);
+            UnaryOperator<DataStream<Row>> outputStream = loader.loadSink(driverClass, config);
             SylphTableSink tableSink = new SylphTableSink(tableTypeInfo, outputStream);
             tableEnv.registerTableSink(tableName, tableSink.getFieldNames(), tableSink.getFieldTypes(), tableSink);
         }

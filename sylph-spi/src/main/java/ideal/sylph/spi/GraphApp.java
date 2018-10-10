@@ -15,29 +15,19 @@
  */
 package ideal.sylph.spi;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import ideal.common.graph.Graph;
 import ideal.common.graph.GraphBuilder;
 import ideal.common.graph.impl.DagNode;
-import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.EtlFlow;
 import ideal.sylph.spi.model.EdgeInfo;
 import ideal.sylph.spi.model.NodeInfo;
-import ideal.sylph.spi.utils.GenericTypeReference;
-import ideal.sylph.spi.utils.JsonTextUtil;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-
-import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
-import static java.util.Objects.requireNonNull;
 
 public interface GraphApp<T, R>
         extends App<T>
 {
-    ObjectMapper MAPPER = new ObjectMapper();
-
     NodeLoader<R> getNodeLoader();
 
     default Graph<R> buildGraph(String jobId, EtlFlow flow)
@@ -48,29 +38,22 @@ public interface GraphApp<T, R>
 
         final NodeLoader<R> loader = getNodeLoader();
         nodes.forEach(nodeInfo -> {
-            try {
-                String json = JsonTextUtil.readJsonText(nodeInfo.getNodeText());
-                final Map<String, Object> config = MAPPER.readValue(json, new GenericTypeReference(Map.class, String.class, Object.class));
+            final Map<String, Object> config = nodeInfo.getUserConfig();
+            String driverString = nodeInfo.getDriverClass();
+            String id = nodeInfo.getNodeId();
 
-                String driverString = (String) requireNonNull(config.get("driver"), "driver class IS NULL");
-                String id = nodeInfo.getNodeId();
-
-                switch (nodeInfo.getNodeType()) {
-                    case "source":
-                        graphx.addNode(new DagNode<>(id, driverString, loader.loadSource(config)));
-                        break;
-                    case "transfrom":
-                        graphx.addNode(new DagNode<>(id, driverString, loader.loadTransform(config)));
-                        break;
-                    case "sink":
-                        graphx.addNode(new DagNode<>(id, driverString, loader.loadSink(config)));
-                        break;
-                    default:
-                        System.out.println("错误的类型算子");
-                }
-            }
-            catch (IOException e) {
-                throw new SylphException(JOB_BUILD_ERROR, "graph creating fail", e);
+            switch (nodeInfo.getNodeType()) {
+                case "source":
+                    graphx.addNode(new DagNode<>(id, driverString, loader.loadSource(driverString, config)));
+                    break;
+                case "transform":
+                    graphx.addNode(new DagNode<>(id, driverString, loader.loadTransform(driverString, config)));
+                    break;
+                case "sink":
+                    graphx.addNode(new DagNode<>(id, driverString, loader.loadSink(driverString, config)));
+                    break;
+                default:
+                    System.out.println("错误的类型算子 + " + nodeInfo);
             }
         });
 

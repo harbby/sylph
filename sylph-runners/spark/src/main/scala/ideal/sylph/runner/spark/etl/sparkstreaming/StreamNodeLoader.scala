@@ -32,8 +32,8 @@ import org.apache.spark.streaming.dstream.DStream
   */
 class StreamNodeLoader(private val pluginManager: PipelinePluginManager, private val binds: Binds) extends NodeLoader[DStream[Row]] {
 
-  override def loadSource(config: java.util.Map[String, Object]): UnaryOperator[DStream[Row]] = {
-    val driverClass = pluginManager.loadPluginDriver(config.get("driver").asInstanceOf[String])
+  override def loadSource(driverStr: String, config: java.util.Map[String, Object]): UnaryOperator[DStream[Row]] = {
+    val driverClass = pluginManager.loadPluginDriver(driverStr)
 
     val source = getInstance(driverClass, config).asInstanceOf[Source[DStream[Row]]]
 
@@ -42,8 +42,8 @@ class StreamNodeLoader(private val pluginManager: PipelinePluginManager, private
     }
   }
 
-  override def loadSink(config: java.util.Map[String, Object]): UnaryOperator[DStream[Row]] = {
-    val driverClass = pluginManager.loadPluginDriver(config.get("driver").asInstanceOf[String])
+  override def loadSink(driverStr: String, config: java.util.Map[String, Object]): UnaryOperator[DStream[Row]] = {
+    val driverClass = pluginManager.loadPluginDriver(driverStr)
     val driver = getInstance(driverClass, config)
 
     val sink: Sink[RDD[Row]] = driver match {
@@ -64,8 +64,8 @@ class StreamNodeLoader(private val pluginManager: PipelinePluginManager, private
   /**
     * transform api 尝试中
     **/
-  override def loadTransform(config: java.util.Map[String, Object]): UnaryOperator[DStream[Row]] = {
-    val driverClass = pluginManager.loadPluginDriver(config.get("driver").asInstanceOf[String])
+  override def loadTransform(driverStr: String, config: java.util.Map[String, Object]): UnaryOperator[DStream[Row]] = {
+    val driverClass = pluginManager.loadPluginDriver(driverStr)
     val driver: Any = getInstance(driverClass, config)
 
     val transform: TransForm[DStream[Row]] = driver match {

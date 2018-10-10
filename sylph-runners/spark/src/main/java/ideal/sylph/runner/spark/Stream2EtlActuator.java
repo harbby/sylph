@@ -15,8 +15,6 @@
  */
 package ideal.sylph.runner.spark;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import ideal.common.classloader.ThreadContextClassLoader;
 import ideal.common.proxy.DynamicProxy;
@@ -26,65 +24,35 @@ import ideal.sylph.runner.spark.yarn.SparkAppLauncher;
 import ideal.sylph.runner.spark.yarn.YarnJobContainer;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.EtlFlow;
+import ideal.sylph.spi.job.EtlJobActuatorHandle;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuator;
-import ideal.sylph.spi.job.JobActuatorHandle;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobHandle;
-import ideal.sylph.spi.model.NodeInfo;
 import ideal.sylph.spi.model.PipelinePluginManager;
-import ideal.sylph.spi.utils.GenericTypeReference;
-import ideal.sylph.spi.utils.JsonTextUtil;
-import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 
-import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URLClassLoader;
-import java.util.Collection;
-import java.util.Map;
 import java.util.Optional;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
-import static java.util.Objects.requireNonNull;
 
 @Name("Spark_Structured_StreamETL")
 @Description("spark2.x Structured streaming StreamETL")
 @JobActuator.Mode(JobActuator.ModeType.STREAM_ETL)
 public class Stream2EtlActuator
-        implements JobActuatorHandle
+        extends EtlJobActuatorHandle
 {
-    private static final ObjectMapper MAPPER = new ObjectMapper();
     @Inject private YarnClient yarnClient;
     @Inject private SparkAppLauncher appLauncher;
     @Inject private PipelinePluginManager pluginManager;
-
-    @Nullable
-    @Override
-    public Collection<File> parserFlowDepends(Flow inFlow)
-            throws IOException
-    {
-        EtlFlow flow = (EtlFlow) inFlow;
-        //---- flow parser depends ----
-        ImmutableSet.Builder<File> builder = ImmutableSet.builder();
-        for (NodeInfo nodeInfo : flow.getNodes()) {
-            String json = JsonTextUtil.readJsonText(nodeInfo.getNodeText());
-
-            Map<String, Object> config = MAPPER.readValue(json, new GenericTypeReference(Map.class, String.class, Object.class));
-            String driverString = (String) requireNonNull(config.get("driver"), "driver is null");
-            Optional<PipelinePluginManager.PipelinePluginInfo> pluginInfo = pluginManager.findPluginInfo(driverString);
-            pluginInfo.ifPresent(plugin -> FileUtils.listFiles(plugin.getPluginFile(), null, true)
-                    .forEach(builder::add));
-        }
-        return builder.build();
-    }
 
     @NotNull
     @Override

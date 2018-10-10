@@ -41,11 +41,11 @@ public interface NodeLoader<R>
 {
     Logger logger = LoggerFactory.getLogger(NodeLoader.class);
 
-    public UnaryOperator<R> loadSource(final Map<String, Object> pluginConfig);
+    public UnaryOperator<R> loadSource(String driverStr, final Map<String, Object> pluginConfig);
 
-    public UnaryOperator<R> loadTransform(final Map<String, Object> pluginConfig);
+    public UnaryOperator<R> loadTransform(String driverStr, final Map<String, Object> pluginConfig);
 
-    public UnaryOperator<R> loadSink(final Map<String, Object> pluginConfig);
+    public UnaryOperator<R> loadSink(String driverStr, final Map<String, Object> pluginConfig);
 
     /**
      * This method will generate the instance object by injecting the PipeLine interface.
@@ -129,7 +129,7 @@ public interface NodeLoader<R>
                     field.set(pluginConfig, proxyField.get(proxy));
                 }
             }
-            logger.info("copied  proxyClass to {}, obj is {}", type, pluginConfig);
+            logger.info("copied  proxyClass to {}, the proxyObj is {}", type, pluginConfig);
             return pluginConfig;
         }
     }
@@ -153,7 +153,7 @@ public interface NodeLoader<R>
                 }
             }
         }
-        logger.info("inject pluginConfig Class [{}], obj is {}", typeClass, pluginConfig);
+        logger.info("inject pluginConfig Class [{}], outObj is {}", typeClass, pluginConfig);
     }
 
     public Binds getBinds();

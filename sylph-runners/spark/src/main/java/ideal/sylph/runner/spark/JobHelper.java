@@ -87,12 +87,12 @@ final class JobHelper
                 return new StructuredNodeLoader(pluginManager, binds)
                 {
                     @Override
-                    public UnaryOperator<Dataset<Row>> loadSink(Map<String, Object> config)
+                    public UnaryOperator<Dataset<Row>> loadSink(String driverStr, Map<String, Object> config)
                     {
                         return isCompile.get() ? (stream) -> {
-                            super.loadSinkWithComplic(config).apply(stream);
+                            super.loadSinkWithComplic(driverStr, config).apply(stream);
                             return null;
-                        } : super.loadSink(config);
+                        } : super.loadSink(driverStr, config);
                     }
                 };
             }

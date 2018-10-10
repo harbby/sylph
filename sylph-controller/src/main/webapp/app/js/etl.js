@@ -76,7 +76,7 @@ function bindDeleteNode(instance, node) {
  * 获取所有节点及其连接线
  *
  * */
-function getAllNodes(instance) {
+function getFlow(instance) {
     /*获取连接线*/
     var edges = [];
     $.each(instance.getAllConnections(), function (idx, connection) {
@@ -92,13 +92,14 @@ function getAllNodes(instance) {
     var nodes = [];
     $("#flow-panel").find(".node").each(function (idx, element) {
         var elem = $(element);
-        var nodeText = JSON.parse(elem.data("data"))
+        //var nodeText = JSON.parse(elem.data("data"))
 
         nodes.push({
             nodeId: elem.attr("id"),
-            nodeType: elem.text(),
+            nodeLable: elem.text(),
+            nodeType: elem.data("type"),
             nodeText: elem.data("data"),
-            nodeConfig: elem.data("config"),
+            nodeConfig: elem.data("config"),  //暂时无用字段
             nodeX: parseInt(elem.css("left"), 10),
             nodeY: parseInt(elem.css("top"), 10)
         });
@@ -122,7 +123,7 @@ function drawNodesConnections(instance, _addEndpoints, nodesCon) {
     //节点
     for (var i = 0; i < nodes.length; i++) {
         //节点
-        var node = addNode('flow-panel', nodes[i].nodeId, nodes[i].nodeType, {
+        var node = addNode('flow-panel', nodes[i].nodeId, nodes[i].nodeLable, {
             x: nodes[i].nodeX + 'px',
             y: nodes[i].nodeY + 'px'
         });
@@ -131,7 +132,8 @@ function drawNodesConnections(instance, _addEndpoints, nodesCon) {
         //节点绑定双击事件
         var currentNode = {
             data: nodes[i].nodeText,
-            config: nodes[i].nodeConfig
+            config: nodes[i].nodeConfig,
+            type: nodes[i].nodeType
         };
         $("#" + nodes[i].nodeId).data(currentNode);
         //双击修改
@@ -314,13 +316,13 @@ jsPlumb.ready(function () {
 
     //加载所有的执行引擎
     $.ajax({
-        url: "/_sys/plugin/actuators?type=",
+        url: "/_sys/plugin/actuators?type=etl",
         type: "get",
         data: {},
         success: function (result) {
             $("#actuators_select :last").remove()
             result.forEach(function (value) {
-                $("#actuators_select").append("<option value='"+value+"'>" + value + "</option>")
+                $("#actuators_select").append("<option value='" + value + "'>" + value + "</option>")
             })
 
             //初始化左侧节点树
@@ -353,24 +355,28 @@ jsPlumb.ready(function () {
         var mx = '' + ev.originalEvent.offsetX + 'px';
         var my = '' + ev.originalEvent.offsetY + 'px';
 
-        var text = ev.originalEvent.dataTransfer.getData('text'); //文本
+        var nodeLable = ev.originalEvent.dataTransfer.getData('text'); //文本
         var nodeInfo = JSON.parse(ev.originalEvent.dataTransfer.getData('data')); //携带的内容(json字符串)
         var config = JSON.parse(ev.originalEvent.dataTransfer.getData('config')); //业务定义
 
         var uid = new Date().getTime();
         var node_id = 'node' + uid;
         //节点
-        var node = addNode('flow-panel', node_id, text, {x: mx, y: my});
+        var node = addNode('flow-panel', node_id, nodeLable, {x: mx, y: my});
         //锚点
         addPorts(_addEndpoints, node, config.in, config.out);
         //节点绑定双击事件
-        var userConfig = nodeInfo.config
-        userConfig.driver = nodeInfo.name[0]
-        userConfig.name = text+"_"+uid
-        userConfig.type = nodeInfo.type
+        var configText = {
+            user: nodeInfo.config,
+            plugin: {
+                driver: nodeInfo.name[0],
+                name: nodeLable + "_" + uid
+            }
+        }
         var currentNode = {
-            data: JSON.stringify(userConfig, null, 2),
-            config: config
+            data: JSON.stringify(configText, null, 2),
+            config: config,
+            type: nodeInfo.type
         };
         $("#" + node_id).data(currentNode);
         //双击修改
@@ -395,12 +401,17 @@ jsPlumb.ready(function () {
             success: function (result) {
                 if (result.graph && result.graph != "") {
                     drawNodesConnections(instance, _addEndpoints, result.graph);
+
+                    var actuator = result.config.type
+                    document.getElementById("actuators_select").value = actuator
+                    initAllTrees(); //重新初始化 左侧工具栏
+
+                    var congfigString = ""
+                    $.each(result.config.config, function (key, value) {
+                        congfigString += key + "= " + value + "\n"
+                    });
+                    $("textarea[name=config]").val(congfigString);   //JSON.stringify(result.config.config)
                 }
-                var congfigString = ""
-                $.each(result.config.config, function (key, value) {
-                    congfigString += key + "= " + value + "\n"
-                });
-                $("textarea[name=config]").val(congfigString);   //JSON.stringify(result.config.config)
 
                 //renderer = jsPlumbToolkit.Support.ingest({ jsPlumb:instance });
                 // renderer.storePositionsInModel();
@@ -423,14 +434,15 @@ jsPlumb.ready(function () {
         }
         var formData = new FormData();
         formData.append("jobId", task);
-        formData.append("graph", JSON.stringify(getAllNodes(instance)));
+        formData.append("graph", JSON.stringify(getFlow(instance)));
         var element = $('#select_file')[0].files;
         for (var i = 0; i < element.length; i++) {
             formData.append('file', element[i]);
         }
         formData.append('config', $("textarea[name=config]").val());
+        var actuator = document.getElementById("actuators_select").value;   //job 执行引擎
         $.ajax({
-            url: '/_sys/etl_builder/save',
+            url: '/_sys/etl_builder/save?actuator='+actuator,
             type: 'POST',
             cache: false,
             data: formData,
@@ -445,7 +457,7 @@ jsPlumb.ready(function () {
                 alert(result.msg);
             }
         }).fail(function (data) {
-            alert("接口请求失败");
+            alert("任务保存失败");
         });
     });
 

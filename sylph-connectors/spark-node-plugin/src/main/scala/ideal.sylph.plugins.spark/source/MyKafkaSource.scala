@@ -80,11 +80,18 @@ class MyKafkaSource(@transient private val ssc: StreamingContext, private val co
 @SerialVersionUID(2L)
 private[this] class KafkaSourceConfig extends PluginConfig {
   @Name("kafka_topic")
-  @Description("this is kafka topic list") val topics: String = null
+  @Description("this is kafka topic list")
+  var topics: String = "test1,test2"
+
   @Name("kafka_broker")
-  @Description("this is kafka broker list") val brokers: String = null
+  @Description("this is kafka broker list")
+  var brokers: String = "localhost:9092"
+
   @Name("kafka_group_id")
-  @Description("this is kafka_group_id") val groupid: String = null
+  @Description("this is kafka_group_id")
+  var groupid: String = "streamEtl1"
+
   @Name("auto.offset.reset")
-  @Description("this is auto.offset.reset mode") var offsetMode = "latest"
+  @Description("this is auto.offset.reset mode")
+  var offsetMode = "latest"
 }

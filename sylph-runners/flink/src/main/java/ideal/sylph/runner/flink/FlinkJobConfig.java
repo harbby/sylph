@@ -39,7 +39,7 @@ public class FlinkJobConfig
         this.config = requireNonNull(jobConfig, "jobConfig is null");
     }
 
-    @JsonProperty(value = "config")
+    @Override
     public JobParameter getConfig()
     {
         return config;

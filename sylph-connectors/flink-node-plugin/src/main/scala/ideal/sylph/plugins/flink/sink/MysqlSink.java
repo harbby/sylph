@@ -28,6 +28,10 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Name("mysql")
 @Description("this is mysql Sink, if table not execit ze create table")
@@ -41,10 +45,20 @@ public class MysqlSink
     private Connection connection;
     private PreparedStatement statement;
     private int num = 0;
+    private final String prepareStatementQuery;
+    private final String[] keys;
 
     public MysqlSink(MysqlConfig mysqlConfig)
     {
         this.config = mysqlConfig;
+        this.prepareStatementQuery = config.saveQuery.replaceAll("\\$\\{.*?}", "?");
+        // parser sql query ${key}
+        Matcher matcher = Pattern.compile("(?<=\\$\\{)(.+?)(?=\\})").matcher(config.saveQuery);
+        List<String> builder = new ArrayList<>();
+        while (matcher.find()) {
+            builder.add(matcher.group());
+        }
+        this.keys = builder.toArray(new String[0]);
     }
 
     @Override
@@ -53,7 +67,7 @@ public class MysqlSink
         try {
             Class.forName("com.mysql.jdbc.Driver");
             this.connection = DriverManager.getConnection(config.jdbcUrl, config.user, config.password);
-            this.statement = connection.prepareStatement(config.insertQuery);
+            this.statement = connection.prepareStatement(prepareStatementQuery);
         }
         catch (SQLException | ClassNotFoundException e) {
             throw new RuntimeException("MysqlSink open fail", e);
@@ -62,15 +76,18 @@ public class MysqlSink
     }
 
     @Override
-    public void process(Row value)
+    public void process(Row row)
     {
         try {
-            for (int i = 0; i < value.size(); i++) {
-                statement.setObject(i + 1, value.getAs(i));
+            int i = 1;
+            for (String key : keys) {
+                Object value = isNumeric(key) ? row.getAs(Integer.parseInt(key)) : row.getAs(key);
+                statement.setObject(i, value);
+                i += 1;
             }
             statement.addBatch();
             // submit batch
-            if (num >= 5) {
+            if (num >= 50) {
                 statement.executeBatch();
                 num = 0;
             }
@@ -106,18 +123,32 @@ public class MysqlSink
     {
         @Name("url")
         @Description("this is mysql jdbc url")
-        private final String jdbcUrl = "jdbc:mysql://localhost:3306/pop?characterEncoding=utf-8&useSSL=false";
+        private String jdbcUrl = "jdbc:mysql://localhost:3306/pop?characterEncoding=utf-8&useSSL=false";
 
         @Name("userName")
         @Description("this is mysql userName")
-        private final String user = "demo";
+        private String user = "demo";
 
         @Name("password")
         @Description("this is mysql password")
-        private final String password = "demo";
+        private String password = "demo";
 
-        @Name("insert.query")
-        @Description("this is mysql insert.query")
-        private final String insertQuery = "insert into mysql_table_sink values(?,?,?)";
+        @Name("query")
+        @Description("this is mysql save query")
+        private String saveQuery = "insert into your_table values(${0},${1},${2})";
+        /*
+         * demo: insert into your_table values(${0},${1},${2})
+         * demo: replace into table select '${0}', ifnull((select cnt from table where id = '${0}'),0)+{1};
+         * */
+    }
+
+    private static boolean isNumeric(String str)
+    {
+        for (int i = str.length(); --i >= 0; ) {
+            if (!Character.isDigit(str.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 }

@@ -15,6 +15,7 @@
  */
 package ideal.sylph.controller.action;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import ideal.sylph.spi.SylphContext;
 import ideal.sylph.spi.job.JobActuator;
@@ -32,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static java.util.Objects.requireNonNull;
+import static com.google.common.base.Preconditions.checkArgument;
 
 @javax.inject.Singleton
 @Path("/plugin")
@@ -54,7 +55,7 @@ public class PluginMangerResource
     @Path("actuators")
     @GET
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
-    public List<String> getAllActuators(@QueryParam("type") String type)
+    public List<String> getETLActuators()
     {
         List<String> names = sylphContext.getAllActuatorsInfo()
                 .stream()
@@ -69,8 +70,7 @@ public class PluginMangerResource
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
     public Map getAllPlugins(@QueryParam("actuator") String actuator)
     {
-        //test Object a1 = uriInfo.getQueryParameters();
-        requireNonNull(actuator, "actuator is null");
+        checkArgument(!Strings.isNullOrEmpty(actuator), "actuator not setting");
         Map plugins = sylphContext.getPlugins(actuator).stream().map(pluginInfo -> {
             Map config = pluginInfo.getPluginConfig().stream()
                     .collect(Collectors.toMap(
