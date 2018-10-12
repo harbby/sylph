@@ -31,11 +31,11 @@ create sink table mysql_table_sink(
     a2 varchar,
     event_time bigint
 ) with (
-    type = 'mysql',   -- ideal.sylph.plugins.flink.sink
+    type = 'mysql',   -- ideal.sylph.plugins.flink.sink.MysqlSink.java
     userName = 'demo',
     password = 'demo',
     url = 'jdbc:mysql://localhost:3306/pop?characterEncoding=utf-8&useSSL=false',
-    other = 'demo001'
+    query = 'insert into mysql_table_sink values(${0},${1},${2})'
 );
 -- 描述数据流计算过程
 insert into mysql_table_sink
@@ -60,24 +60,26 @@ create source table topic1(
 );
 
 create sink table mysql_uv_table_sink(
+    user_id varchar,
     uv bigint,
     cnt_time date
 ) with (
-    type = 'mysql',   -- ideal.sylph.plugins.flink.sink
+    type = 'mysql',   -- ideal.sylph.plugins.flink.sink.MysqlSink.java
     userName = 'demo',
     password = 'demo',
     url = 'jdbc:mysql://localhost:3306/pop?characterEncoding=utf-8&useSSL=false',
-    other = 'demo001'
+    query = 'insert into mysql_uv_table_sink values(${0},${1},${2})'
 );
 
 with tb13 as (SELECT proctime
     ,row_get(rowline,0)as user_id
-    FROM cdn_c13, LATERAL TABLE(json_parser(_message,'user_id')) as T(rowline) 
+    FROM topic1, LATERAL TABLE(json_parser(_message,'user_id')) as T(rowline) 
     where cast(row_get(rowline,0) as varchar) is not null
 )
-insert into mysql_table_sink
+insert into mysql_uv_table_sink
 select 
-count_distinct(user_id) as uv
+user_id,
+count(distinct user_id) as uv
 ,TUMBLE_START(proctime,INTERVAL '60' SECOND) AS window_start 
 FROM tb13 GROUP BY user_id,TUMBLE(proctime,INTERVAL '60' SECOND)
 ```
