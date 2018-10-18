@@ -16,9 +16,6 @@
 package ideal.sylph.runner.flink.udf;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.api.common.typeinfo.Types;
-import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.table.functions.TableFunction;
 import org.apache.flink.types.Row;
 import org.slf4j.Logger;
@@ -56,11 +53,5 @@ public final class JsonParser
     public void eval(final String str, final String keys)
     {
         this.transEval(str, keys.split(","));
-    }
-
-    @Override
-    public TypeInformation<Row> getResultType()
-    {
-        return new RowTypeInfo(Types.STRING);
     }
 }
