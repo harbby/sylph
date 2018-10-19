@@ -24,8 +24,11 @@ import ideal.sylph.runner.flink.yarn.YarnClusterConfiguration;
 import ideal.sylph.spi.exception.SylphException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.yarn.client.api.TimelineClient;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Arrays;
@@ -41,6 +44,8 @@ import static java.util.Objects.requireNonNull;
 public class FlinkRunnerModule
         implements Module
 {
+    private static final Logger logger = LoggerFactory.getLogger(FlinkRunnerModule.class);
+
     @Override
     public void configure(Binder binder)
     {
@@ -58,6 +63,13 @@ public class FlinkRunnerModule
         public YarnClient get()
         {
             YarnClient client = YarnClient.createYarnClient();
+            try {
+                TimelineClient.createTimelineClient();
+            }
+            catch (NoClassDefFoundError e) {
+                logger.warn("createTimelineClient() error with {}", TimelineClient.class.getResource(TimelineClient.class.getSimpleName() + ".class"), e);
+                yarnConfiguration.setBoolean(YarnConfiguration.TIMELINE_SERVICE_ENABLED, false);
+            }
             client.init(yarnConfiguration);
             client.start();
             return client;
