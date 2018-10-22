@@ -1,8 +1,16 @@
 apply plugin: 'scala'
 
 dependencies {
-    compileOnly group: 'org.apache.spark', name: 'spark-sql_2.11', version: deps.spark
-    compileOnly group: 'org.apache.spark', name: 'spark-streaming_2.11', version: deps.spark
+    compileOnly (group: 'org.apache.spark', name: 'spark-sql_2.11', version: deps.spark){
+        exclude(module: 'spark-core_2.11')
+    }
+    compileOnly (group: 'org.apache.spark', name: 'spark-streaming_2.11', version: deps.spark){
+        exclude(module: 'spark-core_2.11')
+    }
+    compileOnly (group: 'org.apache.spark', name: 'spark-core_2.11', version: deps.spark){
+        exclude(module: 'hadoop-client')
+    }
+    compileOnly group: 'org.apache.hadoop', name: 'hadoop-client', version: '2.7.3'
 
 
     /**

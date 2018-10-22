@@ -70,7 +70,7 @@ public class MysqlSink
             this.statement = connection.prepareStatement(prepareStatementQuery);
         }
         catch (SQLException | ClassNotFoundException e) {
-            throw new RuntimeException("MysqlSink open fail", e);
+            throw new RuntimeException("Mysql connection open fail", e);
         }
         return true;
     }
@@ -87,12 +87,9 @@ public class MysqlSink
             }
             statement.addBatch();
             // submit batch
-            if (num >= 50) {
+            if (num++ >= 50) {
                 statement.executeBatch();
                 num = 0;
-            }
-            else {
-                num++;
             }
         }
         catch (SQLException e) {
