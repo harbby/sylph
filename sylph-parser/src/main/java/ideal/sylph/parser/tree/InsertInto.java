@@ -22,45 +22,38 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
-import static java.util.Objects.requireNonNull;
 
-public class Property
-        extends Node
+public class InsertInto
+        extends Statement
 {
-    private final Identifier name;
-    private final Expression value;
+    private final String insertQuery;
 
-    public Property(Identifier name, Expression value)
+    public InsertInto(NodeLocation location, String insertQuery)
     {
-        this(Optional.empty(), name, value);
+        this(Optional.of(location), insertQuery);
     }
 
-    public Property(NodeLocation location, Identifier name, Expression value)
-    {
-        this(Optional.of(location), name, value);
-    }
-
-    private Property(Optional<NodeLocation> location, Identifier name, Expression value)
+    private InsertInto(Optional<NodeLocation> location, String insertQuery)
     {
         super(location);
-        this.name = requireNonNull(name, "name is null");
-        this.value = requireNonNull(value, "value is null");
+        this.insertQuery = insertQuery;
     }
 
-    public Identifier getName()
+    public String getInsertQuery()
     {
-        return name;
-    }
-
-    public Expression getValue()
-    {
-        return value;
+        return insertQuery;
     }
 
     @Override
     public List<? extends Node> getChildren()
     {
-        return ImmutableList.of(name, value);
+        return ImmutableList.of();
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(insertQuery);
     }
 
     @Override
@@ -69,26 +62,18 @@ public class Property
         if (this == obj) {
             return true;
         }
-        if (obj == null || getClass() != obj.getClass()) {
+        if ((obj == null) || (getClass() != obj.getClass())) {
             return false;
         }
-        Property other = (Property) obj;
-        return Objects.equals(name, other.name) &&
-                Objects.equals(value, other.value);
-    }
-
-    @Override
-    public int hashCode()
-    {
-        return Objects.hash(name, value);
+        InsertInto o = (InsertInto) obj;
+        return Objects.equals(insertQuery, o.insertQuery);
     }
 
     @Override
     public String toString()
     {
         return toStringHelper(this)
-                .add("name", name)
-                .add("value", value)
+                .add("insertQuery", insertQuery)
                 .toString();
     }
 }

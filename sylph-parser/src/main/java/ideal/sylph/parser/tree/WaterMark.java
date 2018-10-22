@@ -59,12 +59,6 @@ public class WaterMark
     }
 
     @Override
-    protected <R, C> R accept(AstVisitor<R, C> visitor, C context)
-    {
-        return null;
-    }
-
-    @Override
     public List<? extends Node> getChildren()
     {
         return ImmutableList.<Node>builder()

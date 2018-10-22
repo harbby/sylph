@@ -22,45 +22,38 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
-import static java.util.Objects.requireNonNull;
 
-public class Property
-        extends Node
+public class SelectQuery
+        extends Statement
 {
-    private final Identifier name;
-    private final Expression value;
+    private final String query;
 
-    public Property(Identifier name, Expression value)
+    public SelectQuery(NodeLocation location, String query)
     {
-        this(Optional.empty(), name, value);
+        this(Optional.of(location), query);
     }
 
-    public Property(NodeLocation location, Identifier name, Expression value)
-    {
-        this(Optional.of(location), name, value);
-    }
-
-    private Property(Optional<NodeLocation> location, Identifier name, Expression value)
+    private SelectQuery(Optional<NodeLocation> location, String query)
     {
         super(location);
-        this.name = requireNonNull(name, "name is null");
-        this.value = requireNonNull(value, "value is null");
+        this.query = query;
     }
 
-    public Identifier getName()
+    public String getQuery()
     {
-        return name;
-    }
-
-    public Expression getValue()
-    {
-        return value;
+        return query;
     }
 
     @Override
     public List<? extends Node> getChildren()
     {
-        return ImmutableList.of(name, value);
+        return ImmutableList.of();
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(query);
     }
 
     @Override
@@ -69,26 +62,18 @@ public class Property
         if (this == obj) {
             return true;
         }
-        if (obj == null || getClass() != obj.getClass()) {
+        if ((obj == null) || (getClass() != obj.getClass())) {
             return false;
         }
-        Property other = (Property) obj;
-        return Objects.equals(name, other.name) &&
-                Objects.equals(value, other.value);
-    }
-
-    @Override
-    public int hashCode()
-    {
-        return Objects.hash(name, value);
+        SelectQuery o = (SelectQuery) obj;
+        return Objects.equals(query, o.query);
     }
 
     @Override
     public String toString()
     {
         return toStringHelper(this)
-                .add("name", name)
-                .add("value", value)
+                .add("query", query)
                 .toString();
     }
 }

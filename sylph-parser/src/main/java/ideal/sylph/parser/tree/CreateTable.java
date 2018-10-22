@@ -27,23 +27,37 @@ import static java.util.Objects.requireNonNull;
 public class CreateTable
         extends Statement
 {
+    public enum Type
+    {
+        SINK,
+        SOURCE,
+        BATCH;
+    }
+
     private final QualifiedName name;
     private final List<TableElement> elements;
     private final boolean notExists;
     private final List<Property> properties;
     private final Optional<String> comment;
+    private final Type type;
+    private final Optional<WaterMark> watermark;
 
-    public CreateTable(QualifiedName name, List<TableElement> elements, boolean notExists, List<Property> properties, Optional<String> comment)
+    public CreateTable(Type type,
+            NodeLocation location,
+            QualifiedName name,
+            List<TableElement> elements,
+            boolean notExists,
+            List<Property> properties,
+            Optional<String> comment,
+            Optional<WaterMark> watermark)
     {
-        this(Optional.empty(), name, elements, notExists, properties, comment);
+        this(type, Optional.of(location), name, elements, notExists, properties, comment, watermark);
     }
 
-    public CreateTable(NodeLocation location, QualifiedName name, List<TableElement> elements, boolean notExists, List<Property> properties, Optional<String> comment)
-    {
-        this(Optional.of(location), name, elements, notExists, properties, comment);
-    }
-
-    private CreateTable(Optional<NodeLocation> location, QualifiedName name, List<TableElement> elements, boolean notExists, List<Property> properties, Optional<String> comment)
+    private CreateTable(Type type, Optional<NodeLocation> location, QualifiedName name,
+            List<TableElement> elements, boolean notExists,
+            List<Property> properties, Optional<String> comment,
+            Optional<WaterMark> watermark)
     {
         super(location);
         this.name = requireNonNull(name, "table is null");
@@ -51,11 +65,13 @@ public class CreateTable
         this.notExists = notExists;
         this.properties = requireNonNull(properties, "properties is null");
         this.comment = requireNonNull(comment, "comment is null");
+        this.type = requireNonNull(type, "type is null");
+        this.watermark = requireNonNull(watermark, "watermark is null");
     }
 
-    public QualifiedName getName()
+    public String getName()
     {
-        return name;
+        return name.getParts().get(name.getParts().size() - 1);
     }
 
     public List<TableElement> getElements()
@@ -78,10 +94,14 @@ public class CreateTable
         return comment;
     }
 
-    @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context)
+    public Type getType()
     {
-        return visitor.visitCreateTable(this, context);
+        return type;
+    }
+
+    public Optional<WaterMark> getWatermark()
+    {
+        return watermark;
     }
 
     @Override
@@ -96,7 +116,7 @@ public class CreateTable
     @Override
     public int hashCode()
     {
-        return Objects.hash(name, elements, notExists, properties, comment);
+        return Objects.hash(name, elements, notExists, properties, comment, type, watermark);
     }
 
     @Override
@@ -113,7 +133,9 @@ public class CreateTable
                 Objects.equals(elements, o.elements) &&
                 Objects.equals(notExists, o.notExists) &&
                 Objects.equals(properties, o.properties) &&
-                Objects.equals(comment, o.comment);
+                Objects.equals(comment, o.comment) &&
+                Objects.equals(type, o.type) &&
+                Objects.equals(watermark, o.watermark);
     }
 
     @Override
@@ -125,6 +147,8 @@ public class CreateTable
                 .add("notExists", notExists)
                 .add("properties", properties)
                 .add("comment", comment)
+                .add("type", type)
+                .add("watermark", watermark)
                 .toString();
     }
 }

@@ -15,9 +15,9 @@
  */
 package ideal.sylph.parser.tree;
 
-import ideal.sylph.parser.ExpressionFormatter;
-
 import java.util.Optional;
+
+import static java.lang.String.format;
 
 public abstract class Expression
         extends Node
@@ -27,18 +27,9 @@ public abstract class Expression
         super(location);
     }
 
-    /**
-     * Accessible for {@link AstVisitor}, use {@link AstVisitor#process(Node, Object)} instead.
-     */
     @Override
-    protected <R, C> R accept(AstVisitor<R, C> visitor, C context)
+    public String toString()
     {
-        return visitor.visitExpression(this, context);
-    }
-
-    @Override
-    public final String toString()
-    {
-        return ExpressionFormatter.formatExpression(this, Optional.empty()); // This will not replace parameters, but we don't have access to them here
+        throw new UnsupportedOperationException(format("not yet implemented: %s.visit%s", getClass().getName(), this.getClass().getSimpleName()));
     }
 }

@@ -19,8 +19,8 @@ import ideal.sylph.parser.antlr4.SqlBaseLexer;
 import ideal.sylph.parser.antlr4.SqlBaseParser;
 import ideal.sylph.parser.tree.Node;
 import ideal.sylph.parser.tree.Statement;
-import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BaseErrorListener;
+import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
@@ -49,7 +49,7 @@ public class SqlParser
     private Node invokeParser(String name, String sql, Function<SqlBaseParser, ParserRuleContext> parseFunction)
     {
         try {
-            SqlBaseLexer lexer = new SqlBaseLexer(new CaseInsensitiveStream(new ANTLRInputStream(sql)));
+            SqlBaseLexer lexer = new SqlBaseLexer(new CaseInsensitiveStream(CharStreams.fromString(sql)));
             CommonTokenStream tokenStream = new CommonTokenStream(lexer);
             SqlBaseParser parser = new SqlBaseParser(tokenStream);
 
@@ -69,7 +69,7 @@ public class SqlParser
             }
             catch (ParseCancellationException ex) {
                 // if we fail, parse with LL mode
-                tokenStream.reset(); // rewind input stream
+                tokenStream.seek(0); // rewind input stream
                 parser.reset();
 
                 parser.getInterpreter().setPredictionMode(PredictionMode.LL);

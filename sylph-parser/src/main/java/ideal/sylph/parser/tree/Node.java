@@ -29,14 +29,6 @@ public abstract class Node
         this.location = requireNonNull(location, "location is null");
     }
 
-    /**
-     * Accessible for {@link AstVisitor}, use {@link AstVisitor#process(Node, Object)} instead.
-     */
-    protected <R, C> R accept(AstVisitor<R, C> visitor, C context)
-    {
-        return visitor.visitNode(this, context);
-    }
-
     public Optional<NodeLocation> getLocation()
     {
         return location;

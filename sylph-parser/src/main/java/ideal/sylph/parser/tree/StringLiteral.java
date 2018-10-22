@@ -15,9 +15,13 @@
  */
 package ideal.sylph.parser.tree;
 
+import com.google.common.base.CharMatcher;
+
 import java.util.Objects;
 import java.util.Optional;
+import java.util.PrimitiveIterator;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 public class StringLiteral
@@ -48,12 +52,6 @@ public class StringLiteral
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context)
-    {
-        return visitor.visitStringLiteral(this, context);
-    }
-
-    @Override
     public boolean equals(Object o)
     {
         if (this == o) {
@@ -71,5 +69,52 @@ public class StringLiteral
     public int hashCode()
     {
         return value.hashCode();
+    }
+
+    @Override
+    public String toString()
+    {
+        return formatStringLiteral(this.getValue());
+    }
+
+    static String formatStringLiteral(String s)
+    {
+        s = s.replace("'", "''");
+        if (CharMatcher.inRange((char) 0x20, (char) 0x7E).matchesAllOf(s)) {
+            return "'" + s + "'";
+        }
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("U&'");
+        PrimitiveIterator.OfInt iterator = s.codePoints().iterator();
+        while (iterator.hasNext()) {
+            int codePoint = iterator.nextInt();
+            checkArgument(codePoint >= 0, "Invalid UTF-8 encoding in characters: %s", s);
+            if (isAsciiPrintable(codePoint)) {
+                char ch = (char) codePoint;
+                if (ch == '\\') {
+                    builder.append(ch);
+                }
+                builder.append(ch);
+            }
+            else if (codePoint <= 0xFFFF) {
+                builder.append('\\');
+                builder.append(String.format("%04X", codePoint));
+            }
+            else {
+                builder.append("\\+");
+                builder.append(String.format("%06X", codePoint));
+            }
+        }
+        builder.append("'");
+        return builder.toString();
+    }
+
+    private static boolean isAsciiPrintable(int codePoint)
+    {
+        if (codePoint >= 0x7F || codePoint < 0x20) {
+            return false;
+        }
+        return true;
     }
 }
