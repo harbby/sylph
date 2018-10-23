@@ -1,7 +1,14 @@
 #!/bin/bash
 
+# set your JAVA_HOME
 #export JAVA_HOME=/opt/cloudera/parcels/jdk8
-#export FLINK_HOME=/opt/cloudera/parcels/flink
+
+# set your HADOOP_CONF_DIR
 #export HADOOP_CONF_DIR=/opt/cloudera/parcels/CDH/lib/hadoop/etc/hadoop
 export HADOOP_CONF_DIR=/ideal/hadoop/hadoop/etc/hadoop
+
+# set your FLINK_HOME
 export FLINK_HOME=/ideal/hadoop/flink
+
+# set your SPARK_HOME
+export SPARK_HOME=/ideal/hadoop/spark
