@@ -13,24 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.parser.tree;
+package ideal.sylph.parser.antlr.tree;
 
-import com.google.common.collect.ImmutableList;
-
-import java.util.List;
-import java.util.Optional;
-
-public abstract class Literal
-        extends Expression
+public final class NodeLocation
 {
-    protected Literal(Optional<NodeLocation> location)
+    private final int line;
+    private final int charPositionInLine;
+
+    public NodeLocation(int line, int charPositionInLine)
     {
-        super(location);
+        this.line = line;
+        this.charPositionInLine = charPositionInLine;
     }
 
-    @Override
-    public List<Node> getChildren()
+    public int getLineNumber()
     {
-        return ImmutableList.of();
+        return line;
+    }
+
+    public int getColumnNumber()
+    {
+        return charPositionInLine + 1;
     }
 }

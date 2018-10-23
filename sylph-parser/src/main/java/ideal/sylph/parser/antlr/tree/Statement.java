@@ -13,36 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.parser.tree;
+package ideal.sylph.parser.antlr.tree;
 
-import java.util.List;
 import java.util.Optional;
 
-import static java.util.Objects.requireNonNull;
-
-public abstract class Node
+public abstract class Statement
+        extends Node
 {
-    private final Optional<NodeLocation> location;
-
-    protected Node(Optional<NodeLocation> location)
+    protected Statement(Optional<NodeLocation> location)
     {
-        this.location = requireNonNull(location, "location is null");
+        super(location);
     }
 
-    public Optional<NodeLocation> getLocation()
-    {
-        return location;
-    }
-
-    public abstract List<? extends Node> getChildren();
-
-    // Force subclasses to have a proper equals and hashcode implementation
-    @Override
-    public abstract int hashCode();
-
-    @Override
-    public abstract boolean equals(Object obj);
-
-    @Override
     public abstract String toString();
 }

@@ -13,17 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.parser.tree;
+package ideal.sylph.parser.antlr;
 
-public final class NodeLocation
+import ideal.sylph.parser.antlr.tree.NodeLocation;
+import org.antlr.v4.runtime.RecognitionException;
+
+import static java.lang.String.format;
+
+public class ParsingException
+        extends RuntimeException
 {
     private final int line;
     private final int charPositionInLine;
 
-    public NodeLocation(int line, int charPositionInLine)
+    public ParsingException(String message, RecognitionException cause, int line, int charPositionInLine)
     {
+        super(message, cause);
+
         this.line = line;
         this.charPositionInLine = charPositionInLine;
+    }
+
+    public ParsingException(String message)
+    {
+        this(message, null, 1, 0);
+    }
+
+    public ParsingException(String message, NodeLocation nodeLocation)
+    {
+        this(message, null, nodeLocation.getLineNumber(), nodeLocation.getColumnNumber());
     }
 
     public int getLineNumber()
@@ -34,5 +52,16 @@ public final class NodeLocation
     public int getColumnNumber()
     {
         return charPositionInLine + 1;
+    }
+
+    public String getErrorMessage()
+    {
+        return super.getMessage();
+    }
+
+    @Override
+    public String getMessage()
+    {
+        return format("line %s:%s: %s", getLineNumber(), getColumnNumber(), getErrorMessage());
     }
 }

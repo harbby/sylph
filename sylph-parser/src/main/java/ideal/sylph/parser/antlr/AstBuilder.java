@@ -13,28 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.parser;
+package ideal.sylph.parser.antlr;
 
 import com.google.common.collect.ImmutableList;
+import ideal.sylph.parser.antlr.tree.ColumnDefinition;
+import ideal.sylph.parser.antlr.tree.CreateFunction;
+import ideal.sylph.parser.antlr.tree.CreateStreamAsSelect;
+import ideal.sylph.parser.antlr.tree.CreateTable;
+import ideal.sylph.parser.antlr.tree.Expression;
+import ideal.sylph.parser.antlr.tree.Identifier;
+import ideal.sylph.parser.antlr.tree.InsertInto;
+import ideal.sylph.parser.antlr.tree.IntervalLiteral;
+import ideal.sylph.parser.antlr.tree.Node;
+import ideal.sylph.parser.antlr.tree.NodeLocation;
+import ideal.sylph.parser.antlr.tree.Property;
+import ideal.sylph.parser.antlr.tree.QualifiedName;
+import ideal.sylph.parser.antlr.tree.SelectQuery;
+import ideal.sylph.parser.antlr.tree.StringLiteral;
+import ideal.sylph.parser.antlr.tree.TableElement;
+import ideal.sylph.parser.antlr.tree.WaterMark;
 import ideal.sylph.parser.antlr4.SqlBaseBaseVisitor;
 import ideal.sylph.parser.antlr4.SqlBaseLexer;
 import ideal.sylph.parser.antlr4.SqlBaseParser;
-import ideal.sylph.parser.tree.ColumnDefinition;
-import ideal.sylph.parser.tree.CreateFunction;
-import ideal.sylph.parser.tree.CreateStreamAsSelect;
-import ideal.sylph.parser.tree.CreateTable;
-import ideal.sylph.parser.tree.Expression;
-import ideal.sylph.parser.tree.Identifier;
-import ideal.sylph.parser.tree.InsertInto;
-import ideal.sylph.parser.tree.IntervalLiteral;
-import ideal.sylph.parser.tree.Node;
-import ideal.sylph.parser.tree.NodeLocation;
-import ideal.sylph.parser.tree.Property;
-import ideal.sylph.parser.tree.QualifiedName;
-import ideal.sylph.parser.tree.SelectQuery;
-import ideal.sylph.parser.tree.StringLiteral;
-import ideal.sylph.parser.tree.TableElement;
-import ideal.sylph.parser.tree.WaterMark;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.Interval;

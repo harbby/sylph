@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.parser.tree;
+package ideal.sylph.parser.antlr.tree;
 
 import com.google.common.collect.ImmutableList;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-
-import static com.google.common.base.MoreObjects.toStringHelper;
 
 public class SelectQuery
         extends Statement
@@ -37,11 +35,6 @@ public class SelectQuery
     {
         super(location);
         this.query = query;
-    }
-
-    public String getQuery()
-    {
-        return query;
     }
 
     @Override
@@ -72,8 +65,6 @@ public class SelectQuery
     @Override
     public String toString()
     {
-        return toStringHelper(this)
-                .add("query", query)
-                .toString();
+        return query;
     }
 }

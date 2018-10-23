@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.parser;
+package ideal.sylph.parser.antlr;
 
+import ideal.sylph.parser.antlr.tree.Node;
+import ideal.sylph.parser.antlr.tree.Statement;
 import ideal.sylph.parser.antlr4.SqlBaseLexer;
 import ideal.sylph.parser.antlr4.SqlBaseParser;
-import ideal.sylph.parser.tree.Node;
-import ideal.sylph.parser.tree.Statement;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -30,7 +30,7 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.util.function.Function;
 
-public class SqlParser
+public class AntlrSqlParser
 {
     private static final BaseErrorListener LEXER_ERROR_LISTENER = new BaseErrorListener()
     {

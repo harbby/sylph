@@ -13,15 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.parser.tree;
+package ideal.sylph.parser.antlr.tree;
 
 import java.util.Optional;
 
-public abstract class Statement
+import static java.lang.String.format;
+
+public abstract class Expression
         extends Node
 {
-    protected Statement(Optional<NodeLocation> location)
+    protected Expression(Optional<NodeLocation> location)
     {
         super(location);
+    }
+
+    @Override
+    public String toString()
+    {
+        throw new UnsupportedOperationException(format("not yet implemented: %s.visit%s", getClass().getName(), this.getClass().getSimpleName()));
     }
 }

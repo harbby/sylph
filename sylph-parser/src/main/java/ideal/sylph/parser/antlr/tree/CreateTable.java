@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.parser.tree;
+package ideal.sylph.parser.antlr.tree;
 
 import com.google.common.collect.ImmutableList;
 
@@ -24,34 +24,49 @@ import java.util.Optional;
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
-public class CreateStreamAsSelect
+public class CreateTable
         extends Statement
 {
-    private final QualifiedName name;
-    private final boolean notExists;
-    private final Optional<String> comment;
-    private final Optional<WaterMark> watermark;
-    private final String viewSql;
-
-    public CreateStreamAsSelect(
-            NodeLocation location,
-            QualifiedName name,
-            boolean notExists,
-            Optional<String> comment,
-            Optional<WaterMark> watermark,
-            String viewSql)
+    public enum Type
     {
-        super(Optional.of(location));
-        this.name = requireNonNull(name, "table is null");
-        this.notExists = notExists;
-        this.comment = requireNonNull(comment, "comment is null");
-        this.watermark = requireNonNull(watermark, "watermark is null");
-        this.viewSql = requireNonNull(viewSql, "viewSql is null");
+        SINK,
+        SOURCE,
+        BATCH;
     }
 
-    public Optional<WaterMark> getWatermark()
+    private final QualifiedName name;
+    private final List<TableElement> elements;
+    private final boolean notExists;
+    private final List<Property> properties;
+    private final Optional<String> comment;
+    private final Type type;
+    private final Optional<WaterMark> watermark;
+
+    public CreateTable(Type type,
+            NodeLocation location,
+            QualifiedName name,
+            List<TableElement> elements,
+            boolean notExists,
+            List<Property> properties,
+            Optional<String> comment,
+            Optional<WaterMark> watermark)
     {
-        return watermark;
+        this(type, Optional.of(location), name, elements, notExists, properties, comment, watermark);
+    }
+
+    private CreateTable(Type type, Optional<NodeLocation> location, QualifiedName name,
+            List<TableElement> elements, boolean notExists,
+            List<Property> properties, Optional<String> comment,
+            Optional<WaterMark> watermark)
+    {
+        super(location);
+        this.name = requireNonNull(name, "table is null");
+        this.elements = ImmutableList.copyOf(requireNonNull(elements, "elements is null"));
+        this.notExists = notExists;
+        this.properties = requireNonNull(properties, "properties is null");
+        this.comment = requireNonNull(comment, "comment is null");
+        this.type = requireNonNull(type, "type is null");
+        this.watermark = requireNonNull(watermark, "watermark is null");
     }
 
     public String getName()
@@ -59,9 +74,19 @@ public class CreateStreamAsSelect
         return name.getParts().get(name.getParts().size() - 1);
     }
 
-    public String getViewSql()
+    public List<TableElement> getElements()
     {
-        return viewSql;
+        return elements;
+    }
+
+    public boolean isNotExists()
+    {
+        return notExists;
+    }
+
+    public List<Property> getProperties()
+    {
+        return properties;
     }
 
     public Optional<String> getComment()
@@ -69,17 +94,29 @@ public class CreateStreamAsSelect
         return comment;
     }
 
+    public Type getType()
+    {
+        return type;
+    }
+
+    public Optional<WaterMark> getWatermark()
+    {
+        return watermark;
+    }
+
     @Override
-    public List<? extends Node> getChildren()
+    public List<Node> getChildren()
     {
         return ImmutableList.<Node>builder()
+                .addAll(elements)
+                .addAll(properties)
                 .build();
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(name, notExists, comment, watermark, viewSql);
+        return Objects.hash(name, elements, notExists, properties, comment, type, watermark);
     }
 
     @Override
@@ -91,12 +128,14 @@ public class CreateStreamAsSelect
         if ((obj == null) || (getClass() != obj.getClass())) {
             return false;
         }
-        CreateStreamAsSelect o = (CreateStreamAsSelect) obj;
+        CreateTable o = (CreateTable) obj;
         return Objects.equals(name, o.name) &&
+                Objects.equals(elements, o.elements) &&
                 Objects.equals(notExists, o.notExists) &&
+                Objects.equals(properties, o.properties) &&
                 Objects.equals(comment, o.comment) &&
-                Objects.equals(watermark, o.watermark) &&
-                Objects.equals(viewSql, o.viewSql);
+                Objects.equals(type, o.type) &&
+                Objects.equals(watermark, o.watermark);
     }
 
     @Override
@@ -104,10 +143,12 @@ public class CreateStreamAsSelect
     {
         return toStringHelper(this)
                 .add("name", name)
+                .add("elements", elements)
                 .add("notExists", notExists)
+                .add("properties", properties)
                 .add("comment", comment)
+                .add("type", type)
                 .add("watermark", watermark)
-                .add("viewSql", viewSql)
                 .toString();
     }
 }
