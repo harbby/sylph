@@ -1,9 +1,19 @@
 apply plugin: 'antlr'
 
 dependencies {
-    antlr "org.antlr:antlr4:4.6"
+    antlr "org.antlr:antlr4:4.7.1"
 
     compile group: 'com.google.guava', name: 'guava', version: deps.guava
+
+  //
+    compileOnly (group: 'org.apache.calcite', name: 'calcite-core', version: '1.16.0'){
+      exclude(module : 'guava')
+      exclude(module : 'jsr305')
+      exclude(module: 'jackson-core')
+      exclude(module: 'jackson-annotations')
+      exclude(module: 'commons-logging')
+      exclude(module: '*')
+    }
 }
 generateGrammarSource.dependsOn 'licenseMain','licenseTest'
 licenseMain.dependsOn 'clean'

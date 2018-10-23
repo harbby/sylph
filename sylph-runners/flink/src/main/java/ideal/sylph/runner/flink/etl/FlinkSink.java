@@ -16,53 +16,50 @@
 package ideal.sylph.runner.flink.etl;
 
 import ideal.sylph.etl.api.RealTimeSink;
-import org.apache.flink.api.common.io.OutputFormat;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
+import org.apache.flink.streaming.api.operators.StreamingRuntimeContext;
 import org.apache.flink.types.Row;
 
-import java.io.IOException;
-
-import static java.util.Objects.requireNonNull;
-
-/**
- * RichSinkFunction or OutputFormat
- */
 public final class FlinkSink
-        implements OutputFormat<Row>
+        extends RichSinkFunction<Row>
 {
     private final RealTimeSink realTimeSink;
     private final TypeInformation<Row> typeInformation;
 
     public FlinkSink(RealTimeSink realTimeSink, TypeInformation<Row> typeInformation)
     {
-        this.realTimeSink = requireNonNull(realTimeSink, "realTimeSink is null");
-        this.typeInformation = requireNonNull(typeInformation, "typeInformation is null");
+        this.realTimeSink = realTimeSink;
+        this.typeInformation = typeInformation;
     }
 
     @Override
-    public void configure(Configuration parameters)
+    public void invoke(Row value, Context context)
+            throws Exception
     {
+        realTimeSink.process(new FlinkRow(value, typeInformation));
     }
 
     @Override
-    public void open(int taskNumber, int numTasks)
-            throws IOException
+    public void open(Configuration parameters)
+            throws Exception
     {
-        realTimeSink.open(taskNumber, numTasks);
-    }
+        super.open(parameters);
+        StreamingRuntimeContext context = (StreamingRuntimeContext) getRuntimeContext();
 
-    @Override
-    public void writeRecord(Row record)
-            throws IOException
-    {
-        realTimeSink.process(new FlinkRow(record, typeInformation));
+        // get parallelism id
+        int partitionId = (context.getNumberOfParallelSubtasks() > 0) ?
+                (context.getIndexOfThisSubtask() + 1) : 0;
+
+        realTimeSink.open(partitionId, 0);
     }
 
     @Override
     public void close()
-            throws IOException
+            throws Exception
     {
         realTimeSink.close(null);
+        super.close();
     }
 }

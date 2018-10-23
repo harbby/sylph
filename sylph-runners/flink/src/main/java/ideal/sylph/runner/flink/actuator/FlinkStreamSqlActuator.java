@@ -24,8 +24,8 @@ import ideal.common.jvm.JVMLaunchers;
 import ideal.common.jvm.VmFuture;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
-import ideal.sylph.parser.SqlParser;
-import ideal.sylph.parser.tree.CreateStream;
+import ideal.sylph.parser.antlr.AntlrSqlParser;
+import ideal.sylph.parser.antlr.tree.CreateTable;
 import ideal.sylph.runner.flink.FlinkJobConfig;
 import ideal.sylph.runner.flink.FlinkJobHandle;
 import ideal.sylph.spi.exception.SylphException;
@@ -80,13 +80,20 @@ public class FlinkStreamSqlActuator
     {
         SqlFlow flow = (SqlFlow) inFlow;
         ImmutableSet.Builder<File> builder = ImmutableSet.builder();
-        SqlParser parser = new SqlParser();
+        AntlrSqlParser parser = new AntlrSqlParser();
 
-        Stream.of(flow.getSqlSplit()).filter(sql -> sql.toLowerCase().contains("create ") && sql.toLowerCase().contains(" table "))
-                .map(parser::createStatement)
-                .filter(statement -> statement instanceof CreateStream)
+        Stream.of(flow.getSqlSplit())
+                .map(query -> {
+                    try {
+                        return parser.createStatement(query);
+                    }
+                    catch (Exception x) {
+                        return null;
+                    }
+                })
+                .filter(statement -> statement instanceof CreateTable)
                 .forEach(statement -> {
-                    CreateStream createTable = (CreateStream) statement;
+                    CreateTable createTable = (CreateTable) statement;
                     Map<String, String> withConfig = createTable.getProperties().stream()
                             .collect(Collectors.toMap(
                                     k -> k.getName().getValue(),
@@ -126,7 +133,7 @@ public class FlinkStreamSqlActuator
                     StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.createLocalEnvironment();
                     execEnv.setParallelism(parallelism);
                     StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(execEnv);
-                    StreamSqlBuilder streamSqlBuilder = new StreamSqlBuilder(tableEnv, pluginManager, new SqlParser());
+                    StreamSqlBuilder streamSqlBuilder = new StreamSqlBuilder(tableEnv, pluginManager, new AntlrSqlParser());
                     Arrays.stream(sqlSplit).forEach(streamSqlBuilder::buildStreamBySql);
                     return execEnv.getStreamGraph().getJobGraph();
                 })

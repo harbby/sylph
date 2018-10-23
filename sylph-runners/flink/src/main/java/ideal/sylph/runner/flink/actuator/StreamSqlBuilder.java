@@ -17,24 +17,24 @@ package ideal.sylph.runner.flink.actuator;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import ideal.sylph.parser.SqlParser;
-import ideal.sylph.parser.tree.ColumnDefinition;
-import ideal.sylph.parser.tree.CreateFunction;
-import ideal.sylph.parser.tree.CreateStream;
-import ideal.sylph.parser.tree.CreateStreamAsSelect;
-import ideal.sylph.parser.tree.Statement;
+import ideal.sylph.parser.antlr.AntlrSqlParser;
+import ideal.sylph.parser.antlr.ParsingException;
+import ideal.sylph.parser.antlr.tree.CreateFunction;
+import ideal.sylph.parser.antlr.tree.CreateStreamAsSelect;
+import ideal.sylph.parser.antlr.tree.CreateTable;
+import ideal.sylph.parser.antlr.tree.InsertInto;
+import ideal.sylph.parser.antlr.tree.SelectQuery;
+import ideal.sylph.parser.antlr.tree.Statement;
 import ideal.sylph.runner.flink.etl.FlinkNodeLoader;
+import ideal.sylph.runner.flink.sql.FlinkSqlParser;
 import ideal.sylph.runner.flink.table.SylphTableSink;
 import ideal.sylph.spi.Binds;
 import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.model.PipelinePluginManager;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
-import org.apache.flink.api.java.typeutils.TypeExtractor;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.table.api.Table;
-import org.apache.flink.table.api.Types;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.table.functions.AggregateFunction;
 import org.apache.flink.table.functions.ScalarFunction;
@@ -43,15 +43,18 @@ import org.apache.flink.types.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
-import static ideal.sylph.parser.tree.CreateStream.Type.SINK;
-import static ideal.sylph.parser.tree.CreateStream.Type.SOURCE;
+import static ideal.sylph.parser.antlr.tree.CreateTable.Type.BATCH;
+import static ideal.sylph.parser.antlr.tree.CreateTable.Type.SINK;
+import static ideal.sylph.parser.antlr.tree.CreateTable.Type.SOURCE;
 import static ideal.sylph.runner.flink.actuator.StreamSqlUtil.buildWaterMark;
 import static ideal.sylph.runner.flink.actuator.StreamSqlUtil.checkStream;
+import static ideal.sylph.runner.flink.actuator.StreamSqlUtil.getTableRowTypeInfo;
 
 class StreamSqlBuilder
 {
@@ -59,12 +62,14 @@ class StreamSqlBuilder
 
     private final PipelinePluginManager pluginManager;
     private final StreamTableEnvironment tableEnv;
-    private final SqlParser sqlParser;
+    private final AntlrSqlParser sqlParser;
+
+    private final List<CreateTable> batchTables = new ArrayList<>();
 
     StreamSqlBuilder(
             StreamTableEnvironment tableEnv,
             PipelinePluginManager pluginManager,
-            SqlParser sqlParser
+            AntlrSqlParser sqlParser
     )
     {
         this.pluginManager = pluginManager;
@@ -74,25 +79,34 @@ class StreamSqlBuilder
 
     void buildStreamBySql(String sql)
     {
-        if (sql.toLowerCase().contains("create ") &&
-                (sql.toLowerCase().contains(" table ") || sql.toLowerCase().contains(" function "))
-        ) {
-            Statement statement = sqlParser.createStatement(sql);
-            if (statement instanceof CreateStreamAsSelect) {
-                createStreamTableAsSelect((CreateStreamAsSelect) statement);
-            }
-            else if (statement instanceof CreateStream) {
-                createStreamTable((CreateStream) statement);
-            }
-            else if (statement instanceof CreateFunction) {
-                createFunction((CreateFunction) statement);
+        Statement statement;
+        try {
+            statement = sqlParser.createStatement(sql);
+        }
+        catch (ParsingException e) {
+            logger.warn("Sylph sql parser error, will try flink parser directly");
+            FlinkSqlParser.parser(tableEnv, sql, ImmutableList.copyOf(batchTables));
+            return;
+        }
+        if (statement instanceof CreateStreamAsSelect) {
+            createStreamTableAsSelect((CreateStreamAsSelect) statement);
+        }
+        else if (statement instanceof CreateTable) {
+            if (((CreateTable) statement).getType() == CreateTable.Type.BATCH) {
+                batchTables.add((CreateTable) statement);
             }
             else {
-                throw new IllegalArgumentException("this driver class " + statement.getClass() + " have't support!");
+                createStreamTable((CreateTable) statement);
             }
         }
+        else if (statement instanceof CreateFunction) {
+            createFunction((CreateFunction) statement);
+        }
+        else if (statement instanceof InsertInto || statement instanceof SelectQuery) {
+            FlinkSqlParser.parser(tableEnv, statement.toString(), ImmutableList.copyOf(batchTables));
+        }
         else {
-            tableEnv.sqlUpdate(sql);
+            throw new IllegalArgumentException("this driver class " + statement.getClass() + " have't support!");
         }
     }
 
@@ -107,20 +121,20 @@ class StreamSqlBuilder
             throw new IllegalArgumentException("create function failed " + createFunction, e);
         }
         if (function instanceof AggregateFunction) {
-            tableEnv.registerFunction(createFunction.getFunctionName(), (AggregateFunction) function);
+            tableEnv.registerFunction(createFunction.getFunctionName(), (AggregateFunction<?, ?>) function);
         }
         else if (function instanceof TableFunction) {
-            tableEnv.registerFunction(createFunction.getFunctionName(), (TableFunction) function);
+            tableEnv.registerFunction(createFunction.getFunctionName(), (TableFunction<?>) function);
         }
         else if (function instanceof ScalarFunction) {
             tableEnv.registerFunction(createFunction.getFunctionName(), (ScalarFunction) function);
         }
     }
 
-    private void createStreamTable(CreateStream createStream)
+    private void createStreamTable(CreateTable createStream)
     {
         final String tableName = createStream.getName();
-        final List<ColumnDefinition> columns = createStream.getElements().stream().map(ColumnDefinition.class::cast).collect(Collectors.toList());
+        RowTypeInfo tableTypeInfo = getTableRowTypeInfo(createStream);
 
         final Map<String, String> withConfig = createStream.getProperties().stream()
                 .collect(Collectors.toMap(
@@ -137,7 +151,7 @@ class StreamSqlBuilder
                 //.put(org.apache.flink.table.api.scala.StreamTableEnvironment.class, null)  // tableEnv
                 .build();
         NodeLoader<DataStream<Row>> loader = new FlinkNodeLoader(pluginManager, binds);
-        RowTypeInfo tableTypeInfo = parserColumns(columns);
+
         if (SOURCE == createStream.getType()) {  //Source.class.isAssignableFrom(driver)
             DataStream<Row> inputStream = checkStream(loader.loadSource(driverClass, config).apply(null), tableTypeInfo);
             //---------------------------------------------------
@@ -160,6 +174,9 @@ class StreamSqlBuilder
             SylphTableSink tableSink = new SylphTableSink(tableTypeInfo, outputStream);
             tableEnv.registerTableSink(tableName, tableSink.getFieldNames(), tableSink.getFieldTypes(), tableSink);
         }
+        else if (BATCH == createStream.getType()) {
+            throw new UnsupportedOperationException("this method have't support!");
+        }
         else {
             throw new IllegalArgumentException("this driver class " + withConfig.get("type") + " have't support!");
         }
@@ -181,49 +198,6 @@ class StreamSqlBuilder
         });
         if (!createStreamAsSelect.getWatermark().isPresent()) {
             tableEnv.registerTable(createStreamAsSelect.getName(), table);
-        }
-    }
-
-    private static RowTypeInfo parserColumns(List<ColumnDefinition> columns)
-    {
-        String[] fieldNames = columns.stream().map(columnDefinition -> columnDefinition.getName().getValue())
-                .toArray(String[]::new);
-
-        TypeInformation[] fieldTypes = columns.stream().map(columnDefinition -> parserSqlType(columnDefinition.getType()))
-                .toArray(TypeInformation[]::new);
-
-        return new RowTypeInfo(fieldTypes, fieldNames);
-    }
-
-    private static TypeInformation<?> parserSqlType(String type)
-    {
-        switch (type) {
-            case "varchar":
-            case "string":
-                return Types.STRING();
-            case "integer":
-            case "int":
-                return Types.INT();
-            case "long":
-            case "bigint":
-                return Types.LONG();
-            case "boolean":
-            case "bool":
-                return Types.BOOLEAN();
-            case "double":
-                return Types.DOUBLE();
-            case "float":
-                return Types.FLOAT();
-            case "byte":
-                return Types.BYTE();
-            case "timestamp":
-                return Types.SQL_TIMESTAMP();
-            case "date":
-                return Types.SQL_DATE();
-            case "binary":
-                return TypeExtractor.createTypeInfo(byte[].class); //Types.OBJECT_ARRAY(Types.BYTE());
-            default:
-                throw new IllegalArgumentException("this TYPE " + type + " have't support!");
         }
     }
 }

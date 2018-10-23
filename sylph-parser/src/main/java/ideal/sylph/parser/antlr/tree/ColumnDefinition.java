@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.parser.tree;
+package ideal.sylph.parser.antlr.tree;
 
 import com.google.common.collect.ImmutableList;
 
@@ -24,27 +24,29 @@ import java.util.Optional;
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
-public class Property
-        extends Node
+public final class ColumnDefinition
+        extends TableElement
 {
     private final Identifier name;
-    private final Expression value;
+    private final String type;
+    private final Optional<String> comment;
 
-    public Property(Identifier name, Expression value)
+    public ColumnDefinition(Identifier name, String type, Optional<String> comment)
     {
-        this(Optional.empty(), name, value);
+        this(Optional.empty(), name, type, comment);
     }
 
-    public Property(NodeLocation location, Identifier name, Expression value)
+    public ColumnDefinition(NodeLocation location, Identifier name, String type, Optional<String> comment)
     {
-        this(Optional.of(location), name, value);
+        this(Optional.of(location), name, type, comment);
     }
 
-    private Property(Optional<NodeLocation> location, Identifier name, Expression value)
+    private ColumnDefinition(Optional<NodeLocation> location, Identifier name, String type, Optional<String> comment)
     {
         super(location);
         this.name = requireNonNull(name, "name is null");
-        this.value = requireNonNull(value, "value is null");
+        this.type = requireNonNull(type, "type is null");
+        this.comment = requireNonNull(comment, "comment is null");
     }
 
     public Identifier getName()
@@ -52,21 +54,20 @@ public class Property
         return name;
     }
 
-    public Expression getValue()
+    public String getType()
     {
-        return value;
+        return type;
+    }
+
+    public Optional<String> getComment()
+    {
+        return comment;
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context)
+    public List<Node> getChildren()
     {
-        return visitor.visitProperty(this, context);
-    }
-
-    @Override
-    public List<? extends Node> getChildren()
-    {
-        return ImmutableList.of(name, value);
+        return ImmutableList.of();
     }
 
     @Override
@@ -78,15 +79,16 @@ public class Property
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        Property other = (Property) obj;
-        return Objects.equals(name, other.name) &&
-                Objects.equals(value, other.value);
+        ColumnDefinition o = (ColumnDefinition) obj;
+        return Objects.equals(this.name, o.name) &&
+                Objects.equals(this.type, o.type) &&
+                Objects.equals(this.comment, o.comment);
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(name, value);
+        return Objects.hash(name, type, comment);
     }
 
     @Override
@@ -94,7 +96,8 @@ public class Property
     {
         return toStringHelper(this)
                 .add("name", name)
-                .add("value", value)
+                .add("type", type)
+                .add("comment", comment)
                 .toString();
     }
 }

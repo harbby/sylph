@@ -31,6 +31,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
+
 public final class SylphMaster
 {
     private SylphMaster() {}
@@ -43,12 +45,12 @@ public final class SylphMaster
             " |( | ) _\\__ \\ / /_/ / / / / /_/ / / / / /   ) ) ) ) |\n" +
             " | \\|/ /____/  \\__, / /_/ / .___/ /_/ /_/   / / / /  |\n" +
             " |  '         /____/     /_/               /_/_/_/   |\n" +
-            " |  :: Sylph ::  version = (v0.2.0-SNAPSHOT)         |\n" +
+            " |  :: Sylph ::  version = (v0.3.0-SNAPSHOT)         |\n" +
             " *---------------------------------------------------*";
 
     public static void main(String[] args)
     {
-        PropertyConfigurator.configure(System.getProperty("log4j.file"));
+        PropertyConfigurator.configure(requireNonNull(System.getProperty("log4j.file"), "log4j.file not setting"));
         List<Module> modules = ImmutableList.of(new ServerMainModule());
 
         /*2 Initialize Guice Injector */

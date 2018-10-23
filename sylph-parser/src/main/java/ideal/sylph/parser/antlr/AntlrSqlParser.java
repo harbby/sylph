@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.parser;
+package ideal.sylph.parser.antlr;
 
+import ideal.sylph.parser.antlr.tree.Node;
+import ideal.sylph.parser.antlr.tree.Statement;
 import ideal.sylph.parser.antlr4.SqlBaseLexer;
 import ideal.sylph.parser.antlr4.SqlBaseParser;
-import ideal.sylph.parser.tree.Node;
-import ideal.sylph.parser.tree.Statement;
-import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BaseErrorListener;
+import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
@@ -30,7 +30,7 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.util.function.Function;
 
-public class SqlParser
+public class AntlrSqlParser
 {
     private static final BaseErrorListener LEXER_ERROR_LISTENER = new BaseErrorListener()
     {
@@ -49,7 +49,7 @@ public class SqlParser
     private Node invokeParser(String name, String sql, Function<SqlBaseParser, ParserRuleContext> parseFunction)
     {
         try {
-            SqlBaseLexer lexer = new SqlBaseLexer(new CaseInsensitiveStream(new ANTLRInputStream(sql)));
+            SqlBaseLexer lexer = new SqlBaseLexer(new CaseInsensitiveStream(CharStreams.fromString(sql)));
             CommonTokenStream tokenStream = new CommonTokenStream(lexer);
             SqlBaseParser parser = new SqlBaseParser(tokenStream);
 
@@ -69,7 +69,7 @@ public class SqlParser
             }
             catch (ParseCancellationException ex) {
                 // if we fail, parse with LL mode
-                tokenStream.reset(); // rewind input stream
+                tokenStream.seek(0); // rewind input stream
                 parser.reset();
 
                 parser.getInterpreter().setPredictionMode(PredictionMode.LL);

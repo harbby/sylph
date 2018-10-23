@@ -13,30 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.parser.tree;
+package ideal.sylph.runner.flink.sqlTest;
 
-import com.google.common.collect.ImmutableList;
+import org.junit.Assert;
+import org.junit.Test;
 
-import java.util.List;
-import java.util.Optional;
+import static ideal.sylph.runner.flink.actuator.FlinkStreamSqlActuator.SqlFlow.SQL_REGEX;
 
-public abstract class Literal
-        extends Expression
+public class SqlSplit
 {
-    protected Literal(Optional<NodeLocation> location)
+    @Test
+    public void splitTest1()
     {
-        super(location);
-    }
-
-    @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context)
-    {
-        return visitor.visitLiteral(this, context);
-    }
-
-    @Override
-    public List<Node> getChildren()
-    {
-        return ImmutableList.of();
+        String code = "a1;a2;'12;34';\"a4;a8\";10";
+        String[] split = code.split(SQL_REGEX);
+        Assert.assertEquals(split.length, 5);
+        Assert.assertArrayEquals(split, new String[] {"a1", "a2", "'12;34'", "\"a4;a8\"", "10"});
     }
 }

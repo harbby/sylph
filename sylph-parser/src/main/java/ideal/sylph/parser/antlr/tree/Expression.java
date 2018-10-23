@@ -13,21 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.parser.tree;
+package ideal.sylph.parser.antlr.tree;
 
 import java.util.Optional;
 
-public abstract class TableElement
+import static java.lang.String.format;
+
+public abstract class Expression
         extends Node
 {
-    public TableElement(Optional<NodeLocation> location)
+    protected Expression(Optional<NodeLocation> location)
     {
         super(location);
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context)
+    public String toString()
     {
-        return visitor.visitTableElement(this, context);
+        throw new UnsupportedOperationException(format("not yet implemented: %s.visit%s", getClass().getName(), this.getClass().getSimpleName()));
     }
 }

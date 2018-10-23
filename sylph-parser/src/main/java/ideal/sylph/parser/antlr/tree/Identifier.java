@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.parser.tree;
+package ideal.sylph.parser.antlr.tree;
 
 import com.google.common.collect.ImmutableList;
 
@@ -67,12 +67,6 @@ public class Identifier
     }
 
     @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context)
-    {
-        return visitor.visitIdentifier(this, context);
-    }
-
-    @Override
     public List<Node> getChildren()
     {
         return ImmutableList.of();
@@ -96,5 +90,16 @@ public class Identifier
     public int hashCode()
     {
         return value.hashCode();
+    }
+
+    @Override
+    public String toString()
+    {
+        if (!this.isDelimited()) {
+            return this.getValue();
+        }
+        else {
+            return '"' + this.getValue().replace("\"", "\"\"") + '"';
+        }
     }
 }

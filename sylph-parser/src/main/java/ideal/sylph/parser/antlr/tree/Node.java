@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.parser.tree;
+package ideal.sylph.parser.antlr.tree;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,14 +27,6 @@ public abstract class Node
     protected Node(Optional<NodeLocation> location)
     {
         this.location = requireNonNull(location, "location is null");
-    }
-
-    /**
-     * Accessible for {@link AstVisitor}, use {@link AstVisitor#process(Node, Object)} instead.
-     */
-    protected <R, C> R accept(AstVisitor<R, C> visitor, C context)
-    {
-        return visitor.visitNode(this, context);
     }
 
     public Optional<NodeLocation> getLocation()

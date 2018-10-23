@@ -13,27 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.parser;
+package ideal.sylph.parser.antlr;
 
 import com.google.common.collect.ImmutableList;
+import ideal.sylph.parser.antlr.tree.ColumnDefinition;
+import ideal.sylph.parser.antlr.tree.CreateFunction;
+import ideal.sylph.parser.antlr.tree.CreateStreamAsSelect;
+import ideal.sylph.parser.antlr.tree.CreateTable;
+import ideal.sylph.parser.antlr.tree.Expression;
+import ideal.sylph.parser.antlr.tree.Identifier;
+import ideal.sylph.parser.antlr.tree.InsertInto;
+import ideal.sylph.parser.antlr.tree.IntervalLiteral;
+import ideal.sylph.parser.antlr.tree.Node;
+import ideal.sylph.parser.antlr.tree.NodeLocation;
+import ideal.sylph.parser.antlr.tree.Property;
+import ideal.sylph.parser.antlr.tree.QualifiedName;
+import ideal.sylph.parser.antlr.tree.SelectQuery;
+import ideal.sylph.parser.antlr.tree.StringLiteral;
+import ideal.sylph.parser.antlr.tree.TableElement;
+import ideal.sylph.parser.antlr.tree.WaterMark;
 import ideal.sylph.parser.antlr4.SqlBaseBaseVisitor;
 import ideal.sylph.parser.antlr4.SqlBaseLexer;
 import ideal.sylph.parser.antlr4.SqlBaseParser;
-import ideal.sylph.parser.tree.ColumnDefinition;
-import ideal.sylph.parser.tree.CreateFunction;
-import ideal.sylph.parser.tree.CreateStream;
-import ideal.sylph.parser.tree.CreateStreamAsSelect;
-import ideal.sylph.parser.tree.CreateTable;
-import ideal.sylph.parser.tree.Expression;
-import ideal.sylph.parser.tree.Identifier;
-import ideal.sylph.parser.tree.IntervalLiteral;
-import ideal.sylph.parser.tree.Node;
-import ideal.sylph.parser.tree.NodeLocation;
-import ideal.sylph.parser.tree.Property;
-import ideal.sylph.parser.tree.QualifiedName;
-import ideal.sylph.parser.tree.StringLiteral;
-import ideal.sylph.parser.tree.TableElement;
-import ideal.sylph.parser.tree.WaterMark;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.Interval;
@@ -143,30 +144,6 @@ public class AstBuilder
     }
 
     @Override
-    public Node visitCreateStream(SqlBaseParser.CreateStreamContext context)
-    {
-        Optional<String> comment = Optional.empty();
-        if (context.COMMENT() != null) {
-            comment = Optional.of(((StringLiteral) visit(context.string())).getValue());
-        }
-        List<Property> properties = ImmutableList.of();
-        if (context.properties() != null) {
-            properties = visit(context.properties().property(), Property.class);
-        }
-
-        CreateStream.Type type = context.SINK() != null ? CreateStream.Type.SINK : CreateStream.Type.SOURCE;
-        return new CreateStream(
-                requireNonNull(type, "stream type is null,but must is SOURCE or SINK"),
-                getLocation(context),
-                getQualifiedName(context.qualifiedName()),
-                visit(context.tableElement(), TableElement.class),
-                context.EXISTS() != null,
-                properties,
-                comment,
-                visitIfPresent(context.watermark(), WaterMark.class));
-    }
-
-    @Override
     public Node visitCreateTable(SqlBaseParser.CreateTableContext context)
     {
         Optional<String> comment = Optional.empty();
@@ -177,13 +154,51 @@ public class AstBuilder
         if (context.properties() != null) {
             properties = visit(context.properties().property(), Property.class);
         }
+
+        CreateTable.Type type = null;
+        if (context.SINK() != null || context.OUTPUT() != null) {
+            type = CreateTable.Type.SINK;
+        }
+        else if (context.SOURCE() != null || context.INPUT() != null) {
+            type = CreateTable.Type.SOURCE;
+        }
+        else if (context.BATCH() != null) {
+            type = CreateTable.Type.BATCH;
+        }
+
         return new CreateTable(
+                requireNonNull(type, "table type is null,but must is SOURCE or SINK or BATCH"),
                 getLocation(context),
                 getQualifiedName(context.qualifiedName()),
                 visit(context.tableElement(), TableElement.class),
                 context.EXISTS() != null,
                 properties,
-                comment);
+                comment,
+                visitIfPresent(context.watermark(), WaterMark.class));
+    }
+
+    @Override
+    public Node visitInsertInto(SqlBaseParser.InsertIntoContext context)
+    {
+        String insert = getNodeText(context);
+
+        return new InsertInto(getLocation(context), insert);
+    }
+
+    @Override
+    public Node visitSelectQuery(SqlBaseParser.SelectQueryContext context)
+    {
+        String query = getNodeText(context);
+        return new SelectQuery(getLocation(context), query);
+    }
+
+    private static String getNodeText(ParserRuleContext context)
+    {
+        int a = context.start.getStartIndex();
+        int b = context.stop.getStopIndex();
+        Interval interval = new Interval(a, b);
+        String text = context.start.getInputStream().getText(interval);
+        return text;
     }
 
     @Override
@@ -198,22 +213,6 @@ public class AstBuilder
                 (Identifier) visit(context.identifier()),
                 getType(context.type()),
                 comment);
-    }
-
-    @Override
-    public Node visitInterval(SqlBaseParser.IntervalContext context)
-    {
-        return new IntervalLiteral(
-                getLocation(context),
-                ((StringLiteral) visit(context.string())).getValue(),
-                Optional.ofNullable(context.sign)
-                        .map(AstBuilder::getIntervalSign)
-                        .orElse(IntervalLiteral.Sign.POSITIVE),
-                getIntervalFieldType((Token) context.from.getChild(0).getPayload()),
-                Optional.ofNullable(context.to)
-                        .map((x) -> x.getChild(0).getPayload())
-                        .map(Token.class::cast)
-                        .map(AstBuilder::getIntervalFieldType));
     }
 
     private String getType(SqlBaseParser.TypeContext type)
@@ -255,11 +254,6 @@ public class AstBuilder
             }
             builder.append(")");
             return "ROW" + builder.toString();
-        }
-
-        if (type.INTERVAL() != null) {
-            return "INTERVAL " + getIntervalFieldType((Token) type.from.getChild(0).getPayload()) +
-                    " TO " + getIntervalFieldType((Token) type.to.getChild(0).getPayload());
         }
 
         throw new IllegalArgumentException("Unsupported type specification: " + type.getText());

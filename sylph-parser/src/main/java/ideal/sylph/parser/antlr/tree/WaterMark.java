@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.parser.tree;
+package ideal.sylph.parser.antlr.tree;
 
 import com.google.common.collect.ImmutableList;
 
@@ -56,12 +56,6 @@ public class WaterMark
     public Object getOffset()
     {
         return offset;
-    }
-
-    @Override
-    protected <R, C> R accept(AstVisitor<R, C> visitor, C context)
-    {
-        return null;
     }
 
     @Override

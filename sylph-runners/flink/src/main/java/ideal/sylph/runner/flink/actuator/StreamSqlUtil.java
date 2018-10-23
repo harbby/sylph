@@ -15,12 +15,16 @@
  */
 package ideal.sylph.runner.flink.actuator;
 
-import ideal.sylph.parser.tree.WaterMark;
+import ideal.sylph.parser.antlr.tree.ColumnDefinition;
+import ideal.sylph.parser.antlr.tree.CreateTable;
+import ideal.sylph.parser.antlr.tree.WaterMark;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
+import org.apache.flink.api.java.typeutils.TypeExtractor;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
 import org.apache.flink.streaming.api.watermark.Watermark;
+import org.apache.flink.table.api.Types;
 import org.apache.flink.types.Row;
 
 import javax.annotation.Nullable;
@@ -38,21 +42,20 @@ public final class StreamSqlUtil
 
     static DataStream<Row> checkStream(DataStream<Row> inputStream, RowTypeInfo tableTypeInfo)
     {
-        TypeInformation<Row> sourceType = inputStream.getType();
-        if (sourceType instanceof RowTypeInfo) {
-            List<Integer> indexs = Arrays.stream(tableTypeInfo.getFieldNames())
-                    .map(fieldName -> {
-                        int fieldIndex = ((RowTypeInfo) sourceType).getFieldIndex(fieldName);
-                        checkState(fieldIndex != -1, sourceType + " not with " + fieldName);
-                        return fieldIndex;
-                    })
-                    .collect(Collectors.toList());
-            return inputStream.map(inRow -> Row.of(indexs.stream().map(inRow::getField).toArray()))
-                    .returns(tableTypeInfo);
-        }
-        else {
+        if (!(inputStream.getType() instanceof RowTypeInfo)) {
             throw new RuntimeException("sourceType not is RowTypeInfo");
         }
+        RowTypeInfo sourceType = (RowTypeInfo) inputStream.getType();
+
+        List<Integer> indexs = Arrays.stream(tableTypeInfo.getFieldNames())
+                .map(fieldName -> {
+                    int fieldIndex = sourceType.getFieldIndex(fieldName);
+                    checkState(fieldIndex != -1, sourceType + " not with " + fieldName);
+                    return fieldIndex;
+                })
+                .collect(Collectors.toList());
+        return inputStream.map(inRow -> Row.of(indexs.stream().map(inRow::getField).toArray()))
+                .returns(tableTypeInfo);
     }
 
     static DataStream<Row> buildWaterMark(
@@ -112,6 +115,55 @@ public final class StreamSqlUtil
         }
         else {
             throw new UnsupportedOperationException("this " + waterMark + " have't support!");
+        }
+    }
+
+    public static RowTypeInfo getTableRowTypeInfo(CreateTable createStream)
+    {
+        final List<ColumnDefinition> columns = createStream.getElements().stream().map(ColumnDefinition.class::cast).collect(Collectors.toList());
+        return parserColumns(columns);
+    }
+
+    private static RowTypeInfo parserColumns(List<ColumnDefinition> columns)
+    {
+        String[] fieldNames = columns.stream().map(columnDefinition -> columnDefinition.getName().getValue())
+                .toArray(String[]::new);
+
+        TypeInformation[] fieldTypes = columns.stream().map(columnDefinition -> parserSqlType(columnDefinition.getType()))
+                .toArray(TypeInformation[]::new);
+
+        return new RowTypeInfo(fieldTypes, fieldNames);
+    }
+
+    private static TypeInformation<?> parserSqlType(String type)
+    {
+        switch (type) {
+            case "varchar":
+            case "string":
+                return Types.STRING();
+            case "integer":
+            case "int":
+                return Types.INT();
+            case "long":
+            case "bigint":
+                return Types.LONG();
+            case "boolean":
+            case "bool":
+                return Types.BOOLEAN();
+            case "double":
+                return Types.DOUBLE();
+            case "float":
+                return Types.FLOAT();
+            case "byte":
+                return Types.BYTE();
+            case "timestamp":
+                return Types.SQL_TIMESTAMP();
+            case "date":
+                return Types.SQL_DATE();
+            case "binary":
+                return TypeExtractor.createTypeInfo(byte[].class); //Types.OBJECT_ARRAY(Types.BYTE());
+            default:
+                throw new IllegalArgumentException("this TYPE " + type + " have't support!");
         }
     }
 }

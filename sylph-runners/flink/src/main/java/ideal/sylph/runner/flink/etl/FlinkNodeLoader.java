@@ -140,7 +140,7 @@ public final class FlinkNodeLoader
     private static Sink<DataStream<Row>> loadRealTimeSink(RealTimeSink realTimeSink)
     {
         // or user stream.addSink(new FlinkSink(realTimeSink, stream.getType()));
-        return (Sink<DataStream<Row>>) stream -> stream.writeUsingOutputFormat(new FlinkSink(realTimeSink, stream.getType()));
+        return (Sink<DataStream<Row>>) stream -> stream.addSink(new FlinkSink(realTimeSink, stream.getType()));
     }
 
     private static TransForm<DataStream<Row>> loadRealTimeTransForm(RealTimeTransForm realTimeTransForm)

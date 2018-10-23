@@ -13,21 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.runner.flink.sql;
+package ideal.sylph.parser.antlr.tree;
 
-import org.junit.Assert;
-import org.junit.Test;
-
-import static ideal.sylph.runner.flink.actuator.FlinkStreamSqlActuator.SqlFlow.SQL_REGEX;
-
-public class SqlSplit
+public final class NodeLocation
 {
-    @Test
-    public void splitTest1()
+    private final int line;
+    private final int charPositionInLine;
+
+    public NodeLocation(int line, int charPositionInLine)
     {
-        String code = "a1;a2;'12;34';\"a4;a8\";10";
-        String[] split = code.split(SQL_REGEX);
-        Assert.assertEquals(split.length, 5);
-        Assert.assertArrayEquals(split, new String[] {"a1", "a2", "'12;34'", "\"a4;a8\"", "10"});
+        this.line = line;
+        this.charPositionInLine = charPositionInLine;
+    }
+
+    public int getLineNumber()
+    {
+        return line;
+    }
+
+    public int getColumnNumber()
+    {
+        return charPositionInLine + 1;
     }
 }

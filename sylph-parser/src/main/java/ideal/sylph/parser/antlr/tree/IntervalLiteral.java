@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.parser.tree;
+package ideal.sylph.parser.antlr.tree;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -105,12 +105,6 @@ public class IntervalLiteral
     public boolean isYearToMonth()
     {
         return startField == IntervalField.YEAR || startField == IntervalField.MONTH;
-    }
-
-    @Override
-    public <R, C> R accept(AstVisitor<R, C> visitor, C context)
-    {
-        return visitor.visitIntervalLiteral(this, context);
     }
 
     @Override

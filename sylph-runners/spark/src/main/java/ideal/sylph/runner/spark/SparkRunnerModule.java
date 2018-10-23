@@ -22,8 +22,11 @@ import com.google.inject.Provider;
 import com.google.inject.Scopes;
 import ideal.sylph.spi.exception.SylphException;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.yarn.client.api.TimelineClient;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.stream.Stream;
@@ -34,6 +37,8 @@ import static java.util.Objects.requireNonNull;
 public class SparkRunnerModule
         implements Module
 {
+    private static final Logger logger = LoggerFactory.getLogger(SparkRunnerModule.class);
+
     @Override
     public void configure(Binder binder)
     {
@@ -50,6 +55,13 @@ public class SparkRunnerModule
         public YarnClient get()
         {
             YarnClient client = YarnClient.createYarnClient();
+            try {
+                TimelineClient.createTimelineClient();
+            }
+            catch (NoClassDefFoundError e) {
+                logger.warn("createTimelineClient() error with {}", TimelineClient.class.getResource(TimelineClient.class.getSimpleName() + ".class"), e);
+                yarnConfiguration.setBoolean(YarnConfiguration.TIMELINE_SERVICE_ENABLED, false);
+            }
             client.init(yarnConfiguration);
             client.start();
             return client;
