@@ -17,6 +17,7 @@ package ideal.sylph.runner.flink.actuator;
 
 import com.google.inject.Inject;
 import ideal.common.classloader.ThreadContextClassLoader;
+import ideal.common.ioc.Binds;
 import ideal.common.jvm.JVMException;
 import ideal.common.jvm.JVMLauncher;
 import ideal.common.jvm.JVMLaunchers;
@@ -29,7 +30,6 @@ import ideal.sylph.runner.flink.FlinkJobHandle;
 import ideal.sylph.runner.flink.etl.FlinkNodeLoader;
 import ideal.sylph.runner.flink.yarn.FlinkYarnJobLauncher;
 import ideal.sylph.spi.App;
-import ideal.sylph.spi.Binds;
 import ideal.sylph.spi.GraphApp;
 import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.exception.SylphException;
@@ -162,11 +162,11 @@ public class FlinkStreamEtlActuator
                         public NodeLoader<DataStream<Row>> getNodeLoader()
                         {
                             Binds binds = Binds.builder()
-                                    .put(org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.class, execEnv)
-                                    .put(org.apache.flink.table.api.StreamTableEnvironment.class, tableEnv)
-                                    .put(org.apache.flink.table.api.java.StreamTableEnvironment.class, tableEnv)
-                                    //.put(org.apache.flink.streaming.api.scala.StreamExecutionEnvironment.class, null) // execEnv
-                                    //.put(org.apache.flink.table.api.scala.StreamTableEnvironment.class, null)  // tableEnv
+                                    .bind(org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.class, execEnv)
+                                    .bind(org.apache.flink.table.api.StreamTableEnvironment.class, tableEnv)
+                                    .bind(org.apache.flink.table.api.java.StreamTableEnvironment.class, tableEnv)
+                                    //.bind(org.apache.flink.streaming.api.scala.StreamExecutionEnvironment.class, null) // execEnv
+                                    //.bind(org.apache.flink.table.api.scala.StreamTableEnvironment.class, null)  // tableEnv
                                     .build();
                             return new FlinkNodeLoader(pluginManager, binds);
                         }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.spi;
+package ideal.common.ioc;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,7 +31,7 @@ public interface Binds
     {
         private final Map<Class<?>, Object> map = new HashMap<>();
 
-        public <T> Builder put(Class<T> type, T value)
+        public <T> Builder bind(Class<T> type, T value)
         {
             map.put(type, value);
             return this;
@@ -46,10 +46,13 @@ public interface Binds
                 {
                     @SuppressWarnings("unchecked")
                     T value = (T) map.get(type);
-                    if (value == null) {
-                        throw new IllegalArgumentException(String.format("Cannot find instance of parameter [%s], unable to inject, only [%s]", type, map.keySet()));
-                    }
                     return value;
+                }
+
+                @Override
+                public String toString()
+                {
+                    return map.toString();
                 }
             };
         }

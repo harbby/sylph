@@ -33,9 +33,7 @@ public class Suppliers
 
     public static <T> Supplier<T> goLazy(Supplier<T> delegate)
     {
-        return delegate instanceof Suppliers.MemoizingSupplier ?
-                delegate :
-                new Suppliers.MemoizingSupplier<>(requireNonNull(delegate));
+        return memoize(delegate);
     }
 
     static class MemoizingSupplier<T>

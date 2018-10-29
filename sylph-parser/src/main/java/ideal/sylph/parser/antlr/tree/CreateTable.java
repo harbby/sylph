@@ -18,8 +18,10 @@ package ideal.sylph.parser.antlr.tree;
 import com.google.common.collect.ImmutableList;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
@@ -87,6 +89,14 @@ public class CreateTable
     public List<Property> getProperties()
     {
         return properties;
+    }
+
+    public Map<String, String> getWithConfig()
+    {
+        return this.getProperties().stream()
+                .collect(Collectors.toMap(
+                        k -> k.getName().getValue(),
+                        v -> v.getValue().toString().replace("'", "")));
     }
 
     public Optional<String> getComment()

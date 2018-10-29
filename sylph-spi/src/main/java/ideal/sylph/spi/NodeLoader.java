@@ -15,7 +15,8 @@
  */
 package ideal.sylph.spi;
 
-import com.google.common.collect.ImmutableList;
+import ideal.common.ioc.Binds;
+import ideal.common.ioc.Injectors;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.etl.PluginConfig;
 import javassist.CannotCompileException;
@@ -35,8 +36,6 @@ import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.function.UnaryOperator;
 
-import static com.google.common.base.Preconditions.checkState;
-
 public interface NodeLoader<R>
 {
     Logger logger = LoggerFactory.getLogger(NodeLoader.class);
@@ -50,37 +49,23 @@ public interface NodeLoader<R>
     /**
      * This method will generate the instance object by injecting the PipeLine interface.
      */
-    default <T> T getInstance(Class<T> driver, Map<String, Object> config)
-            throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException, CannotCompileException, NoSuchFieldException, NotFoundException
+    default <T> T getPluginInstance(Class<T> driver, Map<String, Object> config)
     {
-        @SuppressWarnings("unchecked")
-        Constructor<T>[] constructors = (Constructor<T>[]) driver.getConstructors();
-        checkState(constructors.length == 1, String.format("%s has multiple public constructors, please ensure that there is only one", driver));
-        final Constructor<T> constructor = constructors[0];
+        return getPluginInstance(driver, getBinds(), config);
+    }
 
-        if (constructor.getParameters().length == 0) {
-            logger.info("plugin class [{}] not find 'no parameter' Constructor, using class.newInstance()", driver);
-            return driver.newInstance();
-        }
-
-        constructor.setAccessible(true);
-        ImmutableList.Builder<Object> builder = ImmutableList.builder();
-        for (Class<?> type : constructor.getParameterTypes()) {
+    static <T> T getPluginInstance(Class<T> driver, Binds binds, Map<String, Object> config)
+    {
+        return Injectors.INSTANCE.getInstance(driver, binds, (type) -> {
             if (PluginConfig.class.isAssignableFrom(type)) { //config injection
-                PluginConfig pluginConfig = getPipeConfigInstance(type.asSubclass(PluginConfig.class), this.getClass().getClassLoader());
+                PluginConfig pluginConfig = getPipeConfigInstance(type.asSubclass(PluginConfig.class), NodeLoader.class.getClassLoader());
                 //--- inject map config
                 injectConfig(pluginConfig, config);
-                builder.add(pluginConfig);
+                return pluginConfig;
             }
-            else {
-                Object value = getBinds().get(type);
-                if (value == null) {
-                    throw new IllegalArgumentException(String.format("Cannot find instance of parameter [%s], unable to inject", type));
-                }
-                builder.add(value);
-            }
-        }
-        return constructor.newInstance(builder.build().toArray());
+
+            throw new IllegalArgumentException(String.format("Cannot find instance of parameter [%s], unable to inject, only [%s]", type, binds));
+        });
     }
 
     static PluginConfig getPipeConfigInstance(Class<? extends PluginConfig> type, ClassLoader classLoader)
@@ -148,8 +133,9 @@ public interface NodeLoader<R>
                 }
                 else if (field.get(pluginConfig) == null) {
                     // Unable to inject via config, and there is no default value
-                    String errorMsg = String.format("[PluginConfig] %s field %s[%s] unable to inject ,and there is no default value, config only %s", typeClass, field.getName(), name.value(), config);
-                    throw new IllegalArgumentException(errorMsg);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("[PluginConfig] {} field {}[{}] unable to inject ,and there is no default value, config only {}", typeClass, field.getName(), name.value(), config);
+                    }
                 }
             }
         }

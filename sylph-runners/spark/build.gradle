@@ -41,6 +41,9 @@ dependencies {
   }
 
   //--other--
+  compile (project(':sylph-parser')){
+    exclude(module: 'guava')
+  }
   compile group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
 
   //--- add scala class

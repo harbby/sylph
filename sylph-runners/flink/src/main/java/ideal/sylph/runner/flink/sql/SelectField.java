@@ -22,7 +22,7 @@ import java.util.Objects;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
-public class Field
+public class SelectField
         implements Serializable
 {
     private final String fieldName;
@@ -31,7 +31,7 @@ public class Field
     private final boolean isBatchTableField;
     private final int fieldIndex;
 
-    private Field(String fieldName, TypeInformation<?> type, String tableName, boolean isBatchTableField, int fieldIndex)
+    private SelectField(String fieldName, TypeInformation<?> type, String tableName, boolean isBatchTableField, int fieldIndex)
     {
         this.fieldName = fieldName;
         this.tableName = tableName;
@@ -65,9 +65,9 @@ public class Field
         return fieldIndex;
     }
 
-    public static Field of(String fieldName, TypeInformation<?> type, String tableName, boolean batchTableField, int fieldIndex)
+    public static SelectField of(String fieldName, TypeInformation<?> type, String tableName, boolean batchTableField, int fieldIndex)
     {
-        return new Field(fieldName, type, tableName, batchTableField, fieldIndex);
+        return new SelectField(fieldName, type, tableName, batchTableField, fieldIndex);
     }
 
     @Override
@@ -85,7 +85,7 @@ public class Field
         if ((obj == null) || (getClass() != obj.getClass())) {
             return false;
         }
-        Field o = (Field) obj;
+        SelectField o = (SelectField) obj;
         return Objects.equals(fieldName, o.fieldName) &&
                 Objects.equals(type, o.type) &&
                 Objects.equals(tableName, o.tableName) &&

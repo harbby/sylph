@@ -24,7 +24,7 @@ import org.apache.spark.sql.Row
 object SparkUtil {
   val transFunction = (partition: Iterator[Row], realTimeTransForm: RealTimeTransForm) => {
     var errorOrNull: Exception = null
-    val schema = realTimeTransForm.getRowSchema
+    val schema = realTimeTransForm.getSchema // if not null
     val list: java.util.List[ideal.sylph.etl.Row] = new java.util.ArrayList[etl.Row]()
     val collector = new ListCollector(list)
     try {

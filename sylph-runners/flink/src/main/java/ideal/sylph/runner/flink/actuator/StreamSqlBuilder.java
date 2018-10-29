@@ -17,6 +17,7 @@ package ideal.sylph.runner.flink.actuator;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import ideal.common.ioc.Binds;
 import ideal.sylph.parser.antlr.AntlrSqlParser;
 import ideal.sylph.parser.antlr.ParsingException;
 import ideal.sylph.parser.antlr.tree.CreateFunction;
@@ -28,7 +29,6 @@ import ideal.sylph.parser.antlr.tree.Statement;
 import ideal.sylph.runner.flink.etl.FlinkNodeLoader;
 import ideal.sylph.runner.flink.sql.FlinkSqlParser;
 import ideal.sylph.runner.flink.table.SylphTableSink;
-import ideal.sylph.spi.Binds;
 import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
@@ -47,7 +47,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 
 import static ideal.sylph.parser.antlr.tree.CreateTable.Type.BATCH;
 import static ideal.sylph.parser.antlr.tree.CreateTable.Type.SINK;
@@ -79,13 +78,18 @@ class StreamSqlBuilder
 
     void buildStreamBySql(String sql)
     {
+        FlinkSqlParser flinkSqlParser = FlinkSqlParser.builder()
+                .setTableEnv(tableEnv)
+                .setBatchPluginManager(pluginManager)
+                .build();
+
         Statement statement;
         try {
             statement = sqlParser.createStatement(sql);
         }
         catch (ParsingException e) {
             logger.warn("Sylph sql parser error, will try flink parser directly");
-            FlinkSqlParser.parser(tableEnv, sql, ImmutableList.copyOf(batchTables));
+            flinkSqlParser.parser(sql, ImmutableList.copyOf(batchTables));
             return;
         }
         if (statement instanceof CreateStreamAsSelect) {
@@ -103,7 +107,7 @@ class StreamSqlBuilder
             createFunction((CreateFunction) statement);
         }
         else if (statement instanceof InsertInto || statement instanceof SelectQuery) {
-            FlinkSqlParser.parser(tableEnv, statement.toString(), ImmutableList.copyOf(batchTables));
+            flinkSqlParser.parser(sql, ImmutableList.copyOf(batchTables));
         }
         else {
             throw new IllegalArgumentException("this driver class " + statement.getClass() + " have't support!");
@@ -136,17 +140,14 @@ class StreamSqlBuilder
         final String tableName = createStream.getName();
         RowTypeInfo tableTypeInfo = getTableRowTypeInfo(createStream);
 
-        final Map<String, String> withConfig = createStream.getProperties().stream()
-                .collect(Collectors.toMap(
-                        k -> k.getName().getValue(),
-                        v -> v.getValue().toString().replace("'", "")));
+        final Map<String, String> withConfig = createStream.getWithConfig();
         final Map<String, Object> config = ImmutableMap.copyOf(withConfig);
         final String driverClass = withConfig.get("type");
 
         final Binds binds = Binds.builder()
-                .put(org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.class, tableEnv.execEnv())
-                .put(org.apache.flink.table.api.StreamTableEnvironment.class, tableEnv)
-                .put(org.apache.flink.table.api.java.StreamTableEnvironment.class, tableEnv)
+                .bind(org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.class, tableEnv.execEnv())
+                .bind(org.apache.flink.table.api.StreamTableEnvironment.class, tableEnv)
+                .bind(org.apache.flink.table.api.java.StreamTableEnvironment.class, tableEnv)
                 //.put(org.apache.flink.streaming.api.scala.StreamExecutionEnvironment.class, null) // execEnv
                 //.put(org.apache.flink.table.api.scala.StreamTableEnvironment.class, null)  // tableEnv
                 .build();

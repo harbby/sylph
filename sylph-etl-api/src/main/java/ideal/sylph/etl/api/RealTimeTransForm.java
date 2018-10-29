@@ -25,10 +25,10 @@ public interface RealTimeTransForm
     /**
      * line 级别的 需要注意线程安全问题
      **/
-    void process(Row value, Collector<Row> collector);
+    void process(Row input, Collector<Row> collector);
 
     /**
      * driver 上运行
      */
-    Row.Schema getRowSchema();
+    Row.Schema getSchema();
 }

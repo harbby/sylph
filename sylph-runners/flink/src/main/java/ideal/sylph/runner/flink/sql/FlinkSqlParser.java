@@ -15,11 +15,17 @@
  */
 package ideal.sylph.runner.flink.sql;
 
+import ideal.common.ioc.Binds;
+import ideal.sylph.etl.PipelinePlugin;
+import ideal.sylph.etl.api.RealTimeTransForm;
+import ideal.sylph.etl.join.JoinContext;
 import ideal.sylph.parser.antlr.tree.CreateTable;
 import ideal.sylph.parser.calcite.CalciteSqlParser;
 import ideal.sylph.parser.calcite.JoinInfo;
 import ideal.sylph.parser.calcite.TableName;
 import ideal.sylph.runner.flink.actuator.StreamSqlUtil;
+import ideal.sylph.spi.NodeLoader;
+import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.calcite.config.Lex;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -35,7 +41,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.calcite.shaded.com.google.common.collect.ImmutableList;
-import org.apache.flink.streaming.api.datastream.AsyncDataStream;
+import org.apache.flink.shaded.guava18.com.google.common.collect.ImmutableMap;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableException;
@@ -48,7 +54,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -74,27 +79,76 @@ public class FlinkSqlParser
      * we use Java lex because back ticks are easier than double quotes in programming
      * and cases are preserved
      */
-    private static final SqlParser.Config sqlParserConfig = SqlParser
+    private SqlParser.Config sqlParserConfig = SqlParser
             .configBuilder()
             .setLex(Lex.JAVA)
             .build();
 
-    public static void parser(StreamTableEnvironment tableEnv, String query, List<CreateTable> batchTablesList)
+    private StreamTableEnvironment tableEnv;
+    private PipelinePluginManager pluginManager;
+
+    public static Builder builder()
     {
-        Map<String, RowTypeInfo> batchTables = batchTablesList.stream()
-                .collect(Collectors.toMap(CreateTable::getName, StreamSqlUtil::getTableRowTypeInfo));
+        return new Builder();
+    }
+
+    public static class Builder
+    {
+        private Builder() {}
+
+        private final FlinkSqlParser sqlParser = new FlinkSqlParser();
+
+        public Builder setTableEnv(StreamTableEnvironment tableEnv)
+        {
+            sqlParser.tableEnv = tableEnv;
+            return Builder.this;
+        }
+
+        public Builder setBatchPluginManager(PipelinePluginManager pluginManager)
+        {
+            sqlParser.pluginManager = pluginManager;
+            return Builder.this;
+        }
+
+        public Builder setParserConfig(SqlParser.Config sqlParserConfig)
+        {
+            sqlParser.sqlParserConfig = sqlParserConfig;
+            return Builder.this;
+        }
+
+        public FlinkSqlParser build()
+        {
+            checkState(sqlParser.sqlParserConfig != null);
+            checkState(sqlParser.tableEnv != null);
+            checkState(sqlParser.pluginManager != null);
+            return sqlParser;
+        }
+    }
+
+    public void parser(String query, List<CreateTable> batchTablesList)
+    {
+        Map<String, CreateTable> batchTables = batchTablesList.stream()
+                .collect(Collectors.toMap(CreateTable::getName, v -> v));
         CalciteSqlParser sqlParser = new CalciteSqlParser(batchTables.keySet());
-        List<Object> execNodes = null;
+
+        List<Object> plan;
         try {
-            execNodes = sqlParser.parser(query, sqlParserConfig);
+            plan = sqlParser.getPlan(query, sqlParserConfig);
         }
         catch (SqlParseException e) {
             throw new RuntimeException(e);
         }
-        buildDag(tableEnv, execNodes, batchTables);
+
+        List<String> registerViews = new ArrayList<>();
+        try {
+            translate(plan, batchTables, registerViews);
+        }
+        finally {
+            //registerViews.forEach(tableName -> tableEnv.sqlQuery("drop table " + tableName));
+        }
     }
 
-    private static void buildDag(StreamTableEnvironment tableEnv, List<Object> execNodes, Map<String, RowTypeInfo> batchTables)
+    private void translate(List<Object> execNodes, Map<String, CreateTable> batchTables, List<String> registerViews)
     {
         for (Object it : execNodes) {
             if (it instanceof SqlNode) {
@@ -103,12 +157,13 @@ public class FlinkSqlParser
                 if (sqlKind == INSERT) {
                     tableEnv.sqlUpdate(sqlNode.toString());
                 }
-                else if (sqlKind == AS) {
+                else if (sqlKind == AS) {  //Subquery
                     SqlBasicCall sqlBasicCall = (SqlBasicCall) sqlNode;
                     SqlSelect sqlSelect = sqlBasicCall.operand(0);
                     String tableAlias = sqlBasicCall.operand(1).toString();
                     Table table = tableEnv.sqlQuery(sqlSelect.toString());
                     tableEnv.registerTable(tableAlias, table);
+                    registerViews.add(tableAlias);
                 }
                 else if (sqlKind == SELECT) {
                     logger.warn("You entered the select query statement, only one for testing");
@@ -126,43 +181,79 @@ public class FlinkSqlParser
                     String tableAlias = sqlWithItem.name.toString();
                     Table table = tableEnv.sqlQuery(sqlWithItem.query.toString());
                     tableEnv.registerTable(tableAlias, table);
+                    registerViews.add(tableAlias);
                 }
             }
             else if (it instanceof JoinInfo) {
-                JoinInfo joinInfo = (JoinInfo) it;
-
-                Table streamTable = getTable(tableEnv, joinInfo.getStreamTable());
-                RowTypeInfo streamTableRowType = new RowTypeInfo(streamTable.getSchema().getTypes(), streamTable.getSchema().getColumnNames());
-
-                RowTypeInfo batchTableRowType = requireNonNull(batchTables.get(joinInfo.getBatchTable().getName()), "batch table [" + joinInfo.getJoinTableName() + "] not exits");
-                List<Field> joinSelectFields = getAllSelectFields(joinInfo, streamTableRowType, batchTableRowType);
-
-                DataStream<Row> inputStream = tableEnv.toAppendStream(streamTable, org.apache.flink.types.Row.class);
-
-                //It is recommended to do keyby first.
-                DataStream<Row> joinResultStream = AsyncDataStream.orderedWait(
-                        inputStream, new MysqlAsyncFunction(joinInfo, streamTableRowType, joinSelectFields),
-                        1000, TimeUnit.MILLISECONDS, // 超时时间
-                        100);  // 进行中的异步请求的最大数量
-
-                List<String> fieldNames = new ArrayList<>();
-                joinSelectFields.stream().map(Field::getFieldName).forEach(name -> {
-                    String newName = name;
-                    for (int i = 0; fieldNames.contains(newName); i++) {
-                        newName = name + i;
-                    }
-                    fieldNames.add(newName);
-                });
-                TypeInformation[] fieldTypes = joinSelectFields.stream().map(Field::getType).toArray(TypeInformation[]::new);
-                RowTypeInfo rowTypeInfo = new RowTypeInfo(fieldTypes, fieldNames.toArray(new String[0]));
-
-                joinResultStream.getTransformation().setOutputType(rowTypeInfo);
-                tableEnv.registerDataStream(joinInfo.getJoinTableName(), joinResultStream, String.join(",", fieldNames));
-
-                //next update join select query
-                joinSelectUp(joinInfo, streamTableRowType, batchTableRowType, fieldNames);
+                translateJoin((JoinInfo) it, batchTables);
+            }
+            else {
+                throw new IllegalArgumentException(it.toString());
             }
         }
+    }
+
+    private void translateJoin(JoinInfo joinInfo, Map<String, CreateTable> batchTables)
+    {
+        Table streamTable = getTable(tableEnv, joinInfo.getStreamTable());
+        RowTypeInfo streamRowType = (RowTypeInfo) streamTable.getSchema().toRowType();
+        DataStream<Row> inputStream = tableEnv.toAppendStream(streamTable, org.apache.flink.types.Row.class);
+        inputStream.getTransformation().setOutputType(streamRowType);
+
+        //get batch table schema
+        CreateTable batchTable = requireNonNull(batchTables.get(joinInfo.getBatchTable().getName()), "batch table [" + joinInfo.getJoinTableName() + "] not exits");
+        RowTypeInfo batchTableRowType = StreamSqlUtil.getTableRowTypeInfo(batchTable);
+        List<SelectField> joinSelectFields = getAllSelectFields(joinInfo, streamRowType, batchTableRowType);
+
+        //It is recommended to do keyby first.
+        JoinContext joinContext = JoinContextImpl.createContext(joinInfo, streamRowType, joinSelectFields);
+        RealTimeTransForm transForm = getJoinTransForm(joinContext, batchTable);
+        DataStream<Row> joinResultStream = AsyncFunctionHelper.translate(inputStream, transForm);
+
+        //set schema
+        RowTypeInfo rowTypeInfo = getJoinOutScheam(joinSelectFields);
+        joinResultStream.getTransformation().setOutputType(rowTypeInfo);
+        //--register tmp joinTable
+        tableEnv.registerDataStream(joinInfo.getJoinTableName(), joinResultStream);
+
+        //next update join select query
+        joinQueryUpdate(joinInfo, rowTypeInfo.getFieldNames());
+    }
+
+    private RealTimeTransForm getJoinTransForm(JoinContext joinContext, CreateTable batchTable)
+    {
+        Map<String, String> withConfig = batchTable.getWithConfig();
+        String driverOrName = withConfig.get("type");
+        Class<?> driver = null;
+        try {
+            driver = pluginManager.loadPluginDriver(driverOrName, PipelinePlugin.PipelineType.transform);
+        }
+        catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        checkState(RealTimeTransForm.class.isAssignableFrom(driver), "batch table type driver must is RealTimeTransForm");
+
+        // instance
+        Binds binds = Binds.builder()
+                .bind(JoinContext.class, joinContext)
+                .build();
+
+        return NodeLoader.getPluginInstance(driver.asSubclass(RealTimeTransForm.class), binds, ImmutableMap.copyOf(withConfig));
+    }
+
+    private static RowTypeInfo getJoinOutScheam(List<SelectField> joinSelectFields)
+    {
+        List<String> fieldNames = new ArrayList<>();
+        joinSelectFields.stream().map(SelectField::getFieldName).forEach(name -> {
+            String newName = name;
+            for (int i = 0; fieldNames.contains(newName); i++) {
+                newName = name + i;
+            }
+            fieldNames.add(newName);
+        });
+        TypeInformation[] fieldTypes = joinSelectFields.stream().map(SelectField::getType).toArray(TypeInformation[]::new);
+
+        return new RowTypeInfo(fieldTypes, fieldNames.toArray(new String[0]));
     }
 
     private static Table getTable(StreamTableEnvironment tableEnv, TableName tableName)
@@ -179,7 +270,7 @@ public class FlinkSqlParser
         return table;
     }
 
-    private static void joinSelectUp(JoinInfo joinInfo, RowTypeInfo streamTableRowType, RowTypeInfo batchTableRowType, List<String> upFieldNames)
+    private static void joinQueryUpdate(JoinInfo joinInfo, String[] upFieldNames)
     {
         SqlSelect sqlSelect = joinInfo.getJoinSelect();
         String joinOutTableName = joinInfo.getJoinTableName();
@@ -192,47 +283,57 @@ public class FlinkSqlParser
         }
         sqlSelect.setSelectList(selectNodes);
 
+        //parser where
+        // Pushdown across data sources is not supported at this time
+        if (sqlSelect.getWhere() != null) {
+            throw new UnsupportedOperationException("stream join batch Where filtering is not supported, Please consider using `having`;\n" +
+                    " will ignore where " + sqlSelect.getWhere().toString());
+        }
+
         //--- parser having ---
         SqlNode havingNode = sqlSelect.getHaving();
-        //sqlSelect.setWhere();
         if (havingNode != null) {
-            SqlNode[] whereNodes = ((SqlBasicCall) havingNode).getOperands();
-            for (int i = 0; i < whereNodes.length; i++) {
-                SqlNode whereSqlNode = whereNodes[i];
-                SqlNode upNode = updateSelectFieldName(whereSqlNode, joinOutTableName);
-                whereNodes[i] = upNode;
+            SqlNode[] filterNodes = ((SqlBasicCall) havingNode).getOperands();
+            for (int i = 0; i < filterNodes.length; i++) {
+                SqlNode whereSqlNode = filterNodes[i];
+                SqlNode upNode = updateOnlyOneFilter(whereSqlNode, joinOutTableName);
+                filterNodes[i] = upNode;
             }
-        }
 
-        //where ...
+            sqlSelect.setHaving(null);
+            sqlSelect.setWhere(havingNode);
+        }
     }
 
-    private static SqlNode updateSelectFieldName(SqlNode inSqlNode, String joinOutTableName)
+    /**
+     * update having
+     */
+    private static SqlNode updateOnlyOneFilter(SqlNode filterNode, String joinOutTableName)
     {
-        if (inSqlNode.getKind() == IDENTIFIER) {
-            SqlIdentifier field = ((SqlIdentifier) inSqlNode);
-            if (field.isStar()) {
-                return field.setName(0, joinOutTableName);
+        if (filterNode.getKind() == IDENTIFIER) {
+            SqlIdentifier field = ((SqlIdentifier) filterNode);
+            checkState(!field.isStar(), "filter field must not Star(*)");
+            if (field.names.size() > 1) {
+                field.setName(0, field.getComponent(0).getSimple());
+                field.setName(1, joinOutTableName);
             }
-            else {
-                return field.setName(0, joinOutTableName);
-            }
+            return field;
         }
-        else if (inSqlNode instanceof SqlBasicCall) {
-            SqlBasicCall sqlBasicCall = (SqlBasicCall) inSqlNode;
+        else if (filterNode instanceof SqlBasicCall) {  //demo: `user_id` = 'uid_1'
+            SqlBasicCall sqlBasicCall = (SqlBasicCall) filterNode;
             for (int i = 0; i < sqlBasicCall.getOperandList().size(); i++) {
                 SqlNode sqlNode = sqlBasicCall.getOperandList().get(i);
-                SqlNode upNode = updateSelectFieldName(sqlNode, joinOutTableName);
+                SqlNode upNode = updateOnlyOneFilter(sqlNode, joinOutTableName);
                 sqlBasicCall.getOperands()[i] = upNode;
             }
             return sqlBasicCall;
         }
         else {
-            return inSqlNode;
+            return filterNode;
         }
     }
 
-    private static List<Field> getAllSelectFields(JoinInfo joinInfo, RowTypeInfo streamTableRowType, RowTypeInfo batchTableRowType)
+    private static List<SelectField> getAllSelectFields(JoinInfo joinInfo, RowTypeInfo streamTableRowType, RowTypeInfo batchTableRowType)
     {
         String streamTable = joinInfo.getStreamTable().getAliasOrElseName();
         String batchTable = joinInfo.getBatchTable().getAliasOrElseName();
@@ -241,7 +342,7 @@ public class FlinkSqlParser
         tableTypes.put(streamTable, streamTableRowType);
         tableTypes.put(batchTable, batchTableRowType);
 
-        final ImmutableList.Builder<Field> fieldBuilder = ImmutableList.builder();
+        final ImmutableList.Builder<SelectField> fieldBuilder = ImmutableList.builder();
         for (SqlNode sqlNode : joinInfo.getJoinSelect().getSelectList().getList()) {
             SqlIdentifier sqlIdentifier;
             if (sqlNode.getKind() == IDENTIFIER) {
@@ -260,7 +361,7 @@ public class FlinkSqlParser
 
             if (sqlIdentifier.isStar()) {
                 for (int i = 0; i < tableRowType.getArity(); i++) {
-                    Field field = Field.of(tableRowType.getFieldNames()[i], tableRowType.getFieldTypes()[i], tableName, isBatchField, i);
+                    SelectField field = SelectField.of(tableRowType.getFieldNames()[i], tableRowType.getFieldTypes()[i], tableName, isBatchField, i);
                     fieldBuilder.add(field);
                 }
             }
@@ -270,9 +371,9 @@ public class FlinkSqlParser
                 checkState(fieldIndex != -1, "table " + tableName + " not exists field:" + fieldName);
                 if (sqlNode instanceof SqlBasicCall) {
                     // if(field as newName)  { use newName }
-                    fieldName = ((SqlIdentifier) ((SqlBasicCall) sqlNode).operand(1)).names.get(0).toLowerCase();
+                    fieldName = ((SqlIdentifier) ((SqlBasicCall) sqlNode).operand(1)).names.get(0);
                 }
-                fieldBuilder.add(Field.of(fieldName, tableRowType.getFieldTypes()[fieldIndex], tableName, isBatchField, fieldIndex));
+                fieldBuilder.add(SelectField.of(fieldName, tableRowType.getFieldTypes()[fieldIndex], tableName, isBatchField, fieldIndex));
             }
         }
 

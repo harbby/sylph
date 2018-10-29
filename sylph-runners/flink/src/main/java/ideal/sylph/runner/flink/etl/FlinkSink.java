@@ -16,10 +16,10 @@
 package ideal.sylph.runner.flink.etl;
 
 import ideal.sylph.etl.api.RealTimeSink;
+import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
-import org.apache.flink.streaming.api.operators.StreamingRuntimeContext;
 import org.apache.flink.types.Row;
 
 public final class FlinkSink
@@ -46,7 +46,7 @@ public final class FlinkSink
             throws Exception
     {
         super.open(parameters);
-        StreamingRuntimeContext context = (StreamingRuntimeContext) getRuntimeContext();
+        RuntimeContext context = getRuntimeContext();
 
         // get parallelism id
         int partitionId = (context.getNumberOfParallelSubtasks() > 0) ?
