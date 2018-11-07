@@ -14,7 +14,7 @@ create sink table print_table_sink(
     cnt long,
     window_time varchar
 ) with (
-    type = 'ideal.sylph.plugins.flink.sink.PrintSink',   -- print console
+    type = 'console',   -- print console
     other = 'demo001'
 );
 

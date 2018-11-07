@@ -1,0 +1,31 @@
+create function json_parser as 'ideal.sylph.runner.flink.udf.JsonParser';
+
+create source table topic1(
+    _topic varchar,
+    _key varchar,
+    _message varchar,
+    _partition integer,
+    _offset bigint
+) with (
+    type = 'kafka',
+    kafka_topic = 'test1,test2',
+    "auto.offset.reset" = latest,
+    kafka_broker = 'localhost:9092',
+    kafka_group_id = 'streamSql_test1'
+);
+-- 定义数据流输出位置
+create sink table mysql_table_sink(
+    a1 varchar,
+    a2 varchar,
+    event_time bigint
+) with (
+    type = 'mysql',   -- ideal.sylph.plugins.flink.sink
+    userName = 'demo',
+    password = 'demo',
+    url = 'jdbc:mysql://localhost:3306/pop?characterEncoding=utf-8&useSSL=false',
+    query = 'insert into mysql_table_sink values(${0},${1},${2})'
+);
+-- 描述数据流计算过程
+insert into mysql_table_sink
+select _topic,`_message`,cast(_offset as bigint)
+from topic1 where _key is not null

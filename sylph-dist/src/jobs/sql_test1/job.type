@@ -1,0 +1,12 @@
+type: StreamSql
+
+config:
+  parallelism : 2
+  queue: "default"
+  taskManagerCount: 2
+  taskManagerMemoryMb: 1024
+  taskManagerSlots: 1
+  jobManagerMemoryMb: 1024
+  appTags:
+    - "demo1"
+    - "demo2"
