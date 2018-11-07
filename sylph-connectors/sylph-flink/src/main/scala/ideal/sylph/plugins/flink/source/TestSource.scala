@@ -58,7 +58,7 @@ class TestSource(@transient private val tableEnv: StreamTableEnvironment) extend
         val eventTime: java.lang.Long = System.currentTimeMillis - random.nextInt(10 * 1000) //表示数据已经产生了 但是会有10秒以内的延迟
         val user_id = "uid_" + count
         val msg = JSONObject(Map[String, String]("user_id" -> user_id, "ip" -> "127.0.0.1")).toString()
-        val row = Row.of("key" + count, msg, eventTime)
+        val row = Row.of("key" + random.nextInt(10), msg, eventTime)
         sourceContext.collect(row)
         count += 1
         if (count > numKeys) count = 1L

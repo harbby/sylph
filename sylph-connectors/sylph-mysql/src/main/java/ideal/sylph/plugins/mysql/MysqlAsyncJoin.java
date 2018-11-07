@@ -27,6 +27,7 @@ import org.apache.flink.shaded.guava18.com.google.common.cache.Cache;
 import org.apache.flink.shaded.guava18.com.google.common.cache.CacheBuilder;
 import org.apache.flink.shaded.guava18.com.google.common.collect.ImmutableList;
 import org.apache.flink.shaded.guava18.com.google.common.collect.ImmutableMap;
+import org.apache.flink.shaded.guava18.com.google.common.collect.ImmutableSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +38,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -49,10 +51,10 @@ import static org.apache.flink.shaded.guava18.com.google.common.base.Preconditio
  */
 @Name("mysql")
 @Description("this is `join mode` mysql config table")
-public class MysqlAsyncFunction
+public class MysqlAsyncJoin
         implements RealTimeTransForm
 {
-    private static final Logger logger = LoggerFactory.getLogger(MysqlAsyncFunction.class);
+    private static final Logger logger = LoggerFactory.getLogger(MysqlAsyncJoin.class);
 
     private final List<Field> selectFields;
     private final Map<Integer, String> joinOnMapping;
@@ -63,14 +65,10 @@ public class MysqlAsyncFunction
     private final Row.Schema schema;
 
     private Connection connection;
-    private PreparedStatement statement;
 
-    private final Cache<String, List<Map<String, Object>>> cache = CacheBuilder.newBuilder()
-            .maximumSize(1000)   //max cache 1000 value
-            .expireAfterAccess(300, TimeUnit.SECONDS)  //5 minutes
-            .build();
+    private Cache<String, List<Map<String, Object>>> cache;
 
-    public MysqlAsyncFunction(JoinContext context, MysqlSink.MysqlConfig mysqlConfig)
+    public MysqlAsyncJoin(JoinContext context, MysqlSink.MysqlConfig mysqlConfig)
     {
         this.config = mysqlConfig;
         this.schema = context.getSchema();
@@ -80,22 +78,38 @@ public class MysqlAsyncFunction
         this.joinOnMapping = context.getJoinOnMapping();
 
         String where = context.getJoinOnMapping().values().stream().map(x -> x + " = ?").collect(Collectors.joining(" and "));
-        String batchSelectField = context.getSelectFields().stream().filter(Field::isBatchTableField)
-                .map(Field::getName).collect(Collectors.joining(","));
+        List<String> batchFields = context.getSelectFields().stream().filter(Field::isBatchTableField)
+                .map(Field::getName).collect(Collectors.toList());
+
         String select = "select %s from %s where %s";
 
-        if (batchSelectField.length() == 0) {
-            // 没有选中任何字段
-            batchSelectField = "true";
-        }
+        String batchSelectFields = batchFields.isEmpty() ? "true" : String.join(",", batchFields);
 
         String jdbcTable = config.getQuery() != null && config.getQuery().trim().length() > 0
                 ? "(" + config.getQuery() + ") as " + context.getBatchTable()
                 : context.getBatchTable();
 
-        this.sql = String.format(select, batchSelectField, jdbcTable, where);
+        this.sql = String.format(select, batchSelectFields, jdbcTable, where);
+
+        checkMysql(mysqlConfig, jdbcTable, ImmutableSet.<String>builder().addAll(batchFields).addAll(context.getJoinOnMapping().values()).build());
+
         logger.info("batch table join query is [{}]", sql);
         logger.info("join mapping is {}", context.getJoinOnMapping());
+    }
+
+    private static void checkMysql(MysqlSink.MysqlConfig config, String tableName, Set<String> fieldNames)
+    {
+        try (Connection connection = DriverManager.getConnection(config.getJdbcUrl(), config.getUser(), config.getPassword());
+                ResultSet resultSet = connection.getMetaData().getColumns(null, null, tableName, null);
+        ) {
+            List<Map<String, Object>> tableSchema = JdbcUtils.resultToList(resultSet);
+            List<String> listNames = tableSchema.stream().map(x -> (String) x.get("COLUMN_NAME")).collect(Collectors.toList());
+
+            checkState(listNames.containsAll(fieldNames), "mysql table `" + tableName + " fields ` only " + listNames + ", but your is " + fieldNames);
+        }
+        catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -110,16 +124,20 @@ public class MysqlAsyncFunction
             List<Map<String, Object>> cacheData = cache.get(builder.toString(), () -> {
                 //-- 这里进行真正的数据库查询
                 List<Integer> indexs = ImmutableList.copyOf(joinOnMapping.keySet());
-                for (int i = 0; i < indexs.size(); i++) {
-                    statement.setObject(i + 1, input.getField(indexs.get(i)));
-                }
-
-                try (ResultSet rs = statement.executeQuery()) {
-                    List<Map<String, Object>> result = JdbcUtils.resultToList(rs);
-                    if (result.isEmpty() && joinType == LEFT) { // left join and inter join
-                        return ImmutableList.of(ImmutableMap.of());
+                try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                    for (int i = 0; i < indexs.size(); i++) {
+                        statement.setObject(i + 1, input.getField(indexs.get(i)));
                     }
-                    return result;
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Thread is  {}, this {}", Thread.currentThread().getId(), this);
+                    }
+                    try (ResultSet rs = statement.executeQuery()) {
+                        List<Map<String, Object>> result = JdbcUtils.resultToList(rs);
+                        if (result.isEmpty() && joinType == LEFT) { // left join and inter join
+                            return ImmutableList.of(ImmutableMap.of());
+                        }
+                        return result;
+                    }
                 }
                 catch (SQLException e) {
                     throw new RuntimeException(e);
@@ -159,7 +177,10 @@ public class MysqlAsyncFunction
         try {
             Class.forName("com.mysql.jdbc.Driver");
             this.connection = DriverManager.getConnection(config.getJdbcUrl(), config.getUser(), config.getPassword());
-            this.statement = connection.prepareStatement(sql);
+            this.cache = CacheBuilder.newBuilder()
+                    .maximumSize(1000)   //max cache 1000 value
+                    .expireAfterAccess(300, TimeUnit.SECONDS)  //5 minutes
+                    .build();
             return true;
         }
         catch (SQLException | ClassNotFoundException e) {
@@ -171,9 +192,8 @@ public class MysqlAsyncFunction
     public void close(Throwable errorOrNull)
     {
         try (Connection conn = connection) {
-            if (statement != null) {
-                statement.close();
-            }
+            conn.isClosed();
+            cache.invalidateAll();
         }
         catch (Exception e) {
         }
