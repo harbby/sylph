@@ -24,4 +24,9 @@ public class JVMException
     {
         super(message);
     }
+
+    public JVMException(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
 }

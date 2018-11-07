@@ -36,17 +36,22 @@ public class JVMLauncherTest
         System.out.println("--- vm test ---");
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
                 .setCallable(() -> {
-                    TimeUnit.SECONDS.sleep(1);
+                    //TimeUnit.SECONDS.sleep(1000000);
                     System.out.println("************ job start ***************");
                     return 1;
                 })
                 .addUserjars(Collections.emptyList())
+                .setXms("16m")
+                .setXmx("16m")
                 .setConsole((msg) -> System.out.println(msg))
                 .build();
 
         VmFuture<Integer> out = launcher.startAndGet();
         Assert.assertEquals(out.get().get().intValue(), 1);
     }
+
+    //ops.add("-Xms8G");
+    //ops.add("-Xmx8G");
 
     @Test
     public void test2()

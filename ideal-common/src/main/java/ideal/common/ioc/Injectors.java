@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -38,6 +39,8 @@ public class Injectors
         }
         catch (RuntimeException e) {
             throw e;
+        }catch (InvocationTargetException e){
+            throw new InjectorException(e.getCause());
         }
         catch (Exception e) {
             throw new InjectorException(e);

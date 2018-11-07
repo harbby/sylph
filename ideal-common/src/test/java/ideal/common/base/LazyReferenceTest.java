@@ -25,12 +25,11 @@ import java.sql.SQLException;
 
 public class LazyReferenceTest
 {
-
     @Test
     public void goLazy()
             throws IOException
     {
-        final LazyReference<Connection> connection = LazyReference.goLazy(() -> {
+        final Lazys.Supplier<Connection> connection = Lazys.goLazy(() -> {
             try {
                 return DriverManager.getConnection("jdbc:url");
             }

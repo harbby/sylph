@@ -36,6 +36,7 @@ public class JVMLaunchers
         private boolean depThisJvm = true;
         private Consumer<String> consoleHandler;
         private final List<URL> tmpJars = new ArrayList<>();
+        private final List<String> otherVmOps = new ArrayList<>();
 
         public VmBuilder<T> setCallable(VmCallable<T> callable)
         {
@@ -71,10 +72,22 @@ public class JVMLaunchers
             return this;
         }
 
+        public VmBuilder<T> setXms(String xms)
+        {
+            otherVmOps.add("-Xms" + xms);
+            return this;
+        }
+
+        public VmBuilder<T> setXmx(String xmx)
+        {
+            otherVmOps.add("-Xmx" + xmx);
+            return this;
+        }
+
         public JVMLauncher<T> build()
         {
             requireNonNull(consoleHandler, "setConsole(Consumer<String> consoleHandler) not setting");
-            return new JVMLauncher<T>(callable, consoleHandler, tmpJars, depThisJvm);
+            return new JVMLauncher<T>(callable, consoleHandler, tmpJars, depThisJvm, otherVmOps);
         }
     }
 
