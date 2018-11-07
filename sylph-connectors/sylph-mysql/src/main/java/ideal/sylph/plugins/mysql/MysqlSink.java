@@ -62,6 +62,18 @@ public class MysqlSink
             builder.add(matcher.group());
         }
         this.keys = builder.toArray(new String[0]);
+
+        checkMysql();
+    }
+
+    private void checkMysql()
+    {
+        try {
+            this.open(0, 9);
+        }
+        finally {
+            this.close(null);
+        }
     }
 
     @Override

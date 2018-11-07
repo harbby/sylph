@@ -69,6 +69,7 @@ public class MysqlAsyncJoin
     private Cache<String, List<Map<String, Object>>> cache;
 
     public MysqlAsyncJoin(JoinContext context, MysqlSink.MysqlConfig mysqlConfig)
+            throws Exception
     {
         this.config = mysqlConfig;
         this.schema = context.getSchema();
@@ -98,6 +99,7 @@ public class MysqlAsyncJoin
     }
 
     private static void checkMysql(MysqlSink.MysqlConfig config, String tableName, Set<String> fieldNames)
+            throws SQLException
     {
         try (Connection connection = DriverManager.getConnection(config.getJdbcUrl(), config.getUser(), config.getPassword());
                 ResultSet resultSet = connection.getMetaData().getColumns(null, null, tableName, null);
@@ -106,9 +108,6 @@ public class MysqlAsyncJoin
             List<String> listNames = tableSchema.stream().map(x -> (String) x.get("COLUMN_NAME")).collect(Collectors.toList());
 
             checkState(listNames.containsAll(fieldNames), "mysql table `" + tableName + " fields ` only " + listNames + ", but your is " + fieldNames);
-        }
-        catch (SQLException e) {
-            throw new RuntimeException(e);
         }
     }
 

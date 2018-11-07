@@ -15,6 +15,9 @@
  */
 package ideal.sylph.runner.flink.sqlTest;
 
+import ideal.sylph.etl.Collector;
+import ideal.sylph.etl.api.RealTimeTransForm;
+import ideal.sylph.etl.join.JoinContext;
 import ideal.sylph.parser.antlr.AntlrSqlParser;
 import ideal.sylph.parser.antlr.tree.CreateTable;
 import ideal.sylph.runner.flink.sql.FlinkSqlParser;
@@ -35,6 +38,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
+
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * 经过研究 发现目前flin1.6 只支持流流join
@@ -81,7 +86,7 @@ public class JoinTest
             throws Exception
     {
         final AntlrSqlParser sqlParser = new AntlrSqlParser();
-        CreateTable createTable = (CreateTable) sqlParser.createStatement("create batch table users(id string, name string, city string) with(type = 'ideal.sylph.plugins.mysql.MysqlAsyncFunction')");
+        CreateTable createTable = (CreateTable) sqlParser.createStatement("create batch table users(id string, name string, city string) with(type = '" + TestMysqlJoin.class.getName() + "')");
 
         List<String> querys = ImmutableList.<String>builder()
                 .add("select tb1.*,users.* from tb1 left join users on tb1.user_id=users.id")
@@ -114,6 +119,41 @@ public class JoinTest
             System.out.println(plan);
             Assert.assertNotNull(plan);
             //tableEnv.execEnv().execute();
+        }
+    }
+
+    public static class TestMysqlJoin
+            implements RealTimeTransForm
+    {
+        public TestMysqlJoin(JoinContext context)
+        {
+            //--check context
+            checkState(context != null, "context is null");
+        }
+
+        @Override
+        public void process(ideal.sylph.etl.Row input, Collector<ideal.sylph.etl.Row> collector)
+        {
+
+        }
+
+        @Override
+        public ideal.sylph.etl.Row.Schema getSchema()
+        {
+            return null;
+        }
+
+        @Override
+        public boolean open(long partitionId, long version)
+                throws Exception
+        {
+            return false;
+        }
+
+        @Override
+        public void close(Throwable errorOrNull)
+        {
+
         }
     }
 }

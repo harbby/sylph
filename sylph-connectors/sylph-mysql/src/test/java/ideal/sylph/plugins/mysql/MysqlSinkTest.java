@@ -55,8 +55,14 @@ public class MysqlSinkTest
                 Assert.assertNotNull(pluginConfig);
                 Assert.assertNotNull(pluginConfig.toString());
                 System.out.println(type + " class -> " + pluginConfig);
-                Object mysqlSink = constructor.newInstance(pluginConfig);
-                Assert.assertTrue(mysqlSink instanceof MysqlSink);
+                try {
+                    Object mysqlSink = constructor.newInstance(pluginConfig);
+                    Assert.assertTrue(mysqlSink instanceof MysqlSink);
+                }
+                catch (Exception e) {
+                    String error = e.getCause().getMessage();
+                    Assert.assertEquals("Mysql connection open fail", error);
+                }
             }
         }
     }
