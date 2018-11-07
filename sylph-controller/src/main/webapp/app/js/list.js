@@ -31,7 +31,7 @@ $(function () {
                         break;
                     case 'STARTING':
                         status = '正在启动中';
-                        //button = '<button class="btn btn-primary active">上线</button>' + '<button class="btn btn-primary delete">删除</button>';
+                        button = '<button class="btn btn-primary stop">下线</button>';
                         break;
                     case 'START_ERROR':
                         status = '启动失败';
