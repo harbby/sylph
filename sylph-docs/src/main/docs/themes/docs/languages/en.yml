@@ -27,6 +27,7 @@ sidebar:
     What is: What is STLPH
     Get Start: Quick start
     Etl is: ETL Job
+    batch join: stream join batch
     #基础
     Basics: Basics
     Setup: Setup
