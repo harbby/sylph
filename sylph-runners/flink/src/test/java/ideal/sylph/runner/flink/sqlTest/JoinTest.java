@@ -81,7 +81,7 @@ public class JoinTest
             throws Exception
     {
         final AntlrSqlParser sqlParser = new AntlrSqlParser();
-        CreateTable createTable = (CreateTable) sqlParser.createStatement("create batch table users(id string, name string, password string) with(type = 'ideal.sylph.plugins.mysql.MysqlAsyncFunction')");
+        CreateTable createTable = (CreateTable) sqlParser.createStatement("create batch table users(id string, name string, city string) with(type = 'ideal.sylph.plugins.mysql.MysqlAsyncFunction')");
 
         List<String> querys = ImmutableList.<String>builder()
                 .add("select tb1.*,users.* from tb1 left join users on tb1.user_id=users.id")
@@ -95,7 +95,7 @@ public class JoinTest
         for (String query : querys) {
             tableEnv = TableEnvironment.getTableEnvironment(tableEnv.execEnv());
             tableEnv.registerFunction("from_unixtime", new TimeUtil.FromUnixTime());
-            tableEnv.execEnv().setParallelism(1);
+            tableEnv.execEnv().setParallelism(4);
 
             TableSource<Row> tableSource = new TestTableSource();
             tableEnv.registerTableSource("tb1", tableSource);

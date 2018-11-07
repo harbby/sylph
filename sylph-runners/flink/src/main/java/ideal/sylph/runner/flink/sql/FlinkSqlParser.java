@@ -136,7 +136,7 @@ public class FlinkSqlParser
             plan = sqlParser.getPlan(query, sqlParserConfig);
         }
         catch (SqlParseException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(query, e);
         }
 
         List<String> registerViews = new ArrayList<>();

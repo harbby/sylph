@@ -93,12 +93,9 @@ public class AsyncFunctionHelper
             // 设置请求完成时的回调: 将结果传递给 collector
             resultFuture.whenComplete((result, error) -> {
                 if (error != null) {
-                    //todo: 这里可以加入开关 如果关联失败是否进行置空,默认情况 整个任务会直接结束
                     asyncCollector.completeExceptionally(error);
                 }
                 else {
-                    //因为一条数据 可能join出来多条 所以结果是集合
-                    Row row = Row.of("uid", "topic", "uid", 123L, "batch111", "batch222");
                     asyncCollector.complete(result);
                 }
             });
