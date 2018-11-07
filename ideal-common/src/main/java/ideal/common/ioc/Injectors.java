@@ -39,7 +39,8 @@ public class Injectors
         }
         catch (RuntimeException e) {
             throw e;
-        }catch (InvocationTargetException e){
+        }
+        catch (InvocationTargetException e) {
             throw new InjectorException(e.getCause());
         }
         catch (Exception e) {

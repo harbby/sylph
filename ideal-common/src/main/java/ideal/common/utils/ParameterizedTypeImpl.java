@@ -32,7 +32,7 @@ import java.util.Objects;
  *
  * <p>
  * Implementing class for ParameterizedType interface.
- *
+ * <p>
  * demo : ParameterizedTypeImpl.make(Map.class, new Type[]{String.class, String.class}, null)
  */
 
