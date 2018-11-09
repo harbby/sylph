@@ -35,7 +35,7 @@ public interface JoinContext
 
     public JoinType getJoinType();
 
-    public List<Field> getSelectFields();
+    public List<SelectField> getSelectFields();
 
     public int getSelectFieldCnt();
 

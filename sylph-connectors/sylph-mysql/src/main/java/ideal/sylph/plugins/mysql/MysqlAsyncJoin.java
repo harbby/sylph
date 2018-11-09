@@ -20,8 +20,8 @@ import ideal.sylph.annotation.Name;
 import ideal.sylph.etl.Collector;
 import ideal.sylph.etl.Row;
 import ideal.sylph.etl.api.RealTimeTransForm;
-import ideal.sylph.etl.join.Field;
 import ideal.sylph.etl.join.JoinContext;
+import ideal.sylph.etl.join.SelectField;
 import ideal.sylph.plugins.mysql.utils.JdbcUtils;
 import org.apache.flink.shaded.guava18.com.google.common.cache.Cache;
 import org.apache.flink.shaded.guava18.com.google.common.cache.CacheBuilder;
@@ -56,19 +56,19 @@ public class MysqlAsyncJoin
 {
     private static final Logger logger = LoggerFactory.getLogger(MysqlAsyncJoin.class);
 
-    private final List<Field> selectFields;
+    private final List<SelectField> selectFields;
     private final Map<Integer, String> joinOnMapping;
     private final String sql;
     private final JoinContext.JoinType joinType;
     private final int selectFieldCnt;
-    private final MysqlSink.MysqlConfig config;
+    private final MyJoinConfig config;
     private final Row.Schema schema;
 
     private Connection connection;
 
     private Cache<String, List<Map<String, Object>>> cache;
 
-    public MysqlAsyncJoin(JoinContext context, MysqlSink.MysqlConfig mysqlConfig)
+    public MysqlAsyncJoin(JoinContext context, MyJoinConfig mysqlConfig)
             throws Exception
     {
         this.config = mysqlConfig;
@@ -79,8 +79,8 @@ public class MysqlAsyncJoin
         this.joinOnMapping = context.getJoinOnMapping();
 
         String where = context.getJoinOnMapping().values().stream().map(x -> x + " = ?").collect(Collectors.joining(" and "));
-        List<String> batchFields = context.getSelectFields().stream().filter(Field::isBatchTableField)
-                .map(Field::getName).collect(Collectors.toList());
+        List<String> batchFields = context.getSelectFields().stream().filter(SelectField::isBatchTableField)
+                .map(SelectField::getFieldName).collect(Collectors.toList());
 
         String select = "select %s from %s where %s";
 
@@ -96,9 +96,14 @@ public class MysqlAsyncJoin
 
         logger.info("batch table join query is [{}]", sql);
         logger.info("join mapping is {}", context.getJoinOnMapping());
+
+        this.cache = CacheBuilder.newBuilder()
+                .maximumSize(mysqlConfig.getCacheMaxNumber())   //max cache 1000 value
+                .expireAfterAccess(mysqlConfig.getCacheTime(), TimeUnit.SECONDS)  //
+                .build();
     }
 
-    private static void checkMysql(MysqlSink.MysqlConfig config, String tableName, Set<String> fieldNames)
+    private static void checkMysql(MyJoinConfig config, String tableName, Set<String> fieldNames)
             throws SQLException
     {
         try (Connection connection = DriverManager.getConnection(config.getJdbcUrl(), config.getUser(), config.getPassword());
@@ -146,12 +151,12 @@ public class MysqlAsyncJoin
             for (Map<String, Object> map : cacheData) {
                 Object[] row = new Object[selectFieldCnt];
                 for (int i = 0; i < selectFieldCnt; i++) {
-                    Field field = selectFields.get(i);
+                    SelectField field = selectFields.get(i);
                     if (field.isBatchTableField()) {
-                        row[i] = map.get(field.getName());
+                        row[i] = map.get(field.getFieldName());
                     }
                     else {
-                        row[i] = input.getField(field.getIndex());
+                        row[i] = input.getField(field.getFieldIndex());
                     }
                 }
                 collector.collect(Row.of(row));
@@ -176,10 +181,6 @@ public class MysqlAsyncJoin
         try {
             Class.forName("com.mysql.jdbc.Driver");
             this.connection = DriverManager.getConnection(config.getJdbcUrl(), config.getUser(), config.getPassword());
-            this.cache = CacheBuilder.newBuilder()
-                    .maximumSize(1000)   //max cache 1000 value
-                    .expireAfterAccess(300, TimeUnit.SECONDS)  //5 minutes
-                    .build();
             return true;
         }
         catch (SQLException | ClassNotFoundException e) {
@@ -199,6 +200,63 @@ public class MysqlAsyncJoin
 
         if (errorOrNull != null) {
             logger.error("", errorOrNull);
+        }
+    }
+
+    public static final class MyJoinConfig
+    {
+        @Name("cache.max.number")
+        @Description("this is max cache number")
+        private int maxNumber = 1000;
+
+        @Name("cache.expire.number")
+        @Description("this is cache expire SECONDS")
+        private int cacheTime = 300;   // 5 minutes
+
+        @Name("url")
+        @Description("this is mysql jdbc url")
+        private String jdbcUrl = "jdbc:mysql://localhost:3306/pop?characterEncoding=utf-8&useSSL=false";
+
+        @Name("userName")
+        @Description("this is mysql userName")
+        private String user = "demo";
+
+        @Name("password")
+        @Description("this is mysql password")
+        private String password = "demo";
+
+        @Name("query")
+        @Description("this is mysql save query")
+        private String query = null;
+
+        public int getCacheTime()
+        {
+            return cacheTime;
+        }
+
+        public int getCacheMaxNumber()
+        {
+            return maxNumber;
+        }
+
+        public String getJdbcUrl()
+        {
+            return jdbcUrl;
+        }
+
+        public String getUser()
+        {
+            return user;
+        }
+
+        public String getPassword()
+        {
+            return password;
+        }
+
+        public String getQuery()
+        {
+            return query;
         }
     }
 }

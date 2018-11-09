@@ -13,25 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.runner.flink.sql;
-
-import org.apache.flink.api.common.typeinfo.TypeInformation;
+package ideal.sylph.etl.join;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
-
-import static com.google.common.base.MoreObjects.toStringHelper;
 
 public class SelectField
         implements Serializable
 {
     private final String fieldName;
-    private final TypeInformation<?> type;
+    private final Class<?> type;
     private final String tableName;
     private final boolean isBatchTableField;
     private final int fieldIndex;
 
-    private SelectField(String fieldName, TypeInformation<?> type, String tableName, boolean isBatchTableField, int fieldIndex)
+    private SelectField(String fieldName, Class<?> type, String tableName, boolean isBatchTableField, int fieldIndex)
     {
         this.fieldName = fieldName;
         this.tableName = tableName;
@@ -50,7 +48,7 @@ public class SelectField
         return tableName;
     }
 
-    public TypeInformation<?> getType()
+    public Class<?> getType()
     {
         return type;
     }
@@ -65,7 +63,7 @@ public class SelectField
         return fieldIndex;
     }
 
-    public static SelectField of(String fieldName, TypeInformation<?> type, String tableName, boolean batchTableField, int fieldIndex)
+    public static SelectField of(String fieldName, Class<?> type, String tableName, boolean batchTableField, int fieldIndex)
     {
         return new SelectField(fieldName, type, tableName, batchTableField, fieldIndex);
     }
@@ -96,12 +94,12 @@ public class SelectField
     @Override
     public String toString()
     {
-        return toStringHelper(this)
-                .add("fieldName", fieldName)
-                .add("type", type)
-                .add("tableName", tableName)
-                .add("isBatchTableField", isBatchTableField)
-                .add("fieldIndex", fieldIndex)
-                .toString();
+        Map<String, Object> builder = new HashMap<>();
+        builder.put("fieldName", fieldName);
+        builder.put("type", type);
+        builder.put("tableName", tableName);
+        builder.put("isBatchTableField", isBatchTableField);
+        builder.put("fieldIndex", fieldIndex);
+        return this + builder.toString();
     }
 }

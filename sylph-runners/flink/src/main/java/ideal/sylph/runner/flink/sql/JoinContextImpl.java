@@ -16,8 +16,8 @@
 package ideal.sylph.runner.flink.sql;
 
 import ideal.sylph.etl.Row;
-import ideal.sylph.etl.join.Field;
 import ideal.sylph.etl.join.JoinContext;
+import ideal.sylph.etl.join.SelectField;
 import ideal.sylph.parser.calcite.JoinInfo;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 
@@ -32,17 +32,17 @@ public class JoinContextImpl
 {
     private final String batchTable;
     private final JoinType joinType;
-    private final List<Field> selectFields;
+    private final List<SelectField> selectFields;
     private final int selectFieldCnt;
     private final Map<Integer, String> joinOnMapping;
 
-    private JoinContextImpl(String batchTable, JoinType joinType, List<Field> selectFields, int selectFieldCnt, Map<Integer, String> joinOnMapping)
+    private JoinContextImpl(String batchTable, JoinType joinType, List<SelectField> selectFields, Map<Integer, String> joinOnMapping)
     {
         this.batchTable = batchTable;
         this.joinType = joinType;
         this.selectFields = selectFields;
 
-        this.selectFieldCnt = selectFieldCnt;
+        this.selectFieldCnt = selectFields.size();
         this.joinOnMapping = joinOnMapping;
     }
 
@@ -56,7 +56,7 @@ public class JoinContextImpl
         return joinType;
     }
 
-    public List<Field> getSelectFields()
+    public List<SelectField> getSelectFields()
     {
         return selectFields;
     }
@@ -79,11 +79,6 @@ public class JoinContextImpl
     public static JoinContext createContext(JoinInfo joinInfo, RowTypeInfo streamRowType, List<SelectField> joinSelectFields)
     {
         JoinContext.JoinType joinType = transJoinType(joinInfo.getJoinType());
-        List<Field> selectFields = joinSelectFields.stream()
-                .map(field -> new Field(field.getFieldName(), field.isBatchTableField(), field.getFieldIndex()))
-                .collect(Collectors.toList());
-
-        int selectFieldCnt = joinSelectFields.size();
 
         Map<Integer, String> joinOnMapping = joinInfo.getJoinOnMapping()
                 .entrySet().stream()
@@ -93,7 +88,7 @@ public class JoinContextImpl
                     return streamFieldIndex;
                 }, Map.Entry::getValue));
 
-        return new JoinContextImpl(joinInfo.getBatchTable().getName(), joinType, selectFields, selectFieldCnt, joinOnMapping);
+        return new JoinContextImpl(joinInfo.getBatchTable().getName(), joinType, joinSelectFields, joinOnMapping);
     }
 
     private static JoinContext.JoinType transJoinType(org.apache.calcite.sql.JoinType joinType)

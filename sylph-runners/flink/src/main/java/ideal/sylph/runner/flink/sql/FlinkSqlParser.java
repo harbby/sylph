@@ -19,6 +19,7 @@ import ideal.common.ioc.Binds;
 import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.etl.api.RealTimeTransForm;
 import ideal.sylph.etl.join.JoinContext;
+import ideal.sylph.etl.join.SelectField;
 import ideal.sylph.parser.antlr.tree.CreateTable;
 import ideal.sylph.parser.calcite.CalciteSqlParser;
 import ideal.sylph.parser.calcite.JoinInfo;
@@ -251,7 +252,10 @@ public class FlinkSqlParser
             }
             fieldNames.add(newName);
         });
-        TypeInformation[] fieldTypes = joinSelectFields.stream().map(SelectField::getType).toArray(TypeInformation[]::new);
+        TypeInformation[] fieldTypes = joinSelectFields.stream()
+                .map(SelectField::getType)
+                .map(TypeInformation::of)
+                .toArray(TypeInformation[]::new);
 
         return new RowTypeInfo(fieldTypes, fieldNames.toArray(new String[0]));
     }
@@ -361,7 +365,7 @@ public class FlinkSqlParser
 
             if (sqlIdentifier.isStar()) {
                 for (int i = 0; i < tableRowType.getArity(); i++) {
-                    SelectField field = SelectField.of(tableRowType.getFieldNames()[i], tableRowType.getFieldTypes()[i], tableName, isBatchField, i);
+                    SelectField field = SelectField.of(tableRowType.getFieldNames()[i], tableRowType.getFieldTypes()[i].getTypeClass(), tableName, isBatchField, i);
                     fieldBuilder.add(field);
                 }
             }
@@ -373,7 +377,7 @@ public class FlinkSqlParser
                     // if(field as newName)  { use newName }
                     fieldName = ((SqlIdentifier) ((SqlBasicCall) sqlNode).operand(1)).names.get(0);
                 }
-                fieldBuilder.add(SelectField.of(fieldName, tableRowType.getFieldTypes()[fieldIndex], tableName, isBatchField, fieldIndex));
+                fieldBuilder.add(SelectField.of(fieldName, tableRowType.getFieldTypes()[fieldIndex].getTypeClass(), tableName, isBatchField, fieldIndex));
             }
         }
 

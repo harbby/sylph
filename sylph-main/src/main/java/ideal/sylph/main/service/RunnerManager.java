@@ -52,6 +52,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -80,12 +81,9 @@ public class RunnerManager
         runner.create(runnerContext).forEach(jobActuatorHandle -> {
             JobActuator jobActuator = new JobActuatorImpl(jobActuatorHandle);
             String name = jobActuator.getInfo().getName();
-            if (jobActuatorMap.containsKey(name)) {
-                throw new IllegalArgumentException(String.format("Multiple entries with same key: %s=%s and %s=%s", name, jobActuatorMap.get(name), name, jobActuator));
-            }
-            else {
-                jobActuatorMap.put(name, jobActuator);
-            }
+            checkState(!jobActuatorMap.containsKey(name), String.format("Multiple entries with same key: %s=%s and %s=%s", name, jobActuatorMap.get(name), name, jobActuator));
+
+            jobActuatorMap.put(name, jobActuator);
         });
     }
 

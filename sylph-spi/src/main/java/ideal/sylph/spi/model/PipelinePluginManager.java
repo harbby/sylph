@@ -36,6 +36,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkState;
@@ -227,36 +228,42 @@ public interface PipelinePluginManager
      */
     static List<Map> parserDriverConfig(Class<? extends PipelinePlugin> javaClass, ClassLoader classLoader)
     {
-        for (Constructor<?> constructor : javaClass.getConstructors()) {
-            for (Class<?> argmentType : constructor.getParameterTypes()) {
-                if (PluginConfig.class.isAssignableFrom(argmentType)) {
-                    try {
-                        PluginConfig pluginConfig = getPipeConfigInstance(argmentType.asSubclass(PluginConfig.class), classLoader);
-                        return Arrays.stream(argmentType.getDeclaredFields())
-                                .filter(field -> field.getAnnotation(Name.class) != null)
-                                .map(field -> {
-                                    Name name = field.getAnnotation(Name.class);
-                                    Description description = field.getAnnotation(Description.class);
-                                    field.setAccessible(true);
-                                    try {
-                                        Object defaultValue = field.get(pluginConfig);
-                                        return ImmutableMap.of(
-                                                "key", name.value(),
-                                                "description", description == null ? "" : description.value(),
-                                                "default", defaultValue == null ? "" : defaultValue
-                                        );
-                                    }
-                                    catch (IllegalAccessException e) {
-                                        throw new IllegalArgumentException(e);
-                                    }
-                                }).collect(Collectors.toList());
-                    }
-                    catch (Exception e) {
-                        throw new IllegalArgumentException(argmentType + " Unable to be instantiated", e);
-                    }
-                }
+        Constructor<?>[] constructors = javaClass.getConstructors();
+        checkState(constructors.length == 1, "PipelinePlugin " + javaClass + " must ont constructor");
+        Constructor<?> constructor = constructors[0];
+
+        for (Class<?> argmentType : constructor.getParameterTypes()) {
+            if (!PluginConfig.class.isAssignableFrom(argmentType)) {
+                continue;
+            }
+
+            try {
+                PluginConfig pluginConfig = getPipeConfigInstance(argmentType.asSubclass(PluginConfig.class), classLoader);
+
+                return Stream.of(argmentType.getDeclaredFields())
+                        .filter(field -> field.getAnnotation(Name.class) != null)
+                        .map(field -> {
+                            Name name = field.getAnnotation(Name.class);
+                            Description description = field.getAnnotation(Description.class);
+                            field.setAccessible(true);
+                            try {
+                                Object defaultValue = field.get(pluginConfig);
+                                return ImmutableMap.of(
+                                        "key", name.value(),
+                                        "description", description == null ? "" : description.value(),
+                                        "default", defaultValue == null ? "" : defaultValue
+                                );
+                            }
+                            catch (IllegalAccessException e) {
+                                throw new IllegalArgumentException(e);
+                            }
+                        }).collect(Collectors.toList());
+            }
+            catch (Exception e) {
+                throw new IllegalArgumentException(argmentType + " Unable to be instantiated", e);
             }
         }
+
         return ImmutableList.of();
     }
 }

@@ -19,7 +19,7 @@ create sink table mysql_table_sink(
     a2 varchar,
     event_time bigint
 ) with (
-    type = 'mysql',   -- ideal.sylph.plugins.flink.sink
+    type = 'mysql',   -- or ideal.sylph.plugins.mysql.MysqlSink
     userName = 'demo',
     password = 'demo',
     url = 'jdbc:mysql://localhost:3306/pop?characterEncoding=utf-8&useSSL=false',

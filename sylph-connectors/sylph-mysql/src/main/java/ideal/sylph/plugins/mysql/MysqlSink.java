@@ -43,12 +43,12 @@ public class MysqlSink
     private static final Logger logger = LoggerFactory.getLogger(MysqlSink.class);
 
     private final MysqlConfig config;
-
-    private Connection connection;
-    private PreparedStatement statement;
-    private int num = 0;
     private final String prepareStatementQuery;
     private final String[] keys;
+
+    private transient Connection connection;
+    private transient PreparedStatement statement;
+    private int num = 0;
 
     public MysqlSink(MysqlConfig mysqlConfig)
     {
@@ -130,7 +130,7 @@ public class MysqlSink
         }
     }
 
-    public static class MysqlConfig
+    public static final class MysqlConfig
             extends PluginConfig
     {
         @Name("url")
