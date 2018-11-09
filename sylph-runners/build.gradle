@@ -1,4 +1,3 @@
-
 subprojects {
   apply plugin: 'com.github.harbby.gradle.serviceloader'
   serviceLoader {
@@ -13,15 +12,19 @@ subprojects {
   }
 
   def modules = project(':sylph-dist').buildDir.path + "/modules/${name}"
-  task copyConf(type: Copy){
+  task copyConf(type: Copy) {
     from('conf')
     into modules + "/conf"
   }
-  task buildModules(type: Copy,dependsOn: copyConf) {
+  task copyLibs(type: Copy, dependsOn: copyConf) {
     from(configurations.runtime)
-    from(jar)
     into modules + "/lib"
     //include   '*.jar'
+  }
+
+  task buildModules(type: Copy, dependsOn: copyLibs) {
+    from(jar)
+    into modules
   }
   assemble.dependsOn buildModules
   project(':sylph-dist').dist.dependsOn assemble

@@ -1,0 +1,12 @@
+---
+type: "StreamETL"
+config:
+  taskManagerMemoryMb: 1024
+  taskManagerCount: 2
+  taskManagerSlots: 2
+  jobManagerMemoryMb: 1024
+  parallelism: 4
+  queue: "default"
+  appTags:
+  - "sylph"
+  - "flink"

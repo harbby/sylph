@@ -160,17 +160,6 @@ public class PipelinePluginLoader
         catch (Exception e) {
             throw new RuntimeException(e);
         }
-
-//        Type type = javaClass.getGenericInterfaces()[0];  //获取多个泛型信息 //直接获取会报出 ClassNotFoundException
-//        if (type instanceof ParameterizedType) {
-//            ParameterizedType parameterizedType = (ParameterizedType) type;
-//            Type[] types = parameterizedType.getActualTypeArguments();
-//            logger.info("--The {} is not RealTimePipeline--the Java generics is {} --", javaClass, Arrays.asList(types));
-//            //return getPluginInfo(factoryClass, javaClass, PRIVATE, types);
-//        }
-//        else {
-//            throw new RuntimeException("Unrecognized plugin:" + javaClass);
-//        }
     }
 
     private static PipelinePluginManager.PipelinePluginInfo getPluginInfo(

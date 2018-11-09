@@ -83,11 +83,6 @@ public class JoinInfo
         return rightTable;
     }
 
-    public void setJoinWhere(SqlNode joinWhere)
-    {
-        this.joinWhere = joinWhere;
-    }
-
     public void setJoinSelect(SqlSelect sqlSelect)
     {
         this.joinSelect = sqlSelect;
@@ -96,11 +91,6 @@ public class JoinInfo
     public SqlSelect getJoinSelect()
     {
         return joinSelect;
-    }
-
-    public SqlNode getJoinWhere()
-    {
-        return joinWhere;
     }
 
     public void setJoinOnMapping(Map<String, String> joinOnMapping)

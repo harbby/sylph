@@ -27,10 +27,13 @@ import java.util.Objects;
  * package: sun.reflect.generics.reflectiveObjects
  * <p>
  * Jdk9 or above can't find this class
- * Alternatives are available: guava-> new MoreTypes.ParameterizedTypeImpl(null, rawType, typeArguments)
+ * Alternatives are available: guice-> new MoreTypes.ParameterizedTypeImpl(null, rawType, typeArguments)
+ * guice see {@link com.google.inject.internal.MoreTypes.ParameterizedTypeImpl(Type, Type, Type)}
  *
  * <p>
  * Implementing class for ParameterizedType interface.
+ * <p>
+ * demo : ParameterizedTypeImpl.make(Map.class, new Type[]{String.class, String.class}, null)
  */
 
 public class ParameterizedTypeImpl

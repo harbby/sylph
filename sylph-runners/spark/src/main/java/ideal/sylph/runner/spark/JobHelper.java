@@ -15,13 +15,13 @@
  */
 package ideal.sylph.runner.spark;
 
+import ideal.common.ioc.Binds;
 import ideal.common.jvm.JVMException;
 import ideal.common.jvm.JVMLauncher;
 import ideal.common.jvm.JVMLaunchers;
 import ideal.sylph.runner.spark.etl.sparkstreaming.StreamNodeLoader;
 import ideal.sylph.runner.spark.etl.structured.StructuredNodeLoader;
 import ideal.sylph.spi.App;
-import ideal.sylph.spi.Binds;
 import ideal.sylph.spi.GraphApp;
 import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.exception.SylphException;
@@ -82,7 +82,7 @@ final class JobHelper
             public NodeLoader<Dataset<Row>> getNodeLoader()
             {
                 Binds binds = Binds.builder()
-                        .put(SparkSession.class, spark)
+                        .bind(SparkSession.class, spark)
                         .build();
                 return new StructuredNodeLoader(pluginManager, binds)
                 {
@@ -151,7 +151,7 @@ final class JobHelper
             public NodeLoader<DStream<Row>> getNodeLoader()
             {
                 Binds binds = Binds.builder()
-                        .put(StreamingContext.class, spark)
+                        .bind(StreamingContext.class, spark)
                         .build();
                 return new StreamNodeLoader(pluginManager, binds);
             }

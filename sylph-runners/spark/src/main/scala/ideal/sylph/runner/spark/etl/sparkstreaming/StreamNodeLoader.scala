@@ -17,10 +17,12 @@ package ideal.sylph.runner.spark.etl.sparkstreaming
 
 import java.util.function.UnaryOperator
 
+import ideal.common.ioc.Binds
+import ideal.sylph.etl.PipelinePlugin
 import ideal.sylph.etl.api._
 import ideal.sylph.runner.spark.etl.{SparkRow, SparkUtil}
+import ideal.sylph.spi.NodeLoader
 import ideal.sylph.spi.model.PipelinePluginManager
-import ideal.sylph.spi.{Binds, NodeLoader}
 import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
@@ -33,9 +35,9 @@ import org.apache.spark.streaming.dstream.DStream
 class StreamNodeLoader(private val pluginManager: PipelinePluginManager, private val binds: Binds) extends NodeLoader[DStream[Row]] {
 
   override def loadSource(driverStr: String, config: java.util.Map[String, Object]): UnaryOperator[DStream[Row]] = {
-    val driverClass = pluginManager.loadPluginDriver(driverStr)
+    val driverClass = pluginManager.loadPluginDriver(driverStr, PipelinePlugin.PipelineType.source)
 
-    val source = getInstance(driverClass, config).asInstanceOf[Source[DStream[Row]]]
+    val source = getPluginInstance(driverClass, config).asInstanceOf[Source[DStream[Row]]]
 
     new UnaryOperator[DStream[Row]] {
       override def apply(stream: DStream[Row]): DStream[Row] = source.getSource
@@ -43,8 +45,8 @@ class StreamNodeLoader(private val pluginManager: PipelinePluginManager, private
   }
 
   override def loadSink(driverStr: String, config: java.util.Map[String, Object]): UnaryOperator[DStream[Row]] = {
-    val driverClass = pluginManager.loadPluginDriver(driverStr)
-    val driver = getInstance(driverClass, config)
+    val driverClass = pluginManager.loadPluginDriver(driverStr, PipelinePlugin.PipelineType.sink)
+    val driver = getPluginInstance(driverClass, config)
 
     val sink: Sink[RDD[Row]] = driver match {
       case realTimeSink: RealTimeSink =>
@@ -65,8 +67,8 @@ class StreamNodeLoader(private val pluginManager: PipelinePluginManager, private
     * transform api 尝试中
     **/
   override def loadTransform(driverStr: String, config: java.util.Map[String, Object]): UnaryOperator[DStream[Row]] = {
-    val driverClass = pluginManager.loadPluginDriver(driverStr)
-    val driver: Any = getInstance(driverClass, config)
+    val driverClass = pluginManager.loadPluginDriver(driverStr, PipelinePlugin.PipelineType.transform)
+    val driver: Any = getPluginInstance(driverClass, config)
 
     val transform: TransForm[DStream[Row]] = driver match {
       case realTimeTransForm: RealTimeTransForm =>
@@ -78,7 +80,6 @@ class StreamNodeLoader(private val pluginManager: PipelinePluginManager, private
       override def apply(stream: DStream[Row]): DStream[Row] = transform.transform(stream)
     }
   }
-
 
   private[sparkstreaming] def loadRealTimeSink(realTimeSink: RealTimeSink) = new Sink[RDD[Row]] {
     override def run(rdd: RDD[Row]): Unit = {

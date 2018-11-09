@@ -63,12 +63,14 @@ public class FlinkRunnerModule
         public YarnClient get()
         {
             YarnClient client = YarnClient.createYarnClient();
-            try {
-                TimelineClient.createTimelineClient();
-            }
-            catch (NoClassDefFoundError e) {
-                logger.warn("createTimelineClient() error with {}", TimelineClient.class.getResource(TimelineClient.class.getSimpleName() + ".class"), e);
-                yarnConfiguration.setBoolean(YarnConfiguration.TIMELINE_SERVICE_ENABLED, false);
+            if (yarnConfiguration.getBoolean(YarnConfiguration.TIMELINE_SERVICE_ENABLED, false)) {
+                try {
+                    TimelineClient.createTimelineClient();
+                }
+                catch (NoClassDefFoundError e) {
+                    logger.warn("createTimelineClient() error with {}", TimelineClient.class.getResource(TimelineClient.class.getSimpleName() + ".class"), e);
+                    yarnConfiguration.setBoolean(YarnConfiguration.TIMELINE_SERVICE_ENABLED, false);
+                }
             }
             client.init(yarnConfiguration);
             client.start();

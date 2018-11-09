@@ -18,10 +18,12 @@ package ideal.sylph.runner.spark.etl.structured
 import java.util
 import java.util.function.UnaryOperator
 
+import ideal.common.ioc.Binds
+import ideal.sylph.etl.PipelinePlugin
 import ideal.sylph.etl.api.{RealTimeSink, RealTimeTransForm, Sink, TransForm}
 import ideal.sylph.runner.spark.etl.{SparkRow, SparkUtil}
+import ideal.sylph.spi.NodeLoader
 import ideal.sylph.spi.model.PipelinePluginManager
-import ideal.sylph.spi.{Binds, NodeLoader}
 import org.apache.spark.sql.streaming.{DataStreamWriter, Trigger}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Dataset, ForeachWriter, Row, SparkSession}
@@ -66,8 +68,8 @@ class StructuredNodeLoader(private val pluginManager: PipelinePluginManager, pri
   }
 
   def loadSinkWithComplic(driverStr: String, config: util.Map[String, Object]): DataFrame => DataStreamWriter[Row] = {
-    val driverClass = pluginManager.loadPluginDriver(driverStr)
-    val driver: Any = getInstance(driverClass, config)
+    val driverClass = pluginManager.loadPluginDriver(driverStr, PipelinePlugin.PipelineType.sink)
+    val driver: Any = getPluginInstance(driverClass, config)
     val sink: Sink[DataStreamWriter[Row]] = driver match {
       case realTimeSink: RealTimeSink => loadRealTimeSink(realTimeSink)
       case sink: Sink[_] => sink.asInstanceOf[Sink[DataStreamWriter[Row]]]
@@ -97,8 +99,8 @@ class StructuredNodeLoader(private val pluginManager: PipelinePluginManager, pri
     * transform api 尝试中
     **/
   override def loadTransform(driverStr: String, config: util.Map[String, Object]): UnaryOperator[DataFrame] = {
-    val driverClass = pluginManager.loadPluginDriver(driverStr)
-    val driver: Any = driverClass.newInstance()
+    val driverClass = pluginManager.loadPluginDriver(driverStr, PipelinePlugin.PipelineType.transform)
+    val driver: Any = getPluginInstance(driverClass, config)
 
     val transform: TransForm[DataFrame] = driver match {
       case realTimeTransForm: RealTimeTransForm => loadRealTimeTransForm(realTimeTransForm)

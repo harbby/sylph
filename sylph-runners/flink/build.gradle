@@ -1,5 +1,6 @@
 ext.moduleName = 'ideal.sylph.runner.flink'
 
+
 configurations.all {
   resolutionStrategy {  preferProjectModules() }
 }
@@ -18,16 +19,18 @@ dependencies {
   compile group: 'org.apache.flink', name: 'flink-table_2.11', version: deps.flink
 
   //-------cep-------------------
-  runtime "org.apache.flink:flink-cep_2.11:$deps.flink"
-  runtime "org.apache.flink:flink-cep-scala_2.11:$deps.flink"
+  compile "org.apache.flink:flink-cep_2.11:$deps.flink"
+  compile "org.apache.flink:flink-cep-scala_2.11:$deps.flink"
 
   //--- other----
   compile (project(':sylph-parser')){
     exclude(module: 'guava')
+    exclude(module: 'calcite-core')
   }
 
   //colour
   compile group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
 
-  testCompile project(':sylph-connectors:flink-node-plugin')
+  testCompile project(':sylph-connectors:sylph-flink')
+  testCompile project(':sylph-connectors:sylph-mysql')
 }

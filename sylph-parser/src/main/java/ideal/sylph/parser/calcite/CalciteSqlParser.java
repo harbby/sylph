@@ -16,6 +16,7 @@
 package ideal.sylph.parser.calcite;
 
 import com.google.common.collect.ImmutableList;
+import org.apache.calcite.config.Lex;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInsert;
@@ -50,34 +51,34 @@ import static org.apache.calcite.sql.SqlKind.WITH;
 
 public class CalciteSqlParser
 {
-    private final List<Object> queueInfo = new ArrayList<>();
+    private final List<Object> plan = new ArrayList<>();
     private final Set<String> batchTables; //所有维度表 join的维度表一定要有
+
+    private final SqlParser.Config sqlParserConfig = SqlParser
+            .configBuilder()
+            .setLex(Lex.JAVA)
+            .build();
 
     public CalciteSqlParser(Set<String> batchTables)
     {
         this.batchTables = requireNonNull(batchTables, "batchTables is null");
     }
 
-    public List<Object> parser(String joinSql)
+    public List<Object> getPlan(String joinSql)
             throws SqlParseException
     {
-        SqlParser sqlParser = SqlParser.create(joinSql);
-        SqlNode sqlNode = sqlParser.parseStmt();
-
-        SqlNode rootNode = sqlParse(sqlNode);
-        queueInfo.add(rootNode);
-        return queueInfo;
+        return getPlan(joinSql, sqlParserConfig);
     }
 
-    public List<Object> parser(String joinSql, SqlParser.Config sqlParserConfig)
+    public List<Object> getPlan(String joinSql, SqlParser.Config sqlParserConfig)
             throws SqlParseException
     {
         SqlParser sqlParser = SqlParser.create(joinSql, sqlParserConfig);
         SqlNode sqlNode = sqlParser.parseStmt();
 
         SqlNode rootNode = sqlParse(sqlNode);
-        queueInfo.add(rootNode);
-        return queueInfo;
+        plan.add(rootNode);
+        return plan;
     }
 
     private SqlNode sqlParse(SqlNode sqlNode)
@@ -90,7 +91,7 @@ public class CalciteSqlParser
                 for (SqlNode withAsTable : sqlNodeList) {
                     SqlWithItem sqlWithItem = (SqlWithItem) withAsTable;
                     sqlParse(sqlWithItem.query);
-                    queueInfo.add(sqlWithItem);
+                    plan.add(sqlWithItem);
                 }
                 sqlParse(sqlWith.body);
                 return sqlWith.body;
@@ -146,20 +147,19 @@ public class CalciteSqlParser
         checkState(joinInfo.getJoinType() == INNER || joinInfo.getJoinType() == LEFT, "Sorry, we currently only support left join and inner join. but your " + joinInfo.getJoinType());
 
         //next stream join batch
-        joinInfo.setJoinWhere(sqlSelect.getWhere());
         joinInfo.setJoinSelect(sqlSelect);
 
         SqlNode streamNode = joinInfo.getRightIsBatch() ? joinInfo.getLeftNode() : joinInfo.getRightNode();
         if (streamNode.getKind() == AS) {  //如果是子查询 则对子查询再进一步进行解析
             SqlNode query = ((SqlBasicCall) streamNode).operand(0);
             if (query.getKind() == SELECT || query.getKind() == WITH) {
-                queueInfo.add(streamNode);
+                plan.add(streamNode);
             }
         }
         else if (streamNode.getKind() == SELECT) {
             throw new IllegalArgumentException("Select sub query must have `as` an alias");
         }
-        queueInfo.add(joinInfo);
+        plan.add(joinInfo);
 
         SqlNode joinOn = joinInfo.getSqlJoin().getCondition();
         List<SqlNode> sqlNodeList = joinOn.getKind() == SqlKind.AND

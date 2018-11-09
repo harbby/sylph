@@ -25,11 +25,12 @@ project(':sylph-runners:spark').name = 'sylph-runner-spark'
 //----
 include 'sylph-etl-api'
 include 'sylph-connectors'
-include 'sylph-connectors:flink-node-plugin'
-include 'sylph-connectors:spark-node-plugin'
+include 'sylph-connectors:sylph-flink'
+include 'sylph-connectors:sylph-spark'
+include 'sylph-connectors:sylph-mysql'
+findProject(':sylph-connectors:sylph-mysql')?.name = 'sylph-mysql'
 
 //----
 include 'sylph-dist'
 include 'sylph-parser'
 include 'sylph-docs'
-

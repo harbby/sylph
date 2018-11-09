@@ -24,7 +24,9 @@ public interface PipelinePlugin
     {
         source(1),
         transform(2),
-        sink(3);
+        sink(3),
+        @Deprecated
+        batch_join(4);
 
         private final int code;
 

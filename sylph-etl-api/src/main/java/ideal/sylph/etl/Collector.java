@@ -31,5 +31,5 @@ public interface Collector<T>
     /**
      * Closes the collector. If any data was buffered, that data will be flushed.
      */
-    void close();
+    default void close() {}
 }

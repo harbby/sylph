@@ -21,6 +21,7 @@ public class DemoNode
         extends Node<Void>
 {
     private final String id;
+
     public DemoNode(String id)
     {
         this.id = id;

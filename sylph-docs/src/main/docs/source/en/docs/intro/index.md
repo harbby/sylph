@@ -5,7 +5,7 @@ title: SYLPH 是什么?
 
 - 开发工具：`webUI`, 定义streamSql或streamETl任务
 - 运行时：基于`spark2.x`及`flink1.5+` , 依赖`hdfs`和`yarn`
-- pipline插件扩展: `java8`, 按需实现`source`,`transform`,`sink`,由插件商店管理
+- pipline插件扩展: `java8`, 按需实现`source`,`transform`,`sink`
 - 基础运维：在`webUI`完成任务创建后一键部署上线,无需人工部署,整个分布式程序由sylph进行管理
 - 运行分析: 在sylph`webUI` 上面即可看到任务运行情况,不再需要打隧道查看yarn任务
 

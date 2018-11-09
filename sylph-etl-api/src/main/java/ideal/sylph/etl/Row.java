@@ -15,6 +15,7 @@
  */
 package ideal.sylph.etl;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -94,6 +95,7 @@ public interface Row
     }
 
     public static final class Schema
+            implements Serializable
     {
         private final List<Field> fields;
 
@@ -130,6 +132,7 @@ public interface Row
     }
 
     public static final class Field
+            implements Serializable
     {
         private final String name;
         private final Class<?> javaType;

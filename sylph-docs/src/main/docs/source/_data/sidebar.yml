@@ -4,6 +4,7 @@ docs:
       What is: /docs/intro/index.html
       Get Start: /docs/intro/quickstart.html
       Etl is: /docs/intro/etl.html
+      batch join: /docs/intro/batch-join.html
     Basics: #基础功能
       Setup: /docs/basics/setup.html
       Structure: /docs/basics/structure.html

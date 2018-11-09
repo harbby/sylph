@@ -24,6 +24,7 @@ import ideal.common.jvm.JVMLaunchers;
 import ideal.common.jvm.VmFuture;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
+import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.parser.antlr.AntlrSqlParser;
 import ideal.sylph.parser.antlr.tree.CreateTable;
 import ideal.sylph.runner.flink.FlinkJobConfig;
@@ -50,8 +51,6 @@ import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
@@ -94,16 +93,12 @@ public class FlinkStreamSqlActuator
                 .filter(statement -> statement instanceof CreateTable)
                 .forEach(statement -> {
                     CreateTable createTable = (CreateTable) statement;
-                    Map<String, String> withConfig = createTable.getProperties().stream()
-                            .collect(Collectors.toMap(
-                                    k -> k.getName().getValue(),
-                                    v -> v.getValue().toString().replace("'", ""))
-                            );
-                    String driverString = requireNonNull(withConfig.get("type"), "driver is null");
-                    Optional<PipelinePluginManager.PipelinePluginInfo> pluginInfo = pluginManager.findPluginInfo(driverString);
-                    pluginInfo.ifPresent(plugin -> FileUtils
-                            .listFiles(plugin.getPluginFile(), null, true)
-                            .forEach(builder::add));
+                    Map<String, String> withConfig = createTable.getWithConfig();
+                    String driverOrName = requireNonNull(withConfig.get("type"), "driver is null");
+                    pluginManager.findPluginInfo(driverOrName, getPipeType(createTable.getType()))
+                            .ifPresent(plugin -> FileUtils
+                                    .listFiles(plugin.getPluginFile(), null, true)
+                                    .forEach(builder::add));
                 });
         return builder.build();
     }
@@ -179,6 +174,20 @@ public class FlinkStreamSqlActuator
         public String toString()
         {
             return sqlText;
+        }
+    }
+
+    private static PipelinePlugin.PipelineType getPipeType(CreateTable.Type type)
+    {
+        switch (type) {
+            case BATCH:
+                return PipelinePlugin.PipelineType.transform;
+            case SINK:
+                return PipelinePlugin.PipelineType.sink;
+            case SOURCE:
+                return PipelinePlugin.PipelineType.source;
+            default:
+                throw new IllegalArgumentException("this type " + type + " have't support!");
         }
     }
 }

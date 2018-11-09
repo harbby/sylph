@@ -16,6 +16,7 @@
 package ideal.sylph.spi.job;
 
 import com.google.common.collect.ImmutableSet;
+import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.spi.model.NodeInfo;
 import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.commons.io.FileUtils;
@@ -47,8 +48,9 @@ public abstract class EtlJobActuatorHandle
         //---- flow parser depends ----
         ImmutableSet.Builder<File> builder = ImmutableSet.builder();
         for (NodeInfo nodeInfo : flow.getNodes()) {
-            String driverString = nodeInfo.getDriverClass();
-            Optional<PipelinePluginManager.PipelinePluginInfo> pluginInfo = this.getPluginManager().findPluginInfo(driverString);
+            String driverOrName = nodeInfo.getDriverClass();
+            PipelinePlugin.PipelineType type = PipelinePlugin.PipelineType.valueOf(nodeInfo.getNodeType());
+            Optional<PipelinePluginManager.PipelinePluginInfo> pluginInfo = this.getPluginManager().findPluginInfo(driverOrName, type);
             pluginInfo.ifPresent(plugin -> FileUtils.listFiles(plugin.getPluginFile(), null, true)
                     .forEach(builder::add));
         }

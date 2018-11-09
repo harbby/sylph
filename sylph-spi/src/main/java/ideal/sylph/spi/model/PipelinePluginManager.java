@@ -18,6 +18,7 @@ package ideal.sylph.spi.model;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableTable;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.etl.PipelinePlugin;
@@ -29,7 +30,6 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.google.common.base.Preconditions.checkState;
 import static ideal.sylph.spi.NodeLoader.getPipeConfigInstance;
 import static java.util.Objects.requireNonNull;
 
@@ -53,10 +54,10 @@ public interface PipelinePluginManager
         return new PipelinePluginManager()
         {
             @Override
-            public Class<?> loadPluginDriver(String driverString)
+            public Class<?> loadPluginDriver(String driverOrName, PipelinePlugin.PipelineType pipelineType)
                     throws ClassNotFoundException
             {
-                return Class.forName(driverString);
+                return Class.forName(driverOrName);
             }
         };
     }
@@ -66,21 +67,35 @@ public interface PipelinePluginManager
         return ImmutableSet.of();
     }
 
-    default Class<?> loadPluginDriver(String driverString)
+    default Class<?> loadPluginDriver(String driverOrName, PipelinePlugin.PipelineType pipelineType)
             throws ClassNotFoundException
     {
-        PipelinePluginInfo info = findPluginInfo(driverString).orElseThrow(() -> new ClassNotFoundException("no such driver class " + driverString));
+        PipelinePluginInfo info = findPluginInfo(requireNonNull(driverOrName, "driverOrName is null"), pipelineType)
+                .orElseThrow(() -> new ClassNotFoundException("no such driver class " + driverOrName));
         return Class.forName(info.getDriverClass());
     }
 
-    default Optional<PipelinePluginInfo> findPluginInfo(String driverString)
+    default Optional<PipelinePluginInfo> findPluginInfo(String driverOrName, PipelinePlugin.PipelineType pipelineType)
     {
-        Map<String, PipelinePluginInfo> plugins = new HashMap<>();
-        this.getAllPlugins().forEach(it -> {
-            Stream.of(it.getNames()).forEach(name -> plugins.put(name, it));
-            plugins.put(it.getDriverClass(), it);
-        });
-        return Optional.ofNullable(plugins.get(driverString));
+        ImmutableTable.Builder<String, String, PipelinePluginInfo> builder = ImmutableTable.builder();
+
+        this.getAllPlugins().forEach(info ->
+                ImmutableList.<String>builder().add(info.getNames())
+                        .add(info.getDriverClass()).build()
+                        .stream()
+                        .distinct()
+                        .forEach(name -> builder.put(name + info.getPipelineType(), name, info))
+        );
+        ImmutableTable<String, String, PipelinePluginInfo> plugins = builder.build();
+
+        if (pipelineType == null) {
+            Map<String, PipelinePluginInfo> infoMap = plugins.column(driverOrName);
+            checkState(infoMap.size() <= 1, "Multiple choices appear, please enter `type` to query" + infoMap);
+            return infoMap.values().stream().findFirst();
+        }
+        else {
+            return Optional.ofNullable(plugins.get(driverOrName + pipelineType, driverOrName));
+        }
     }
 
     public static class PipelinePluginInfo
@@ -213,36 +228,42 @@ public interface PipelinePluginManager
      */
     static List<Map> parserDriverConfig(Class<? extends PipelinePlugin> javaClass, ClassLoader classLoader)
     {
-        for (Constructor<?> constructor : javaClass.getConstructors()) {
-            for (Class<?> argmentType : constructor.getParameterTypes()) {
-                if (PluginConfig.class.isAssignableFrom(argmentType)) {
-                    try {
-                        PluginConfig pluginConfig = getPipeConfigInstance(argmentType.asSubclass(PluginConfig.class), classLoader);
-                        return Arrays.stream(argmentType.getDeclaredFields())
-                                .filter(field -> field.getAnnotation(Name.class) != null)
-                                .map(field -> {
-                                    Name name = field.getAnnotation(Name.class);
-                                    Description description = field.getAnnotation(Description.class);
-                                    field.setAccessible(true);
-                                    try {
-                                        Object defaultValue = field.get(pluginConfig);
-                                        return ImmutableMap.of(
-                                                "key", name.value(),
-                                                "description", description == null ? "" : description.value(),
-                                                "default", defaultValue == null ? "" : defaultValue
-                                        );
-                                    }
-                                    catch (IllegalAccessException e) {
-                                        throw new IllegalArgumentException(e);
-                                    }
-                                }).collect(Collectors.toList());
-                    }
-                    catch (Exception e) {
-                        throw new IllegalArgumentException(argmentType + " Unable to be instantiated", e);
-                    }
-                }
+        Constructor<?>[] constructors = javaClass.getConstructors();
+        checkState(constructors.length == 1, "PipelinePlugin " + javaClass + " must ont constructor");
+        Constructor<?> constructor = constructors[0];
+
+        for (Class<?> argmentType : constructor.getParameterTypes()) {
+            if (!PluginConfig.class.isAssignableFrom(argmentType)) {
+                continue;
+            }
+
+            try {
+                PluginConfig pluginConfig = getPipeConfigInstance(argmentType.asSubclass(PluginConfig.class), classLoader);
+
+                return Stream.of(argmentType.getDeclaredFields())
+                        .filter(field -> field.getAnnotation(Name.class) != null)
+                        .map(field -> {
+                            Name name = field.getAnnotation(Name.class);
+                            Description description = field.getAnnotation(Description.class);
+                            field.setAccessible(true);
+                            try {
+                                Object defaultValue = field.get(pluginConfig);
+                                return ImmutableMap.of(
+                                        "key", name.value(),
+                                        "description", description == null ? "" : description.value(),
+                                        "default", defaultValue == null ? "" : defaultValue
+                                );
+                            }
+                            catch (IllegalAccessException e) {
+                                throw new IllegalArgumentException(e);
+                            }
+                        }).collect(Collectors.toList());
+            }
+            catch (Exception e) {
+                throw new IllegalArgumentException(argmentType + " Unable to be instantiated", e);
             }
         }
+
         return ImmutableList.of();
     }
 }

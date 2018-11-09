@@ -31,6 +31,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,19 +47,22 @@ public final class JVMLauncher<R extends Serializable>
     private final Collection<URL> userJars;
     private final Consumer<String> consoleHandler;
     private final boolean depThisJvm;
+    private final List<String> otherVmOps;
 
     private Process process;
 
-    public JVMLauncher(
+    JVMLauncher(
             VmCallable<R> callable,
             Consumer<String> consoleHandler,
             Collection<URL> userJars,
-            boolean depThisJvm)
+            boolean depThisJvm,
+            List<String> otherVmOps)
     {
         this.callable = callable;
         this.userJars = userJars;
         this.consoleHandler = consoleHandler;
         this.depThisJvm = depThisJvm;
+        this.otherVmOps = otherVmOps;
     }
 
     public VmFuture<R> startAndGet()
@@ -81,11 +85,11 @@ public final class JVMLauncher<R extends Serializable>
     }
 
     private Socket startAndGetByte()
-            throws IOException
+            throws IOException, JVMException
     {
         try (ServerSocket sock = new ServerSocket()) {
             sock.bind(new InetSocketAddress(InetAddress.getLocalHost(), 0));
-            ProcessBuilder builder = new ProcessBuilder(buildMainArg(sock.getLocalPort()))
+            ProcessBuilder builder = new ProcessBuilder(buildMainArg(sock.getLocalPort(), otherVmOps))
                     .redirectErrorStream(true);
 
             this.process = builder.start();
@@ -100,8 +104,19 @@ public final class JVMLauncher<R extends Serializable>
                 }
             }
             //---return Socket io Stream
-            Socket client = sock.accept();
-            return client;
+            // 能执行到这里 并跳出上面的where 则说明子进程已经退出
+            //set accept timeOut 3s  //设置最大3秒等待,防止子进程意外退出时 无限等待
+            // 正常情况下子进程在退出时,已经回写完数据， 这里需要设置异常退出时 最大等待时间
+            sock.setSoTimeout(3000);
+            try {
+                return sock.accept();
+            }
+            catch (SocketTimeoutException e) {
+                if (process.isAlive()) {
+                    process.destroy();
+                }
+                throw new JVMException("Jvm child process abnormal exit, exit code " + process.exitValue(), e);
+            }
         }
     }
 
@@ -112,11 +127,14 @@ public final class JVMLauncher<R extends Serializable>
                 .collect(Collectors.joining(File.pathSeparator));
     }
 
-    private List<String> buildMainArg(int port)
+    private List<String> buildMainArg(int port, List<String> otherVmOps)
     {
         File java = new File(new File(System.getProperty("java.home"), "bin"), "java");
-        ArrayList<String> ops = new ArrayList<>();
+        List<String> ops = new ArrayList<>();
         ops.add(java.toString());
+
+        ops.addAll(otherVmOps);
+
         ops.add("-classpath");
         //ops.add(System.getProperty("java.class.path"));
         String userSdkJars = getUserAddClasspath(); //编译时还需要 用户的额外jar依赖
