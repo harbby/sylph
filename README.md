@@ -39,7 +39,7 @@ from topic1
 ## UDF UDAF UDTF
 The registration of the custom function is consistent with the hive
 ```sql
-create function json_parser as 'ideal.sylph.runner.flink.udf.JsonParser';
+create function get_json_object as 'ideal.sylph.runner.flink.udf.UDFJson';
 ```
 
 ## Building
