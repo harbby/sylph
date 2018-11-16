@@ -1,4 +1,4 @@
--- 本例子测试 如何数据源带有event_time 直接设置 WATERMARK
+-- 本例子测试 如何数据源带有event_time 可直接设置 WATERMARK
 create function get_json_object as 'ideal.sylph.runner.flink.udf.UDFJson';
 
 create source table topic1(
