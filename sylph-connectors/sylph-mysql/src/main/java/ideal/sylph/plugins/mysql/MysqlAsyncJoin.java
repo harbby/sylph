@@ -18,6 +18,7 @@ package ideal.sylph.plugins.mysql;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.etl.Collector;
+import ideal.sylph.etl.PluginConfig;
 import ideal.sylph.etl.Row;
 import ideal.sylph.etl.api.RealTimeTransForm;
 import ideal.sylph.etl.join.JoinContext;
@@ -61,20 +62,20 @@ public class MysqlAsyncJoin
     private final String sql;
     private final JoinContext.JoinType joinType;
     private final int selectFieldCnt;
-    private final MyJoinConfig config;
+    private final MysqlJoinConfig config;
     private final Row.Schema schema;
 
     private Connection connection;
 
     private Cache<String, List<Map<String, Object>>> cache;
 
-    public MysqlAsyncJoin(JoinContext context, MyJoinConfig mysqlConfig)
+    public MysqlAsyncJoin(JoinContext context, MysqlJoinConfig mysqlConfig)
             throws Exception
     {
         this.config = mysqlConfig;
         this.schema = context.getSchema();
         this.selectFields = context.getSelectFields();
-        this.selectFieldCnt = context.getSelectFieldCnt();
+        this.selectFieldCnt = selectFields.size();
         this.joinType = context.getJoinType();
         this.joinOnMapping = context.getJoinOnMapping();
 
@@ -103,7 +104,7 @@ public class MysqlAsyncJoin
                 .build();
     }
 
-    private static void checkMysql(MyJoinConfig config, String tableName, Set<String> fieldNames)
+    private static void checkMysql(MysqlJoinConfig config, String tableName, Set<String> fieldNames)
             throws SQLException
     {
         try (Connection connection = DriverManager.getConnection(config.getJdbcUrl(), config.getUser(), config.getPassword());
@@ -203,7 +204,8 @@ public class MysqlAsyncJoin
         }
     }
 
-    public static final class MyJoinConfig
+    public static final class MysqlJoinConfig
+            extends PluginConfig
     {
         @Name("cache.max.number")
         @Description("this is max cache number")
