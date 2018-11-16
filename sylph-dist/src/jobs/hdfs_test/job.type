@@ -1,14 +1,14 @@
 ---
 type: "StreamSql"
 config:
-  taskManagerMemoryMb: 1024
+  taskManagerMemoryMb: 2048
   taskManagerCount: 2
   taskManagerSlots: 2
   jobManagerMemoryMb: 1024
-  checkpointInterval: 10000
+  checkpointInterval: -1
   checkpointTimeout: 600000
   parallelism: 4
   queue: "default"
   appTags:
-  - "sylph"
-  - "flink"
+  - "Sylph"
+  - "Flink"

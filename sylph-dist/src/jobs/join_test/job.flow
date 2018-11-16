@@ -1,10 +1,9 @@
 -- 本例子测试 如何数据源带有event_time 直接设置 WATERMARK
-create function json_parser as 'ideal.sylph.runner.flink.udf.JsonParser';
-create function row_get as 'ideal.sylph.runner.flink.udf.RowGet';
+create function get_json_object as 'ideal.sylph.runner.flink.udf.UDFJson';
 
 create source table topic1(
     key varchar,
-    value varchar,     -- json
+    message varchar,     -- json
     event_time bigint
 ) with (
     type = 'ideal.sylph.plugins.flink.source.TestSource'
@@ -38,8 +37,8 @@ create batch table users(
 -- 描述数据流计算过程
 insert into print_table_sink
 with tb1 as (
-    select key, row_get(rowline,0) as uid , row_get(rowline,1) as ip, event_time, proctime
-    from topic1 , LATERAL TABLE(json_parser(`value`,'user_id,ip')) as T(rowline) 
+    select key, get_json_object(message,'user_id') as uid , get_json_object(message,'ip') as ip, event_time, proctime
+    from topic1
 ),tb2 as (
     select uid,
     count(distinct key) as cnt,
