@@ -9,41 +9,31 @@ Support for
 
 ## StreamSql
 ```sql
+create function get_json_object as 'ideal.sylph.runner.flink.udf.UDFJson';
+
 create source table topic1(
     key varchar,
-    value varchar,
+    message varchar,
     event_time bigint
 ) with (
     type = 'ideal.sylph.plugins.flink.source.TestSource'
 );
 
--- Define the data stream output location
-create sink table print_table_sink(
+-- 定义数据流输出位置
+create sink table event_log(
     key varchar,
-    cnt long,
-    window_time varchar
+    user_id varchar,
+    event_time bigint
 ) with (
-    type = 'ideal.sylph.plugins.flink.sink.PrintSink',   -- print console
-    other = 'demo001'
+    type = 'hdfs',   -- print console
+    hdfs_write_dir = 'hdfs:///tmp/test/data/xx_log',
+    eventTime_field = 'event_time', --哪个字段是event_time
+    format = 'parquet'
 );
 
--- Define WATERMARK, usually you should parse the event_time field from the kafka message
-create view TABLE foo
-WATERMARK event_time FOR rowtime BY ROWMAX_OFFSET(5000)  --event_time Generate time for your real data
-AS 
-with tb1 as (select * from topic1)  --Usually parsing kafka message here
-select * from tb1;
-
--- Describe the data flow calculation process
-insert into print_table_sink
-with tb2 as (
-    select key,
-    count(1),
-    cast(TUMBLE_START(rowtime,INTERVAL '5' SECOND) as varchar)|| '-->' 
-    || cast(TUMBLE_END(rowtime,INTERVAL '5' SECOND) as varchar) AS window_time
-    from foo where key is not null
-    group by key,TUMBLE(rowtime,INTERVAL '5' SECOND)
-) select * from tb2
+insert into event_log
+select key,get_json_object(message, 'get_json_object') as user_id,event_time 
+from topic1
 ```
 
 ## UDF UDAF UDTF
