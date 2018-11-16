@@ -109,15 +109,15 @@ public class FlinkStreamSqlActuator
     {
         SqlFlow flow = (SqlFlow) inFlow;
         //----- compile --
-        final int parallelism = ((FlinkJobConfig) jobConfig).getConfig().getParallelism();
-        JobGraph jobGraph = compile(jobId, pluginManager, parallelism, flow.getSqlSplit(), jobClassLoader);
+        final JobParameter jobParameter = ((FlinkJobConfig) jobConfig).getConfig();
+        JobGraph jobGraph = compile(jobId, pluginManager, jobParameter, flow.getSqlSplit(), jobClassLoader);
         return new FlinkJobHandle(jobGraph);
     }
 
     private static JobGraph compile(
             String jobId,
             PipelinePluginManager pluginManager,
-            int parallelism,
+            JobParameter jobConfig,
             String[] sqlSplit,
             URLClassLoader jobClassLoader)
     {
@@ -125,8 +125,7 @@ public class FlinkStreamSqlActuator
                 .setConsole((line) -> System.out.println(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
                 .setCallable(() -> {
                     System.out.println("************ job start ***************");
-                    StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.createLocalEnvironment();
-                    execEnv.setParallelism(parallelism);
+                    StreamExecutionEnvironment execEnv = FlinkEnvFactory.getStreamEnv(jobConfig);
                     StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(execEnv);
                     StreamSqlBuilder streamSqlBuilder = new StreamSqlBuilder(tableEnv, pluginManager, new AntlrSqlParser());
                     Arrays.stream(sqlSplit).forEach(streamSqlBuilder::buildStreamBySql);

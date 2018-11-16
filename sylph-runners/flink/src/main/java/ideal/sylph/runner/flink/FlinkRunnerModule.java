@@ -116,11 +116,7 @@ public class FlinkRunnerModule
             }
         });
 
-        YarnConfiguration yarnConf = new YarnConfiguration(hadoopConf);
-        //        try (PrintWriter pw = new PrintWriter(new FileWriter(yarnSite))) { //write local file
-        //            yarnConf.writeXml(pw);
-        //        }
-        return yarnConf;
+        return new YarnConfiguration(hadoopConf);
     }
 
     private static File getFlinkJarFile()

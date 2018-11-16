@@ -1,8 +1,8 @@
-create function json_parser as 'ideal.sylph.runner.flink.udf.JsonParser';
+create function get_json_object as 'ideal.sylph.runner.flink.udf.UDFJson';
 
 create source table topic1(
     key varchar,
-    value varchar,
+    message varchar,
     event_time bigint
 ) with (
     type = 'ideal.sylph.plugins.flink.source.TestSource'

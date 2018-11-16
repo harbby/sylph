@@ -5,6 +5,8 @@ config:
   taskManagerCount: 2
   taskManagerSlots: 2
   jobManagerMemoryMb: 1024
+  checkpointInterval: 10000
+  checkpointTimeout: 600000
   parallelism: 4
   queue: "default"
   appTags:

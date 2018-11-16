@@ -37,8 +37,6 @@ public interface JoinContext
 
     public List<SelectField> getSelectFields();
 
-    public int getSelectFieldCnt();
-
     public Map<Integer, String> getJoinOnMapping();
 
     public Row.Schema getSchema();

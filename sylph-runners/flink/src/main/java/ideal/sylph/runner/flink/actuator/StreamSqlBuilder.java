@@ -18,6 +18,7 @@ package ideal.sylph.runner.flink.actuator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import ideal.common.ioc.Binds;
+import ideal.sylph.etl.SinkContext;
 import ideal.sylph.parser.antlr.AntlrSqlParser;
 import ideal.sylph.parser.antlr.ParsingException;
 import ideal.sylph.parser.antlr.tree.CreateFunction;
@@ -53,6 +54,7 @@ import java.util.function.UnaryOperator;
 import static ideal.sylph.parser.antlr.tree.CreateTable.Type.BATCH;
 import static ideal.sylph.parser.antlr.tree.CreateTable.Type.SINK;
 import static ideal.sylph.parser.antlr.tree.CreateTable.Type.SOURCE;
+import static ideal.sylph.runner.flink.actuator.StreamSqlUtil.buildSylphSchema;
 import static ideal.sylph.runner.flink.actuator.StreamSqlUtil.buildWaterMark;
 import static ideal.sylph.runner.flink.actuator.StreamSqlUtil.checkStream;
 import static ideal.sylph.runner.flink.actuator.StreamSqlUtil.getTableRowTypeInfo;
@@ -156,8 +158,22 @@ class StreamSqlBuilder
                 .bind(org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.class, tableEnv.execEnv())
                 .bind(org.apache.flink.table.api.StreamTableEnvironment.class, tableEnv)
                 .bind(org.apache.flink.table.api.java.StreamTableEnvironment.class, tableEnv)
-                //.put(org.apache.flink.streaming.api.scala.StreamExecutionEnvironment.class, null) // execEnv
-                //.put(org.apache.flink.table.api.scala.StreamTableEnvironment.class, null)  // tableEnv
+                .bind(SinkContext.class, new SinkContext()
+                {
+                    private final ideal.sylph.etl.Row.Schema schema = buildSylphSchema(tableTypeInfo);
+
+                    @Override
+                    public ideal.sylph.etl.Row.Schema getSchema()
+                    {
+                        return schema;
+                    }
+
+                    @Override
+                    public String getSinkTable()
+                    {
+                        return tableName;
+                    }
+                })
                 .build();
         NodeLoader<DataStream<Row>> loader = new FlinkNodeLoader(pluginManager, binds);
 

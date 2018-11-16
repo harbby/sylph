@@ -1,0 +1,24 @@
+create function get_json_object as 'ideal.sylph.runner.flink.udf.UDFJson';
+
+create source table topic1(
+    key varchar,
+    message varchar,
+    event_time bigint
+) with (
+    type = 'ideal.sylph.plugins.flink.source.TestSource'
+);
+
+-- 定义数据流输出位置
+create sink table event_log(
+    key varchar,
+    message varchar,
+    event_time bigint
+) with (
+    type = 'hdfs',   -- print console
+    hdfs_write_dir = 'hdfs:///tmp/test/data/xx_log',
+    eventTime_field = 'event_time', --哪个字段是event_time
+    format = 'parquet'
+);
+
+insert into event_log
+select key,message,event_time from topic1

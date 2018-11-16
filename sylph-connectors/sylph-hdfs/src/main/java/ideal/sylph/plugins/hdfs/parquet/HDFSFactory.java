@@ -13,17 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.plugins.flink.source;
+package ideal.sylph.plugins.hdfs.parquet;
 
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.table.api.java.StreamTableEnvironment;
+import ideal.sylph.etl.Row;
 
-public final class FlinkEnvUtil
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
+public interface HDFSFactory
 {
-    private FlinkEnvUtil() {}
+    String getWriteDir();
 
-    public static StreamExecutionEnvironment getFlinkEnv(StreamTableEnvironment tableEnv)
-    {
-        return tableEnv.execEnv();
-    }
+    void writeLine(long eventTime, Map<String, Object> evalRow)
+            throws IOException;
+
+    public void writeLine(long eventTime, List<Object> evalRow)
+            throws IOException;
+
+    public void writeLine(long eventTime, Row row)
+            throws IOException;
+
+    public void close()
+            throws IOException;
 }

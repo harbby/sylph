@@ -1,4 +1,3 @@
-apply plugin: 'scala'
 
 dependencies {
     compileOnly(group: 'org.apache.flink', name: 'flink-streaming-scala_2.11', version: deps.flink) {
@@ -8,7 +7,5 @@ dependencies {
     //--table sql---
     compileOnly group: 'org.apache.flink', name: 'flink-table_2.11', version:deps.flink
 
-    compileOnly group: 'org.scala-lang', name: 'scala-library', version: '2.11.12'
-    compile group: 'org.apache.flink', name: 'flink-connector-kafka-0.11_2.11', version:deps.flink
-
+    compile group: 'org.apache.flink', name: 'flink-connector-kafka-0.10_2.11', version:deps.flink
 }

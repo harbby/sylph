@@ -16,42 +16,58 @@
 package ideal.sylph.runner.flink.udf;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.table.functions.TableFunction;
-import org.apache.flink.types.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * udtf
+ * <p>
+ * bug: Will cause problems with the join dimension table
+ * Recommended UDFJson.class
  */
-public final class JsonParser
-        extends TableFunction<Row>
+@Deprecated
+final class JsonParser
+        extends TableFunction<Map<String, String>>
 {
     private static final Logger logger = LoggerFactory.getLogger(JsonParser.class);
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    public JsonParser() {}
+    private JsonParser() {}
 
-    private void transEval(final String jsonStr, final String... keys)
+    @Override
+    public TypeInformation<Map<String, String>> getResultType()
     {
-        try {
-            Map object = MAPPER.readValue(jsonStr, Map.class);
-            Row row = new Row(keys.length);
-            for (int i = 0; i < keys.length; i++) {
-                Object value = object.get(keys[i]);
-                row.setField(i, value == null ? null : value.toString());
-            }
-            collect(row);
-        }
-        catch (Exception e) {
-            logger.error("parser json failed:{}", jsonStr, e);
-        }
+        //return Types.ROW(Types.STRING,Types.STRING);
+        return Types.MAP(Types.STRING, Types.STRING);
     }
 
-    public void eval(final String str, final String keys)
+    /**
+     * @return Map[string, json string or null]
+     */
+    @SuppressWarnings("unchecked")
+    public void eval(final String jsonStr, final String... keys)
     {
-        this.transEval(str, keys.split(","));
+        try {
+            Map<String, Object> object = MAPPER.readValue(jsonStr, Map.class);
+            Stream<String> keyStream = keys.length == 0 ? object.keySet().stream() : Stream.of(keys);
+
+            Map<String, String> out = keyStream
+                    .collect(Collectors.toMap(k -> k, v -> {
+                        Object value = object.get(v);
+                        return value instanceof String ? (String) value : value.toString();
+                    }, (k1, k2) -> k1));
+            collect(out);
+        }
+        catch (IOException e) {
+            logger.error("parser json failed:{}", jsonStr, e);
+        }
     }
 }

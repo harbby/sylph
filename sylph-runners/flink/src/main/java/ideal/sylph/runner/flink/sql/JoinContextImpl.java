@@ -33,7 +33,6 @@ public class JoinContextImpl
     private final String batchTable;
     private final JoinType joinType;
     private final List<SelectField> selectFields;
-    private final int selectFieldCnt;
     private final Map<Integer, String> joinOnMapping;
 
     private JoinContextImpl(String batchTable, JoinType joinType, List<SelectField> selectFields, Map<Integer, String> joinOnMapping)
@@ -42,35 +41,34 @@ public class JoinContextImpl
         this.joinType = joinType;
         this.selectFields = selectFields;
 
-        this.selectFieldCnt = selectFields.size();
         this.joinOnMapping = joinOnMapping;
     }
 
+    @Override
     public String getBatchTable()
     {
         return batchTable;
     }
 
+    @Override
     public JoinType getJoinType()
     {
         return joinType;
     }
 
+    @Override
     public List<SelectField> getSelectFields()
     {
         return selectFields;
     }
 
-    public int getSelectFieldCnt()
-    {
-        return selectFieldCnt;
-    }
-
+    @Override
     public Map<Integer, String> getJoinOnMapping()
     {
         return joinOnMapping;
     }
 
+    @Override
     public Row.Schema getSchema()
     {
         return Row.Schema.newBuilder().build();

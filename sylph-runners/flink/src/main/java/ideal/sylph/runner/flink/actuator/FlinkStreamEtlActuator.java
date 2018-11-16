@@ -90,8 +90,8 @@ public class FlinkStreamEtlActuator
     {
         EtlFlow flow = (EtlFlow) inFlow;
 
-        final int parallelism = ((FlinkJobConfig) jobConfig).getConfig().getParallelism();
-        JobGraph jobGraph = compile(jobId, flow, parallelism, jobClassLoader, pluginManager);
+        final JobParameter jobParameter = ((FlinkJobConfig) jobConfig).getConfig();
+        JobGraph jobGraph = compile(jobId, flow, jobParameter, jobClassLoader, pluginManager);
         return new FlinkJobHandle(jobGraph);
     }
 
@@ -147,14 +147,13 @@ public class FlinkStreamEtlActuator
                 .toString();
     }
 
-    private static JobGraph compile(String jobId, EtlFlow flow, int parallelism, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
+    private static JobGraph compile(String jobId, EtlFlow flow, JobParameter jobParameter, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
     {
         //---- build flow----
         JVMLauncher<JobGraph> launcher = JVMLaunchers.<JobGraph>newJvm()
                 .setCallable(() -> {
                     System.out.println("************ job start ***************");
-                    StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.createLocalEnvironment();
-                    execEnv.setParallelism(parallelism);
+                    StreamExecutionEnvironment execEnv = FlinkEnvFactory.getStreamEnv(jobParameter);
                     StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(execEnv);
                     App<StreamTableEnvironment> app = new GraphApp<StreamTableEnvironment, DataStream<Row>>()
                     {

@@ -28,9 +28,12 @@ include 'sylph-connectors'
 include 'sylph-connectors:sylph-flink'
 include 'sylph-connectors:sylph-spark'
 include 'sylph-connectors:sylph-mysql'
-findProject(':sylph-connectors:sylph-mysql')?.name = 'sylph-mysql'
+include 'sylph-connectors:sylph-hdfs'
+include 'sylph-connectors:sylph-kafka09'
 
 //----
 include 'sylph-dist'
 include 'sylph-parser'
 include 'sylph-docs'
+
+
