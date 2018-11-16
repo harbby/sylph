@@ -89,8 +89,10 @@ public class FlinkYarnJobLauncher
                 yarnAppId,
                 job.getId(),
                 userProvidedJars);
-
-        start(descriptor, jobHandle.getJobGraph());
+        JobGraph jobGraph = jobHandle.getJobGraph();
+        //todo: How to use `savepoints` to restore a job
+        //jobGraph.setSavepointRestoreSettings(SavepointRestoreSettings.forPath("hdfs:///tmp/sylph/apps/savepoints"));
+        start(descriptor, jobGraph);
     }
 
     @VisibleForTesting

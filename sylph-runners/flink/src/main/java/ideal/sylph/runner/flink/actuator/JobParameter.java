@@ -18,28 +18,35 @@ package ideal.sylph.runner.flink.actuator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableSet;
+import org.apache.flink.streaming.api.environment.CheckpointConfig;
 
-import java.util.Objects;
+import java.io.Serializable;
 import java.util.Set;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class JobParameter
+        implements Serializable
 {
     private int parallelism = 4;
-
-    @JsonProperty("queue")
     private String queue = "default";
 
     private int taskManagerMemoryMb = 1024;
     private int taskManagerCount = 2;
     private int taskManagerSlots = 2;
     private int jobManagerMemoryMb = 1024;
-    private Set<String> appTags = ImmutableSet.of("sylph", "flink");
+    private Set<String> appTags = ImmutableSet.of("Sylph", "Flink");
+
+    /**
+     * checkpoint
+     */
+    private int checkpointInterval = -1;   //see: CheckpointConfig.checkpointInterval;
+    private long checkpointTimeout = CheckpointConfig.DEFAULT_TIMEOUT;
 
     public JobParameter() {}
 
+    @JsonProperty("queue")
     public void setQueue(String queue)
     {
         this.queue = queue;
@@ -84,7 +91,7 @@ public class JobParameter
     }
 
     /**
-     * The name of the queue to which the application should be submitted
+     * App submitted to the queue used by yarn
      *
      * @return queue
      **/
@@ -119,25 +126,24 @@ public class JobParameter
         return taskManagerMemoryMb;
     }
 
-    @Override
-    public boolean equals(Object o)
+    public int getCheckpointInterval()
     {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        JobParameter jobParameter = (JobParameter) o;
-        return Objects.equals(this.queue, jobParameter.queue) &&
-                Objects.equals(this.taskManagerCount, jobParameter.taskManagerCount) &&
-                Objects.equals(this.taskManagerMemoryMb, jobParameter.taskManagerMemoryMb);
+        return checkpointInterval;
     }
 
-    @Override
-    public int hashCode()
+    public void setCheckpointInterval(int checkpointInterval)
     {
-        return Objects.hash(queue, taskManagerMemoryMb, taskManagerCount);
+        this.checkpointInterval = checkpointInterval;
+    }
+
+    public long getCheckpointTimeout()
+    {
+        return checkpointTimeout;
+    }
+
+    public void setCheckpointTimeout(long checkpointTimeout)
+    {
+        this.checkpointTimeout = checkpointTimeout;
     }
 
     @Override
@@ -146,7 +152,12 @@ public class JobParameter
         return toStringHelper(this)
                 .add("queue", queue)
                 .add("memory", taskManagerMemoryMb)
+                .add("taskManagerCount", taskManagerCount)
+                .add("jobManagerMemoryMb", jobManagerMemoryMb)
+                .add("parallelism", parallelism)
                 .add("vCores", taskManagerSlots)
+                .add("checkpointInterval", checkpointInterval)
+                .add("checkpointTimeout", checkpointTimeout)
                 .toString();
     }
 }

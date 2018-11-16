@@ -27,6 +27,7 @@ dependencies {
     exclude(module: 'guava')
     exclude(module: 'calcite-core')
   }
+  compile 'com.jayway.jsonpath:json-path:2.4.0'
 
   //colour
   compile group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'

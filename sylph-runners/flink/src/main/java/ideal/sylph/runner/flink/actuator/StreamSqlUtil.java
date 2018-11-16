@@ -166,4 +166,16 @@ public final class StreamSqlUtil
                 throw new IllegalArgumentException("this TYPE " + type + " have't support!");
         }
     }
+
+    public static ideal.sylph.etl.Row.Schema buildSylphSchema(RowTypeInfo rowTypeInfo)
+    {
+        String[] names = rowTypeInfo.getFieldNames();
+        ideal.sylph.etl.Row.Schema.SchemaBuilder builder = ideal.sylph.etl.Row.Schema.newBuilder();
+        for (int i = 0; i < rowTypeInfo.getArity(); i++) {
+            Class<?> type = rowTypeInfo.getTypeAt(i).getTypeClass();
+            String name = names[i];
+            builder.add(name, type);
+        }
+        return builder.build();
+    }
 }
