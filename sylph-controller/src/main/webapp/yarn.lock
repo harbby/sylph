@@ -36,9 +36,9 @@ d3@mbostock-bower/d3-bower#5.0.0:
   version "0.0.0"
   resolved "https://codeload.github.com/mbostock-bower/d3-bower/tar.gz/940a7978acad59aacb11c81cd00e1be683eaccaa"
 
-fontawesome@4.7.0:
+fontawesome@FortAwesome/Font-Awesome#4.7.0:
   version "4.7.0"
-  resolved "https://registry.yarnpkg.com/fontawesome/-/fontawesome-4.7.0.tgz#039a48639219f0905e890f97af7efa70c4700404"
+  resolved "https://codeload.github.com/FortAwesome/Font-Awesome/tar.gz/a8386aae19e200ddb0f6845b5feeee5eb7013687"
 
 jquery-ui@components/jqueryui#1.9.2:
   version "1.9.2"
