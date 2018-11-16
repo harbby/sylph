@@ -98,10 +98,24 @@ public interface Row
             implements Serializable
     {
         private final List<Field> fields;
+        private final List<String> names;
+        private final List<Class<?>> types;
 
         private Schema(List<Field> fields)
         {
             this.fields = requireNonNull(fields, "fields must not null");
+            this.names = fields.stream().map(Field::getName).collect(Collectors.toList());
+            this.types = fields.stream().map(Field::getJavaType).collect(Collectors.toList());
+        }
+
+        public List<String> getFieldNames()
+        {
+            return names;
+        }
+
+        public List<Class<?>> getFieldTypes()
+        {
+            return types;
         }
 
         public List<Field> getFields()

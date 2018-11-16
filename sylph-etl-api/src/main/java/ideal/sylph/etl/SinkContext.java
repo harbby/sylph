@@ -13,31 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.etl.join;
+package ideal.sylph.etl;
 
-import ideal.sylph.etl.Row;
+import java.io.Serializable;
 
-import java.util.List;
-import java.util.Map;
-
-public interface JoinContext
+public interface SinkContext
+        extends Serializable
 {
-    public enum JoinType
-    {
-        INNER,
-        FULL,
-        CROSS,
-        LEFT,
-        RIGHT
-    }
-
-    public String getBatchTable();
-
-    public JoinType getJoinType();
-
-    public List<SelectField> getSelectFields();
-
-    public Map<Integer, String> getJoinOnMapping();
-
     public Row.Schema getSchema();
+
+    public String getSinkTable();
 }

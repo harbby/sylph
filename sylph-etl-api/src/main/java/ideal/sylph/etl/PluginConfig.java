@@ -18,12 +18,15 @@ package ideal.sylph.etl;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public abstract class PluginConfig
         implements Serializable
 {
+    private final Map<String, Object> otherConfig = Collections.emptyMap();
+
     @Override
     public String toString()
     {
@@ -39,5 +42,10 @@ public abstract class PluginConfig
                     }
                 }));
         return map.toString();
+    }
+
+    public Map<String, Object> getOtherConfig()
+    {
+        return otherConfig;
     }
 }
