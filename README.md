@@ -1,11 +1,10 @@
 # Sylph [![Build Status](http://img.shields.io/travis/harbby/sylph.svg?style=flat&branch=master)](https://travis-ci.org/harbby/sylph)
-The sylph is stream and batch Job management platform. 
-The sylph core idea is to build distributed applications through workflow descriptions.
+The Sylph is Stream Job management platform. 
+The Sylph core idea is to build distributed applications through workflow descriptions.
 Support for 
 * spark1.x Spark-Streaming
 * spark2.x Structured-Streaming 
 * flink stream
-* batch job
 
 ## StreamSql
 ```sql
@@ -25,14 +24,14 @@ create sink table event_log(
     user_id varchar,
     event_time bigint
 ) with (
-    type = 'hdfs',   -- print console
+    type = 'hdfs',   -- write hdfs
     hdfs_write_dir = 'hdfs:///tmp/test/data/xx_log',
-    eventTime_field = 'event_time', --哪个字段是event_time
+    eventTime_field = 'event_time',
     format = 'parquet'
 );
 
 insert into event_log
-select key,get_json_object(message, 'get_json_object') as user_id,event_time 
+select key,get_json_object(message, 'user_id') as user_id,event_time 
 from topic1
 ```
 
@@ -80,5 +79,5 @@ Sylph comes with sample configuration that should work out-of-the-box for develo
 We need more power to improve the view layer. If you are interested, you can contact me by email.
 
 ## Other
-* sylph被设计来处理分布式实时ETL,实时StreamSql计算,分布式程序监控和托管以及离线周期任务.
+* sylph被设计来处理分布式实时ETL,实时StreamSql计算,分布式程序监控和托管.
 * 加入QQ群 438625067
