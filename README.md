@@ -75,7 +75,7 @@ Sylph comes with sample configuration that should work out-of-the-box for develo
 ## Useful mailing lists
 1. yezhixinghai@gmail.com - For discussions about code, design and features
 2. lydata_jia@163.com -  For discussions about code, design and features
-3. jeific@gmail.com - For discussions about code, design and features
+3. jeific@163.com - For discussions about code, design and features
 ## Help
 We need more power to improve the view layer. If you are interested, you can contact me by email.
 
