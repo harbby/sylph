@@ -81,7 +81,7 @@ public class StreamSqlResource
             String jobId = requireNonNull(request.getParameter("jobId"), "job jobId 不能为空");
             String flow = request.getParameter("query");
             String configString = request.getParameter("config");
-
+            checkArgument(isNotBlank(jobId),"JobId IS NULL");
             checkArgument(isNotBlank(flow), "SQL query IS NULL");
             sylphContext.saveJob(jobId, flow, ImmutableMap.of("type", "StreamSql", "config", parserJobConfig(configString)));
             Map out = ImmutableMap.of(

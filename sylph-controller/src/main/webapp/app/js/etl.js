@@ -332,7 +332,7 @@ jsPlumb.ready(function () {
             initAllTrees();
         },
         error: function (result) {
-            alert("执行引擎 actuators获取失败");
+            alert("Engine list failed to get");
         }
     });
 
@@ -420,7 +420,7 @@ jsPlumb.ready(function () {
                 //instance.bind("jsPlumbDemoNodeAdded", function(el) {renderer.ingest(el);  });
             },
             error: function (result) {
-                alert("接口拉取失败");
+                alert("Data get failed");
             }
         });
     }
@@ -428,8 +428,8 @@ jsPlumb.ready(function () {
     /*点击保存*/
     $("#flow_save").click(function () {
         var task = $("#task_name").val();
-        if (task == "") {
-            alert("任务名称不能为空");
+        if (task === "") {
+            alert("Job name cannot be empty");
             return;
         }
         var formData = new FormData();
@@ -450,14 +450,14 @@ jsPlumb.ready(function () {
             contentType: false
         }).done(function (result) {
             if (result.status == "ok") {
-                alert("保存成功");
+                alert("Successfully saved");
                 window.location.href = "index.html";
             }
             else {
                 alert(result.msg);
             }
         }).fail(function (data) {
-            alert("任务保存失败");
+            alert("Save failed");
         });
     });
 
