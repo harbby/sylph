@@ -37,9 +37,10 @@ import java.util.concurrent.TimeUnit;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.ILLEGAL_OPERATION;
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_START_ERROR;
+import static ideal.sylph.spi.job.Job.Status.KILLING;
 import static ideal.sylph.spi.job.Job.Status.RUNNING;
+import static ideal.sylph.spi.job.Job.Status.STARTED_ERROR;
 import static ideal.sylph.spi.job.Job.Status.STARTING;
-import static ideal.sylph.spi.job.Job.Status.START_ERROR;
 
 /**
  * JobManager
@@ -47,103 +48,55 @@ import static ideal.sylph.spi.job.Job.Status.START_ERROR;
 public final class JobManager
 {
     private static final Logger logger = LoggerFactory.getLogger(JobManager.class);
+    private static final int MaxSubmitJobNum = 10;
 
     @Inject private JobStore jobStore;
     @Inject private RunnerManager runnerManger;
     @Inject private MetadataManager metadataManager;
 
-    //@Inject
-    //@Named("max.submitJob")
-    private int maxSubmitJob = 10;
+    private final ConcurrentMap<String, JobContainer> runningContainers = new ConcurrentHashMap<>();
+
+    private volatile boolean run;
 
     /**
      * 用来做耗时的->任务启动提交到yarn的操作
      */
-    private ExecutorService jobStartPool = Executors.newFixedThreadPool(maxSubmitJob);
-
-    /**
-     * 上线job
-     */
-    public synchronized void startJob(String jobId)
-    {
-        if (runningContainers.containsKey(jobId)) {
-            throw new SylphException(JOB_START_ERROR, "Job " + jobId + " already started");
-        }
-        Job job = this.getJob(jobId).orElseThrow(() -> new SylphException(JOB_START_ERROR, "Job " + jobId + " not found with jobStore"));
-        runningContainers.computeIfAbsent(jobId, k -> runnerManger.createJobContainer(job, null));
-        logger.info("runningContainers size:{}", runningContainers.size());
-    }
-
-    /**
-     * 下线Job
-     */
-    public void stopJob(String jobId)
-            throws Exception
-    {
-        JobContainer container = runningContainers.remove(jobId);
-        if (container != null) {
-            metadataManager.removeMetadata(jobId);
-            container.shutdown();
-        }
-    }
-
-    public synchronized void saveJob(@NotNull Job job)
-    {
-        jobStore.saveJob(job);
-    }
-
-    public void removeJob(String jobId)
-            throws IOException
-    {
-        if (runningContainers.containsKey(jobId)) {
-            throw new SylphException(ILLEGAL_OPERATION, "Can only delete tasks that have been offline");
-        }
-        jobStore.removeJob(jobId);
-    }
-
-    public Optional<Job> getJob(String jobId)
-    {
-        return jobStore.getJob(jobId);
-    }
-
-    @NotNull
-    public Collection<Job> listJobs()
-    {
-        return jobStore.getJobs();
-    }
-
-    private final ConcurrentMap<String, JobContainer> runningContainers = new ConcurrentHashMap<>();
-
-    private boolean run;
+    private ExecutorService jobStartPool = Executors.newFixedThreadPool(MaxSubmitJobNum);
 
     private final Thread monitorService = new Thread(() -> {
         while (run) {
+            Thread.currentThread().setName("job_monitor");
             runningContainers.forEach((jobId, container) -> {
                 try {
                     Job.Status status = container.getStatus();
                     switch (status) {
-                        case RUNNING:
-                        case START_ERROR:
-                            break;
-                        case STARTING:
-                            //-------正在启动中-------
-                            //TODO: 判断任务启动 用掉耗时 如果大于5分钟 则进行放弃
-                            break;
-                        default:
+                        case STOP: {
                             jobStartPool.submit(() -> {
                                 try {
+                                    Thread.currentThread().setName("job_submit_" + jobId);
                                     logger.warn("Job {}[{}] Status is {}, Soon to start", jobId,
                                             container.getRunId(), status);
                                     container.setStatus(STARTING);
                                     Optional<String> runResult = container.run();
-                                    container.setStatus(RUNNING);
-                                    runResult.ifPresent(result -> metadataManager.addMetadata(jobId, result));
+                                    if (container.getStatus() == KILLING) {
+                                        container.shutdown();
+                                    }
+                                    else {
+                                        container.setStatus(RUNNING);
+                                        runResult.ifPresent(result -> metadataManager.addMetadata(jobId, result));
+                                    }
                                 }
                                 catch (Exception e) {
-                                    container.setStatus(START_ERROR);
+                                    container.setStatus(STARTED_ERROR);
                                     logger.warn("job {} start error", jobId, e);
                                 }
                             }); //需要重启 Job
+                        }
+                        case RUNNING:
+                        case STARTED_ERROR:
+                        case STARTING:
+                        case KILLING:
+                        default:
                     }
                 }
                 catch (Exception e) {
@@ -159,6 +112,63 @@ public final class JobManager
             }
         }
     });
+
+    /**
+     * deploy job
+     */
+    public synchronized void startJob(String jobId)
+    {
+        if (runningContainers.containsKey(jobId)) {
+            throw new SylphException(JOB_START_ERROR, "Job " + jobId + " already started");
+        }
+        Job job = this.getJob(jobId).orElseThrow(() -> new SylphException(JOB_START_ERROR, "Job " + jobId + " not found with jobStore"));
+        runningContainers.computeIfAbsent(jobId, k -> runnerManger.createJobContainer(job, null));
+        logger.info("runningContainers size:{}", runningContainers.size());
+    }
+
+    /**
+     * stop Job
+     */
+    public synchronized void stopJob(String jobId)
+            throws Exception
+    {
+        JobContainer container = runningContainers.remove(jobId);
+        if (container != null) {
+            metadataManager.removeMetadata(jobId);
+            container.shutdown();
+        }
+    }
+
+    public void saveJob(@NotNull Job job)
+    {
+        jobStore.saveJob(job);
+    }
+
+    public void removeJob(String jobId)
+            throws IOException
+    {
+        if (runningContainers.containsKey(jobId)) {
+            throw new SylphException(ILLEGAL_OPERATION, "Can only delete tasks that have been offline");
+        }
+        jobStore.removeJob(jobId);
+    }
+
+    /**
+     * Get the compiled job
+     *
+     * @param jobId
+     * @return Job
+     */
+    public Optional<Job> getJob(String jobId)
+    {
+        return jobStore.getJob(jobId);
+    }
+
+    @NotNull
+    public Collection<Job> listJobs()
+    {
+        return jobStore.getJobs();
+    }
 
     /**
      * start jobManager

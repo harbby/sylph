@@ -74,7 +74,7 @@ public class LocalJobStore
     }
 
     @Override
-    public void saveJob(@NotNull Job job)
+    public synchronized void saveJob(@NotNull Job job)
     {
         File jobDir = job.getWorkDir();
         try {
@@ -94,19 +94,19 @@ public class LocalJobStore
     }
 
     @Override
-    public Optional<Job> getJob(String jobId)
+    public synchronized Optional<Job> getJob(String jobId)
     {
         return Optional.ofNullable(jobs.get(jobId));
     }
 
     @Override
-    public Collection<Job> getJobs()
+    public synchronized Collection<Job> getJobs()
     {
         return jobs.values();
     }
 
     @Override
-    public void removeJob(String jobId)
+    public synchronized void removeJob(String jobId)
             throws IOException
     {
         Job job = requireNonNull(jobs.remove(jobId), jobId + " is not exists");
@@ -117,7 +117,7 @@ public class LocalJobStore
      * load local jobs dir job
      */
     @Override
-    public void loadJobs()
+    public synchronized void loadJobs()
     {
         File jobsDir = new File(config.getJobWorkDir());
         if (!jobsDir.exists() || jobsDir.isFile()) {
