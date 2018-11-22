@@ -42,6 +42,7 @@ import static org.apache.flink.shaded.guava18.com.google.common.base.Preconditio
 public class ElasticsearchSink
         implements RealTimeSink
 {
+    private static final int MAX_BATCH_BULK = 100;
     private final Row.Schema schema;
     private final ElasticsearchSinkConfig config;
 
@@ -85,7 +86,7 @@ public class ElasticsearchSink
             requestBuilder.setSource(map);
             bulkBuilder.add(requestBuilder.request());
         }
-        if (cnt.getAndIncrement() > 100) {
+        if (cnt.getAndIncrement() > MAX_BATCH_BULK) {
             client.bulk(bulkBuilder.request()).actionGet();
             cnt.set(0);
             bulkBuilder = client.prepareBulk();
