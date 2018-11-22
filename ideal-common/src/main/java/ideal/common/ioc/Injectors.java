@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -30,7 +31,7 @@ public class Injectors
 
     private Injectors() {}
 
-    public final <T, O> T getInstance(Class<T> driver, Binds binds, Function<Class<?>, ?> other)
+    public final <T> T getInstance(Class<T> driver, Binds binds, Function<Class<?>, ?> other)
             throws InjectorException
     {
         try {
@@ -39,12 +40,18 @@ public class Injectors
         catch (RuntimeException e) {
             throw e;
         }
+        catch (InvocationTargetException e) {
+            if (e.getCause() instanceof RuntimeException) {
+                throw (RuntimeException) e.getCause();
+            }
+            throw new InjectorException(e.getMessage(), e.getCause());
+        }
         catch (Exception e) {
-            throw new InjectorException(e);
+            throw new InjectorException(e.getMessage(), e);
         }
     }
 
-    private static <T, O> T instance(Class<T> driver, Binds binds, Function<Class<?>, ?> other)
+    private static <T> T instance(Class<T> driver, Binds binds, Function<Class<?>, ?> other)
             throws Exception
     {
         @SuppressWarnings("unchecked")
@@ -62,7 +69,7 @@ public class Injectors
         for (Class<?> argType : constructor.getParameterTypes()) {
             Object value = binds.get(argType);
             if (value == null) {
-                Object otherValue = other.apply((Class<O>) argType);
+                Object otherValue = other.apply(argType);
                 checkState(otherValue != null, String.format("Cannot find instance of parameter [%s], unable to inject", argType));
                 checkState(argType.isInstance(otherValue));
                 builder.add(otherValue);
