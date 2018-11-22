@@ -24,7 +24,6 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.JobManagerOptions;
 import org.apache.flink.configuration.RestOptions;
 import org.apache.flink.runtime.jobgraph.JobGraph;
-import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.ShutdownHookUtil;
 import org.apache.flink.yarn.AbstractYarnClusterDescriptor;
 import org.apache.flink.yarn.Utils;
@@ -60,6 +59,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static java.util.Objects.requireNonNull;
 
 public class YarnClusterDescriptor
         extends AbstractYarnClusterDescriptor
@@ -404,16 +405,15 @@ public class YarnClusterDescriptor
     private class DeploymentFailureHook
             extends Thread
     {
-
         private final YarnClient yarnClient;
         private final YarnClientApplication yarnApplication;
         private final Path yarnFilesDir;
 
         DeploymentFailureHook(YarnClient yarnClient, YarnClientApplication yarnApplication, Path yarnFilesDir)
         {
-            this.yarnClient = Preconditions.checkNotNull(yarnClient);
-            this.yarnApplication = Preconditions.checkNotNull(yarnApplication);
-            this.yarnFilesDir = Preconditions.checkNotNull(yarnFilesDir);
+            this.yarnClient = requireNonNull(yarnClient);
+            this.yarnApplication = requireNonNull(yarnApplication);
+            this.yarnFilesDir = requireNonNull(yarnFilesDir);
         }
 
         @Override

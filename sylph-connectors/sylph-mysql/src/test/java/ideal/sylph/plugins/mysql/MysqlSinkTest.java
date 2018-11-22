@@ -61,7 +61,7 @@ public class MysqlSinkTest
                 }
                 catch (Exception e) {
                     String error = e.getCause().getMessage();
-                    Assert.assertEquals("Mysql connection open fail", error);
+                    Assert.assertNotNull(error);
                 }
             }
         }
