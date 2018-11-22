@@ -20,7 +20,7 @@ import com.google.inject.Scopes;
 import ideal.common.bootstrap.Bootstrap;
 import ideal.common.classloader.DirClassLoader;
 import ideal.sylph.etl.PipelinePlugin;
-import ideal.sylph.runner.spark.yarn.SparkAppLauncher;
+import ideal.sylph.runtime.yarn.YarnModule;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.JobActuatorHandle;
@@ -61,16 +61,15 @@ public class SparkRunner
                 ((DirClassLoader) classLoader).addDir(new File(sparkHome, "jars"));
             }
 
-            Bootstrap app = new Bootstrap(new SparkRunnerModule(), binder -> {
-                binder.bind(StreamEtlActuator.class).in(Scopes.SINGLETON);
-                binder.bind(Stream2EtlActuator.class).in(Scopes.SINGLETON);
-                binder.bind(SparkSubmitActuator.class).in(Scopes.SINGLETON);
-                binder.bind(SparkAppLauncher.class).in(Scopes.SINGLETON);
-                //------------------------
-                binder.bind(PipelinePluginManager.class)
-                        .toProvider(() -> createPipelinePluginManager(context))
-                        .in(Scopes.SINGLETON);
-            });
+            Bootstrap app = new Bootstrap(
+                    new SparkRunnerModule(),
+                    new YarnModule(),
+                    binder -> {
+                        //------------------------
+                        binder.bind(PipelinePluginManager.class)
+                                .toProvider(() -> createPipelinePluginManager(context))
+                                .in(Scopes.SINGLETON);
+                    });
             Injector injector = app.strictConfig()
                     .name(this.getClass().getSimpleName())
                     .setRequiredConfigurationProperties(Collections.emptyMap())

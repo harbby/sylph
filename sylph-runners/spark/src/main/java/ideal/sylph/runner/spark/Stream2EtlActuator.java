@@ -21,7 +21,7 @@ import ideal.common.proxy.DynamicProxy;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.runner.spark.yarn.SparkAppLauncher;
-import ideal.sylph.runner.spark.yarn.YarnJobContainer;
+import ideal.sylph.runtime.yarn.YarnJobContainer;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.EtlFlow;
 import ideal.sylph.spi.job.EtlJobActuatorHandle;
