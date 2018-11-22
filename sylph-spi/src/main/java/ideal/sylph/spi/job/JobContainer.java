@@ -42,8 +42,7 @@ public interface JobContainer
     /**
      * offline job
      */
-    void shutdown()
-            throws Exception;
+    void shutdown();
 
     /**
      * 获取job的状态
