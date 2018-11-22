@@ -30,34 +30,22 @@
 
 <h2>JobManager</h2>
 
-<!--<form method="post" action="/_sys/job_manger" enctype="multipart/form-data">-->
-<!--<div style="width: 500px; margin-bottom: 50px">-->
-<!--<div class="form-group">-->
-<!--<label>上传任务</label>-->
-<!--<input type="file" name="file" class="form-control" />-->
-<!--</div>-->
-<!--<span>-->
-<!--<input type="submit" class="btn btn-primary" value="点击上传" />-->
-<!--</span>-->
-<!--</div>-->
-<!--</form>-->
-
 <div class="row">
-    <div class="col-md-8"><label>job列表</label></div>
+    <div class="col-md-8"><label>jobs</label></div>
     <div class="col-md-4">
-        <button class="btn btn-primary refresh_all">刷新</button>
-        <button class="btn btn-primary" onclick='window.location.href="etl.html"'>新建etl任务</button>
-        <button class="btn btn-primary" onclick='window.location.href="stream_sql.html"'>新建StreamSql任务</button>
+        <button class="btn btn-primary refresh_all">Refresh</button>
+        <button class="btn btn-primary" onclick='window.location.href="etl.html"'>Create_ETL</button>
+        <button class="btn btn-primary" onclick='window.location.href="stream_sql.html"'>Create_StreamSQL</button>
     </div>
 </div>
 
 <div class="row" id="rowHead">
-    <div class="col-md-2">任务id</div>
-    <div class="col-md-3">AppId</div>
-    <div class="col-md-1">类型</div>
-    <div class="col-md-2">创建时间</div>
-    <div class="col-md-1">状态</div>
-    <div class="col-md-3">操作</div>
+    <div class="col-md-2">job</div>
+    <div class="col-md-3">runId</div>
+    <div class="col-md-1">type</div>
+    <!--<div class="col-md-2">create_time</div>-->
+    <div class="col-md-1">status</div>
+    <div class="col-md-3">click</div>
 </div>
 
 </body>

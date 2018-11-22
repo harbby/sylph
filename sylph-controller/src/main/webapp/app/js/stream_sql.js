@@ -119,7 +119,7 @@ editor.on('change', editor => {
 });
 function openConfigSetLayer() {
     var configSetLayer = layer.open({
-        type: 1, area: ['500px', '360px'], title: '高级配置', shade: 0.6, maxmin: false,
+        type: 1, area: ['500px', '360px'], title: 'Job_Config', shade: 0.6, maxmin: false,
         anim: 1, content: $('#config-set'),
         success: function (layero, index) { //弹窗完成后 进行语法渲染
             editor.setValue(document.getElementById('config').value)

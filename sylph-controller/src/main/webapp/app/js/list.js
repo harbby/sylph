@@ -42,7 +42,7 @@ $(function () {
                         break;
                     default:
                         alert("this " + status + " have't support!")
-                        //status = 'unknown state';
+                    //status = 'unknown state';
                 }
                 if (yarnId != null && yarnId != '') {
                     yarnId = '<a href="' + app_url + '" target="_blank">' + yarnId + '</a>';
@@ -52,7 +52,7 @@ $(function () {
                     '<div class="col-md-2">' + jobId + '</div>' +
                     '<div class="col-md-3">' + yarnId + '</div>' +
                     '<div class="col-md-1">' + type + '</div>' +
-                    '<div class="col-md-2">' + create_time + '</div>' +
+                    // '<div class="col-md-2">' + create_time + '</div>' +
                     '<div class="col-md-1">' + status + '</div>' +
                     '<div class="col-md-3" jobId="' + jobId + '">' + button + '</div>' +
                     '</div>';

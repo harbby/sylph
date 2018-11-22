@@ -53,13 +53,12 @@
 <body>
 <div class="task_title">
     <div class="task_input" style="margin-left: 50px;">
-        <input type="text" class="form-control" id="task_name" placeholder="请输入名称">
+        <input type="text" class="form-control" id="task_name" placeholder="Please enter the job name">
     </div>
-    <!--<h3>任务名称</h3>-->
 </div>
 <div class="operate_area">
     <div class="extraIcon">
-        <label>执行引擎:</label>
+        <label>Engine:</label>
         <select id="actuators_select">
             <option value="volvo">none</option>
         </select>
@@ -69,8 +68,8 @@
         <span class="glyphicon glyphicon-cog" aria-hidden="true" onclick="$('#config_modal').modal('show');"></span>
     </div>
     <div style="float: left;margin-top: -15px;margin-left: 10px;">
-        <button class="btn btn-primary" id="flow_save">保存</button>
-        <button class="btn btn-primary" onclick='window.location.href="index.html"'>返回</button>
+        <button class="btn btn-primary" id="flow_save">Save</button>
+        <button class="btn btn-primary" onclick='window.location.href="index.html"'>Cancel</button>
     </div>
 </div>
 <div class="flow-fluid">
@@ -101,7 +100,7 @@
         </div>
         <div class="footer-text">
             <div class="footer-square"></div>
-            双击节点或连接线文字，可修改内容
+            Double-click the node to modify the content
         </div>
     </div>
 </div>
@@ -121,8 +120,8 @@
                 </textarea>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-blue" id="flow_confirm">确认修改</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-blue" id="flow_confirm">Yes</button>
             </div>
         </div>
     </div>
@@ -135,14 +134,14 @@
                 <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
                     &times;
                 </button>
-                <h4 class="modal-title">警告</h4>
+                <h4 class="modal-title">Warning</h4>
             </div>
             <div class="modal-body">
-                确认删除 <span class="delete_text"></span> 节点,数据以及连接线吗？
+                Are you sure to delete the `<span class="delete_text"></span>` node?
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-red" id="delete_confirm">确认删除</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">No</button>
+                <button type="button" class="btn btn-red" id="delete_confirm">Yes</button>
             </div>
         </div>
     </div>
@@ -153,15 +152,15 @@
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title">附加文件上传</h4>
+                <h4 class="modal-title">Attach file upload</h4>
             </div>
             <div class="modal-body">
                 <input type="file" name="file" id="select_file" multiple="multiple" style="display: none"/>
                 <div id="fileList" class="upload-file-list"></div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary" onclick="$('input[name=file]').click();">选择文件</button>
-                <button type="button" class="btn btn-primary" data-dismiss="modal">完成</button>
+                <button type="button" class="btn btn-primary" onclick="$('input[name=file]').click();">Select</button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal">Ok</button>
             </div>
         </div>
     </div>
@@ -172,37 +171,37 @@
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title">高级配置</h4>
+                <h4 class="modal-title">Job_Config</h4>
             </div>
             <div class="modal-body">
                 <textarea rows="15" class="config_modal_textarea" name="config" id="config"></textarea>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary" data-dismiss="modal">完成</button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal">Ok</button>
             </div>
         </div>
     </div>
 </div>
 <!--保存-->
-<div class="modal fade save_modal" id="save_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
-                    &times;
-                </button>
-                <h4 class="modal-title">警告</h4>
-            </div>
-            <div class="modal-body">
-                确认删除 <span class="delete_text"></span> 节点及其数据吗？
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
-                <button type="button" class="btn btn-red" id="delete_confirm">确认删除</button>
-            </div>
-        </div>
-    </div>
-</div>
+<!--<div class="modal fade save_modal" id="save_modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">-->
+<!--<div class="modal-dialog">-->
+<!--<div class="modal-content">-->
+<!--<div class="modal-header">-->
+<!--<button type="button" class="close" data-dismiss="modal" aria-hidden="true">-->
+<!--&times;-->
+<!--</button>-->
+<!--<h4 class="modal-title">警告</h4>-->
+<!--</div>-->
+<!--<div class="modal-body">-->
+<!--确认删除 <span class="delete_text"></span> 节点及其数据吗？-->
+<!--</div>-->
+<!--<div class="modal-footer">-->
+<!--<button type="button" class="btn btn-default" data-dismiss="modal">取消</button>-->
+<!--<button type="button" class="btn btn-red" id="delete_confirm">确认删除</button>-->
+<!--</div>-->
+<!--</div>-->
+<!--</div>-->
+<!--</div>-->
 
 </body>
 
