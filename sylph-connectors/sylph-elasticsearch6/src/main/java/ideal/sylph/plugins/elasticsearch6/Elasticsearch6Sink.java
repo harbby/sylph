@@ -39,7 +39,7 @@ import static org.apache.flink.shaded.guava18.com.google.common.base.Preconditio
 
 @Name("elasticsearch6")
 @Description("this is elasticsearch6 sink plugin")
-public class ElasticsearchSink
+public class Elasticsearch6Sink
         implements RealTimeSink
 {
     private static final int MAX_BATCH_BULK = 100;
@@ -51,7 +51,7 @@ public class ElasticsearchSink
     private final AtomicInteger cnt = new AtomicInteger(0);
     private BulkRequestBuilder bulkBuilder;
 
-    public ElasticsearchSink(SinkContext context, ElasticsearchSinkConfig config)
+    public Elasticsearch6Sink(SinkContext context, ElasticsearchSinkConfig config)
     {
         schema = context.getSchema();
         this.config = config;
