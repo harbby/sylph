@@ -51,11 +51,13 @@ public abstract class YarnJobContainer
     }
 
     @Override
-    public void shutdown()
+    public synchronized void shutdown()
     {
         try {
             this.setStatus(KILLING);
-            yarnClient.killApplication(yarnAppId);
+            if (yarnAppId != null) {
+                yarnClient.killApplication(yarnAppId);
+            }
         }
         catch (Exception e) {
             logger.error("kill yarn id {} failed", yarnAppId, e);
@@ -68,7 +70,7 @@ public abstract class YarnJobContainer
         return yarnAppId == null ? "none" : yarnAppId.toString();
     }
 
-    public void setYarnAppId(ApplicationId appId)
+    public synchronized void setYarnAppId(ApplicationId appId)
     {
         this.yarnAppId = requireNonNull(appId, "appId is null");
     }
