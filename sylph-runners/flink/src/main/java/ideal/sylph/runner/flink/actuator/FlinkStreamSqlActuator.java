@@ -156,7 +156,7 @@ public class FlinkStreamSqlActuator
         private final String[] sqlSplit;
         private final String sqlText;
 
-        SqlFlow(byte[] flowBytes)
+        public SqlFlow(byte[] flowBytes)
         {
             this.sqlText = new String(flowBytes, UTF_8);
             this.sqlSplit = Stream.of(sqlText.split(SQL_REGEX))
@@ -164,7 +164,7 @@ public class FlinkStreamSqlActuator
         }
 
         @JsonIgnore
-        String[] getSqlSplit()
+        public String[] getSqlSplit()
         {
             return sqlSplit;
         }

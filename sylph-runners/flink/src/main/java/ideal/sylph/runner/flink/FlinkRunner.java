@@ -22,7 +22,7 @@ import ideal.common.classloader.DirClassLoader;
 import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.runner.flink.actuator.FlinkStreamEtlActuator;
 import ideal.sylph.runner.flink.actuator.FlinkStreamSqlActuator;
-import ideal.sylph.runner.flink.yarn.FlinkYarnJobLauncher;
+import ideal.sylph.runtime.yarn.YarnModule;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.JobActuatorHandle;
@@ -63,15 +63,15 @@ public class FlinkRunner
             if (classLoader instanceof DirClassLoader) {
                 ((DirClassLoader) classLoader).addDir(new File(flinkHome, "lib"));
             }
-            Bootstrap app = new Bootstrap(new FlinkRunnerModule(), binder -> {
-                binder.bind(FlinkStreamEtlActuator.class).in(Scopes.SINGLETON);
-                binder.bind(FlinkStreamSqlActuator.class).in(Scopes.SINGLETON);
-                binder.bind(FlinkYarnJobLauncher.class).in(Scopes.SINGLETON);
-                //----------------------------------
-                binder.bind(PipelinePluginManager.class)
-                        .toProvider(() -> createPipelinePluginManager(context))
-                        .in(Scopes.SINGLETON);
-            });
+            Bootstrap app = new Bootstrap(
+                    new FlinkRunnerModule(),
+                    new YarnModule(),
+                    binder -> {
+                        //----------------------------------
+                        binder.bind(PipelinePluginManager.class)
+                                .toProvider(() -> createPipelinePluginManager(context))
+                                .in(Scopes.SINGLETON);
+                    });
             Injector injector = app.strictConfig()
                     .name(this.getClass().getSimpleName())
                     .setRequiredConfigurationProperties(Collections.emptyMap())

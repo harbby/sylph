@@ -20,12 +20,11 @@ import com.google.inject.Inject;
 import com.google.inject.Module;
 import com.google.inject.Provider;
 import com.google.inject.Scopes;
+import ideal.sylph.runner.flink.actuator.FlinkStreamEtlActuator;
+import ideal.sylph.runner.flink.actuator.FlinkStreamSqlActuator;
+import ideal.sylph.runner.flink.yarn.FlinkYarnJobLauncher;
 import ideal.sylph.runner.flink.yarn.YarnClusterConfiguration;
-import ideal.sylph.spi.exception.SylphException;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.yarn.client.api.TimelineClient;
-import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +37,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static ideal.sylph.runner.flink.FlinkRunner.FLINK_DIST;
-import static ideal.sylph.spi.exception.StandardErrorCode.CONFIG_ERROR;
 import static java.util.Objects.requireNonNull;
 
 public class FlinkRunnerModule
@@ -49,33 +47,10 @@ public class FlinkRunnerModule
     @Override
     public void configure(Binder binder)
     {
-        binder.bind(YarnConfiguration.class).toProvider(FlinkRunnerModule::loadYarnConfiguration).in(Scopes.SINGLETON);
-        binder.bind(YarnClient.class).toProvider(YarnClientProvider.class).in(Scopes.SINGLETON);
+        binder.bind(FlinkStreamEtlActuator.class).in(Scopes.SINGLETON);
+        binder.bind(FlinkStreamSqlActuator.class).in(Scopes.SINGLETON);
+        binder.bind(FlinkYarnJobLauncher.class).in(Scopes.SINGLETON);
         binder.bind(YarnClusterConfiguration.class).toProvider(YarnClusterConfigurationProvider.class).in(Scopes.SINGLETON);
-    }
-
-    private static class YarnClientProvider
-            implements Provider<YarnClient>
-    {
-        @Inject private YarnConfiguration yarnConfiguration;
-
-        @Override
-        public YarnClient get()
-        {
-            YarnClient client = YarnClient.createYarnClient();
-            if (yarnConfiguration.getBoolean(YarnConfiguration.TIMELINE_SERVICE_ENABLED, false)) {
-                try {
-                    TimelineClient.createTimelineClient();
-                }
-                catch (NoClassDefFoundError e) {
-                    logger.warn("createTimelineClient() error with {}", TimelineClient.class.getResource(TimelineClient.class.getSimpleName() + ".class"), e);
-                    yarnConfiguration.setBoolean(YarnConfiguration.TIMELINE_SERVICE_ENABLED, false);
-                }
-            }
-            client.init(yarnConfiguration);
-            client.start();
-            return client;
-        }
     }
 
     private static class YarnClusterConfigurationProvider
@@ -99,24 +74,6 @@ public class FlinkRunnerModule
                     flinkJar,
                     resourcesToLocalize);
         }
-    }
-
-    private static YarnConfiguration loadYarnConfiguration()
-    {
-        Configuration hadoopConf = new Configuration();
-        hadoopConf.set("fs.hdfs.impl", "org.apache.hadoop.hdfs.DistributedFileSystem");
-
-        Stream.of("yarn-site.xml", "core-site.xml", "hdfs-site.xml").forEach(file -> {
-            File site = new File(requireNonNull(System.getenv("HADOOP_CONF_DIR"), "ENV HADOOP_CONF_DIR is not setting"), file);
-            if (site.exists() && site.isFile()) {
-                hadoopConf.addResource(new org.apache.hadoop.fs.Path(site.toURI()));
-            }
-            else {
-                throw new SylphException(CONFIG_ERROR, site + " not exists");
-            }
-        });
-
-        return new YarnConfiguration(hadoopConf);
     }
 
     private static File getFlinkJarFile()

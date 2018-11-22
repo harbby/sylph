@@ -29,6 +29,7 @@ import ideal.sylph.runner.flink.FlinkJobConfig;
 import ideal.sylph.runner.flink.FlinkJobHandle;
 import ideal.sylph.runner.flink.etl.FlinkNodeLoader;
 import ideal.sylph.runner.flink.yarn.FlinkYarnJobLauncher;
+import ideal.sylph.runtime.yarn.YarnJobContainer;
 import ideal.sylph.spi.App;
 import ideal.sylph.spi.GraphApp;
 import ideal.sylph.spi.NodeLoader;
@@ -42,6 +43,7 @@ import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.model.PipelinePluginManager;
+import org.apache.flink.client.program.ClusterClient;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -100,17 +102,39 @@ public class FlinkStreamEtlActuator
     {
         JobContainer yarnJobContainer = new YarnJobContainer(jobLauncher.getYarnClient(), jobInfo)
         {
+            private ClusterClient<ApplicationId> appChanel;
+
             @Override
             public Optional<String> run()
                     throws Exception
             {
-                ApplicationId yarnAppId = jobLauncher.createApplication();
-                this.setYarnAppId(yarnAppId);
-                logger.info("Instantiating flinkSqlJob {} at yarnId {}", job.getId(), yarnAppId);
-                jobLauncher.start(job, yarnAppId);
-                return Optional.of(yarnAppId.toString());
+                logger.info("Instantiating SylphFlinkJob {} at yarnId {}", job.getId());
+                this.appChanel = jobLauncher.start(job);
+                this.setYarnAppId(appChanel.getClusterId());
+                return Optional.of(appChanel.getClusterId().toString());
+            }
+
+            @Override
+            public void shutdown()
+            {
+                try {
+                    FlinkJobHandle jobHandle = (FlinkJobHandle) job.getJobHandle();
+                    appChanel.cancel(jobHandle.getJobGraph().getJobID());
+                }
+                catch (Exception e) {
+                    super.shutdown();
+                }
+                finally {
+                    try {
+                        appChanel.shutDownCluster();
+                    }
+                    catch (Exception e) {
+                        logger.error("", e);
+                    }
+                }
             }
         };
+
         //----create JobContainer Proxy
         DynamicProxy invocationHandler = new DynamicProxy(yarnJobContainer)
         {
