@@ -57,7 +57,7 @@ public class Elasticsearch6Sink
         this.config = config;
         if (!Strings.isNullOrEmpty(config.idField)) {
             int fieldIndex = schema.getFieldIndex(config.idField);
-            checkState(fieldIndex != -1, config.idField + "不存在, only " + schema.getFields());
+            checkState(fieldIndex != -1, config.idField + " does not exist, only " + schema.getFields());
             this.idIndex = fieldIndex;
         }
         if (config.update) {
