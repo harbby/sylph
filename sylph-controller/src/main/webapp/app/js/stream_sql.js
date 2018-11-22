@@ -81,7 +81,7 @@ $(function () {
                 alert("Successfully saved");
                 window.location.href = "index.html";
             } else {
-                alert(data.msg);
+                error_show(data.msg)
             }
         }).fail(function (data) {
             alert(data.msg);
@@ -131,6 +131,16 @@ function openConfigSetLayer() {
         anim: 1, content: $('#config-set'),
         success: function (layero, index) { //弹窗完成后 进行语法渲染
             editor.setValue(document.getElementById('config').value)
+        }
+    });
+}
+
+function error_show(message) {
+    var configSetLayer = layer.open({
+        type: 1, area: ['850px', '540px'], title: 'Error', shade: 0.6, maxmin: false,
+        anim: 1, content: $('#error_message'),
+        success: function (layero, index) { //弹窗完成后 进行语法渲染
+            $('#error_message').text(message)
         }
     });
 }
