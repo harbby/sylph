@@ -15,11 +15,11 @@
  */
 package ideal.sylph.spi;
 
-import ideal.sylph.spi.model.PipelinePluginManager;
+import ideal.sylph.spi.model.PipelinePluginInfo;
 
 import java.util.Set;
 
 public interface RunnerContext
 {
-    public Set<PipelinePluginManager.PipelinePluginInfo> getFindPlugins();
+    public Set<PipelinePluginInfo> getFindPlugins();
 }

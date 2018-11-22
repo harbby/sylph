@@ -18,7 +18,6 @@ package ideal.sylph.runner.flink.actuator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
-import ideal.common.jvm.JVMException;
 import ideal.common.jvm.JVMLauncher;
 import ideal.common.jvm.JVMLaunchers;
 import ideal.common.jvm.VmFuture;
@@ -41,12 +40,12 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.fusesource.jansi.Ansi;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import javax.validation.constraints.NotNull;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.Collection;
@@ -64,6 +63,7 @@ import static org.fusesource.jansi.Ansi.Color.YELLOW;
 public class FlinkStreamSqlActuator
         extends FlinkStreamEtlActuator
 {
+    private static final Logger logger = LoggerFactory.getLogger(FlinkStreamSqlActuator.class);
     @Inject private PipelinePluginManager pluginManager;
 
     @NotNull
@@ -73,7 +73,7 @@ public class FlinkStreamSqlActuator
         return new SqlFlow(flowBytes);
     }
 
-    @Nullable
+    @NotNull
     @Override
     public Collection<File> parserFlowDepends(Flow inFlow)
     {
@@ -106,6 +106,7 @@ public class FlinkStreamSqlActuator
     @NotNull
     @Override
     public JobHandle formJob(String jobId, Flow inFlow, JobConfig jobConfig, URLClassLoader jobClassLoader)
+            throws Exception
     {
         SqlFlow flow = (SqlFlow) inFlow;
         //----- compile --
@@ -120,6 +121,7 @@ public class FlinkStreamSqlActuator
             JobParameter jobConfig,
             String[] sqlSplit,
             URLClassLoader jobClassLoader)
+            throws Exception
     {
         JVMLauncher<JobGraph> launcher = JVMLaunchers.<JobGraph>newJvm()
                 .setConsole((line) -> System.out.println(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
@@ -134,13 +136,8 @@ public class FlinkStreamSqlActuator
                 .addUserURLClassLoader(jobClassLoader)
                 .build();
 
-        try {
-            VmFuture<JobGraph> result = launcher.startAndGet(jobClassLoader);
-            return result.get().orElseThrow(() -> new SylphException(JOB_BUILD_ERROR, result.getOnFailure()));
-        }
-        catch (IOException | JVMException | ClassNotFoundException e) {
-            throw new RuntimeException("StreamSql job build failed", e);
-        }
+        VmFuture<JobGraph> result = launcher.startAndGet(jobClassLoader);
+        return result.get().orElseThrow(() -> new SylphException(JOB_BUILD_ERROR, result.getOnFailure()));
     }
 
     public static class SqlFlow

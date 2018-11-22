@@ -76,7 +76,6 @@ public class YarnClusterDescriptor
     private final String jobName;
     private final Iterable<Path> userProvidedJars;
 
-    private YarnClientApplication application;
     private Path flinkJar;
 
     YarnClusterDescriptor(

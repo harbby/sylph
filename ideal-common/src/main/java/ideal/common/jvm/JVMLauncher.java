@@ -66,13 +66,13 @@ public final class JVMLauncher<R extends Serializable>
     }
 
     public VmFuture<R> startAndGet()
-            throws IOException, ClassNotFoundException, JVMException
+            throws JVMException
     {
         return startAndGet(null);
     }
 
     public VmFuture<R> startAndGet(ClassLoader classLoader)
-            throws IOException, ClassNotFoundException, JVMException
+            throws JVMException
     {
         try (Socket socketClient = startAndGetByte();
                 InputStream inputStream = socketClient.getInputStream()) {
@@ -81,6 +81,9 @@ public final class JVMLauncher<R extends Serializable>
                 throw new JVMException(vmFuture.getOnFailure());
             }
             return vmFuture;
+        }
+        catch (IOException | ClassNotFoundException e) {
+            throw new JVMException("", e);
         }
     }
 

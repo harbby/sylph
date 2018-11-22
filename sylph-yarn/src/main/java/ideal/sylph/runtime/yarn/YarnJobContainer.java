@@ -72,7 +72,7 @@ public abstract class YarnJobContainer
 
     public synchronized void setYarnAppId(ApplicationId appId)
     {
-        this.yarnAppId = requireNonNull(appId, "appId is null");
+        this.yarnAppId = appId;
     }
 
     public ApplicationId getYarnAppId()

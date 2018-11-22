@@ -33,7 +33,7 @@ import ideal.sylph.spi.job.JobActuatorHandle;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobHandle;
-import ideal.sylph.spi.model.PipelinePluginManager;
+import ideal.sylph.spi.model.PipelinePluginInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +41,6 @@ import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collection;
@@ -101,7 +100,7 @@ public class RunnerManager
     }
 
     public Job formJobWithFlow(String jobId, byte[] flowBytes, Map configBytes)
-            throws IOException
+            throws Exception
     {
         String actuatorName = JobConfig.load(configBytes).getType();
         JobActuator jobActuator = jobActuatorMap.get(actuatorName);
@@ -112,7 +111,7 @@ public class RunnerManager
     }
 
     public Job formJobWithFlow(String jobId, byte[] flowBytes, byte[] configBytes)
-            throws IOException
+            throws Exception
     {
         String actuatorName = JobConfig.load(configBytes).getType();
         JobActuator jobActuator = jobActuatorMap.get(actuatorName);
@@ -130,7 +129,7 @@ public class RunnerManager
                 .collect(Collectors.toList());
     }
 
-    public List<PipelinePluginManager.PipelinePluginInfo> getPlugins()
+    public List<PipelinePluginInfo> getPlugins()
     {
         return jobActuatorMap.values()
                 .stream()
@@ -139,14 +138,14 @@ public class RunnerManager
                 .collect(Collectors.toList());
     }
 
-    public List<PipelinePluginManager.PipelinePluginInfo> getPlugins(String actuator)
+    public List<PipelinePluginInfo> getPlugins(String actuator)
     {
         JobActuator jobActuator = requireNonNull(jobActuatorMap.get(actuator), "job actuator [" + actuator + "] not exists");
         return Lists.newArrayList(jobActuator.getHandle().getPluginManager().getAllPlugins());
     }
 
     private Job formJobWithFlow(String jobId, byte[] flowBytes, JobActuator jobActuator, JobConfig jobConfig)
-            throws IOException
+            throws Exception
     {
         JobActuatorHandle jobActuatorHandle = jobActuator.getHandle();
         String actuatorName = jobConfig.getType();

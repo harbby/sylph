@@ -16,7 +16,6 @@
 package ideal.sylph.runner.spark;
 
 import ideal.common.ioc.Binds;
-import ideal.common.jvm.JVMException;
 import ideal.common.jvm.JVMLauncher;
 import ideal.common.jvm.JVMLaunchers;
 import ideal.sylph.runner.spark.etl.sparkstreaming.StreamNodeLoader;
@@ -24,7 +23,6 @@ import ideal.sylph.runner.spark.etl.structured.StructuredNodeLoader;
 import ideal.sylph.spi.App;
 import ideal.sylph.spi.GraphApp;
 import ideal.sylph.spi.NodeLoader;
-import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.EtlFlow;
 import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.spark.SparkConf;
@@ -38,7 +36,6 @@ import org.fusesource.jansi.Ansi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.net.URLClassLoader;
 import java.util.Map;
@@ -46,7 +43,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
-import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
 import static org.fusesource.jansi.Ansi.Color.GREEN;
 import static org.fusesource.jansi.Ansi.Color.YELLOW;
 
@@ -62,6 +58,7 @@ final class JobHelper
     private static final Logger logger = LoggerFactory.getLogger(JobHelper.class);
 
     static SparkJobHandle<App<SparkSession>> build2xJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
+            throws Exception
     {
         final AtomicBoolean isCompile = new AtomicBoolean(true);
         Supplier<App<SparkSession>> appGetter = (Supplier<App<SparkSession>> & Serializable) () -> new GraphApp<SparkSession, Dataset<Row>>()
@@ -111,26 +108,22 @@ final class JobHelper
             }
         };
 
-        try {
-            JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
-                    .setCallable(() -> {
-                        appGetter.get().build();
-                        return 1;
-                    })
-                    .setConsole((line) -> System.out.println(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
-                    .addUserURLClassLoader(jobClassLoader)
-                    .notDepThisJvmClassPath()
-                    .build();
-            launcher.startAndGet(jobClassLoader);
-            isCompile.set(false);
-            return new SparkJobHandle<>(appGetter);
-        }
-        catch (IOException | ClassNotFoundException | JVMException e) {
-            throw new SylphException(JOB_BUILD_ERROR, "JOB_BUILD_ERROR", e);
-        }
+        JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
+                .setCallable(() -> {
+                    appGetter.get().build();
+                    return 1;
+                })
+                .setConsole((line) -> System.out.println(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
+                .addUserURLClassLoader(jobClassLoader)
+                .notDepThisJvmClassPath()
+                .build();
+        launcher.startAndGet(jobClassLoader);
+        isCompile.set(false);
+        return new SparkJobHandle<>(appGetter);
     }
 
     static SparkJobHandle<App<StreamingContext>> build1xJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
+            throws Exception
     {
         final AtomicBoolean isCompile = new AtomicBoolean(true);
         final Supplier<App<StreamingContext>> appGetter = (Supplier<App<StreamingContext>> & Serializable) () -> new GraphApp<StreamingContext, DStream<Row>>()
@@ -170,22 +163,17 @@ final class JobHelper
             }
         };
 
-        try {
-            JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
-                    .setCallable(() -> {
-                        appGetter.get().build();
-                        return 1;
-                    })
-                    .setConsole((line) -> System.out.println(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
-                    .addUserURLClassLoader(jobClassLoader)
-                    .notDepThisJvmClassPath()
-                    .build();
-            launcher.startAndGet(jobClassLoader);
-            isCompile.set(false);
-            return new SparkJobHandle<>(appGetter);
-        }
-        catch (IOException | ClassNotFoundException | JVMException e) {
-            throw new SylphException(JOB_BUILD_ERROR, "JOB_BUILD_ERROR", e);
-        }
+        JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
+                .setCallable(() -> {
+                    appGetter.get().build();
+                    return 1;
+                })
+                .setConsole((line) -> System.out.println(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
+                .addUserURLClassLoader(jobClassLoader)
+                .notDepThisJvmClassPath()
+                .build();
+        launcher.startAndGet(jobClassLoader);
+        isCompile.set(false);
+        return new SparkJobHandle<>(appGetter);
     }
 }

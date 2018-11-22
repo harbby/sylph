@@ -40,6 +40,7 @@ public class StreamEtlActuator
     @NotNull
     @Override
     public JobHandle formJob(String jobId, Flow flow, JobConfig jobConfig, URLClassLoader jobClassLoader)
+            throws Exception
     {
         return JobHelper.build1xJob(jobId, (EtlFlow) flow, jobClassLoader, pluginManager);
     }

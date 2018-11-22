@@ -34,6 +34,7 @@ import java.net.URLClassLoader;
 public class SparkSubmitActuator
         implements JobActuatorHandle
 {
+    @NotNull
     @Override
     public Flow formFlow(byte[] flowBytes)
             throws IOException

@@ -53,6 +53,7 @@ public class BatchEtlActuator
 {
     @Inject private Scheduler batchJobScheduler;
 
+    @NotNull
     @Override
     public JobHandle formJob(String jobId, Flow flow, JobConfig jobConfig, URLClassLoader jobClassLoader)
     {

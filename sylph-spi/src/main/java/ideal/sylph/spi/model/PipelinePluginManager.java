@@ -16,36 +16,32 @@
 package ideal.sylph.spi.model;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableTable;
-import ideal.sylph.annotation.Description;
-import ideal.sylph.annotation.Name;
+import ideal.common.classloader.DirClassLoader;
 import ideal.sylph.etl.PipelinePlugin;
-import ideal.sylph.etl.PluginConfig;
-import sun.reflect.generics.tree.TypeArgument;
+import ideal.sylph.spi.Runner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import sun.reflect.generics.tree.ClassTypeSignature;
 
-import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
-import java.lang.reflect.Constructor;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.base.Preconditions.checkState;
-import static ideal.sylph.spi.NodeLoader.getPipeConfigInstance;
+import static ideal.sylph.spi.model.PipelinePluginInfo.parserPluginDefualtConfig;
 import static java.util.Objects.requireNonNull;
 
 public interface PipelinePluginManager
         extends Serializable
 {
+    Logger logger = LoggerFactory.getLogger(PipelinePluginManager.class);
+
     /**
      * use test
      */
@@ -98,172 +94,45 @@ public interface PipelinePluginManager
         }
     }
 
-    public static class PipelinePluginInfo
-            implements Serializable
+    public static Set<PipelinePluginInfo> filterRunnerPlugins(
+            Set<PipelinePluginInfo> findPlugins,
+            Set<String> keyword,
+            Class<? extends Runner> runnerClass)
     {
-        private final boolean realTime;
-        private final String[] names;
-        private final String description;
-        private final String version;
-        private final String driverClass;
-        private final transient TypeArgument[] javaGenerics;
-        //-------------
-        private final File pluginFile;
-        private final PipelinePlugin.PipelineType pipelineType;  //source transform or sink
-        private final List<Map> pluginConfig = Collections.emptyList(); //Injected by the specific runner
-
-        public PipelinePluginInfo(
-                String[] names,
-                String description,
-                String version,
-                boolean realTime,
-                String driverClass,
-                TypeArgument[] javaGenerics,
-                File pluginFile,
-                PipelinePlugin.PipelineType pipelineType)
-        {
-            this.names = requireNonNull(names, "names is null");
-            this.description = requireNonNull(description, "description is null");
-            this.version = requireNonNull(version, "version is null");
-            this.realTime = realTime;
-            this.driverClass = requireNonNull(driverClass, "driverClass is null");
-            this.javaGenerics = requireNonNull(javaGenerics, "javaGenerics is null");
-            this.pluginFile = requireNonNull(pluginFile, "pluginFile is null");
-            this.pipelineType = requireNonNull(pipelineType, "pipelineType is null");
-        }
-
-        public String getDriverClass()
-        {
-            return driverClass;
-        }
-
-        public boolean getRealTime()
-        {
-            return realTime;
-        }
-
-        public String[] getNames()
-        {
-            return names;
-        }
-
-        public File getPluginFile()
-        {
-            return pluginFile;
-        }
-
-        public TypeArgument[] getJavaGenerics()
-        {
-            return javaGenerics;
-        }
-
-        public String getDescription()
-        {
-            return description;
-        }
-
-        public String getVersion()
-        {
-            return version;
-        }
-
-        public PipelinePlugin.PipelineType getPipelineType()
-        {
-            return pipelineType;
-        }
-
-        public List<Map> getPluginConfig()
-        {
-            return pluginConfig;
-        }
-
-        @Override
-        public int hashCode()
-        {
-            return Objects.hash(realTime, names, description, version, driverClass, javaGenerics, pluginFile, pipelineType, pluginConfig);
-        }
-
-        @Override
-        public boolean equals(Object obj)
-        {
-            if (this == obj) {
-                return true;
-            }
-
-            if ((obj == null) || (getClass() != obj.getClass())) {
-                return false;
-            }
-
-            PipelinePluginInfo other = (PipelinePluginInfo) obj;
-            return Objects.equals(this.realTime, other.realTime)
-                    && Arrays.equals(this.names, other.names)
-                    && Objects.equals(this.description, other.description)
-                    && Objects.equals(this.version, other.version)
-                    && Objects.equals(this.driverClass, other.driverClass)
-                    && Arrays.equals(this.javaGenerics, other.javaGenerics)
-                    && Objects.equals(this.pluginFile, other.pluginFile)
-                    && Objects.equals(this.pipelineType, other.pipelineType)
-                    && Objects.equals(this.pluginConfig, other.pluginConfig);
-        }
-
-        @Override
-        public String toString()
-        {
-            return toStringHelper(this)
-                    .add("realTime", realTime)
-                    .add("names", names)
-                    .add("description", description)
-                    .add("version", version)
-                    .add("driverClass", driverClass)
-                    .add("javaGenerics", javaGenerics)
-                    .add("pluginFile", pluginFile)
-                    .add("pipelineType", pipelineType)
-                    .add("pluginConfig", pluginConfig)
-                    .toString();
-        }
-    }
-
-    /**
-     * "This method can only be called by the runner, otherwise it will report an error No classFound"
-     */
-    static List<Map> parserDriverConfig(Class<? extends PipelinePlugin> javaClass, ClassLoader classLoader)
-    {
-        Constructor<?>[] constructors = javaClass.getConstructors();
-        checkState(constructors.length == 1, "PipelinePlugin " + javaClass + " must ont constructor");
-        Constructor<?> constructor = constructors[0];
-
-        for (Class<?> argmentType : constructor.getParameterTypes()) {
-            if (!PluginConfig.class.isAssignableFrom(argmentType)) {
-                continue;
-            }
-
-            try {
-                PluginConfig pluginConfig = getPipeConfigInstance(argmentType.asSubclass(PluginConfig.class), classLoader);
-
-                return Stream.of(argmentType.getDeclaredFields())
-                        .filter(field -> field.getAnnotation(Name.class) != null)
-                        .map(field -> {
-                            Name name = field.getAnnotation(Name.class);
-                            Description description = field.getAnnotation(Description.class);
-                            field.setAccessible(true);
+        Set<PipelinePluginInfo> plugins = findPlugins.stream()
+                .filter(it -> {
+                    if (it.getRealTime()) {
+                        return true;
+                    }
+                    if (it.getJavaGenerics().length == 0) {
+                        return false;
+                    }
+                    ClassTypeSignature typeSignature = (ClassTypeSignature) it.getJavaGenerics()[0];
+                    String typeName = typeSignature.getPath().get(0).getName();
+                    return keyword.contains(typeName);
+                })
+                .collect(Collectors.groupingBy(PipelinePluginInfo::getPluginFile))
+                .entrySet().stream()
+                .flatMap(it -> {
+                    try (DirClassLoader classLoader = new DirClassLoader(runnerClass.getClassLoader())) {
+                        classLoader.addDir(it.getKey());
+                        for (PipelinePluginInfo info : it.getValue()) {
                             try {
-                                Object defaultValue = field.get(pluginConfig);
-                                return ImmutableMap.of(
-                                        "key", name.value(),
-                                        "description", description == null ? "" : description.value(),
-                                        "default", defaultValue == null ? "" : defaultValue
-                                );
+                                Class<? extends PipelinePlugin> plugin = classLoader.loadClass(info.getDriverClass()).asSubclass(PipelinePlugin.class);
+                                List<Map> config = parserPluginDefualtConfig(plugin, classLoader);
+                                info.setPluginConfig(config);
                             }
-                            catch (IllegalAccessException e) {
-                                throw new IllegalArgumentException(e);
+                            catch (Exception e) {
+                                logger.warn("parser driver config failed,with {}/{}", info.getPluginFile(), info.getDriverClass(), e);
                             }
-                        }).collect(Collectors.toList());
-            }
-            catch (Exception e) {
-                throw new IllegalArgumentException(argmentType + " Unable to be instantiated", e);
-            }
-        }
+                        }
+                    }
+                    catch (IOException e) {
+                        logger.error("Plugins {} access failed, no plugin details will be available", it.getKey(), e);
+                    }
+                    return it.getValue().stream();
+                }).collect(Collectors.toSet());
 
-        return ImmutableList.of();
+        return plugins;
     }
 }

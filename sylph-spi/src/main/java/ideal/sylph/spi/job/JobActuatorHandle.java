@@ -27,9 +27,19 @@ import java.util.Collections;
 
 public interface JobActuatorHandle
 {
+    /**
+     * building job
+     *
+     * @param flow input Flow
+     * @param jobClassLoader Independent Job ClassLoader
+     * @param jobConfig job config
+     * @param jobId job id
+     * @return JobHandel
+     * @throws ideal.common.jvm.JVMException Throw it if the child process fails to compile
+     */
     @NotNull
     default JobHandle formJob(String jobId, Flow flow, JobConfig jobConfig, URLClassLoader jobClassLoader)
-            throws IOException
+            throws Exception
     {
         throw new UnsupportedOperationException("this method have't support!");
     }
@@ -47,7 +57,6 @@ public interface JobActuatorHandle
 
     @NotNull(message = "getConfigParser() return null")
     default Class<? extends JobConfig> getConfigParser()
-            throws IOException
     {
         return JobConfig.class;
     }
