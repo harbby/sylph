@@ -32,7 +32,6 @@ import java.io.IOException;
 import static ideal.sylph.spi.exception.StandardErrorCode.CONNECTION_ERROR;
 import static ideal.sylph.spi.job.Job.Status.KILLING;
 import static ideal.sylph.spi.job.Job.Status.RUNNING;
-import static java.util.Objects.requireNonNull;
 
 public abstract class YarnJobContainer
         extends JobContainerAbs

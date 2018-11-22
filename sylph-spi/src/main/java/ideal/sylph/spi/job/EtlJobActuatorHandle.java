@@ -19,7 +19,6 @@ import com.google.common.collect.ImmutableSet;
 import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.spi.model.NodeInfo;
 import ideal.sylph.spi.model.PipelinePluginInfo;
-import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.commons.io.FileUtils;
 
 import javax.validation.constraints.NotNull;

@@ -19,7 +19,6 @@ import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.model.PipelinePluginInfo;
-import ideal.sylph.spi.model.PipelinePluginManager;
 
 import javax.validation.constraints.NotNull;
 
