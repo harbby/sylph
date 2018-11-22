@@ -1,4 +1,5 @@
 
 dependencies {
-    
+  compile group: 'org.apache.flink', name: 'flink-shaded-guava', version: '18.0-4.0'
+  compile 'org.elasticsearch.client:transport:6.4.0'
 }
