@@ -83,6 +83,13 @@ public class ElasticsearchSink
         }
         else {
             IndexRequestBuilder requestBuilder = client.prepareIndex(config.index, config.type);
+            if (idIndex != -1) {
+                Object id = value.getAs(idIndex);
+                if (id != null) {
+                    requestBuilder.setId(id.toString());
+                }
+            }
+
             requestBuilder.setSource(map);
             bulkBuilder.add(requestBuilder.request());
         }
