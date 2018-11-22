@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.plugins.flink.source;
+package ideal.sylph.plugins.kafka.flink;
 
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
@@ -24,12 +24,12 @@ import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.api.java.typeutils.TypeExtractor;
-import org.apache.flink.calcite.shaded.com.google.common.base.Supplier;
-import org.apache.flink.calcite.shaded.com.google.common.base.Suppliers;
+import org.apache.flink.shaded.guava18.com.google.common.base.Supplier;
+import org.apache.flink.shaded.guava18.com.google.common.base.Suppliers;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010;
 import org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema;
-import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
 
 import java.util.Arrays;
@@ -53,9 +53,9 @@ public class KafkaSource
     /**
      * 初始化(driver阶段执行)
      **/
-    public KafkaSource(StreamTableEnvironment tableEnv, KafkaSourceConfig config)
+    public KafkaSource(StreamExecutionEnvironment execEnv, KafkaSourceConfig config)
     {
-        requireNonNull(tableEnv, "tableEnv is null");
+        requireNonNull(execEnv, "execEnv is null");
         requireNonNull(config, "config is null");
         loadStream = Suppliers.memoize(() -> {
             String topics = config.topics;
@@ -73,7 +73,7 @@ public class KafkaSource
 
             List<String> topicSets = Arrays.asList(topics.split(","));
             //org.apache.flink.streaming.api.checkpoint.CheckpointedFunction
-            DataStream<Row> stream = tableEnv.execEnv().addSource(new FlinkKafkaConsumer010<Row>(
+            DataStream<Row> stream = execEnv.addSource(new FlinkKafkaConsumer010<Row>(
                     topicSets,
                     new RowDeserializer(),
                     properties)

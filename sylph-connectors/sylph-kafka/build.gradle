@@ -1,6 +1,12 @@
 apply plugin: 'scala'
 
 dependencies {
+    compile group: 'org.apache.flink', name: 'flink-shaded-guava', version: '18.0-4.0'
+    compileOnly(group: 'org.apache.flink', name: 'flink-streaming-scala_2.11', version: deps.flink) {
+        exclude(module: 'flink-shaded-hadoop2')
+    }
+    compile group: 'org.apache.flink', name: 'flink-connector-kafka-0.10_2.11', version:deps.flink
+    //--------------------------------------------------spark----------------------------------------------------
     compileOnly (group: 'org.apache.spark', name: 'spark-sql_2.11', version: deps.spark){
         exclude(module: 'spark-core_2.11')
     }
@@ -11,8 +17,7 @@ dependencies {
         exclude(module: 'hadoop-client')
     }
     compileOnly group: 'org.apache.hadoop', name: 'hadoop-client', version: '2.7.3'
-
-
+    
     /**
      * spark 结构化流 kafka专用
      * */

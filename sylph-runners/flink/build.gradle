@@ -33,6 +33,6 @@ dependencies {
   //colour
   compile group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
 
-  testCompile project(':sylph-connectors:sylph-flink')
+  testCompile project(':sylph-connectors:sylph-kafka')
   testCompile project(':sylph-connectors:sylph-mysql')
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.plugins.flink.source;
+package ideal.sylph.plugins.kafka.flink;
 
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
@@ -23,13 +23,13 @@ import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.ResultTypeQueryable;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.api.java.typeutils.TypeExtractor;
-import org.apache.flink.calcite.shaded.com.google.common.base.Supplier;
-import org.apache.flink.calcite.shaded.com.google.common.base.Suppliers;
+import org.apache.flink.shaded.guava18.com.google.common.base.Supplier;
+import org.apache.flink.shaded.guava18.com.google.common.base.Suppliers;
 import org.apache.flink.shaded.guava18.com.google.common.collect.ImmutableMap;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
-import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
 
 import java.util.Random;
@@ -48,9 +48,9 @@ public class TestSource
 
     private final transient Supplier<DataStream<Row>> loadStream;
 
-    public TestSource(StreamTableEnvironment tableEnv)
+    public TestSource(StreamExecutionEnvironment execEnv)
     {
-        this.loadStream = Suppliers.memoize(() -> tableEnv.execEnv().addSource(new MyDataSource()));
+        this.loadStream = Suppliers.memoize(() -> execEnv.addSource(new MyDataSource()));
     }
 
     @Override
