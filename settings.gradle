@@ -35,5 +35,5 @@ include 'sylph-connectors:sylph-kafka09'
 include 'sylph-dist'
 include 'sylph-parser'
 include 'sylph-docs'
-
+include 'sylph-yarn'
 
