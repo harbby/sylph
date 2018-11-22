@@ -57,12 +57,11 @@ public class PluginMangerResource
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
     public List<String> getETLActuators()
     {
-        List<String> names = sylphContext.getAllActuatorsInfo()
+        return sylphContext.getAllActuatorsInfo()
                 .stream()
                 .filter(x -> x.getMode() == JobActuator.ModeType.STREAM_ETL)
-                .map(x -> x.getName())
+                .map(JobActuator.ActuatorInfo::getName)
                 .collect(Collectors.toList());
-        return names;
     }
 
     @GET
@@ -71,7 +70,7 @@ public class PluginMangerResource
     public Map getAllPlugins(@QueryParam("actuator") String actuator)
     {
         checkArgument(!Strings.isNullOrEmpty(actuator), "actuator not setting");
-        Map plugins = sylphContext.getPlugins(actuator).stream().map(pluginInfo -> {
+        return sylphContext.getPlugins(actuator).stream().map(pluginInfo -> {
             Map config = pluginInfo.getPluginConfig().stream()
                     .collect(Collectors.toMap(
                             //todo: default value is ?
@@ -88,7 +87,5 @@ public class PluginMangerResource
                     .put("config", config)
                     .build();
         }).collect(Collectors.groupingBy(x -> x.get("type").toString().toLowerCase()));
-
-        return plugins;
     }
 }
