@@ -48,10 +48,4 @@ public class SparkSubmitActuator
     {
         throw new UnsupportedOperationException("this method have't support!");
     }
-
-    @Override
-    public JobContainer createJobContainer(@NotNull Job job, String jobInfo)
-    {
-        throw new UnsupportedOperationException("this method have't support!");
-    }
 }

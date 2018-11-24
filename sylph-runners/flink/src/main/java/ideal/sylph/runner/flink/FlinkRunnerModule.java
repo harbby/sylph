@@ -49,43 +49,5 @@ public class FlinkRunnerModule
     {
         binder.bind(FlinkStreamEtlActuator.class).in(Scopes.SINGLETON);
         binder.bind(FlinkStreamSqlActuator.class).in(Scopes.SINGLETON);
-        binder.bind(FlinkYarnJobLauncher.class).in(Scopes.SINGLETON);
-        binder.bind(YarnClusterConfiguration.class).toProvider(YarnClusterConfigurationProvider.class).in(Scopes.SINGLETON);
-    }
-
-    private static class YarnClusterConfigurationProvider
-            implements Provider<YarnClusterConfiguration>
-    {
-        @Inject private YarnConfiguration yarnConf;
-
-        @Override
-        public YarnClusterConfiguration get()
-        {
-            Path flinkJar = new Path(getFlinkJarFile().toURI());
-            @SuppressWarnings("ConstantConditions") final Set<Path> resourcesToLocalize = Stream
-                    .of("conf/flink-conf.yaml", "conf/log4j.properties", "conf/logback.xml")
-                    .map(x -> new Path(new File(System.getenv("FLINK_HOME"), x).toURI()))
-                    .collect(Collectors.toSet());
-
-            String home = "hdfs:///tmp/sylph/apps";
-            return new YarnClusterConfiguration(
-                    yarnConf,
-                    home,
-                    flinkJar,
-                    resourcesToLocalize);
-        }
-    }
-
-    private static File getFlinkJarFile()
-    {
-        String flinkHome = requireNonNull(System.getenv("FLINK_HOME"), "FLINK_HOME env not setting");
-        if (!new File(flinkHome).exists()) {
-            throw new IllegalArgumentException("FLINK_HOME " + flinkHome + " not exists");
-        }
-        String errorMessage = "error not search " + FLINK_DIST + "*.jar";
-        File[] files = requireNonNull(new File(flinkHome, "lib").listFiles(), errorMessage);
-        Optional<File> file = Arrays.stream(files)
-                .filter(f -> f.getName().startsWith(FLINK_DIST)).findFirst();
-        return file.orElseThrow(() -> new IllegalArgumentException(errorMessage));
     }
 }

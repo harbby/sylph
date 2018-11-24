@@ -22,11 +22,10 @@ import ideal.common.classloader.DirClassLoader;
 import ideal.sylph.runtime.yarn.YarnModule;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
+import ideal.sylph.spi.job.ContainerFactory;
 import ideal.sylph.spi.job.JobActuatorHandle;
 import ideal.sylph.spi.model.PipelinePluginInfo;
 import ideal.sylph.spi.model.PipelinePluginManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Collections;
@@ -42,8 +41,6 @@ import static java.util.Objects.requireNonNull;
 public class SparkRunner
         implements Runner
 {
-    private static final Logger logger = LoggerFactory.getLogger(SparkRunner.class);
-
     @Override
     public Set<JobActuatorHandle> create(RunnerContext context)
     {
@@ -78,6 +75,12 @@ public class SparkRunner
             throwIfUnchecked(e);
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public Class<? extends ContainerFactory> getContainerFactory()
+    {
+        return SparkContainerFactory.class;
     }
 
     private static PipelinePluginManager createPipelinePluginManager(RunnerContext context)

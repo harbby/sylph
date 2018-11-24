@@ -23,6 +23,8 @@ import java.net.URLClassLoader;
 
 public interface JobActuator
 {
+    ContainerFactory getFactory();
+
     JobActuatorHandle getHandle();
 
     ActuatorInfo getInfo();

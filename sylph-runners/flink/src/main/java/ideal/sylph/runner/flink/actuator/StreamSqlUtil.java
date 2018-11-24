@@ -120,7 +120,7 @@ public final class StreamSqlUtil
 
     public static RowTypeInfo getTableRowTypeInfo(CreateTable createStream)
     {
-        final List<ColumnDefinition> columns = createStream.getElements().stream().map(ColumnDefinition.class::cast).collect(Collectors.toList());
+        final List<ColumnDefinition> columns = createStream.getElements();
         return parserColumns(columns);
     }
 

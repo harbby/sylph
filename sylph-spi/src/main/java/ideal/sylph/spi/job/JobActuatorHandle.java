@@ -65,9 +65,4 @@ public interface JobActuatorHandle
     {
         return new PipelinePluginManager() {};
     }
-
-    default JobContainer createJobContainer(@NotNull Job job, String jobInfo)
-    {
-        throw new UnsupportedOperationException("this method have't support!");
-    }
 }

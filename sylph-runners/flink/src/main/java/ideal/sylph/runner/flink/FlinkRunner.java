@@ -24,6 +24,7 @@ import ideal.sylph.runner.flink.actuator.FlinkStreamSqlActuator;
 import ideal.sylph.runtime.yarn.YarnModule;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
+import ideal.sylph.spi.job.ContainerFactory;
 import ideal.sylph.spi.job.JobActuatorHandle;
 import ideal.sylph.spi.model.PipelinePluginInfo;
 import ideal.sylph.spi.model.PipelinePluginManager;
@@ -46,6 +47,12 @@ public class FlinkRunner
 {
     public static final String FLINK_DIST = "flink-dist";
     private static final Logger logger = LoggerFactory.getLogger(FlinkRunner.class);
+
+    @Override
+    public Class<? extends ContainerFactory> getContainerFactory()
+    {
+        return FlinkContainerFactory.class;
+    }
 
     @Override
     public Set<JobActuatorHandle> create(RunnerContext context)

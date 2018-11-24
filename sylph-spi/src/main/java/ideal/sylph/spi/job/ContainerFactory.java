@@ -13,16 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.spi;
+package ideal.sylph.spi.job;
 
-import ideal.sylph.spi.job.ContainerFactory;
-import ideal.sylph.spi.job.JobActuatorHandle;
-
-import java.util.Set;
-
-public interface Runner
+public interface ContainerFactory
 {
-    Set<JobActuatorHandle> create(RunnerContext context);
+    JobContainer getYarnContainer(Job job, String lastRunid);
 
-    Class<? extends ContainerFactory> getContainerFactory();
+    JobContainer getLocalContainer(Job job, String lastRunid);
+
+    JobContainer getK8sContainer(Job job, String lastRunid);
 }

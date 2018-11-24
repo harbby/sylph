@@ -93,8 +93,8 @@ public class FlinkStreamSqlActuator
                 .filter(statement -> statement instanceof CreateTable)
                 .forEach(statement -> {
                     CreateTable createTable = (CreateTable) statement;
-                    Map<String, String> withConfig = createTable.getWithConfig();
-                    String driverOrName = requireNonNull(withConfig.get("type"), "driver is null");
+                    Map<String, Object> withConfig = createTable.getWithConfig();
+                    String driverOrName = (String) requireNonNull(withConfig.get("type"), "driver is null");
                     pluginManager.findPluginInfo(driverOrName, getPipeType(createTable.getType()))
                             .ifPresent(plugin -> FileUtils
                                     .listFiles(plugin.getPluginFile(), null, true)
@@ -158,6 +158,11 @@ public class FlinkStreamSqlActuator
             this.sqlText = new String(flowBytes, UTF_8);
             this.sqlSplit = Stream.of(sqlText.split(SQL_REGEX))
                     .filter(StringUtils::isNotBlank).toArray(String[]::new);
+        }
+
+        public static SqlFlow of(byte[] flowBytes)
+        {
+            return new SqlFlow(flowBytes);
         }
 
         @JsonIgnore

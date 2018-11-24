@@ -65,6 +65,11 @@ public final class JVMLauncher<R extends Serializable>
         this.otherVmOps = otherVmOps;
     }
 
+    public Process getProcess()
+    {
+        return process;
+    }
+
     public VmFuture<R> startAndGet()
             throws JVMException
     {
@@ -97,7 +102,7 @@ public final class JVMLauncher<R extends Serializable>
 
             this.process = builder.start();
             try (OutputStream os = new BufferedOutputStream(process.getOutputStream())) {
-                os.write(Serializables.serialize(callable));  //把当前对象 发送到编译进程
+                os.write(Serializables.serialize(callable));  //send task
             }
             //IOUtils.copyBytes();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), UTF_8))) {

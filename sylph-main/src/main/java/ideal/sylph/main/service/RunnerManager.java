@@ -26,6 +26,7 @@ import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.main.server.ServerMainConfig;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
+import ideal.sylph.spi.job.ContainerFactory;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuator;
@@ -77,8 +78,18 @@ public class RunnerManager
         RunnerContext runnerContext = pluginLoader::getPluginsInfo;
 
         logger.info("Runner: {} starts loading {}", runner.getClass().getName(), PipelinePlugin.class.getName());
+
+        checkArgument(runner.getContainerFactory()!=null, runner.getClass() + " getContainerFactory() return null");
+        final ContainerFactory factory;
+        try {
+            factory = runner.getContainerFactory().newInstance();
+        }
+        catch (InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+
         runner.create(runnerContext).forEach(jobActuatorHandle -> {
-            JobActuator jobActuator = new JobActuatorImpl(jobActuatorHandle);
+            JobActuator jobActuator = new JobActuatorImpl(jobActuatorHandle, factory);
             String name = jobActuator.getInfo().getName();
             checkState(!jobActuatorMap.containsKey(name), String.format("Multiple entries with same key: %s=%s and %s=%s", name, jobActuatorMap.get(name), name, jobActuator));
 
@@ -95,7 +106,7 @@ public class RunnerManager
         JobActuator jobActuator = jobActuatorMap.get(jobType);
         checkArgument(jobActuator != null, jobType + " not exists");
         try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(jobActuator.getHandleClassLoader())) {
-            return jobActuator.getHandle().createJobContainer(job, jobInfo);
+            return jobActuator.getFactory().getLocalContainer(job, jobInfo);
         }
     }
 

@@ -66,15 +66,15 @@ queryStream
 
 tableElement
     : columnDefinition
-    | likeClause
+    | proctime
+    ;
+
+proctime
+    : identifier AS 'PROCTIME()'
     ;
 
 columnDefinition
     : identifier type (COMMENT string)?
-    ;
-
-likeClause
-    : LIKE qualifiedName (optionType=(INCLUDING | EXCLUDING) PROPERTIES)?
     ;
 
 properties

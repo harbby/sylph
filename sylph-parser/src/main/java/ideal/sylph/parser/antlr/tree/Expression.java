@@ -32,4 +32,26 @@ public abstract class Expression
     {
         throw new UnsupportedOperationException(format("not yet implemented: %s.visit%s", getClass().getName(), this.getClass().getSimpleName()));
     }
+
+    public static Object getJavaValue(Expression node)
+    {
+        if (node instanceof BooleanLiteral) {
+            return ((BooleanLiteral) node).getValue();
+        }
+        else if (node instanceof StringLiteral) {
+            return ((StringLiteral) node).getValue();
+        }
+        else if (node instanceof LongLiteral) {
+            return ((LongLiteral) node).getValue();
+        }
+        else if (node instanceof DoubleLiteral) {
+            return ((DoubleLiteral) node).getValue();
+        }
+        else if (node instanceof Identifier) {
+            return ((Identifier) node).getValue();
+        }
+        else {
+            throw new UnsupportedOperationException("this Expression " + node.getClass() + " have't support!");
+        }
+    }
 }

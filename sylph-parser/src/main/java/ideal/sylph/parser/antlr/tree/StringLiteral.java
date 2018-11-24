@@ -29,11 +29,6 @@ public class StringLiteral
 {
     private final String value;
 
-    public StringLiteral(String value)
-    {
-        this(Optional.empty(), value);
-    }
-
     public StringLiteral(NodeLocation location, String value)
     {
         this(Optional.of(location), value);

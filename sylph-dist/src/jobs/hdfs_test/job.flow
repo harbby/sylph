@@ -5,7 +5,7 @@ create source table topic1(
     message varchar,
     event_time bigint
 ) with (
-    type = 'ideal.sylph.plugins.flink.source.TestSource'
+    type = 'test'
 );
 
 -- 定义数据流输出位置

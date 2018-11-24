@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * test source
  **/
-@Name("flink_test_source")
+@Name("test")
 @Description("this flink test source inputStream")
 @Version("1.0.0")
 public class TestSource

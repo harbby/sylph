@@ -69,7 +69,6 @@ public class FlinkStreamEtlActuator
         extends EtlJobActuatorHandle
 {
     private static final Logger logger = LoggerFactory.getLogger(FlinkStreamEtlActuator.class);
-    @Inject private FlinkYarnJobLauncher jobLauncher;
     @Inject private PipelinePluginManager pluginManager;
 
     @NotNull
@@ -89,25 +88,6 @@ public class FlinkStreamEtlActuator
         final JobParameter jobParameter = ((FlinkJobConfig) jobConfig).getConfig();
         JobGraph jobGraph = compile(jobId, flow, jobParameter, jobClassLoader, pluginManager);
         return new FlinkJobHandle(jobGraph);
-    }
-
-    @Override
-    public JobContainer createJobContainer(@NotNull Job job, String jobInfo)
-    {
-        JobContainer yarnJobContainer = new YarnJobContainer(jobLauncher.getYarnClient(), jobInfo)
-        {
-            @Override
-            public Optional<String> run()
-                    throws Exception
-            {
-                logger.info("Instantiating SylphFlinkJob {} at yarnId {}", job.getId());
-                this.setYarnAppId(null);
-                ApplicationId applicationId = jobLauncher.start(job);
-                this.setYarnAppId(applicationId);
-                return Optional.of(applicationId.toString());
-            }
-        };
-        return YarnJobContainerProxy.get(yarnJobContainer);
     }
 
     @Override

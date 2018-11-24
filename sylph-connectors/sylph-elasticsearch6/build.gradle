@@ -1,5 +1,28 @@
+plugins {
+  id "com.github.johnrengelman.shadow" version "4.0.3"
+}
 
 dependencies {
-  compile group: 'org.apache.flink', name: 'flink-shaded-guava', version: '18.0-4.0'
+  shadow group: 'org.apache.flink', name: 'flink-shaded-guava', version: '18.0-4.0'
   compile 'org.elasticsearch.client:transport:6.4.0'
 }
+
+shadowJar {
+  baseName = project.name
+  classifier = 'shaded'
+  version = project.version
+
+  configurations = [project.configurations.compile]
+
+  dependencies {
+    exclude(dependency('junit:junit:'))
+  }
+  
+  //relocate 'com.google.protobuf', 'shaded.com.google.protobuf'
+  relocate 'com.google.common', 'shaded.elasticsearch6.com.google.common'
+  relocate 'io.netty', 'shaded.elasticsearch6.io.netty'
+  relocate 'io.netty', 'shaded.elasticsearch6.io.netty'
+  relocate 'org.apache.logging', 'shaded.elasticsearch6.org.apache.logging'
+}
+assemble.dependsOn shadowJar
+buildPlugins.dependsOn shadowJar

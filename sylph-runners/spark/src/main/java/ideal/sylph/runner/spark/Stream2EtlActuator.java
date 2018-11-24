@@ -45,7 +45,6 @@ public class Stream2EtlActuator
         extends EtlJobActuatorHandle
 {
     @Inject private YarnClient yarnClient;
-    @Inject private SparkAppLauncher appLauncher;
     @Inject private PipelinePluginManager pluginManager;
 
     @NotNull
@@ -54,25 +53,6 @@ public class Stream2EtlActuator
             throws Exception
     {
         return JobHelper.build2xJob(jobId, (EtlFlow) inFlow, jobClassLoader, pluginManager);
-    }
-
-    @Override
-    public JobContainer createJobContainer(@NotNull Job job, String jobInfo)
-    {
-        final JobContainer yarnJobContainer = new YarnJobContainer(yarnClient, jobInfo)
-        {
-            @Override
-            public Optional<String> run()
-                    throws Exception
-            {
-                this.setYarnAppId(null);
-                ApplicationId yarnAppId = appLauncher.run(job);
-                this.setYarnAppId(yarnAppId);
-                return Optional.of(yarnAppId.toString());
-            }
-        };
-        //----create JobContainer Proxy
-        return YarnJobContainerProxy.get(yarnJobContainer);
     }
 
     @Override

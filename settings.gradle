@@ -14,8 +14,6 @@ include 'ideal-common'
 include 'sylph-controller'
 
 include 'sylph-runners'
-include 'sylph-runners:batch'
-project(':sylph-runners:batch').name = 'sylph-runner-batch'
 include 'sylph-runners:flink'
 project(':sylph-runners:flink').name = 'sylph-runner-flink'
 include ':sylph-runners:spark'

@@ -42,7 +42,7 @@ import static org.apache.flink.shaded.guava18.com.google.common.base.Preconditio
 public class Elasticsearch6Sink
         implements RealTimeSink
 {
-    private static final int MAX_BATCH_BULK = 100;
+    private static final int MAX_BATCH_BULK = 50;
     private final Row.Schema schema;
     private final ElasticsearchSinkConfig config;
 
@@ -61,7 +61,7 @@ public class Elasticsearch6Sink
             this.idIndex = fieldIndex;
         }
         if (config.update) {
-            checkState(idIndex != -1, "Update mode, `idField` must be set");
+            checkState(idIndex != -1, "This is Update mode, `id_field` must be set");
         }
     }
 
@@ -79,6 +79,7 @@ public class Elasticsearch6Sink
             }
             UpdateRequestBuilder requestBuilder = client.prepareUpdate(config.index, config.type, id.toString());
             requestBuilder.setDoc(map);
+            requestBuilder.setDocAsUpsert(true);
             bulkBuilder.add(requestBuilder.request());
         }
         else {

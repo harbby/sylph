@@ -22,26 +22,21 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
-import static java.util.Objects.requireNonNull;
 
-public final class ColumnDefinition
+public class Proctime
         extends TableElement
 {
     private final Identifier name;
-    private final String type;
-    private final Optional<String> comment;
 
-    public ColumnDefinition(NodeLocation location, Identifier name, String type, Optional<String> comment)
+    public Proctime(NodeLocation location, Identifier name)
     {
-        this(Optional.of(location), name, type, comment);
+        this(Optional.of(location), name);
     }
 
-    private ColumnDefinition(Optional<NodeLocation> location, Identifier name, String type, Optional<String> comment)
+    private Proctime(Optional<NodeLocation> location, Identifier name)
     {
         super(location);
-        this.name = requireNonNull(name, "name is null");
-        this.type = requireNonNull(type, "type is null");
-        this.comment = requireNonNull(comment, "comment is null");
+        this.name = name;
     }
 
     public Identifier getName()
@@ -49,20 +44,16 @@ public final class ColumnDefinition
         return name;
     }
 
-    public String getType()
+    @Override
+    public List<? extends Node> getChildren()
     {
-        return type;
-    }
-
-    public Optional<String> getComment()
-    {
-        return comment;
+        return ImmutableList.of(name);
     }
 
     @Override
-    public List<Node> getChildren()
+    public int hashCode()
     {
-        return ImmutableList.of(name);
+        return Objects.hash(name);
     }
 
     @Override
@@ -74,16 +65,8 @@ public final class ColumnDefinition
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        ColumnDefinition o = (ColumnDefinition) obj;
-        return Objects.equals(this.name, o.name) &&
-                Objects.equals(this.type, o.type) &&
-                Objects.equals(this.comment, o.comment);
-    }
-
-    @Override
-    public int hashCode()
-    {
-        return Objects.hash(name, type, comment);
+        Proctime o = (Proctime) obj;
+        return Objects.equals(this.name, o.name);
     }
 
     @Override
@@ -91,8 +74,6 @@ public final class ColumnDefinition
     {
         return toStringHelper(this)
                 .add("name", name)
-                .add("type", type)
-                .add("comment", comment)
                 .toString();
     }
 }

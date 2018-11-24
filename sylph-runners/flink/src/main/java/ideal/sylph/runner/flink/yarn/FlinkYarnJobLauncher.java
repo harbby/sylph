@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
 import static java.util.Objects.requireNonNull;
 
 /**
- * 负责和yarn打交道 负责job的管理 提交job 杀掉job 获取job 列表
+ *
  */
 public class FlinkYarnJobLauncher
 {

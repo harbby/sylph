@@ -26,6 +26,7 @@ import ideal.sylph.parser.antlr.tree.CreateFunction;
 import ideal.sylph.parser.antlr.tree.CreateStreamAsSelect;
 import ideal.sylph.parser.antlr.tree.CreateTable;
 import ideal.sylph.parser.antlr.tree.InsertInto;
+import ideal.sylph.parser.antlr.tree.Proctime;
 import ideal.sylph.parser.antlr.tree.SelectQuery;
 import ideal.sylph.parser.antlr.tree.Statement;
 import ideal.sylph.parser.antlr.tree.WaterMark;
@@ -51,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 import static ideal.sylph.parser.antlr.tree.CreateTable.Type.BATCH;
 import static ideal.sylph.parser.antlr.tree.CreateTable.Type.SINK;
@@ -103,7 +105,7 @@ public class StreamSqlBuilder
             DataStream<Row> stream = tableEnv.toAppendStream(table, Row.class);
             stream.getTransformation().setOutputType(rowTypeInfo);
 
-            registerStreamTable(stream, createStreamAsSelect.getName(), createStreamAsSelect.getWatermark());
+            registerStreamTable(stream, createStreamAsSelect.getName(), createStreamAsSelect.getWatermark(), ImmutableList.of());
         }
         else if (statement instanceof CreateTable) {
             if (((CreateTable) statement).getType() == CreateTable.Type.BATCH) {
@@ -150,9 +152,9 @@ public class StreamSqlBuilder
         final String tableName = createStream.getName();
         RowTypeInfo tableTypeInfo = getTableRowTypeInfo(createStream);
 
-        final Map<String, String> withConfig = createStream.getWithConfig();
+        final Map<String, Object> withConfig = createStream.getWithConfig();
         final Map<String, Object> config = ImmutableMap.copyOf(withConfig);
-        final String driverClass = withConfig.get("type");
+        final String driverClass = (String) withConfig.get("type");
 
         final Binds binds = Binds.builder()
                 .bind(org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.class, tableEnv.execEnv())
@@ -180,7 +182,7 @@ public class StreamSqlBuilder
         if (SOURCE == createStream.getType()) {  //Source.class.isAssignableFrom(driver)
             DataStream<Row> inputStream = checkStream(loader.loadSource(driverClass, config).apply(null), tableTypeInfo);
             //---------------------------------------------------
-            registerStreamTable(inputStream, tableName, createStream.getWatermark());
+            registerStreamTable(inputStream, tableName, createStream.getWatermark(), createStream.getProctimes());
         }
         else if (SINK == createStream.getType()) {
             UnaryOperator<DataStream<Row>> outputStream = loader.loadSink(driverClass, config);
@@ -195,25 +197,28 @@ public class StreamSqlBuilder
         }
     }
 
-    private void registerStreamTable(DataStream<Row> inputStream, String tableName, Optional<WaterMark> waterMarkOptional)
+    private void registerStreamTable(
+            DataStream<Row> inputStream,
+            String tableName,
+            Optional<WaterMark> waterMarkOptional,
+            List<Proctime> proctimes)
     {
         RowTypeInfo tableTypeInfo = (RowTypeInfo) inputStream.getType();
-
         waterMarkOptional.ifPresent(waterMark -> {
-            //tableTypeInfo.getTypeAt("proctime")
             logger.info("createStreamTable Watermark is {}", waterMark);
             tableEnv.execEnv().setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
             DataStream<Row> waterMarkStream = buildWaterMark(waterMark, tableTypeInfo, inputStream);
             String fields = String.join(",", ImmutableList.<String>builder()
                     .add(tableTypeInfo.getFieldNames())
                     .add(waterMark.getFieldForName() + ".rowtime")
+                    .addAll(proctimes.stream().map(x -> x.getName().getValue() + ".proctime").collect(Collectors.toList()))
                     .build());
             tableEnv.registerDataStream(tableName, waterMarkStream, fields);
         });
         if (!waterMarkOptional.isPresent()) {
             String fields = String.join(",", ImmutableList.<String>builder()
                     .add(tableTypeInfo.getFieldNames())
-                    .add("proctime.proctime")
+                    .addAll(proctimes.stream().map(x -> x.getName().getValue() + ".proctime").collect(Collectors.toList()))
                     .build());
             tableEnv.registerDataStream(tableName, inputStream, fields);
         }
