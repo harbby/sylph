@@ -35,6 +35,6 @@ dependencies {
 
   testCompile project(':sylph-connectors:sylph-kafka')
   testCompile project(':sylph-connectors:sylph-mysql')
-  //testCompile project(':sylph-connectors:sylph-elasticsearch6')
+  testCompile project(':sylph-connectors:sylph-hdfs')
   testCompile project(path: ':sylph-connectors:sylph-elasticsearch6', configuration: 'shadow')
 }

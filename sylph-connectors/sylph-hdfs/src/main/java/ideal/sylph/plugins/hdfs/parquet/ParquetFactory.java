@@ -51,10 +51,10 @@ import static java.util.Objects.requireNonNull;
 public class ParquetFactory
         implements HDFSFactory
 {
-    private final Logger logger = LoggerFactory.getLogger(ParquetFactory.class);
+    private static final Logger logger = LoggerFactory.getLogger(ParquetFactory.class);
     private static final short TIME_Granularity = 5;
 
-    private final BlockingQueue<Runnable> queue = new LinkedBlockingQueue<>(1000);
+    private final BlockingQueue<Runnable> streamData = new LinkedBlockingQueue<>(1000);
     private final BlockingQueue<Runnable> monitorEvent = new ArrayBlockingQueue<>(1000); //警报事件队列
     private final ExecutorService executorPool = Executors.newFixedThreadPool(300); //最多300个线程
     //---parquet流 工厂--结构:Map[key=table+day+0900,parquetWtiter]-
@@ -104,7 +104,7 @@ public class ParquetFactory
         final Callable<Void> consumer = () -> {
             Thread.currentThread().setName("Parquet_Factory_Consumer");
             while (!closed) {
-                Runnable value = queue.poll();
+                Runnable value = streamData.poll();
                 //事件1
                 if (value != null) {
                     value.run(); //put data line
@@ -231,7 +231,7 @@ public class ParquetFactory
     public void writeLine(long eventTime, Map<String, Object> evalRow)
     {
         try {
-            queue.put(() -> {
+            streamData.put(() -> {
                 ApacheParquet parquet = getParquetWriter(eventTime);
                 parquet.writeLine(evalRow);
             });
@@ -245,7 +245,7 @@ public class ParquetFactory
     public void writeLine(long eventTime, List<Object> evalRow)
     {
         try {
-            queue.put(() -> {
+            streamData.put(() -> {
                 ApacheParquet parquet = getParquetWriter(eventTime);
                 parquet.writeLine(evalRow);
             });
@@ -259,7 +259,7 @@ public class ParquetFactory
     public void writeLine(long eventTime, Row evalRow)
     {
         try {
-            queue.put(() -> {
+            streamData.put(() -> {
                 ApacheParquet parquet = getParquetWriter(eventTime);
                 parquet.writeLine(evalRow);
             });

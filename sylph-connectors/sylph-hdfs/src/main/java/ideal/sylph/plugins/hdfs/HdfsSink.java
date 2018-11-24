@@ -60,6 +60,9 @@ public class HdfsSink
             }
         }
         checkState(eventTimeIndex != -1, config.eventTimeName + " does not exist,but only " + schema.getFieldNames());
+
+        checkState("text".equals(config.format.toLowerCase()) || "parquet".equals(config.format.toLowerCase()),
+                "Hdfs sink format only supports text and parquet");
     }
 
     @Override
@@ -87,11 +90,26 @@ public class HdfsSink
     public boolean open(long partitionId, long version)
             throws Exception
     {
-        this.hdfsFactory = HDFSFactorys.getParquetWriter()
-                .tableName(sinkTable)
-                .schema(schema)
-                .writeTableDir(config.writeDir)
-                .getOrCreate();
+        switch (config.format.toLowerCase()) {
+            case "text":
+                this.hdfsFactory = HDFSFactorys.getTextFileWriter()
+                        .tableName(sinkTable)
+                        .schema(schema)
+                        .writeTableDir(config.writeDir)
+                        .getOrCreate();
+                break;
+
+            case "parquet":
+                this.hdfsFactory = HDFSFactorys.getParquetWriter()
+                        .tableName(sinkTable)
+                        .schema(schema)
+                        .writeTableDir(config.writeDir)
+                        .getOrCreate();
+                break;
+            default:
+                throw new UnsupportedOperationException("Hdfs sink format only supports text and parquet");
+        }
+
         return true;
     }
 
@@ -111,7 +129,7 @@ public class HdfsSink
     {
         @Name("format")
         @Description("this is write file type, text or parquet")
-        private String format = "text";
+        private String format = "parquet";
 
         @Name("hdfs_write_dir")
         @Description("this is write dir")

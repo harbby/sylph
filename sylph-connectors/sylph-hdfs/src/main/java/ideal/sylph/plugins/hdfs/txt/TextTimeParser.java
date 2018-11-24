@@ -37,7 +37,7 @@ public class TextTimeParser
     {
         String ip = CommonUtil.getDefaultIpOrPid();
         //"/_tmp_" + this.getPartionMinute + "_" + ip + "_" + UUID.randomUUID().toString
-        return new StringBuilder("/sylph_").append(this.getPartionMinute())
+        return new StringBuilder("/text_").append(this.getPartionMinute())
                 .append("_").append(ip).append("_").append(CommonUtil.getProcessID())
                 .toString();
     }

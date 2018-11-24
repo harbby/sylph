@@ -26,27 +26,35 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static ideal.sylph.plugins.hdfs.factory.HDFSFactorys.getRowKey;
 import static java.util.Objects.requireNonNull;
 
 /**
- * 可用性 需进一步开发
+ * write text
  */
-@Deprecated
 public class TextFileFactory
         implements HDFSFactory
 {
-    private final Logger logger = LoggerFactory.getLogger(TextFileFactory.class);
-    private final Map<String, FSDataOutputStream> writerManager = new HashMap<>();
+    private static final Logger logger = LoggerFactory.getLogger(TextFileFactory.class);
+    private final Map<String, FSDataOutputStream> writerManager = new HashCache();
+    private final BlockingQueue<Tuple2<String, Long>> streamData = new LinkedBlockingQueue<>(1000);
+    private final ExecutorService executorPool = Executors.newSingleThreadExecutor();
 
     private final String writeTableDir;
     private final String table;
     private final Row.Schema schema;
+
+    private volatile boolean closed = false;
 
     public TextFileFactory(
             final String writeTableDir,
@@ -69,6 +77,23 @@ public class TextFileFactory
                 }
             });
         }));
+
+        executorPool.submit(() -> {
+            Thread.currentThread().setName("Text_Factory_Consumer");
+            while (!closed) {
+                Tuple2<String, Long> tuple2 = streamData.poll();
+                if (tuple2 != null) {
+                    long eventTime = tuple2.f2();
+                    String value = tuple2.f1();
+                    FSDataOutputStream outputStream = getTxtFileWriter(eventTime);
+                    writeString(outputStream, value);
+                }
+                else {
+                    TimeUnit.MILLISECONDS.sleep(1);
+                }
+            }
+            return null;
+        });
     }
 
     private FSDataOutputStream getTxtFileWriter(long eventTime)
@@ -134,21 +159,26 @@ public class TextFileFactory
                 builder.append(value.toString());
             }
         }
-        FSDataOutputStream outputStream = getTxtFileWriter(eventTime);
-        writeString(outputStream, builder.toString());
+        try {
+            streamData.put(Tuple2.of(builder.toString(), eventTime));
+        }
+        catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     @Override
     public void writeLine(long eventTime, Row row)
             throws IOException
     {
-        FSDataOutputStream outputStream = getTxtFileWriter(eventTime);
-        writeString(outputStream, row.mkString("\u0001"));
+        try {
+            streamData.put(Tuple2.of(row.mkString("\u0001"), eventTime));
+        }
+        catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
-    /**
-     * todo: 存在线程安全问题
-     */
     private static void writeString(FSDataOutputStream outputStream, String string)
             throws IOException
     {
@@ -156,8 +186,7 @@ public class TextFileFactory
         outputStream.write(bytes); //经过测试 似乎是线程安全的
         int batchSize = 1024; //1k = 1024*1
         if (outputStream.size() % batchSize == 0) {
-            outputStream.hsync();
-            //outputStream.hflush();
+            outputStream.flush();
         }
     }
 
@@ -165,5 +194,66 @@ public class TextFileFactory
     public void close()
             throws IOException
     {
+    }
+
+    public static class Tuple2<T1, T2>
+    {
+        private final T1 t1;
+        private final T2 t2;
+
+        public Tuple2(T1 t1, T2 t2)
+        {
+            this.t1 = t1;
+            this.t2 = t2;
+        }
+
+        public static <T1, T2> Tuple2<T1, T2> of(T1 t1, T2 t2)
+        {
+            return new Tuple2<>(t1, t2);
+        }
+
+        public T1 f1()
+        {
+            return t1;
+        }
+
+        public T2 f2()
+        {
+            return t2;
+        }
+    }
+
+    // An LRU cache using a linked hash map
+    private static class HashCache
+            extends LinkedHashMap<String, FSDataOutputStream>
+    {
+        private static final int CACHE_SIZE = 64;
+        private static final int INIT_SIZE = 32;
+        private static final float LOAD_FACTOR = 0.6f;
+
+        HashCache()
+        {
+            super(INIT_SIZE, LOAD_FACTOR);
+        }
+
+        private static final long serialVersionUID = 1;
+
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, FSDataOutputStream> eldest)
+        {
+            if (size() > CACHE_SIZE) {
+                try {
+                    eldest.getValue().close();
+                    logger.info("close textFile: {}", eldest.getKey());
+                    return true;
+                }
+                catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            else {
+                return false;
+            }
+        }
     }
 }
