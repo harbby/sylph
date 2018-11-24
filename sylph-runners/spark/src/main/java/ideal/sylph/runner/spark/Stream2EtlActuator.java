@@ -18,25 +18,18 @@ package ideal.sylph.runner.spark;
 import com.google.inject.Inject;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
-import ideal.sylph.runner.spark.yarn.SparkAppLauncher;
-import ideal.sylph.runtime.yarn.YarnJobContainer;
-import ideal.sylph.runtime.yarn.YarnJobContainerProxy;
 import ideal.sylph.spi.job.EtlFlow;
 import ideal.sylph.spi.job.EtlJobActuatorHandle;
 import ideal.sylph.spi.job.Flow;
-import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobConfig;
-import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.model.PipelinePluginManager;
-import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 
 import javax.validation.constraints.NotNull;
 
 import java.net.URLClassLoader;
-import java.util.Optional;
 
 @Name("Spark_Structured_StreamETL")
 @Description("spark2.x Structured streaming StreamETL")

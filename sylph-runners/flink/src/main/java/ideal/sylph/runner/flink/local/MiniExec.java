@@ -30,6 +30,8 @@ import org.slf4j.LoggerFactory;
  */
 public class MiniExec
 {
+    private MiniExec() {}
+
     private static final Logger logger = LoggerFactory.getLogger(MiniExec.class);
 
     public static JobExecutionResult execute(JobGraph jobGraph)

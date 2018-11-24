@@ -24,6 +24,7 @@ public class ServerMainConfig
 {
     private String metadataPath;
     private String jobWorkDir;
+    private String runMode = "yarn";
 
     @Config("server.metadata.path")
     @ConfigDescription("server.metadata.path location")
@@ -50,5 +51,18 @@ public class ServerMainConfig
     public String getJobWorkDir()
     {
         return jobWorkDir;
+    }
+
+    @Config("job.runtime.mode")
+    @ConfigDescription("job.runtime.mode, yarn or local")
+    public void setRunMode(String runMode)
+    {
+        this.runMode = runMode;
+    }
+
+    @NotNull(message = "job.runtime.mode not setting")
+    public String getRunMode()
+    {
+        return runMode;
     }
 }

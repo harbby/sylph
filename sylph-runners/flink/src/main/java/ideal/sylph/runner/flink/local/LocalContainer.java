@@ -24,6 +24,7 @@ import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Optional;
@@ -38,22 +39,23 @@ public class LocalContainer
     private final Executor pool = Executors.newSingleThreadExecutor();
 
     private final JVMLauncher<Boolean> launcher;
+    private String url = null;
 
     public LocalContainer(JobGraph jobGraph, Collection<URL> deps)
     {
-        this.launcher = getExecutor(jobGraph, deps);
-    }
-
-    private static JVMLauncher<Boolean> getExecutor(JobGraph jobGraph, Collection<URL> deps)
-    {
-        return JVMLaunchers.<Boolean>newJvm()
+        this.launcher = JVMLaunchers.<Boolean>newJvm()
                 .setCallable(() -> {
                     MiniExec.execute(jobGraph);
                     return true;
                 })
                 .setXms("512m")
                 .setXmx("512m")
-                .setConsole(System.out::println)
+                .setConsole(line -> {
+                    if (url == null && line.contains("Web frontend listening at")) {
+                        url = line.split("Web frontend listening at")[1].trim();
+                    }
+                    System.out.println(line);
+                })
                 .addUserjars(deps)
                 .build();
     }
@@ -61,7 +63,26 @@ public class LocalContainer
     @Override
     public String getRunId()
     {
-        return "007";
+        Process process = launcher.getProcess();
+        if (process == null) {
+            return "none";
+        }
+        String system = process.getClass().getName();
+        if ("java.lang.UNIXProcess".equals(system)) {
+            try {
+                Field field = process.getClass().getDeclaredField("pid");
+                field.setAccessible(true);
+                int pid = (int) field.get(process);
+                return String.valueOf(pid);
+            }
+            catch (NoSuchFieldException | IllegalAccessException ignored) {
+            }
+        }
+        else {
+            //todo: widnows get pid
+            return "windows";
+        }
+        return "none";
     }
 
     @Override
@@ -82,6 +103,7 @@ public class LocalContainer
     @Override
     public void shutdown()
     {
+        //url+ "jobs/{job_id}/yarn-cancel/";
         if (launcher.getProcess() != null) {
             launcher.getProcess().destroy();
         }
@@ -90,10 +112,11 @@ public class LocalContainer
     @Override
     public Job.Status getStatus()
     {
-        if (launcher.getProcess() == null) {
+        Process process = launcher.getProcess();
+        if (process == null) {
             return Job.Status.STOP;
         }
-        return launcher.getProcess().isAlive() ? Job.Status.RUNNING : Job.Status.STOP;
+        return process.isAlive() ? Job.Status.RUNNING : Job.Status.STOP;
     }
 
     @Override
@@ -104,6 +127,6 @@ public class LocalContainer
     @Override
     public String getJobUrl()
     {
-        return null;
+        return url;
     }
 }

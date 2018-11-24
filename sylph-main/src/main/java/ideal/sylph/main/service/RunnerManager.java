@@ -79,7 +79,7 @@ public class RunnerManager
 
         logger.info("Runner: {} starts loading {}", runner.getClass().getName(), PipelinePlugin.class.getName());
 
-        checkArgument(runner.getContainerFactory()!=null, runner.getClass() + " getContainerFactory() return null");
+        checkArgument(runner.getContainerFactory() != null, runner.getClass() + " getContainerFactory() return null");
         final ContainerFactory factory;
         try {
             factory = runner.getContainerFactory().newInstance();
@@ -106,7 +106,14 @@ public class RunnerManager
         JobActuator jobActuator = jobActuatorMap.get(jobType);
         checkArgument(jobActuator != null, jobType + " not exists");
         try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(jobActuator.getHandleClassLoader())) {
-            return jobActuator.getFactory().getLocalContainer(job, jobInfo);
+            switch (config.getRunMode().toLowerCase()) {
+                case "yarn":
+                    return jobActuator.getFactory().getYarnContainer(job, jobInfo);
+                case "local":
+                    return jobActuator.getFactory().getLocalContainer(job, jobInfo);
+                default:
+                    throw new IllegalArgumentException("this job.runtime.mode " + config.getRunMode() + " have't support!");
+            }
         }
     }
 

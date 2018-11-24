@@ -16,28 +16,12 @@
 package ideal.sylph.runner.flink;
 
 import com.google.inject.Binder;
-import com.google.inject.Inject;
 import com.google.inject.Module;
-import com.google.inject.Provider;
 import com.google.inject.Scopes;
 import ideal.sylph.runner.flink.actuator.FlinkStreamEtlActuator;
 import ideal.sylph.runner.flink.actuator.FlinkStreamSqlActuator;
-import ideal.sylph.runner.flink.yarn.FlinkYarnJobLauncher;
-import ideal.sylph.runner.flink.yarn.YarnClusterConfiguration;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static ideal.sylph.runner.flink.FlinkRunner.FLINK_DIST;
-import static java.util.Objects.requireNonNull;
 
 public class FlinkRunnerModule
         implements Module
