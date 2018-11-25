@@ -37,7 +37,6 @@ import java.net.URLClassLoader;
 public class Stream2EtlActuator
         extends EtlJobActuatorHandle
 {
-    @Inject private YarnClient yarnClient;
     @Inject private PipelinePluginManager pluginManager;
 
     @NotNull

@@ -56,7 +56,6 @@ public class SparkRunner
 
             Bootstrap app = new Bootstrap(
                     new SparkRunnerModule(),
-                    new YarnModule(),
                     binder -> {
                         //------------------------
                         binder.bind(PipelinePluginManager.class)

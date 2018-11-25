@@ -18,7 +18,6 @@ package ideal.sylph.runner.spark;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Scopes;
-import ideal.sylph.runner.spark.yarn.SparkAppLauncher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +32,5 @@ public class SparkRunnerModule
         binder.bind(StreamEtlActuator.class).in(Scopes.SINGLETON);
         binder.bind(Stream2EtlActuator.class).in(Scopes.SINGLETON);
         binder.bind(SparkSubmitActuator.class).in(Scopes.SINGLETON);
-        binder.bind(SparkAppLauncher.class).in(Scopes.SINGLETON);
     }
 }

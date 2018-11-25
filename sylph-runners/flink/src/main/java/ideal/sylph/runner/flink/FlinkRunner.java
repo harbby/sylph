@@ -68,7 +68,6 @@ public class FlinkRunner
             }
             Bootstrap app = new Bootstrap(
                     new FlinkRunnerModule(),
-                    new YarnModule(),
                     binder -> {
                         //----------------------------------
                         binder.bind(PipelinePluginManager.class)
