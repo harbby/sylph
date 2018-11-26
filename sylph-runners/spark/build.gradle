@@ -42,6 +42,7 @@ dependencies {
 
   //--other--
   compile group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
+  compile (project(':sylph-yarn'))
 
   //--- add scala class
   compileOnly files("$sourceSets.main.scala.outputDir")

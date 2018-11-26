@@ -52,7 +52,8 @@ public interface Job
         RUNNING(0),   //运行中
         STARTING(1),    // 启动中
         STOP(2),           // 停止运行
-        START_ERROR(3);           // 启动失败
+        STARTED_ERROR(3),           // 启动失败
+        KILLING(4);  // Killing job
 
         private final int status;
 

@@ -22,7 +22,9 @@ import org.apache.flink.client.program.ClusterClient;
 import org.apache.flink.client.program.rest.RestClusterClient;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.JobManagerOptions;
+import org.apache.flink.configuration.RestOptions;
 import org.apache.flink.runtime.jobgraph.JobGraph;
+import org.apache.flink.util.ShutdownHookUtil;
 import org.apache.flink.yarn.AbstractYarnClusterDescriptor;
 import org.apache.flink.yarn.Utils;
 import org.apache.flink.yarn.YarnApplicationMasterRunner;
@@ -42,7 +44,8 @@ import org.apache.hadoop.yarn.api.records.LocalResourceVisibility;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.client.api.YarnClient;
-import org.apache.hadoop.yarn.exceptions.YarnException;
+import org.apache.hadoop.yarn.client.api.YarnClientApplication;
+import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
 import org.slf4j.Logger;
@@ -55,39 +58,30 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.apache.hadoop.yarn.api.records.YarnApplicationState.NEW;
+import static java.util.Objects.requireNonNull;
 
 public class YarnClusterDescriptor
         extends AbstractYarnClusterDescriptor
 {
     private static final String APPLICATION_TYPE = "Sylph_FLINK";
     private static final Logger LOG = LoggerFactory.getLogger(YarnClusterDescriptor.class);
-    private static final int MAX_ATTEMPT = 1;
-    private static final long DEPLOY_TIMEOUT_MS = 600 * 1000;
-    private static final long RETRY_DELAY_MS = 250;
-    private static final ScheduledExecutorService YARN_POLL_EXECUTOR = Executors.newSingleThreadScheduledExecutor();
+    private static final int MAX_ATTEMPT = 2;
 
     private final YarnClusterConfiguration clusterConf;
+    private final YarnConfiguration yarnConfiguration;
     private final YarnClient yarnClient;
     private final JobParameter appConf;
-    private final Path homedir;
-    private final ApplicationId yarnAppId;
     private final String jobName;
     private final Iterable<Path> userProvidedJars;
+
     private Path flinkJar;
 
     YarnClusterDescriptor(
             final YarnClusterConfiguration clusterConf,
             final YarnClient yarnClient,
             final JobParameter appConf,
-            ApplicationId yarnAppId,
             String jobName,
             Iterable<Path> userProvidedJars)
     {
@@ -96,9 +90,8 @@ public class YarnClusterDescriptor
         this.clusterConf = clusterConf;
         this.yarnClient = yarnClient;
         this.appConf = appConf;
-        this.yarnAppId = yarnAppId;
         this.userProvidedJars = userProvidedJars;
-        this.homedir = new Path(clusterConf.appRootDir(), yarnAppId.toString());
+        this.yarnConfiguration = clusterConf.yarnConf();
     }
 
     @Override
@@ -117,7 +110,13 @@ public class YarnClusterDescriptor
     }
 
     @Override
-    protected ClusterClient<ApplicationId> createYarnClusterClient(AbstractYarnClusterDescriptor descriptor, int numberTaskManagers, int slotsPerTaskManager, ApplicationReport report, Configuration flinkConfiguration, boolean perJobCluster)
+    protected ClusterClient<ApplicationId> createYarnClusterClient(
+            AbstractYarnClusterDescriptor descriptor,
+            int numberTaskManagers,
+            int slotsPerTaskManager,
+            ApplicationReport report,
+            Configuration flinkConfiguration,
+            boolean perJobCluster)
             throws Exception
     {
         return new RestClusterClient<>(
@@ -131,36 +130,42 @@ public class YarnClusterDescriptor
         return this.yarnClient;
     }
 
-    public YarnClusterClient deploy()
+    public ClusterClient<ApplicationId> deploy()
     {
-        ApplicationSubmissionContext context = Records.newRecord(ApplicationSubmissionContext.class);
-        context.setApplicationId(yarnAppId);
         try {
-            ApplicationReport report = startAppMaster(context);
+            YarnClientApplication application = yarnClient.createApplication();
+            ApplicationReport report = startAppMaster(application);
 
-            Configuration conf = getFlinkConfiguration();
-            conf.setString(JobManagerOptions.ADDRESS.key(), report.getHost());
-            conf.setInteger(JobManagerOptions.PORT.key(), report.getRpcPort());
+            Configuration flinkConfiguration = getFlinkConfiguration();
+            flinkConfiguration.setString(JobManagerOptions.ADDRESS.key(), report.getHost());
+            flinkConfiguration.setInteger(JobManagerOptions.PORT.key(), report.getRpcPort());
 
+            flinkConfiguration.setString(RestOptions.ADDRESS, report.getHost());
+            flinkConfiguration.setInteger(RestOptions.PORT, report.getRpcPort());
+
+            //return new RestClusterClient<>(flinkConfiguration, report.getApplicationId()).getMaxSlots();
             return new YarnClusterClient(this,
                     appConf.getTaskManagerCount(),
                     appConf.getTaskManagerSlots(),
-                    report, conf, false);
+                    report, clusterConf.flinkConfiguration(), false);
         }
         catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private ApplicationReport startAppMaster(ApplicationSubmissionContext appContext)
+    private ApplicationReport startAppMaster(YarnClientApplication application)
             throws Exception
     {
+        ApplicationSubmissionContext appContext = application.getApplicationSubmissionContext();
         ApplicationId appId = appContext.getApplicationId();
         appContext.setMaxAppAttempts(MAX_ATTEMPT);
 
+        Path appHomeDir = new Path(clusterConf.appRootDir(), appId.toString());
+
         Map<String, LocalResource> localResources = new HashMap<>();
         Set<Path> shippedPaths = new HashSet<>();
-        collectLocalResources(localResources, shippedPaths);
+        collectLocalResources(appHomeDir, localResources, shippedPaths);
 
         final ContainerLaunchContext amContainer = setupApplicationMasterContainer(
                 getYarnJobClusterEntrypoint(),
@@ -180,6 +185,7 @@ public class YarnClusterDescriptor
 
         // Setup CLASSPATH and environment variables for ApplicationMaster
         final Map<String, String> appMasterEnv = setUpAmEnvironment(
+                appHomeDir,
                 appId,
                 classPath,
                 shippedFiles,
@@ -191,7 +197,7 @@ public class YarnClusterDescriptor
         // Set up resource type requirements for ApplicationMaster
         Resource capability = Records.newRecord(Resource.class);
         capability.setMemory(appConf.getJobManagerMemoryMb());  //设置jobManneger
-        capability.setVirtualCores(1);  //默认是1
+        capability.setVirtualCores(1);  //default 1
 
         appContext.setApplicationName(jobName);
         appContext.setApplicationType(APPLICATION_TYPE);
@@ -202,34 +208,77 @@ public class YarnClusterDescriptor
             appContext.setQueue(appConf.getQueue());
         }
 
+        // add a hook to clean up in case deployment fails
+        Path yarnAppDir = new Path(clusterConf.appRootDir(), appContext.getApplicationId().toString());
+        Thread deploymentFailureHook = new DeploymentFailureHook(yarnClient, application, yarnAppDir);
+        Runtime.getRuntime().addShutdownHook(deploymentFailureHook);
         LOG.info("Submitting application master {}", appId);
         yarnClient.submitApplication(appContext);
 
-        PollDeploymentStatus poll = new PollDeploymentStatus(appId);
-        YARN_POLL_EXECUTOR.submit(poll);
-        try {
-            return poll.result.get();
+        LOG.info("Waiting for the cluster to be allocated");
+        final long startTime = System.currentTimeMillis();
+        ApplicationReport report;
+        YarnApplicationState lastAppState = YarnApplicationState.NEW;
+        loop:
+        while (true) {
+            try {
+                report = yarnClient.getApplicationReport(appId);
+            }
+            catch (IOException e) {
+                throw new YarnDeploymentException("Failed to deploy the cluster.", e);
+            }
+            YarnApplicationState appState = report.getYarnApplicationState();
+            LOG.debug("Application State: {}", appState);
+            switch (appState) {
+                case FAILED:
+                case FINISHED:
+                case KILLED:
+                    throw new YarnDeploymentException("The YARN application unexpectedly switched to state "
+                            + appState + " during deployment. \n" +
+                            "Diagnostics from YARN: " + report.getDiagnostics() + "\n" +
+                            "If log aggregation is enabled on your cluster, use this command to further investigate the issue:\n" +
+                            "yarn logs -applicationId " + appId);
+                    //break ..
+                case RUNNING:
+                    LOG.info("YARN application has been deployed successfully.");
+                    break loop;
+                default:
+                    if (appState != lastAppState) {
+                        LOG.info("Deploying cluster, current state " + appState);
+                    }
+                    if (System.currentTimeMillis() - startTime > 60000) {
+                        LOG.info("Deployment took more than 60 seconds. Please check if the requested resources are available in the YARN cluster");
+                    }
+            }
+            lastAppState = appState;
+            Thread.sleep(250);
         }
-        catch (ExecutionException e) {
-            LOG.warn("Failed to deploy {}, cause: {}", appId.toString(), e.getCause());
-            yarnClient.killApplication(appId);
-            throw (Exception) e.getCause();
+        // print the application id for user to cancel themselves.
+        if (isDetachedMode()) {
+            LOG.info("The Flink YARN client has been started in detached mode. In order to stop " +
+                    "Flink on YARN, use the following command or a YARN web interface to stop " +
+                    "it:\nyarn application -kill " + appId + "\nPlease also note that the " +
+                    "temporary files of the YARN session in the home directory will not be removed.");
         }
+        // since deployment was successful, remove the hook
+        ShutdownHookUtil.removeShutdownHook(deploymentFailureHook, getClass().getSimpleName(), LOG);
+        return report;
     }
 
     private void collectLocalResources(
+            Path appHomeDir,
             Map<String, LocalResource> resources,
             Set<Path> shippedPaths
     )
             throws IOException, URISyntaxException
     {
         Path flinkJar = clusterConf.flinkJar();
-        LocalResource flinkJarResource = setupLocalResource(flinkJar, homedir, ""); //放到 Appid/根目录下
+        LocalResource flinkJarResource = setupLocalResource(flinkJar, appHomeDir, ""); //放到 Appid/根目录下
         this.flinkJar = ConverterUtils.getPathFromYarnURL(flinkJarResource.getResource());
         resources.put("flink.jar", flinkJarResource);
 
         for (Path p : clusterConf.resourcesToLocalize()) {  //主要是 flink.jar log4f.propors 和 flink.yaml 三个文件
-            LocalResource resource = setupLocalResource(p, homedir, ""); //这些需要放到根目录下
+            LocalResource resource = setupLocalResource(p, appHomeDir, ""); //这些需要放到根目录下
             resources.put(p.getName(), resource);
             if ("log4j.properties".equals(p.getName())) {
                 shippedPaths.add(ConverterUtils.getPathFromYarnURL(resource.getResource()));
@@ -242,7 +291,7 @@ public class YarnClusterDescriptor
                 LOG.warn("Duplicated name in the shipped files {}", p);
             }
             else {
-                LocalResource resource = setupLocalResource(p, homedir, "jars"); //这些放到 jars目录下
+                LocalResource resource = setupLocalResource(p, appHomeDir, "jars"); //这些放到 jars目录下
                 resources.put(name, resource);
                 shippedPaths.add(ConverterUtils.getPathFromYarnURL(resource.getResource()));
             }
@@ -290,11 +339,12 @@ public class YarnClusterDescriptor
     }
 
     private Map<String, String> setUpAmEnvironment(
+            Path appHomeDir,
             ApplicationId appId,
             String amClassPath,
             String shipFiles,
             String dynamicProperties)
-            throws IOException, URISyntaxException
+            throws IOException
     {
         final Map<String, String> appMasterEnv = new HashMap<>();
 
@@ -306,7 +356,7 @@ public class YarnClusterDescriptor
         appMasterEnv.put(YarnConfigKeys.ENV_TM_MEMORY, String.valueOf(appConf.getTaskManagerMemoryMb()));
         appMasterEnv.put(YarnConfigKeys.FLINK_JAR_PATH, flinkJar.toString());
         appMasterEnv.put(YarnConfigKeys.ENV_APP_ID, appId.toString());
-        appMasterEnv.put(YarnConfigKeys.ENV_CLIENT_HOME_DIR, homedir.toString()); //$home/.flink/appid 这个目录里面存放临时数据
+        appMasterEnv.put(YarnConfigKeys.ENV_CLIENT_HOME_DIR, appHomeDir.toString()); //$home/.flink/appid 这个目录里面存放临时数据
         appMasterEnv.put(YarnConfigKeys.ENV_CLIENT_SHIP_FILES, shipFiles);
         appMasterEnv.put(YarnConfigKeys.ENV_SLOTS, String.valueOf(appConf.getTaskManagerSlots()));
         appMasterEnv.put(YarnConfigKeys.ENV_DETACHED, String.valueOf(true));  //是否分离 分离就cluser模式 否则是client模式
@@ -335,74 +385,74 @@ public class YarnClusterDescriptor
         throw new UnsupportedOperationException("this method have't support!");
     }
 
-    private final class PollDeploymentStatus
-            implements Runnable
+    private static class YarnDeploymentException
+            extends RuntimeException
     {
-        private final CompletableFuture<ApplicationReport> result = new CompletableFuture<>();
-        private final ApplicationId appId;
-        private YarnApplicationState lastAppState = NEW;
-        private long startTime;
+        private static final long serialVersionUID = -812040641215388943L;
 
-        private PollDeploymentStatus(ApplicationId appId)
+        public YarnDeploymentException(String message)
         {
-            this.appId = appId;
+            super(message);
+        }
+
+        public YarnDeploymentException(String message, Throwable cause)
+        {
+            super(message, cause);
+        }
+    }
+
+    private class DeploymentFailureHook
+            extends Thread
+    {
+        private final YarnClient yarnClient;
+        private final YarnClientApplication yarnApplication;
+        private final Path yarnFilesDir;
+
+        DeploymentFailureHook(YarnClient yarnClient, YarnClientApplication yarnApplication, Path yarnFilesDir)
+        {
+            this.yarnClient = requireNonNull(yarnClient);
+            this.yarnApplication = requireNonNull(yarnApplication);
+            this.yarnFilesDir = requireNonNull(yarnFilesDir);
         }
 
         @Override
         public void run()
         {
-            if (startTime == 0) {
-                startTime = System.currentTimeMillis();
-            }
-
+            LOG.info("Cancelling deployment from Deployment Failure Hook");
+            failSessionDuringDeployment(yarnClient, yarnApplication);
+            LOG.info("Deleting files in {}.", yarnFilesDir);
             try {
-                ApplicationReport report = poll();
-                if (report == null) {
-                    YARN_POLL_EXECUTOR.schedule(this, RETRY_DELAY_MS, TimeUnit.MILLISECONDS);
+                FileSystem fs = FileSystem.get(yarnConfiguration);
+
+                if (!fs.delete(yarnFilesDir, true)) {
+                    throw new IOException("Deleting files in " + yarnFilesDir + " was unsuccessful");
                 }
-                else {
-                    result.complete(report);
-                }
+
+                fs.close();
             }
-            catch (YarnException | IOException e) {
-                result.completeExceptionally(e);
+            catch (IOException e) {
+                LOG.error("Failed to delete Flink Jar and configuration files in HDFS", e);
             }
         }
 
-        private ApplicationReport poll()
-                throws IOException, YarnException
+        /**
+         * Kills YARN application and stops YARN client.
+         *
+         * <p>Use this method to kill the App before it has been properly deployed
+         */
+        private void failSessionDuringDeployment(YarnClient yarnClient, YarnClientApplication yarnApplication)
         {
-            ApplicationReport report;
-            report = yarnClient.getApplicationReport(appId);
-            YarnApplicationState appState = report.getYarnApplicationState();
-            LOG.debug("Application State: {}", appState);
+            LOG.info("Killing YARN application");
 
-            switch (appState) {
-                case FAILED:
-                case FINISHED:
-                    //TODO: the finished state may be valid in flip-6
-                case KILLED:
-                    throw new IOException("The YARN application unexpectedly switched to state "
-                            + appState + " during deployment. \n"
-                            + "Diagnostics from YARN: " + report.getDiagnostics() + "\n"
-                            + "If log aggregation is enabled on your cluster, use this command to further investigate the issue:\n"
-                            + "yarn logs -applicationId " + appId);
-                    //break ..
-                case RUNNING:
-                    LOG.info("YARN application has been deployed successfully.");
-                    break;
-                default:
-                    if (appState != lastAppState) {
-                        LOG.info("Deploying cluster, current state " + appState);
-                    }
-                    lastAppState = appState;
-                    if (System.currentTimeMillis() - startTime > DEPLOY_TIMEOUT_MS) {
-                        throw new RuntimeException(String.format("Deployment took more than %d seconds. "
-                                + "Please check if the requested resources are available in the YARN cluster", DEPLOY_TIMEOUT_MS));
-                    }
-                    return null;
+            try {
+                yarnClient.killApplication(yarnApplication.getNewApplicationResponse().getApplicationId());
             }
-            return report;
+            catch (Exception e) {
+                // we only log a debug message here because the "killApplication" call is a best-effort
+                // call (we don't know if the application has been deployed when the error occured).
+                LOG.debug("Error while killing YARN application", e);
+            }
+            yarnClient.stop();
         }
     }
 }

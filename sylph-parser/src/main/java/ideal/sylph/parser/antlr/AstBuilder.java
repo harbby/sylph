@@ -16,16 +16,19 @@
 package ideal.sylph.parser.antlr;
 
 import com.google.common.collect.ImmutableList;
+import ideal.sylph.parser.antlr.tree.BooleanLiteral;
 import ideal.sylph.parser.antlr.tree.ColumnDefinition;
 import ideal.sylph.parser.antlr.tree.CreateFunction;
 import ideal.sylph.parser.antlr.tree.CreateStreamAsSelect;
 import ideal.sylph.parser.antlr.tree.CreateTable;
+import ideal.sylph.parser.antlr.tree.DoubleLiteral;
 import ideal.sylph.parser.antlr.tree.Expression;
 import ideal.sylph.parser.antlr.tree.Identifier;
 import ideal.sylph.parser.antlr.tree.InsertInto;
-import ideal.sylph.parser.antlr.tree.IntervalLiteral;
+import ideal.sylph.parser.antlr.tree.LongLiteral;
 import ideal.sylph.parser.antlr.tree.Node;
 import ideal.sylph.parser.antlr.tree.NodeLocation;
+import ideal.sylph.parser.antlr.tree.Proctime;
 import ideal.sylph.parser.antlr.tree.Property;
 import ideal.sylph.parser.antlr.tree.QualifiedName;
 import ideal.sylph.parser.antlr.tree.SelectQuery;
@@ -33,7 +36,6 @@ import ideal.sylph.parser.antlr.tree.StringLiteral;
 import ideal.sylph.parser.antlr.tree.TableElement;
 import ideal.sylph.parser.antlr.tree.WaterMark;
 import ideal.sylph.parser.antlr4.SqlBaseBaseVisitor;
-import ideal.sylph.parser.antlr4.SqlBaseLexer;
 import ideal.sylph.parser.antlr4.SqlBaseParser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
@@ -53,6 +55,30 @@ public class AstBuilder
     public Node visitProperty(SqlBaseParser.PropertyContext context)
     {
         return new Property(getLocation(context), (Identifier) visit(context.identifier()), (Expression) visit(context.expression()));
+    }
+
+    @Override
+    public Node visitBooleanValue(SqlBaseParser.BooleanValueContext context)
+    {
+        return new BooleanLiteral(getLocation(context), context.getText());
+    }
+
+    @Override
+    public Node visitDoubleLiteral(SqlBaseParser.DoubleLiteralContext context)
+    {
+        return new DoubleLiteral(getLocation(context), context.getText());
+    }
+
+    @Override
+    public Node visitDecimalLiteral(SqlBaseParser.DecimalLiteralContext context)
+    {
+        return new DoubleLiteral(getLocation(context), context.getText());
+    }
+
+    @Override
+    public Node visitIntegerLiteral(SqlBaseParser.IntegerLiteralContext context)
+    {
+        return new LongLiteral(getLocation(context), context.getText());
     }
 
     @Override
@@ -144,6 +170,12 @@ public class AstBuilder
     }
 
     @Override
+    public Node visitProctime(SqlBaseParser.ProctimeContext context)
+    {
+        return new Proctime(getLocation(context), (Identifier) visit(context.identifier()));
+    }
+
+    @Override
     public Node visitCreateTable(SqlBaseParser.CreateTableContext context)
     {
         Optional<String> comment = Optional.empty();
@@ -166,11 +198,14 @@ public class AstBuilder
             type = CreateTable.Type.BATCH;
         }
 
+        List<TableElement> elements = visit(context.tableElement(), TableElement.class);
+
         return new CreateTable(
                 requireNonNull(type, "table type is null,but must is SOURCE or SINK or BATCH"),
                 getLocation(context),
                 getQualifiedName(context.qualifiedName()),
-                visit(context.tableElement(), TableElement.class),
+                elements.stream().filter(x -> x instanceof ColumnDefinition).map(ColumnDefinition.class::cast).collect(toList()),
+                elements.stream().filter(x -> x instanceof Proctime).map(Proctime.class::cast).collect(toList()),
                 context.EXISTS() != null,
                 properties,
                 comment,
@@ -315,37 +350,5 @@ public class AstBuilder
                 .collect(Collectors.toList());
 
         return QualifiedName.of(parts);
-    }
-
-    private static IntervalLiteral.IntervalField getIntervalFieldType(Token token)
-    {
-        switch (token.getType()) {
-            case SqlBaseLexer.YEAR:
-                return IntervalLiteral.IntervalField.YEAR;
-            case SqlBaseLexer.MONTH:
-                return IntervalLiteral.IntervalField.MONTH;
-            case SqlBaseLexer.DAY:
-                return IntervalLiteral.IntervalField.DAY;
-            case SqlBaseLexer.HOUR:
-                return IntervalLiteral.IntervalField.HOUR;
-            case SqlBaseLexer.MINUTE:
-                return IntervalLiteral.IntervalField.MINUTE;
-            case SqlBaseLexer.SECOND:
-                return IntervalLiteral.IntervalField.SECOND;
-        }
-
-        throw new IllegalArgumentException("Unsupported interval field: " + token.getText());
-    }
-
-    private static IntervalLiteral.Sign getIntervalSign(Token token)
-    {
-        switch (token.getType()) {
-            case SqlBaseLexer.MINUS:
-                return IntervalLiteral.Sign.NEGATIVE;
-            case SqlBaseLexer.PLUS:
-                return IntervalLiteral.Sign.POSITIVE;
-        }
-
-        throw new IllegalArgumentException("Unsupported sign: " + token.getText());
     }
 }

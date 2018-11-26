@@ -1,4 +1,3 @@
-
 $(function () {
     url = "/_sys/job_manger"
     var send = {
@@ -10,7 +9,7 @@ $(function () {
         contentType: "application/json;charset=UTF-8",
         dataType: "json",
         data: JSON.stringify(send),
-        success : function(data){
+        success: function (data) {
             list = data.data;
             for (var i = 0; i < list.length; i++) {
                 var jobId = list[i].jobId;
@@ -22,23 +21,28 @@ $(function () {
                 var button = '';
                 switch (status) {
                     case 'RUNNING':
-                        status = '上线';
-                        button = '<button class="btn btn-primary stop">下线</button>';
+                        status = 'RUNNING'; //运行中
+                        button = '<button class="btn btn-primary stop">stop</button>';
                         break;
                     case 'STOP':
-                        status = '下线';
-                        button = '<button class="btn btn-primary active">上线</button>' + '<button class="btn btn-primary delete">删除</button>' + '<button class="btn btn-primary btn_edit" data-id="' + jobId + '" data-type="'+type+'">编辑</button>';
+                        status = 'STOP';
+                        button = '<button class="btn btn-primary active">deploy</button>' + '<button class="btn btn-primary delete">delete</button>' + '<button class="btn btn-primary btn_edit" data-id="' + jobId + '" data-type="' + type + '">edit</button>';
                         break;
                     case 'STARTING':
-                        status = '正在启动中';
-                        button = '<button class="btn btn-primary stop">下线</button>';
+                        status = 'STARTING';
+                        button = '<button class="btn btn-primary stop">stop</button>';
                         break;
-                    case 'START_ERROR':
-                        status = '启动失败';
-                        button = '<button class="btn btn-primary stop">下线</button>';
+                    case 'KILLING':
+                        status = 'KILLING';
+                        //button = '<button class="btn btn-primary stop">stop</button>';
                         break;
-                    default:  //未知状态
-                    //status = '未知状态:';
+                    case 'STARTED_ERROR':
+                        status = 'STARTED_ERROR';
+                        button = '<button class="btn btn-primary stop">stop</button>';
+                        break;
+                    default:
+                        alert("this " + status + " have't support!")
+                    //status = 'unknown state';
                 }
                 if (yarnId != null && yarnId != '') {
                     yarnId = '<a href="' + app_url + '" target="_blank">' + yarnId + '</a>';
@@ -48,16 +52,16 @@ $(function () {
                     '<div class="col-md-2">' + jobId + '</div>' +
                     '<div class="col-md-3">' + yarnId + '</div>' +
                     '<div class="col-md-1">' + type + '</div>' +
-                    '<div class="col-md-2">' + create_time + '</div>' +
+                    // '<div class="col-md-2">' + create_time + '</div>' +
                     '<div class="col-md-1">' + status + '</div>' +
                     '<div class="col-md-3" jobId="' + jobId + '">' + button + '</div>' +
                     '</div>';
                 $('#rowHead').after(tmp);
             }
         },
-        error: function(XMLHttpRequest, textStatus, errorThrown) {
-            console.log(textStatus+errorThrown)
-            alert("查询失败请稍后再试:"+errorThrown)
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+            console.log(textStatus + errorThrown)
+            alert("Failed, please refresh and try again:" + errorThrown)
         }
     });
 
@@ -78,7 +82,8 @@ $(function () {
         }
         else if ($(this).hasClass('refresh_all')) {
             send = {"type": "refresh_all"};
-        } else {
+        }
+        else {
             return;
         }
 
@@ -100,7 +105,8 @@ $(function () {
         var type = $(this).attr("data-type");
         if (type == 'StreamSql') {
             window.location.href = "stream_sql.html?type=edit&jobId=" + id;
-        } else {
+        }
+        else {
             window.location.href = "etl.html?jobId=" + id;
         }
 

@@ -16,6 +16,8 @@
 package ideal.sylph.controller.action;
 
 import com.google.common.collect.ImmutableMap;
+import ideal.common.base.Throwables;
+import ideal.common.jvm.JVMException;
 import ideal.sylph.spi.SylphContext;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Job;
@@ -69,7 +71,7 @@ public class StreamSqlResource
     }
 
     /**
-     * 保存job
+     * save job
      */
     @POST
     @Path("save")
@@ -77,29 +79,34 @@ public class StreamSqlResource
     @Produces({MediaType.APPLICATION_JSON})
     public Map saveJob(@Context HttpServletRequest request)
     {
+        String jobId = null;
         try {
-            String jobId = requireNonNull(request.getParameter("jobId"), "job jobId 不能为空");
+            jobId = requireNonNull(request.getParameter("jobId"), "job jobId is not empty");
             String flow = request.getParameter("query");
             String configString = request.getParameter("config");
-
+            checkArgument(isNotBlank(jobId), "JobId IS NULL");
             checkArgument(isNotBlank(flow), "SQL query IS NULL");
             sylphContext.saveJob(jobId, flow, ImmutableMap.of("type", "StreamSql", "config", parserJobConfig(configString)));
             Map out = ImmutableMap.of(
                     "jobId", jobId,
                     "type", "save",
                     "status", "ok",
-                    "msg", "编译过程:..."
-            );
+                    "msg", "ok");
             logger.info("save job {}", jobId);
             return out;
         }
-        catch (Exception e) {
-            Map out = ImmutableMap.of("type", "save",
+        catch (JVMException e) {
+            logger.warn("save job {} failed: {}", jobId, e.getMessage());
+            return ImmutableMap.of("type", "save",
                     "status", "error",
-                    "msg", "任务创建失败: " + e.toString()
-            );
-            logger.warn("job 创建失败", e);
-            return out;
+                    "msg", e.getMessage());
+        }
+        catch (Exception e) {
+            String message = Throwables.getStackTraceAsString(e);
+            logger.warn(message);
+            return ImmutableMap.of("type", "save",
+                    "status", "error",
+                    "msg", message);
         }
     }
 
@@ -124,7 +131,7 @@ public class StreamSqlResource
         return ImmutableMap.builder()
                 .put("query", job.getFlow().toString())
                 .put("config", job.getConfig())
-                .put("msg", "获取任务成功")
+                .put("msg", "Get job successfully")
                 .put("status", "ok")
                 .put("files", files)
                 .put("jobId", jobId)

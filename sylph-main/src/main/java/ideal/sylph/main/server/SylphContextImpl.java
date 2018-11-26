@@ -22,7 +22,7 @@ import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobContainer;
-import ideal.sylph.spi.model.PipelinePluginManager;
+import ideal.sylph.spi.model.PipelinePluginInfo;
 
 import javax.validation.constraints.NotNull;
 
@@ -121,13 +121,13 @@ public class SylphContextImpl
     }
 
     @Override
-    public List<PipelinePluginManager.PipelinePluginInfo> getPlugins()
+    public List<PipelinePluginInfo> getPlugins()
     {
         return runnerManger.getPlugins();
     }
 
     @Override
-    public List<PipelinePluginManager.PipelinePluginInfo> getPlugins(String actuator)
+    public List<PipelinePluginInfo> getPlugins(String actuator)
     {
         return runnerManger.getPlugins(actuator);
     }

@@ -40,6 +40,11 @@ public class SparkAppLauncher
     @Inject private YarnClient yarnClient;
     private static final String sparkHome = System.getenv("SPARK_HOME");
 
+    public YarnClient getYarnClient()
+    {
+        return yarnClient;
+    }
+
     public ApplicationId run(Job job)
             throws Exception
     {

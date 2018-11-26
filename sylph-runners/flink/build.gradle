@@ -23,6 +23,7 @@ dependencies {
   compile "org.apache.flink:flink-cep-scala_2.11:$deps.flink"
 
   //--- other----
+  compile (project(':sylph-yarn'))
   compile (project(':sylph-parser')){
     exclude(module: 'guava')
     exclude(module: 'calcite-core')
@@ -32,6 +33,8 @@ dependencies {
   //colour
   compile group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
 
-  testCompile project(':sylph-connectors:sylph-flink')
+  testCompile project(':sylph-connectors:sylph-kafka')
   testCompile project(':sylph-connectors:sylph-mysql')
+  testCompile project(':sylph-connectors:sylph-hdfs')
+  testCompile project(path: ':sylph-connectors:sylph-elasticsearch6', configuration: 'shadow')
 }

@@ -1,5 +1,3 @@
-apply plugin: 'scala'
-
 
 dependencies {
     compile group: 'org.apache.parquet', name: 'parquet-hadoop' , version: '1.8.3'

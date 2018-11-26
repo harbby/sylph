@@ -223,8 +223,8 @@ public class FlinkSqlParser
 
     private RealTimeTransForm getJoinTransForm(JoinContext joinContext, CreateTable batchTable)
     {
-        Map<String, String> withConfig = batchTable.getWithConfig();
-        String driverOrName = withConfig.get("type");
+        Map<String, Object> withConfig = batchTable.getWithConfig();
+        String driverOrName = (String) withConfig.get("type");
         Class<?> driver = null;
         try {
             driver = pluginManager.loadPluginDriver(driverOrName, PipelinePlugin.PipelineType.transform);

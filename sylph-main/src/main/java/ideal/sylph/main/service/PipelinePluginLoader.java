@@ -29,7 +29,7 @@ import ideal.sylph.etl.api.Sink;
 import ideal.sylph.etl.api.Source;
 import ideal.sylph.etl.api.TransForm;
 import ideal.sylph.spi.exception.SylphException;
-import ideal.sylph.spi.model.PipelinePluginManager;
+import ideal.sylph.spi.model.PipelinePluginInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sun.reflect.generics.repository.AbstractRepository;
@@ -61,7 +61,7 @@ public class PipelinePluginLoader
 {
     private static final String PREFIX = "META-INF/services/";   // copy form ServiceLoader
     private static final Logger logger = LoggerFactory.getLogger(PipelinePluginLoader.class);
-    private Set<PipelinePluginManager.PipelinePluginInfo> pluginsInfo;
+    private Set<PipelinePluginInfo> pluginsInfo;
 
     public void loadPlugins()
             throws InvocationTargetException, NoSuchMethodException, IllegalAccessException, IOException
@@ -72,12 +72,12 @@ public class PipelinePluginLoader
         }
         File[] pluginFiles = requireNonNull(pluginsDir.listFiles(), pluginsDir + " not exists or isDirectory");
 
-        ImmutableSet.Builder<PipelinePluginManager.PipelinePluginInfo> builder = ImmutableSet.builder();
+        ImmutableSet.Builder<PipelinePluginInfo> builder = ImmutableSet.builder();
         for (File it : pluginFiles) {
             DirClassLoader dirClassLoader = new DirClassLoader(null, this.getClass().getClassLoader());
             dirClassLoader.addDir(it);
             Set<Class<? extends PipelinePlugin>> plugins = loadPipelinePlugins(dirClassLoader);
-            Set<PipelinePluginManager.PipelinePluginInfo> tmp = plugins.stream().map(javaClass -> {
+            Set<PipelinePluginInfo> tmp = plugins.stream().map(javaClass -> {
                 try {
                     if (RealTimePipeline.class.isAssignableFrom(javaClass)) {
                         logger.debug("this is RealTimePipeline: {}", javaClass);
@@ -95,7 +95,7 @@ public class PipelinePluginLoader
         this.pluginsInfo = builder.build();
     }
 
-    public Set<PipelinePluginManager.PipelinePluginInfo> getPluginsInfo()
+    public Set<PipelinePluginInfo> getPluginsInfo()
     {
         return pluginsInfo;
     }
@@ -162,7 +162,7 @@ public class PipelinePluginLoader
         }
     }
 
-    private static PipelinePluginManager.PipelinePluginInfo getPluginInfo(
+    private static PipelinePluginInfo getPluginInfo(
             File pluginFile,
             Class<? extends PipelinePlugin> javaClass,
             boolean realTime,   //is realTime ?
@@ -179,7 +179,7 @@ public class PipelinePluginLoader
         Description description = javaClass.getAnnotation(Description.class);
         Version version = javaClass.getAnnotation(Version.class);
 
-        return new PipelinePluginManager.PipelinePluginInfo(
+        return new PipelinePluginInfo(
                 nameArr,
                 description == null ? "" : description.value(),
                 version == null ? "" : version.value(),

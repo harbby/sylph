@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <meta charset="UTF-8">
-<title>任务编辑</title>
+<title>job_edit</title>
 <link href="libs/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css"/>
 <link href="libs/fontawesome/css/font-awesome.min.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="libs/jquery/dist/jquery.min.js"></script>
@@ -63,24 +63,28 @@
             </div>
             <div class="col-sm-2">
                 <button id="submit" type="button" class="btn btn-primary">Save</button>
-                <button type="button" class="btn btn-primary" onclick="window.location.href='./index.html'">取消</button>
+                <button type="button" class="btn btn-primary" onclick="window.location.href='./index.html'">Cancel</button>
             </div>
         </div>
         <div id="upload-files" style="display: none">
             <input type="file" name="file" multiple="multiple" style="display: none"/>
             <div id="fileList"></div>
             <div style="text-align: right;margin-right: 10px;border-top: 1px solid #e5e5e5;padding-top:5px;">
-                <button type="button" class="btn btn-primary" onclick="$('input[name=file]').click();">选择文件</button>
-                <button type="button" class="btn btn-primary" onclick="layer.close(UploadFilesLayer);">确定</button>
+                <button type="button" class="btn btn-primary" onclick="$('input[name=file]').click();">Select</button>
+                <button type="button" class="btn btn-primary" onclick="layer.close(UploadFilesLayer);">Yes</button>
             </div>
         </div>
         <div id="config-set" style="display: none">
             <div><textarea style="width: 100%;height: 265px;" name="config" id="config"></textarea></div>
             <div style="text-align: right;margin-right: 10px;">
-                <button type="button" class="btn btn-primary" onclick="layer.close(ConfigSetLayer);">确定</button>
+                <button type="button" class="btn btn-primary" onclick="layer.close(ConfigSetLayer);">Yes</button>
             </div>
         </div>
     </form>
+
+    <div>
+        <pre class="alert alert-error" id="error_message" style="display: none; color:Red; "></pre>
+    </div>
 </div>
 </body>
 

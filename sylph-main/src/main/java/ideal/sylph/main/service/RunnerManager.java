@@ -26,6 +26,7 @@ import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.main.server.ServerMainConfig;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
+import ideal.sylph.spi.job.ContainerFactory;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuator;
@@ -33,7 +34,7 @@ import ideal.sylph.spi.job.JobActuatorHandle;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobHandle;
-import ideal.sylph.spi.model.PipelinePluginManager;
+import ideal.sylph.spi.model.PipelinePluginInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +42,6 @@ import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collection;
@@ -78,8 +78,18 @@ public class RunnerManager
         RunnerContext runnerContext = pluginLoader::getPluginsInfo;
 
         logger.info("Runner: {} starts loading {}", runner.getClass().getName(), PipelinePlugin.class.getName());
+
+        checkArgument(runner.getContainerFactory() != null, runner.getClass() + " getContainerFactory() return null");
+        final ContainerFactory factory;
+        try {
+            factory = runner.getContainerFactory().newInstance();
+        }
+        catch (InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+
         runner.create(runnerContext).forEach(jobActuatorHandle -> {
-            JobActuator jobActuator = new JobActuatorImpl(jobActuatorHandle);
+            JobActuator jobActuator = new JobActuatorImpl(jobActuatorHandle, factory);
             String name = jobActuator.getInfo().getName();
             checkState(!jobActuatorMap.containsKey(name), String.format("Multiple entries with same key: %s=%s and %s=%s", name, jobActuatorMap.get(name), name, jobActuator));
 
@@ -96,12 +106,19 @@ public class RunnerManager
         JobActuator jobActuator = jobActuatorMap.get(jobType);
         checkArgument(jobActuator != null, jobType + " not exists");
         try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(jobActuator.getHandleClassLoader())) {
-            return jobActuator.getHandle().createJobContainer(job, jobInfo);
+            switch (config.getRunMode().toLowerCase()) {
+                case "yarn":
+                    return jobActuator.getFactory().getYarnContainer(job, jobInfo);
+                case "local":
+                    return jobActuator.getFactory().getLocalContainer(job, jobInfo);
+                default:
+                    throw new IllegalArgumentException("this job.runtime.mode " + config.getRunMode() + " have't support!");
+            }
         }
     }
 
     public Job formJobWithFlow(String jobId, byte[] flowBytes, Map configBytes)
-            throws IOException
+            throws Exception
     {
         String actuatorName = JobConfig.load(configBytes).getType();
         JobActuator jobActuator = jobActuatorMap.get(actuatorName);
@@ -112,7 +129,7 @@ public class RunnerManager
     }
 
     public Job formJobWithFlow(String jobId, byte[] flowBytes, byte[] configBytes)
-            throws IOException
+            throws Exception
     {
         String actuatorName = JobConfig.load(configBytes).getType();
         JobActuator jobActuator = jobActuatorMap.get(actuatorName);
@@ -130,7 +147,7 @@ public class RunnerManager
                 .collect(Collectors.toList());
     }
 
-    public List<PipelinePluginManager.PipelinePluginInfo> getPlugins()
+    public List<PipelinePluginInfo> getPlugins()
     {
         return jobActuatorMap.values()
                 .stream()
@@ -139,14 +156,14 @@ public class RunnerManager
                 .collect(Collectors.toList());
     }
 
-    public List<PipelinePluginManager.PipelinePluginInfo> getPlugins(String actuator)
+    public List<PipelinePluginInfo> getPlugins(String actuator)
     {
         JobActuator jobActuator = requireNonNull(jobActuatorMap.get(actuator), "job actuator [" + actuator + "] not exists");
         return Lists.newArrayList(jobActuator.getHandle().getPluginManager().getAllPlugins());
     }
 
     private Job formJobWithFlow(String jobId, byte[] flowBytes, JobActuator jobActuator, JobConfig jobConfig)
-            throws IOException
+            throws Exception
     {
         JobActuatorHandle jobActuatorHandle = jobActuator.getHandle();
         String actuatorName = jobConfig.getType();

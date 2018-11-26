@@ -26,6 +26,9 @@ import java.util.Map;
 public class ObjectInputStreamProxy
         extends java.io.ObjectInputStream
 {
+    private static final Lazys.Supplier<Map<String, Class<?>>> primClasses =
+            Lazys.goLazy(ObjectInputStreamProxy::getPrimClasses);
+
     private ClassLoader classLoader;
 
     public ObjectInputStreamProxy(InputStream in)
@@ -97,7 +100,7 @@ public class ObjectInputStreamProxy
             return Class.forName(name, false, classLoader);
         }
         catch (ClassNotFoundException ex) {
-            Class<?> cl = getPrimClasses().get(name);
+            Class<?> cl = primClasses.get().get(name);
             if (cl != null) {
                 return cl;
             }

@@ -28,9 +28,9 @@ function getUrlParam(paramName) {
 $(function () {
     /*add or edit*/
     var type = getUrlParam("type");
-    if (type == "add") {
+    if (type === "add") {
         $("input,textarea").val('');
-    } else if (type == "edit") {
+    } else if (type === "edit") {
         $.ajax({
             url: "/_sys/stream_sql/get?jobId=" + getUrlParam("jobId"),
             type: "get",
@@ -40,7 +40,7 @@ $(function () {
             success: function (result) {
                 $("textarea[name=jobId]").val(result.jobId);
                 $("textarea[name=query]").val(result.query);
-                var congfigString = ""
+                var congfigString = "";
                 $.each(result.config.config, function (key, value) {
                     congfigString += key + "= " + value + "\n"
                 });
@@ -61,6 +61,14 @@ $(function () {
 
     $('#submit').click(function () {
         var formData = new FormData($('form')[0]);
+        if(formData.get("jobId")===""){
+            alert("Job name cannot be empty");
+            return;
+        }
+        if(formData.get("query")===""){
+            alert("Job query cannot be empty");
+            return;
+        }
         $.ajax({
             url: '/_sys/stream_sql/save',
             type: 'POST',
@@ -69,11 +77,11 @@ $(function () {
             processData: false,
             contentType: false
         }).done(function (data) {
-            if (data.status == "ok") {
-                alert("保存成功");
+            if (data.status === "ok") {
+                alert("Successfully saved");
                 window.location.href = "index.html";
             } else {
-                alert(data.msg);
+                error_show(data.msg)
             }
         }).fail(function (data) {
             alert(data.msg);
@@ -102,10 +110,10 @@ var UploadFilesLayer;
 
 function openUploadFilesLayer() {
     UploadFilesLayer = layer.open({
-        type: 1, area: ['500px', '360px'], title: '文件上传', shade: 0.6, maxmin: false,
+        type: 1, area: ['500px', '360px'], title: 'File Upload', shade: 0.6, maxmin: false,
         anim: 1, content: $('#upload-files')
     });
-};
+}
 
 var editor = CodeMirror.fromTextArea(document.getElementById("config"), {
     mode: 'properties',
@@ -119,10 +127,20 @@ editor.on('change', editor => {
 });
 function openConfigSetLayer() {
     var configSetLayer = layer.open({
-        type: 1, area: ['500px', '360px'], title: '高级配置', shade: 0.6, maxmin: false,
+        type: 1, area: ['500px', '360px'], title: 'Job_Config', shade: 0.6, maxmin: false,
         anim: 1, content: $('#config-set'),
         success: function (layero, index) { //弹窗完成后 进行语法渲染
             editor.setValue(document.getElementById('config').value)
+        }
+    });
+}
+
+function error_show(message) {
+    var configSetLayer = layer.open({
+        type: 1, area: ['850px', '540px'], title: 'Error', shade: 0.6, maxmin: false,
+        anim: 1, content: $('#error_message'),
+        success: function (layero, index) { //弹窗完成后 进行语法渲染
+            $('#error_message').text(message)
         }
     });
 }

@@ -44,15 +44,13 @@ public class MetadataManager
     private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
     private final ConcurrentMap<String, String> jobInfoMetaData = new ConcurrentHashMap<>();
     private final ServerMainConfig config;
-    private final RunnerManager runnerManger;
     private final File metadataFile;
 
     @Inject
-    public MetadataManager(ServerMainConfig serverMainConfig, RunnerManager runnerManger)
+    public MetadataManager(ServerMainConfig serverMainConfig)
     {
         this.config = requireNonNull(serverMainConfig, "serverMainConfig is null");
         this.metadataFile = new File(config.getMetadataPath(), "metadata.data");
-        this.runnerManger = runnerManger;
     }
 
     /**

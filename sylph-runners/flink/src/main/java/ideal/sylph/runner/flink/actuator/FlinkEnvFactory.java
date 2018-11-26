@@ -38,11 +38,11 @@ public class FlinkEnvFactory
 
             // The maximum number of concurrent checkpoint attempts.
             execEnv.getCheckpointConfig().setMaxConcurrentCheckpoints(1); //default
-        }
 
-        //savePoint
-        //default  execEnv.getStateBackend() is null;
-        execEnv.setStateBackend((StateBackend) new FsStateBackend(checkpointDataUri + new DateTime().toString("yyyyMMdd")));
+            //savePoint
+            //default  execEnv.getStateBackend() is null;
+            execEnv.setStateBackend((StateBackend) new FsStateBackend(checkpointDataUri + new DateTime().toString("yyyyMMdd")));
+        }
         // default  TimeCharacteristic.ProcessingTime
         //execEnv.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 

@@ -15,6 +15,8 @@
  */
 package ideal.sylph.spi.job;
 
+import javax.validation.constraints.NotNull;
+
 import static ideal.sylph.spi.job.Job.Status.RUNNING;
 import static ideal.sylph.spi.job.Job.Status.STOP;
 import static java.util.Objects.requireNonNull;
@@ -22,16 +24,17 @@ import static java.util.Objects.requireNonNull;
 public abstract class JobContainerAbs
         implements JobContainer
 {
-    private Job.Status status = STOP;
+    private volatile Job.Status status = STOP;
 
     @Override
-    public void setStatus(Job.Status status)
+    public synchronized void setStatus(Job.Status status)
     {
         this.status = requireNonNull(status, "status is null");
     }
 
+    @NotNull
     @Override
-    public Job.Status getStatus()
+    public synchronized Job.Status getStatus()
     {
         if (status == RUNNING) {
             return isRunning() ? RUNNING : STOP;

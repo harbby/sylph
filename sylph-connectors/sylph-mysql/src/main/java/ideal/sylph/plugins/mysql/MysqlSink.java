@@ -85,7 +85,7 @@ public class MysqlSink
             this.statement = connection.prepareStatement(prepareStatementQuery);
         }
         catch (SQLException | ClassNotFoundException e) {
-            throw new RuntimeException("Mysql connection open fail", e);
+            throw new RuntimeException("Mysql connection open failed: " + e.getMessage(), e.getCause());
         }
         return true;
     }

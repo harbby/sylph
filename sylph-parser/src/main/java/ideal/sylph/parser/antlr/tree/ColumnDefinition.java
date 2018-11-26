@@ -31,11 +31,6 @@ public final class ColumnDefinition
     private final String type;
     private final Optional<String> comment;
 
-    public ColumnDefinition(Identifier name, String type, Optional<String> comment)
-    {
-        this(Optional.empty(), name, type, comment);
-    }
-
     public ColumnDefinition(NodeLocation location, Identifier name, String type, Optional<String> comment)
     {
         this(Optional.of(location), name, type, comment);
@@ -67,7 +62,7 @@ public final class ColumnDefinition
     @Override
     public List<Node> getChildren()
     {
-        return ImmutableList.of();
+        return ImmutableList.of(name);
     }
 
     @Override

@@ -17,6 +17,7 @@ package ideal.sylph.main.service;
 
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
+import ideal.sylph.spi.job.ContainerFactory;
 import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobActuatorHandle;
 
@@ -31,12 +32,14 @@ public class JobActuatorImpl
     private final long startTime = System.currentTimeMillis();
     private final JobActuator.ActuatorInfo info;
     private final JobActuatorHandle jobActuatorHandle;
+    private final ContainerFactory factory;
 
     private final String name;
     private final String description;
 
-    JobActuatorImpl(JobActuatorHandle jobActuatorHandle)
+    JobActuatorImpl(JobActuatorHandle jobActuatorHandle, ContainerFactory factory)
     {
+        this.factory = requireNonNull(factory, "factory is null");
         this.jobActuatorHandle = requireNonNull(jobActuatorHandle, "jobActuatorHandle is null");
         this.name = buildName(jobActuatorHandle);
         this.description = buildDescription(jobActuatorHandle);
@@ -74,6 +77,12 @@ public class JobActuatorImpl
                 return mode != null ? mode.value() : ModeType.OTHER;
             }
         };
+    }
+
+    @Override
+    public ContainerFactory getFactory()
+    {
+        return factory;
     }
 
     @Override
