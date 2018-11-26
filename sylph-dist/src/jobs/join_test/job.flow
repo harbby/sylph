@@ -4,7 +4,8 @@ create function get_json_object as 'ideal.sylph.runner.flink.udf.UDFJson';
 create source table topic1(
     key varchar,
     message varchar,     -- json
-    event_time bigint
+    event_time bigint,
+    proctime as proctime()
 ) with (
     type = 'test'
 );

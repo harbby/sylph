@@ -21,8 +21,6 @@ import ideal.common.jvm.JVMLaunchers;
 import ideal.sylph.runner.spark.etl.sparkstreaming.StreamNodeLoader;
 import ideal.sylph.runner.spark.etl.structured.StructuredNodeLoader;
 import ideal.sylph.spi.App;
-import ideal.sylph.spi.GraphApp;
-import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.job.EtlFlow;
 import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.spark.SparkConf;
@@ -31,7 +29,6 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.streaming.Seconds;
 import org.apache.spark.streaming.StreamingContext;
-import org.apache.spark.streaming.dstream.DStream;
 import org.fusesource.jansi.Ansi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +40,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
+import static ideal.sylph.spi.GraphAppUtil.buildGraph;
 import static org.fusesource.jansi.Ansi.Color.GREEN;
 import static org.fusesource.jansi.Ansi.Color.YELLOW;
 
@@ -61,7 +59,7 @@ final class JobHelper
             throws Exception
     {
         final AtomicBoolean isCompile = new AtomicBoolean(true);
-        Supplier<App<SparkSession>> appGetter = (Supplier<App<SparkSession>> & Serializable) () -> new GraphApp<SparkSession, Dataset<Row>>()
+        Supplier<App<SparkSession>> appGetter = (Supplier<App<SparkSession>> & Serializable) () -> new App<SparkSession>()
         {
             private final SparkSession spark = getSparkSession();
 
@@ -76,12 +74,19 @@ final class JobHelper
             }
 
             @Override
-            public NodeLoader<Dataset<Row>> getNodeLoader()
+            public SparkSession getContext()
+            {
+                return spark;
+            }
+
+            @Override
+            public void build()
+                    throws Exception
             {
                 Binds binds = Binds.builder()
                         .bind(SparkSession.class, spark)
                         .build();
-                return new StructuredNodeLoader(pluginManager, binds)
+                StructuredNodeLoader loader = new StructuredNodeLoader(pluginManager, binds)
                 {
                     @Override
                     public UnaryOperator<Dataset<Row>> loadSink(String driverStr, Map<String, Object> config)
@@ -92,19 +97,7 @@ final class JobHelper
                         } : super.loadSink(driverStr, config);
                     }
                 };
-            }
-
-            @Override
-            public SparkSession getContext()
-            {
-                return spark;
-            }
-
-            @Override
-            public void build()
-                    throws Exception
-            {
-                this.buildGraph(jobId, flow).run();
+                buildGraph(loader, jobId, flow).run();
             }
         };
 
@@ -126,7 +119,7 @@ final class JobHelper
             throws Exception
     {
         final AtomicBoolean isCompile = new AtomicBoolean(true);
-        final Supplier<App<StreamingContext>> appGetter = (Supplier<App<StreamingContext>> & Serializable) () -> new GraphApp<StreamingContext, DStream<Row>>()
+        final Supplier<App<StreamingContext>> appGetter = (Supplier<App<StreamingContext>> & Serializable) () -> new App<StreamingContext>()
         {
             private final StreamingContext spark = getStreamingContext();
 
@@ -137,16 +130,8 @@ final class JobHelper
                         new SparkConf().setMaster("local[*]").setAppName("sparkCompile")
                         : new SparkConf();
                 //todo: 5s is default
-                return new StreamingContext(sparkConf, Seconds.apply(5));
-            }
-
-            @Override
-            public NodeLoader<DStream<Row>> getNodeLoader()
-            {
-                Binds binds = Binds.builder()
-                        .bind(StreamingContext.class, spark)
-                        .build();
-                return new StreamNodeLoader(pluginManager, binds);
+                SparkSession sparkSession = SparkSession.builder().config(sparkConf).getOrCreate();
+                return new StreamingContext(sparkSession.sparkContext(), Seconds.apply(5));
             }
 
             @Override
@@ -159,7 +144,11 @@ final class JobHelper
             public void build()
                     throws Exception
             {
-                this.buildGraph(jobId, flow).run();
+                Binds binds = Binds.builder()
+                        .bind(StreamingContext.class, spark)
+                        .build();
+                StreamNodeLoader loader = new StreamNodeLoader(pluginManager, binds);
+                buildGraph(loader, jobId, flow).run();
             }
         };
 

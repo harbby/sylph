@@ -21,15 +21,17 @@ import com.google.inject.Injector;
 import com.google.inject.Provider;
 import com.google.inject.Scopes;
 import ideal.common.base.Lazys;
-import ideal.sylph.runner.flink.local.LocalContainer;
+import ideal.common.jvm.JVMLaunchers;
 import ideal.sylph.runner.flink.yarn.FlinkYarnJobLauncher;
 import ideal.sylph.runner.flink.yarn.YarnClusterConfiguration;
+import ideal.sylph.runtime.local.LocalContainer;
 import ideal.sylph.runtime.yarn.YarnJobContainer;
 import ideal.sylph.runtime.yarn.YarnJobContainerProxy;
 import ideal.sylph.runtime.yarn.YarnModule;
 import ideal.sylph.spi.job.ContainerFactory;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobContainer;
+import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
@@ -44,6 +46,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static ideal.sylph.runner.flink.FlinkRunner.FLINK_DIST;
+import static ideal.sylph.runner.flink.local.MiniExec.getLocalRunner;
 import static java.util.Objects.requireNonNull;
 
 public class FlinkContainerFactory
@@ -83,7 +86,31 @@ public class FlinkContainerFactory
     public JobContainer getLocalContainer(Job job, String lastRunid)
     {
         FlinkJobHandle jobHandle = (FlinkJobHandle) job.getJobHandle();
-        return new LocalContainer(jobHandle.getJobGraph(), job.getDepends());
+        JobGraph jobGraph = jobHandle.getJobGraph();
+
+        JVMLaunchers.VmBuilder<Boolean> vmBuilder = JVMLaunchers.<Boolean>newJvm()
+                .setCallable(getLocalRunner(jobGraph))
+                .setXms("512m")
+                .setXmx("512m")
+                .setConsole(System.out::println)
+                .notDepThisJvmClassPath()
+                .addUserjars(job.getDepends());
+        return new LocalContainer(vmBuilder)
+        {
+            @Override
+            public synchronized Optional<String> run()
+                    throws Exception
+            {
+                this.launcher = vmBuilder.setConsole(line -> {
+                    String urlMark = "Web frontend listening at";
+                    if (url == null && line.contains(urlMark)) {
+                        url = line.split(urlMark)[1].trim();
+                    }
+                    System.out.println(line);
+                }).build();
+                return super.run();
+            }
+        };
     }
 
     @Override

@@ -19,7 +19,6 @@ import com.google.inject.Injector;
 import com.google.inject.Scopes;
 import ideal.common.bootstrap.Bootstrap;
 import ideal.common.classloader.DirClassLoader;
-import ideal.sylph.runtime.yarn.YarnModule;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.ContainerFactory;
@@ -55,8 +54,10 @@ public class SparkRunner
             }
 
             Bootstrap app = new Bootstrap(
-                    new SparkRunnerModule(),
                     binder -> {
+                        binder.bind(StreamEtlActuator.class).in(Scopes.SINGLETON);
+                        binder.bind(Stream2EtlActuator.class).in(Scopes.SINGLETON);
+                        binder.bind(SparkSubmitActuator.class).in(Scopes.SINGLETON);
                         //------------------------
                         binder.bind(PipelinePluginManager.class)
                                 .toProvider(() -> createPipelinePluginManager(context))

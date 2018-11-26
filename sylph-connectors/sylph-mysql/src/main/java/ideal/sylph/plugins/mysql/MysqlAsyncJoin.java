@@ -17,6 +17,7 @@ package ideal.sylph.plugins.mysql;
 
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
+import ideal.sylph.etl.CheckHandler;
 import ideal.sylph.etl.Collector;
 import ideal.sylph.etl.PluginConfig;
 import ideal.sylph.etl.Row;
@@ -40,6 +41,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -53,7 +55,7 @@ import static org.apache.flink.shaded.guava18.com.google.common.base.Preconditio
 @Name("mysql")
 @Description("this is `join mode` mysql config table")
 public class MysqlAsyncJoin
-        implements RealTimeTransForm
+        implements RealTimeTransForm, CheckHandler
 {
     private static final Logger logger = LoggerFactory.getLogger(MysqlAsyncJoin.class);
 
@@ -66,8 +68,9 @@ public class MysqlAsyncJoin
     private final Row.Schema schema;
 
     private Connection connection;
-
     private Cache<String, List<Map<String, Object>>> cache;
+
+    private final transient Callable<Void> checkHandler;
 
     public MysqlAsyncJoin(JoinContext context, MysqlJoinConfig mysqlConfig)
     {
@@ -92,8 +95,6 @@ public class MysqlAsyncJoin
 
         this.sql = String.format(select, batchSelectFields, jdbcTable, where);
 
-        checkMysql(mysqlConfig, jdbcTable, ImmutableSet.<String>builder().addAll(batchFields).addAll(context.getJoinOnMapping().values()).build());
-
         logger.info("batch table join query is [{}]", sql);
         logger.info("join mapping is {}", context.getJoinOnMapping());
 
@@ -101,21 +102,27 @@ public class MysqlAsyncJoin
                 .maximumSize(mysqlConfig.getCacheMaxNumber())   //max cache 1000 value
                 .expireAfterAccess(mysqlConfig.getCacheTime(), TimeUnit.SECONDS)  //
                 .build();
+
+        this.checkHandler = () -> {
+            Set<String> fieldNames = ImmutableSet.<String>builder().addAll(batchFields).addAll(context.getJoinOnMapping().values()).build();
+
+            try (Connection connection = DriverManager.getConnection(config.getJdbcUrl(), config.getUser(), config.getPassword());
+                    ResultSet resultSet = connection.getMetaData().getColumns(null, null, jdbcTable, null);
+            ) {
+                List<Map<String, Object>> tableSchema = JdbcUtils.resultToList(resultSet);
+                List<String> listNames = tableSchema.stream().map(x -> (String) x.get("COLUMN_NAME")).collect(Collectors.toList());
+
+                checkState(listNames.containsAll(fieldNames), "mysql table `" + jdbcTable + " fields ` only " + listNames + ", but your is " + fieldNames);
+            }
+            return null;
+        };
     }
 
-    private static void checkMysql(MysqlJoinConfig config, String tableName, Set<String> fieldNames)
+    @Override
+    public void check()
+            throws Exception
     {
-        try (Connection connection = DriverManager.getConnection(config.getJdbcUrl(), config.getUser(), config.getPassword());
-                ResultSet resultSet = connection.getMetaData().getColumns(null, null, tableName, null);
-        ) {
-            List<Map<String, Object>> tableSchema = JdbcUtils.resultToList(resultSet);
-            List<String> listNames = tableSchema.stream().map(x -> (String) x.get("COLUMN_NAME")).collect(Collectors.toList());
-
-            checkState(listNames.containsAll(fieldNames), "mysql table `" + tableName + " fields ` only " + listNames + ", but your is " + fieldNames);
-        }
-        catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        checkHandler.call();
     }
 
     @Override
@@ -180,14 +187,9 @@ public class MysqlAsyncJoin
             throws Exception
     {
         //create connection
-        try {
-            Class.forName("com.mysql.jdbc.Driver");
-            this.connection = DriverManager.getConnection(config.getJdbcUrl(), config.getUser(), config.getPassword());
-            return true;
-        }
-        catch (SQLException | ClassNotFoundException e) {
-            throw new SQLException("Mysql connection open fail", e);
-        }
+        Class.forName("com.mysql.jdbc.Driver");
+        this.connection = DriverManager.getConnection(config.getJdbcUrl(), config.getUser(), config.getPassword());
+        return true;
     }
 
     @Override

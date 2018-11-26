@@ -21,7 +21,6 @@ import ideal.common.bootstrap.Bootstrap;
 import ideal.common.classloader.DirClassLoader;
 import ideal.sylph.runner.flink.actuator.FlinkStreamEtlActuator;
 import ideal.sylph.runner.flink.actuator.FlinkStreamSqlActuator;
-import ideal.sylph.runtime.yarn.YarnModule;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.ContainerFactory;
@@ -67,8 +66,9 @@ public class FlinkRunner
                 ((DirClassLoader) classLoader).addDir(new File(flinkHome, "lib"));
             }
             Bootstrap app = new Bootstrap(
-                    new FlinkRunnerModule(),
                     binder -> {
+                        binder.bind(FlinkStreamEtlActuator.class).in(Scopes.SINGLETON);
+                        binder.bind(FlinkStreamSqlActuator.class).in(Scopes.SINGLETON);
                         //----------------------------------
                         binder.bind(PipelinePluginManager.class)
                                 .toProvider(() -> createPipelinePluginManager(context))

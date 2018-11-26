@@ -26,8 +26,6 @@ import ideal.sylph.runner.flink.FlinkJobConfig;
 import ideal.sylph.runner.flink.FlinkJobHandle;
 import ideal.sylph.runner.flink.etl.FlinkNodeLoader;
 import ideal.sylph.spi.App;
-import ideal.sylph.spi.GraphApp;
-import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.EtlFlow;
 import ideal.sylph.spi.job.EtlJobActuatorHandle;
@@ -37,11 +35,9 @@ import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.flink.runtime.jobgraph.JobGraph;
-import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
-import org.apache.flink.types.Row;
 import org.fusesource.jansi.Ansi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +47,7 @@ import javax.validation.constraints.NotNull;
 import java.net.URLClassLoader;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
+import static ideal.sylph.spi.GraphAppUtil.buildGraph;
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
 import static org.fusesource.jansi.Ansi.Color.GREEN;
 import static org.fusesource.jansi.Ansi.Color.YELLOW;
@@ -107,21 +104,8 @@ public class FlinkStreamEtlActuator
                     System.out.println("************ job start ***************");
                     StreamExecutionEnvironment execEnv = FlinkEnvFactory.getStreamEnv(jobParameter);
                     StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(execEnv);
-                    App<StreamTableEnvironment> app = new GraphApp<StreamTableEnvironment, DataStream<Row>>()
+                    App<StreamTableEnvironment> app = new App<StreamTableEnvironment>()
                     {
-                        @Override
-                        public NodeLoader<DataStream<Row>> getNodeLoader()
-                        {
-                            Binds binds = Binds.builder()
-                                    .bind(org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.class, execEnv)
-                                    .bind(org.apache.flink.table.api.StreamTableEnvironment.class, tableEnv)
-                                    .bind(org.apache.flink.table.api.java.StreamTableEnvironment.class, tableEnv)
-                                    //.bind(org.apache.flink.streaming.api.scala.StreamExecutionEnvironment.class, null) // execEnv
-                                    //.bind(org.apache.flink.table.api.scala.StreamTableEnvironment.class, null)  // tableEnv
-                                    .build();
-                            return new FlinkNodeLoader(pluginManager, binds);
-                        }
-
                         @Override
                         public StreamTableEnvironment getContext()
                         {
@@ -132,7 +116,13 @@ public class FlinkStreamEtlActuator
                         public void build()
                                 throws Exception
                         {
-                            this.buildGraph(jobId, flow).run();
+                            Binds binds = Binds.builder()
+                                    .bind(org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.class, execEnv)
+                                    .bind(org.apache.flink.table.api.StreamTableEnvironment.class, tableEnv)
+                                    .bind(org.apache.flink.table.api.java.StreamTableEnvironment.class, tableEnv)
+                                    .build();
+                            FlinkNodeLoader loader = new FlinkNodeLoader(pluginManager, binds);
+                            buildGraph(loader, jobId, flow).run();
                         }
                     };
                     app.build();

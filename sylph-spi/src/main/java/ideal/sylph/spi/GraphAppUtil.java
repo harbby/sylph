@@ -25,18 +25,16 @@ import ideal.sylph.spi.model.NodeInfo;
 import java.util.List;
 import java.util.Map;
 
-public interface GraphApp<T, R>
-        extends App<T>
+public class GraphAppUtil
 {
-    NodeLoader<R> getNodeLoader();
+    private GraphAppUtil() {}
 
-    default Graph<R> buildGraph(String jobId, EtlFlow flow)
+    public static <R> Graph<R> buildGraph(final NodeLoader<R> loader, String jobId, EtlFlow flow)
     {
         final GraphBuilder<R> graphx = Graph.<R>builder().name(jobId);
         final List<NodeInfo> nodes = flow.getNodes();
         final List<EdgeInfo> edges = flow.getEdges();
 
-        final NodeLoader<R> loader = getNodeLoader();
         nodes.forEach(nodeInfo -> {
             final Map<String, Object> config = nodeInfo.getUserConfig();
             String driverString = nodeInfo.getDriverClass();
