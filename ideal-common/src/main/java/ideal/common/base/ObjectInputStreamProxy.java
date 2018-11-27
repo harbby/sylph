@@ -15,6 +15,8 @@
  */
 package ideal.common.base;
 
+import ideal.common.function.Creater;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectStreamClass;
@@ -26,7 +28,7 @@ import java.util.Map;
 public class ObjectInputStreamProxy
         extends java.io.ObjectInputStream
 {
-    private static final Lazys.Supplier<Map<String, Class<?>>> primClasses =
+    private static final Creater<Map<String, Class<?>>> primClasses =
             Lazys.goLazy(ObjectInputStreamProxy::getPrimClasses);
 
     private ClassLoader classLoader;

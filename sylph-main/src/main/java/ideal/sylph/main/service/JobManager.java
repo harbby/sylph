@@ -77,13 +77,13 @@ public final class JobManager
                                     logger.warn("Job {}[{}] Status is {}, Soon to start", jobId,
                                             container.getRunId(), status);
                                     container.setStatus(STARTING);
-                                    Optional<String> runResult = container.run();
+                                    Optional<String> runId = container.run();
                                     if (container.getStatus() == KILLING) {
                                         container.shutdown();
                                     }
                                     else {
                                         container.setStatus(RUNNING);
-                                        runResult.ifPresent(result -> metadataManager.addMetadata(jobId, result));
+                                        runId.ifPresent(result -> metadataManager.addMetadata(jobId, result));
                                     }
                                 }
                                 catch (Exception e) {

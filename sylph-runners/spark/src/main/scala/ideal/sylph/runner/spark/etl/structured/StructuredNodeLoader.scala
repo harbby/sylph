@@ -18,7 +18,7 @@ package ideal.sylph.runner.spark.etl.structured
 import java.util
 import java.util.function.UnaryOperator
 
-import ideal.common.ioc.Binds
+import ideal.common.ioc.{Bean, IocFactory}
 import ideal.sylph.etl.PipelinePlugin
 import ideal.sylph.etl.api.{RealTimeSink, RealTimeTransForm, Sink, TransForm}
 import ideal.sylph.runner.spark.etl.{SparkRow, SparkUtil}
@@ -32,11 +32,12 @@ import org.slf4j.LoggerFactory
 /**
   * Created by ideal on 17-5-8.
   */
-class StructuredNodeLoader(private val pluginManager: PipelinePluginManager, private val binds: Binds) extends NodeLoader[DataFrame] {
+class StructuredNodeLoader(private val pluginManager: PipelinePluginManager, private val bean: Bean) extends NodeLoader[DataFrame] {
   private val logger = LoggerFactory.getLogger(this.getClass)
+  private lazy val iocFactory = IocFactory.create(bean)
 
   override def loadSource(driverStr: String, config: util.Map[String, Object]): UnaryOperator[DataFrame] = {
-    val spark: SparkSession = binds.get(classOf[SparkSession])
+    val spark: SparkSession = iocFactory.getInstance(classOf[SparkSession])
 
     import collection.JavaConverters._
     val source: DataFrame = driverStr match {
@@ -154,5 +155,5 @@ class StructuredNodeLoader(private val pluginManager: PipelinePluginManager, pri
     }
   }
 
-  override def getBinds: Binds = binds
+  override def getIocFactory: IocFactory = iocFactory
 }

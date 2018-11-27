@@ -4,5 +4,8 @@ dependencies {
   compile project(':sylph-controller')
   compile(project(':sylph-spi'))
   compile project(':ideal-common')
+
+
+  
   testCompile group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
 }

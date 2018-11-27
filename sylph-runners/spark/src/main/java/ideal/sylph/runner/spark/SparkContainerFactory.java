@@ -15,25 +15,35 @@
  */
 package ideal.sylph.runner.spark;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
 import ideal.common.base.Lazys;
+import ideal.common.ioc.IocFactory;
+import ideal.common.jvm.JVMLaunchers;
 import ideal.sylph.runner.spark.yarn.SparkAppLauncher;
+import ideal.sylph.runtime.local.LocalContainer;
 import ideal.sylph.runtime.yarn.YarnJobContainer;
 import ideal.sylph.runtime.yarn.YarnJobContainerProxy;
 import ideal.sylph.runtime.yarn.YarnModule;
+import ideal.sylph.spi.App;
 import ideal.sylph.spi.job.ContainerFactory;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobContainer;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
+import org.apache.spark.SparkConf;
+import org.apache.spark.SparkContext;
+import org.apache.spark.sql.SparkSession;
+import org.apache.spark.streaming.StreamingContext;
 
 import java.util.Optional;
+import java.util.function.Supplier;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
 
 public class SparkContainerFactory
         implements ContainerFactory
 {
-    private final Lazys.Supplier<SparkAppLauncher> yarnLauncher = Lazys.goLazy(() -> {
-        Injector injector = Guice.createInjector(new YarnModule());
+    private final Supplier<SparkAppLauncher> yarnLauncher = Lazys.goLazy(() -> {
+        IocFactory injector = IocFactory.create(new YarnModule());
         return injector.getInstance(SparkAppLauncher.class);
     });
 
@@ -60,7 +70,34 @@ public class SparkContainerFactory
     @Override
     public JobContainer getLocalContainer(Job job, String lastRunid)
     {
-        throw new UnsupportedOperationException("this method have't support!");
+        SparkJobHandle<App<?>> jobHandle = (SparkJobHandle) job.getJobHandle();
+
+        JVMLaunchers.VmBuilder<Boolean> vmBuilder = JVMLaunchers.<Boolean>newJvm()
+                .setCallable(() -> {
+                    SparkConf sparkConf = new SparkConf().setMaster("local[*]").setAppName("spark_local");
+                    SparkContext sparkContext = new SparkContext(sparkConf);
+                    App<?> app = requireNonNull(jobHandle, "sparkJobHandle is null").getApp().get();
+                    app.build();
+                    Object appContext = app.getContext();
+                    if (appContext instanceof SparkSession) {
+                        SparkSession sparkSession = (SparkSession) appContext;
+                        checkArgument(sparkSession.streams().active().length > 0, "no stream pipeline");
+                        sparkSession.streams().awaitAnyTermination();
+                    }
+                    else if (appContext instanceof StreamingContext) {
+                        StreamingContext ssc = (StreamingContext) appContext;
+                        ssc.start();
+                        ssc.awaitTermination();
+                    }
+                    return true;
+                })
+                .setXms("512m")
+                .setXmx("512m")
+                .setConsole(System.out::println)
+                .notDepThisJvmClassPath()
+                .addUserjars(job.getDepends());
+
+        return new LocalContainer(vmBuilder);
     }
 
     @Override

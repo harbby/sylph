@@ -15,6 +15,7 @@
  */
 package ideal.common.base;
 
+import ideal.common.function.Creater;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -29,7 +30,7 @@ public class LazyReferenceTest
     public void goLazy()
             throws IOException
     {
-        final Lazys.Supplier<Connection> connection = Lazys.goLazy(() -> {
+        final Creater<Connection> connection = Lazys.goLazy(() -> {
             try {
                 return DriverManager.getConnection("jdbc:url");
             }

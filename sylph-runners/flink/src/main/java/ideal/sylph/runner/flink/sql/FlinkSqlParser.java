@@ -15,7 +15,7 @@
  */
 package ideal.sylph.runner.flink.sql;
 
-import ideal.common.ioc.Binds;
+import ideal.common.ioc.IocFactory;
 import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.etl.api.RealTimeTransForm;
 import ideal.sylph.etl.join.JoinContext;
@@ -235,11 +235,9 @@ public class FlinkSqlParser
         checkState(RealTimeTransForm.class.isAssignableFrom(driver), "batch table type driver must is RealTimeTransForm");
 
         // instance
-        Binds binds = Binds.builder()
-                .bind(JoinContext.class, joinContext)
-                .build();
+        IocFactory iocFactory = IocFactory.create(binder -> binder.bind(JoinContext.class, joinContext));
 
-        return NodeLoader.getPluginInstance(driver.asSubclass(RealTimeTransForm.class), binds, ImmutableMap.copyOf(withConfig));
+        return NodeLoader.getPluginInstance(driver.asSubclass(RealTimeTransForm.class), iocFactory, ImmutableMap.copyOf(withConfig));
     }
 
     private static RowTypeInfo getJoinOutScheam(List<SelectField> joinSelectFields)

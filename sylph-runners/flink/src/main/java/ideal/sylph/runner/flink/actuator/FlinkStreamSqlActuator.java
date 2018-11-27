@@ -17,7 +17,7 @@ package ideal.sylph.runner.flink.actuator;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableSet;
-import com.google.inject.Inject;
+import ideal.common.ioc.Autowired;
 import ideal.common.jvm.JVMLauncher;
 import ideal.common.jvm.JVMLaunchers;
 import ideal.common.jvm.VmFuture;
@@ -64,7 +64,7 @@ public class FlinkStreamSqlActuator
         extends FlinkStreamEtlActuator
 {
     private static final Logger logger = LoggerFactory.getLogger(FlinkStreamSqlActuator.class);
-    @Inject private PipelinePluginManager pluginManager;
+    @Autowired private PipelinePluginManager pluginManager;
 
     @NotNull
     @Override

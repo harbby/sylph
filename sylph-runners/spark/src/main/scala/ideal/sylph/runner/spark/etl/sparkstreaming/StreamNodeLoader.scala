@@ -17,7 +17,7 @@ package ideal.sylph.runner.spark.etl.sparkstreaming
 
 import java.util.function.UnaryOperator
 
-import ideal.common.ioc.Binds
+import ideal.common.ioc.{Bean, Binds, IocFactory}
 import ideal.sylph.etl.PipelinePlugin
 import ideal.sylph.etl.api._
 import ideal.sylph.runner.spark.etl.{SparkRow, SparkUtil}
@@ -32,7 +32,8 @@ import org.apache.spark.streaming.dstream.DStream
   * Created by ideal on 17-5-8.
   * spark 1.x spark Streaming
   */
-class StreamNodeLoader(private val pluginManager: PipelinePluginManager, private val binds: Binds) extends NodeLoader[DStream[Row]] {
+class StreamNodeLoader(private val pluginManager: PipelinePluginManager, private val bean: Bean) extends NodeLoader[DStream[Row]] {
+  private lazy val iocFactory = IocFactory.create(bean)
 
   override def loadSource(driverStr: String, config: java.util.Map[String, Object]): UnaryOperator[DStream[Row]] = {
     val driverClass = pluginManager.loadPluginDriver(driverStr, PipelinePlugin.PipelineType.source)
@@ -103,5 +104,5 @@ class StreamNodeLoader(private val pluginManager: PipelinePluginManager, private
       stream.mapPartitions(partition => SparkUtil.transFunction(partition, realTimeTransForm))
   }
 
-  override def getBinds: Binds = binds
+  override def getIocFactory: IocFactory = iocFactory
 }

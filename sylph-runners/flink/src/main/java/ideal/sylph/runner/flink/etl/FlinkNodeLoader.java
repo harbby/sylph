@@ -15,7 +15,7 @@
  */
 package ideal.sylph.runner.flink.etl;
 
-import ideal.common.ioc.Binds;
+import ideal.common.ioc.IocFactory;
 import ideal.common.utils.ParameterizedTypeImpl;
 import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.etl.api.RealTimeSink;
@@ -47,12 +47,12 @@ public final class FlinkNodeLoader
 {
     private static final Logger logger = LoggerFactory.getLogger(FlinkNodeLoader.class);
     private final PipelinePluginManager pluginManager;
-    private final Binds binds;
+    private final IocFactory iocFactory;
 
-    public FlinkNodeLoader(PipelinePluginManager pluginManager, Binds binds)
+    public FlinkNodeLoader(PipelinePluginManager pluginManager, IocFactory iocFactory)
     {
         this.pluginManager = requireNonNull(pluginManager, "binds is null");
-        this.binds = requireNonNull(binds, "binds is null");
+        this.iocFactory = requireNonNull(iocFactory, "iocFactory is null");
     }
 
     @Override
@@ -127,9 +127,9 @@ public final class FlinkNodeLoader
     }
 
     @Override
-    public Binds getBinds()
+    public IocFactory getIocFactory()
     {
-        return binds;
+        return iocFactory;
     }
 
     /**

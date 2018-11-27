@@ -13,24 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.runner.spark;
+package ideal.common.ioc;
 
-import com.google.inject.Binder;
-import com.google.inject.Module;
-import com.google.inject.Scopes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import ideal.common.function.Creater;
 
-public class SparkRunnerModule
-        implements Module
+public interface Binder
 {
-    private static final Logger logger = LoggerFactory.getLogger(SparkRunnerModule.class);
+    public <T> void bind(Class<T> key, T instance);
 
-    @Override
-    public void configure(Binder binder)
+    public <T> BinderBuilder<T> bind(Class<T> key);
+
+    public interface BinderBuilder<T>
+            extends BindingSetting
     {
-        binder.bind(StreamEtlActuator.class).in(Scopes.SINGLETON);
-        binder.bind(Stream2EtlActuator.class).in(Scopes.SINGLETON);
-        binder.bind(SparkSubmitActuator.class).in(Scopes.SINGLETON);
+        BindingSetting by(Class<? extends T> createClass);
+
+        void byInstance(T instance);
+
+        BindingSetting byCreater(Creater<? extends T> creater);
+
+        BindingSetting byCreater(Class<? extends Creater<T>> createrClass);
+    }
+
+    public interface BindingSetting
+    {
+        public void withSingle();
     }
 }

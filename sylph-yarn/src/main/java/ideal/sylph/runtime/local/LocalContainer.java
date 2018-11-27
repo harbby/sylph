@@ -13,22 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.runner.flink.local;
+package ideal.sylph.runtime.local;
 
-import ideal.common.jvm.JVMException;
 import ideal.common.jvm.JVMLauncher;
 import ideal.common.jvm.JVMLaunchers;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobContainer;
-import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
-import java.net.URL;
-import java.util.Collection;
 import java.util.Optional;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class LocalContainer
@@ -36,28 +32,17 @@ public class LocalContainer
 {
     private static final Logger logger = LoggerFactory.getLogger(LocalContainer.class);
 
-    private final Executor pool = Executors.newSingleThreadExecutor();
+    private final ExecutorService pool = Executors.newSingleThreadExecutor();
 
-    private final JVMLauncher<Boolean> launcher;
-    private String url = null;
+    private final JVMLaunchers.VmBuilder<Boolean> vmBuilder;
 
-    public LocalContainer(JobGraph jobGraph, Collection<URL> deps)
+    protected JVMLauncher<Boolean> launcher;
+    protected String url = null;
+
+    public LocalContainer(JVMLaunchers.VmBuilder<Boolean> vmBuilder)
     {
-        this.launcher = JVMLaunchers.<Boolean>newJvm()
-                .setCallable(() -> {
-                    MiniExec.execute(jobGraph);
-                    return true;
-                })
-                .setXms("512m")
-                .setXmx("512m")
-                .setConsole(line -> {
-                    if (url == null && line.contains("Web frontend listening at")) {
-                        url = line.split("Web frontend listening at")[1].trim();
-                    }
-                    System.out.println(line);
-                })
-                .addUserjars(deps)
-                .build();
+        this.vmBuilder = vmBuilder;
+        this.launcher = vmBuilder.build();
     }
 
     @Override
@@ -89,14 +74,11 @@ public class LocalContainer
     public synchronized Optional<String> run()
             throws Exception
     {
-        pool.execute(() -> {
-            try {
-                launcher.startAndGet();
-            }
-            catch (JVMException e) {
-                throw new RuntimeException(e);
-            }
+        pool.submit(() -> {
+            launcher.startAndGet();
+            return true;
         });
+        this.setStatus(Job.Status.RUNNING);
         return Optional.empty();
     }
 

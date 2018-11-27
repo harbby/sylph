@@ -15,6 +15,7 @@
  */
 package ideal.sylph.runner.flink.local;
 
+import ideal.common.jvm.VmCallable;
 import org.apache.flink.api.common.JobExecutionResult;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.RestOptions;
@@ -72,5 +73,13 @@ public class MiniExec
         finally {
             miniCluster.close();
         }
+    }
+
+    public static VmCallable<Boolean> getLocalRunner(JobGraph jobGraph)
+    {
+        return () -> {
+            MiniExec.execute(jobGraph);
+            return true;
+        };
     }
 }

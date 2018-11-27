@@ -15,13 +15,10 @@
  */
 package ideal.sylph.runner.flink;
 
-import com.google.inject.Injector;
-import com.google.inject.Scopes;
-import ideal.common.bootstrap.Bootstrap;
 import ideal.common.classloader.DirClassLoader;
+import ideal.common.ioc.IocFactory;
 import ideal.sylph.runner.flink.actuator.FlinkStreamEtlActuator;
 import ideal.sylph.runner.flink.actuator.FlinkStreamSqlActuator;
-import ideal.sylph.runtime.yarn.YarnModule;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.ContainerFactory;
@@ -32,7 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -66,18 +62,13 @@ public class FlinkRunner
             if (classLoader instanceof DirClassLoader) {
                 ((DirClassLoader) classLoader).addDir(new File(flinkHome, "lib"));
             }
-            Bootstrap app = new Bootstrap(
-                    new FlinkRunnerModule(),
-                    binder -> {
-                        //----------------------------------
-                        binder.bind(PipelinePluginManager.class)
-                                .toProvider(() -> createPipelinePluginManager(context))
-                                .in(Scopes.SINGLETON);
-                    });
-            Injector injector = app.strictConfig()
-                    .name(this.getClass().getSimpleName())
-                    .setRequiredConfigurationProperties(Collections.emptyMap())
-                    .initialize();
+            IocFactory injector = IocFactory.create(binder -> {
+                binder.bind(FlinkStreamEtlActuator.class).withSingle();
+                binder.bind(FlinkStreamSqlActuator.class).withSingle();
+                //----------------------------------
+                binder.bind(PipelinePluginManager.class).byCreater(() -> createPipelinePluginManager(context)).withSingle();
+            });
+
             return Stream.of(FlinkStreamEtlActuator.class, FlinkStreamSqlActuator.class)
                     .map(injector::getInstance).collect(Collectors.toSet());
         }

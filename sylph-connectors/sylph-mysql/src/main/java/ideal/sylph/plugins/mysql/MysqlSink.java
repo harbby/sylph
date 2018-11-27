@@ -17,6 +17,7 @@ package ideal.sylph.plugins.mysql;
 
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
+import ideal.sylph.etl.CheckHandler;
 import ideal.sylph.etl.PluginConfig;
 import ideal.sylph.etl.Row;
 import ideal.sylph.etl.api.RealTimeSink;
@@ -38,7 +39,7 @@ import static org.apache.flink.shaded.guava18.com.google.common.base.Preconditio
 @Name("mysql")
 @Description("this is mysql Sink, if table not execit ze create table")
 public class MysqlSink
-        implements RealTimeSink
+        implements RealTimeSink, CheckHandler
 {
     private static final Logger logger = LoggerFactory.getLogger(MysqlSink.class);
 
@@ -62,11 +63,11 @@ public class MysqlSink
             builder.add(matcher.group());
         }
         this.keys = builder.toArray(new String[0]);
-
-        checkMysql();
     }
 
-    private void checkMysql()
+    @Override
+    public void check()
+            throws Exception
     {
         try {
             this.open(0, 9);
@@ -78,15 +79,11 @@ public class MysqlSink
 
     @Override
     public boolean open(long partitionId, long version)
+            throws SQLException, ClassNotFoundException
     {
-        try {
-            Class.forName("com.mysql.jdbc.Driver");
-            this.connection = DriverManager.getConnection(config.jdbcUrl, config.user, config.password);
-            this.statement = connection.prepareStatement(prepareStatementQuery);
-        }
-        catch (SQLException | ClassNotFoundException e) {
-            throw new RuntimeException("Mysql connection open failed: " + e.getMessage(), e.getCause());
-        }
+        Class.forName("com.mysql.jdbc.Driver");
+        this.connection = DriverManager.getConnection(config.jdbcUrl, config.user, config.password);
+        this.statement = connection.prepareStatement(prepareStatementQuery);
         return true;
     }
 

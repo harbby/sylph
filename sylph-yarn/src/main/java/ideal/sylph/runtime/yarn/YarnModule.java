@@ -15,11 +15,10 @@
  */
 package ideal.sylph.runtime.yarn;
 
-import com.google.inject.Binder;
-import com.google.inject.Inject;
-import com.google.inject.Module;
-import com.google.inject.Provider;
-import com.google.inject.Scopes;
+import ideal.common.function.Creater;
+import ideal.common.ioc.Autowired;
+import ideal.common.ioc.Bean;
+import ideal.common.ioc.Binder;
 import ideal.sylph.spi.exception.SylphException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.client.api.TimelineClient;
@@ -35,21 +34,21 @@ import static ideal.sylph.spi.exception.StandardErrorCode.CONFIG_ERROR;
 import static java.util.Objects.requireNonNull;
 
 public class YarnModule
-        implements Module
+        implements Bean
 {
     private static final Logger logger = LoggerFactory.getLogger(YarnModule.class);
 
     @Override
     public void configure(Binder binder)
     {
-        binder.bind(YarnConfiguration.class).toProvider(YarnModule::loadYarnConfiguration).in(Scopes.SINGLETON);
-        binder.bind(YarnClient.class).toProvider(YarnClientProvider.class).in(Scopes.SINGLETON);
+        binder.bind(YarnConfiguration.class).byCreater(YarnModule::loadYarnConfiguration).withSingle();
+        binder.bind(YarnClient.class).byCreater(YarnClientProvider.class).withSingle();
     }
 
     private static class YarnClientProvider
-            implements Provider<YarnClient>
+            implements Creater<YarnClient>
     {
-        @Inject private YarnConfiguration yarnConfiguration;
+        @Autowired private YarnConfiguration yarnConfiguration;
 
         @Override
         public YarnClient get()
