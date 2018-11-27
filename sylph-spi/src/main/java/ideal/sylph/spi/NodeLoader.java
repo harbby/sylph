@@ -15,8 +15,7 @@
  */
 package ideal.sylph.spi;
 
-import ideal.common.ioc.Binds;
-import ideal.common.ioc.Injectors;
+import ideal.common.ioc.IocFactory;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.etl.PluginConfig;
 import javassist.CannotCompileException;
@@ -51,12 +50,12 @@ public interface NodeLoader<R>
      */
     default <T> T getPluginInstance(Class<T> driver, Map<String, Object> config)
     {
-        return getPluginInstance(driver, getBinds(), config);
+        return getPluginInstance(driver, getIocFactory(), config);
     }
 
-    static <T> T getPluginInstance(Class<T> driver, Binds binds, Map<String, Object> config)
+    static <T> T getPluginInstance(Class<T> driver, IocFactory iocFactory, Map<String, Object> config)
     {
-        return Injectors.INSTANCE.getInstance(driver, binds, (type) -> {
+        return iocFactory.getInstance(driver, (type) -> {
             if (PluginConfig.class.isAssignableFrom(type)) { //config injection
                 PluginConfig pluginConfig = getPipeConfigInstance(type.asSubclass(PluginConfig.class), NodeLoader.class.getClassLoader());
                 //--- inject map config
@@ -64,7 +63,8 @@ public interface NodeLoader<R>
                 return pluginConfig;
             }
 
-            throw new IllegalArgumentException(String.format("Cannot find instance of parameter [%s], unable to inject, only [%s]", type, binds));
+            //throw new IllegalArgumentException(String.format("Cannot find instance of parameter [%s], unable to inject, only [%s]", type));
+            return null;
         });
     }
 
@@ -142,5 +142,5 @@ public interface NodeLoader<R>
         logger.info("inject pluginConfig Class [{}], outObj is {}", typeClass, pluginConfig);
     }
 
-    public Binds getBinds();
+    public IocFactory getIocFactory();
 }

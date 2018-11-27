@@ -15,7 +15,7 @@
  */
 package ideal.sylph.runner.spark;
 
-import com.google.inject.Inject;
+import ideal.common.ioc.Autowired;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.spi.job.EtlFlow;
@@ -25,7 +25,6 @@ import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.model.PipelinePluginManager;
-import org.apache.hadoop.yarn.client.api.YarnClient;
 
 import javax.validation.constraints.NotNull;
 
@@ -37,7 +36,7 @@ import java.net.URLClassLoader;
 public class Stream2EtlActuator
         extends EtlJobActuatorHandle
 {
-    @Inject private PipelinePluginManager pluginManager;
+    @Autowired private PipelinePluginManager pluginManager;
 
     @NotNull
     @Override

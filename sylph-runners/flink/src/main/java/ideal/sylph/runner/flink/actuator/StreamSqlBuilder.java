@@ -17,7 +17,7 @@ package ideal.sylph.runner.flink.actuator;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import ideal.common.ioc.Binds;
+import ideal.common.ioc.IocFactory;
 import ideal.sylph.etl.SinkContext;
 import ideal.sylph.parser.SqlParserException;
 import ideal.sylph.parser.antlr.AntlrSqlParser;
@@ -30,6 +30,7 @@ import ideal.sylph.parser.antlr.tree.Proctime;
 import ideal.sylph.parser.antlr.tree.SelectQuery;
 import ideal.sylph.parser.antlr.tree.Statement;
 import ideal.sylph.parser.antlr.tree.WaterMark;
+import ideal.sylph.runner.flink.FlinkBean;
 import ideal.sylph.runner.flink.etl.FlinkNodeLoader;
 import ideal.sylph.runner.flink.sql.FlinkSqlParser;
 import ideal.sylph.runner.flink.table.SylphTableSink;
@@ -156,11 +157,8 @@ public class StreamSqlBuilder
         final Map<String, Object> config = ImmutableMap.copyOf(withConfig);
         final String driverClass = (String) withConfig.get("type");
 
-        final Binds binds = Binds.builder()
-                .bind(org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.class, tableEnv.execEnv())
-                .bind(org.apache.flink.table.api.StreamTableEnvironment.class, tableEnv)
-                .bind(org.apache.flink.table.api.java.StreamTableEnvironment.class, tableEnv)
-                .bind(SinkContext.class, new SinkContext()
+        final IocFactory iocFactory = IocFactory.create(new FlinkBean(tableEnv),
+                binder -> binder.bind(SinkContext.class, new SinkContext()
                 {
                     private final ideal.sylph.etl.Row.Schema schema = buildSylphSchema(tableTypeInfo);
 
@@ -175,9 +173,9 @@ public class StreamSqlBuilder
                     {
                         return tableName;
                     }
-                })
-                .build();
-        NodeLoader<DataStream<Row>> loader = new FlinkNodeLoader(pluginManager, binds);
+                }));
+
+        NodeLoader<DataStream<Row>> loader = new FlinkNodeLoader(pluginManager, iocFactory);
 
         if (SOURCE == createStream.getType()) {  //Source.class.isAssignableFrom(driver)
             DataStream<Row> inputStream = checkStream(loader.loadSource(driverClass, config).apply(null), tableTypeInfo);

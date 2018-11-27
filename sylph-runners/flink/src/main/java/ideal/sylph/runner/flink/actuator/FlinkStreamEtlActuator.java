@@ -15,13 +15,14 @@
  */
 package ideal.sylph.runner.flink.actuator;
 
-import com.google.inject.Inject;
-import ideal.common.ioc.Binds;
+import ideal.common.ioc.Autowired;
+import ideal.common.ioc.IocFactory;
 import ideal.common.jvm.JVMLauncher;
 import ideal.common.jvm.JVMLaunchers;
 import ideal.common.jvm.VmFuture;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
+import ideal.sylph.runner.flink.FlinkBean;
 import ideal.sylph.runner.flink.FlinkJobConfig;
 import ideal.sylph.runner.flink.FlinkJobHandle;
 import ideal.sylph.runner.flink.etl.FlinkNodeLoader;
@@ -59,7 +60,7 @@ public class FlinkStreamEtlActuator
         extends EtlJobActuatorHandle
 {
     private static final Logger logger = LoggerFactory.getLogger(FlinkStreamEtlActuator.class);
-    @Inject private PipelinePluginManager pluginManager;
+    @Autowired private PipelinePluginManager pluginManager;
 
     @NotNull
     @Override
@@ -116,12 +117,8 @@ public class FlinkStreamEtlActuator
                         public void build()
                                 throws Exception
                         {
-                            Binds binds = Binds.builder()
-                                    .bind(org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.class, execEnv)
-                                    .bind(org.apache.flink.table.api.StreamTableEnvironment.class, tableEnv)
-                                    .bind(org.apache.flink.table.api.java.StreamTableEnvironment.class, tableEnv)
-                                    .build();
-                            FlinkNodeLoader loader = new FlinkNodeLoader(pluginManager, binds);
+                            final IocFactory iocFactory = IocFactory.create(new FlinkBean(tableEnv));
+                            FlinkNodeLoader loader = new FlinkNodeLoader(pluginManager, iocFactory);
                             buildGraph(loader, jobId, flow).run();
                         }
                     };

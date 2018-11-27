@@ -15,7 +15,7 @@
  */
 package ideal.sylph.runner.spark;
 
-import ideal.common.ioc.Binds;
+import ideal.common.ioc.Bean;
 import ideal.common.jvm.JVMLauncher;
 import ideal.common.jvm.JVMLaunchers;
 import ideal.sylph.runner.spark.etl.sparkstreaming.StreamNodeLoader;
@@ -83,10 +83,8 @@ final class JobHelper
             public void build()
                     throws Exception
             {
-                Binds binds = Binds.builder()
-                        .bind(SparkSession.class, spark)
-                        .build();
-                StructuredNodeLoader loader = new StructuredNodeLoader(pluginManager, binds)
+                Bean bean = binder -> binder.bind(SparkSession.class, spark);
+                StructuredNodeLoader loader = new StructuredNodeLoader(pluginManager, bean)
                 {
                     @Override
                     public UnaryOperator<Dataset<Row>> loadSink(String driverStr, Map<String, Object> config)
@@ -144,10 +142,8 @@ final class JobHelper
             public void build()
                     throws Exception
             {
-                Binds binds = Binds.builder()
-                        .bind(StreamingContext.class, spark)
-                        .build();
-                StreamNodeLoader loader = new StreamNodeLoader(pluginManager, binds);
+                Bean bean = binder -> binder.bind(StreamingContext.class, spark);
+                StreamNodeLoader loader = new StreamNodeLoader(pluginManager, bean);
                 buildGraph(loader, jobId, flow).run();
             }
         };

@@ -15,10 +15,8 @@
  */
 package ideal.sylph.runner.spark;
 
-import com.google.inject.Injector;
-import com.google.inject.Scopes;
-import ideal.common.bootstrap.Bootstrap;
 import ideal.common.classloader.DirClassLoader;
+import ideal.common.ioc.IocFactory;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.ContainerFactory;
@@ -27,7 +25,6 @@ import ideal.sylph.spi.model.PipelinePluginInfo;
 import ideal.sylph.spi.model.PipelinePluginManager;
 
 import java.io.File;
-import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -53,20 +50,16 @@ public class SparkRunner
                 ((DirClassLoader) classLoader).addDir(new File(sparkHome, "jars"));
             }
 
-            Bootstrap app = new Bootstrap(
+            IocFactory injector = IocFactory.create(
                     binder -> {
-                        binder.bind(StreamEtlActuator.class).in(Scopes.SINGLETON);
-                        binder.bind(Stream2EtlActuator.class).in(Scopes.SINGLETON);
-                        binder.bind(SparkSubmitActuator.class).in(Scopes.SINGLETON);
+                        binder.bind(StreamEtlActuator.class).withSingle();
+                        binder.bind(Stream2EtlActuator.class).withSingle();
+                        binder.bind(SparkSubmitActuator.class).withSingle();
                         //------------------------
                         binder.bind(PipelinePluginManager.class)
-                                .toProvider(() -> createPipelinePluginManager(context))
-                                .in(Scopes.SINGLETON);
+                                .byCreater(() -> createPipelinePluginManager(context))
+                                .withSingle();
                     });
-            Injector injector = app.strictConfig()
-                    .name(this.getClass().getSimpleName())
-                    .setRequiredConfigurationProperties(Collections.emptyMap())
-                    .initialize();
 
             return Stream.of(StreamEtlActuator.class, Stream2EtlActuator.class, SparkSubmitActuator.class)
                     .map(injector::getInstance).collect(Collectors.toSet());

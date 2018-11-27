@@ -15,9 +15,8 @@
  */
 package ideal.sylph.runner.spark;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
 import ideal.common.base.Lazys;
+import ideal.common.ioc.IocFactory;
 import ideal.common.jvm.JVMLaunchers;
 import ideal.sylph.runner.spark.yarn.SparkAppLauncher;
 import ideal.sylph.runtime.local.LocalContainer;
@@ -35,6 +34,7 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.streaming.StreamingContext;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
@@ -42,8 +42,8 @@ import static java.util.Objects.requireNonNull;
 public class SparkContainerFactory
         implements ContainerFactory
 {
-    private final Lazys.Supplier<SparkAppLauncher> yarnLauncher = Lazys.goLazy(() -> {
-        Injector injector = Guice.createInjector(new YarnModule());
+    private final Supplier<SparkAppLauncher> yarnLauncher = Lazys.goLazy(() -> {
+        IocFactory injector = IocFactory.create(new YarnModule());
         return injector.getInstance(SparkAppLauncher.class);
     });
 

@@ -15,34 +15,25 @@
  */
 package ideal.sylph.runner.flink;
 
-import io.airlift.configuration.Config;
+import ideal.common.ioc.Bean;
+import ideal.common.ioc.Binder;
+import org.apache.flink.table.api.java.StreamTableEnvironment;
 
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
-
-import java.io.File;
-
-public class FlinkRunnerConfig
+public class FlinkBean
+        implements Bean
 {
-    private int serverPort = 8080;
-    final File flinkJarFile = getFlinkJarFile();
+    private final StreamTableEnvironment tableEnv;
 
-    @Config("server.http.port")
-    public FlinkRunnerConfig setServerPort(int serverPort)
+    public FlinkBean(StreamTableEnvironment tableEnv)
     {
-        this.serverPort = serverPort;
-        return this;
+        this.tableEnv = tableEnv;
     }
 
-    @Min(1000)
-    public int getServerPort()
+    @Override
+    public void configure(Binder binder)
     {
-        return serverPort;
-    }
-
-    @NotNull
-    public File getFlinkJarFile()
-    {
-        return flinkJarFile;
+        binder.bind(org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.class, tableEnv.execEnv());
+        binder.bind(org.apache.flink.table.api.StreamTableEnvironment.class, tableEnv);
+        binder.bind(org.apache.flink.table.api.java.StreamTableEnvironment.class, tableEnv);
     }
 }

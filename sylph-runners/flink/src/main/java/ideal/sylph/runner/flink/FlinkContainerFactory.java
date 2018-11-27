@@ -15,12 +15,10 @@
  */
 package ideal.sylph.runner.flink;
 
-import com.google.inject.Guice;
-import com.google.inject.Inject;
-import com.google.inject.Injector;
-import com.google.inject.Provider;
-import com.google.inject.Scopes;
 import ideal.common.base.Lazys;
+import ideal.common.function.Creater;
+import ideal.common.ioc.Autowired;
+import ideal.common.ioc.IocFactory;
 import ideal.common.jvm.JVMLaunchers;
 import ideal.sylph.runner.flink.yarn.FlinkYarnJobLauncher;
 import ideal.sylph.runner.flink.yarn.YarnClusterConfiguration;
@@ -42,6 +40,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -54,10 +53,10 @@ public class FlinkContainerFactory
 {
     private static final Logger logger = LoggerFactory.getLogger(FlinkContainerFactory.class);
 
-    private final Lazys.Supplier<FlinkYarnJobLauncher> yarnLauncher = Lazys.goLazy(() -> {
-        Injector injector = Guice.createInjector(new YarnModule(), binder -> {
-            binder.bind(FlinkYarnJobLauncher.class).in(Scopes.SINGLETON);
-            binder.bind(YarnClusterConfiguration.class).toProvider(FlinkContainerFactory.YarnClusterConfigurationProvider.class).in(Scopes.SINGLETON);
+    private final Supplier<FlinkYarnJobLauncher> yarnLauncher = Lazys.goLazy(() -> {
+        IocFactory injector = IocFactory.create(new YarnModule(), binder -> {
+            binder.bind(FlinkYarnJobLauncher.class).withSingle();
+            binder.bind(YarnClusterConfiguration.class).byCreater(FlinkContainerFactory.YarnClusterConfigurationProvider.class).withSingle();
         });
         return injector.getInstance(FlinkYarnJobLauncher.class);
     });
@@ -120,9 +119,9 @@ public class FlinkContainerFactory
     }
 
     private static class YarnClusterConfigurationProvider
-            implements Provider<YarnClusterConfiguration>
+            implements Creater<YarnClusterConfiguration>
     {
-        @Inject private YarnConfiguration yarnConf;
+        @Autowired private YarnConfiguration yarnConf;
 
         @Override
         public YarnClusterConfiguration get()

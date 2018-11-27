@@ -15,7 +15,7 @@
  */
 package ideal.sylph.runner.flink.yarn;
 
-import com.google.inject.Inject;
+import ideal.common.ioc.Autowired;
 import ideal.sylph.runner.flink.FlinkJobConfig;
 import ideal.sylph.runner.flink.FlinkJobHandle;
 import ideal.sylph.runner.flink.FlinkRunner;
@@ -55,9 +55,9 @@ public class FlinkYarnJobLauncher
     private static final Logger logger = LoggerFactory.getLogger(FlinkYarnJobLauncher.class);
     private static final FiniteDuration AKKA_TIMEOUT = new FiniteDuration(1, TimeUnit.MINUTES);
 
-    @Inject
+    @Autowired
     private YarnClusterConfiguration clusterConf;
-    @Inject
+    @Autowired
     private YarnClient yarnClient;
 
     public YarnClient getYarnClient()

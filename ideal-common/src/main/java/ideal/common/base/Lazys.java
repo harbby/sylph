@@ -15,6 +15,8 @@
  */
 package ideal.common.base;
 
+import ideal.common.function.Creater;
+
 import java.io.Serializable;
 
 import static java.util.Objects.requireNonNull;
@@ -23,27 +25,27 @@ public class Lazys
 {
     private Lazys() {}
 
-    public static <T> Supplier<T> memoize(Supplier<T> delegate)
+    public static <T> Creater<T> memoize(Creater<T> delegate)
     {
         return delegate instanceof LazySupplier ?
                 delegate :
                 new LazySupplier<>(requireNonNull(delegate));
     }
 
-    public static <T> Supplier<T> goLazy(Supplier<T> delegate)
+    public static <T> Creater<T> goLazy(Creater<T> delegate)
     {
         return memoize(delegate);
     }
 
     public static class LazySupplier<T>
-            implements Serializable, Supplier<T>
+            implements Serializable, Creater<T>
     {
-        private final Supplier<T> delegate;
+        private final Creater<T> delegate;
         private transient volatile boolean initialized = false;
         private transient T value;
         private static final long serialVersionUID = 0L;
 
-        LazySupplier(Supplier<T> delegate)
+        LazySupplier(Creater<T> delegate)
         {
             this.delegate = delegate;
         }
@@ -68,12 +70,5 @@ public class Lazys
         {
             return "Lazys.memoize(" + this.delegate + ")";
         }
-    }
-
-    @FunctionalInterface
-    public static interface Supplier<T>
-            extends Serializable, java.util.function.Supplier<T>
-    {
-        T get();
     }
 }
