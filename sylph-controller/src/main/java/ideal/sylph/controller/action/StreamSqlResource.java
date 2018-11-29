@@ -15,9 +15,9 @@
  */
 package ideal.sylph.controller.action;
 
+import com.github.harbby.gadtry.base.Throwables;
+import com.github.harbby.gadtry.jvm.JVMException;
 import com.google.common.collect.ImmutableMap;
-import ideal.common.base.Throwables;
-import ideal.common.jvm.JVMException;
 import ideal.sylph.spi.SylphContext;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Job;
@@ -47,11 +47,11 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static com.github.harbby.gadtry.base.Checks.checkState;
+import static com.github.harbby.gadtry.base.Strings.isNotBlank;
 import static ideal.sylph.spi.exception.StandardErrorCode.ILLEGAL_OPERATION;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 @javax.inject.Singleton
 @Path("/stream_sql")
@@ -84,8 +84,8 @@ public class StreamSqlResource
             jobId = requireNonNull(request.getParameter("jobId"), "job jobId is not empty");
             String flow = request.getParameter("query");
             String configString = request.getParameter("config");
-            checkArgument(isNotBlank(jobId), "JobId IS NULL");
-            checkArgument(isNotBlank(flow), "SQL query IS NULL");
+            checkState(isNotBlank(jobId), "JobId IS NULL");
+            checkState(isNotBlank(flow), "SQL query IS NULL");
             sylphContext.saveJob(jobId, flow, ImmutableMap.of("type", "StreamSql", "config", parserJobConfig(configString)));
             Map out = ImmutableMap.of(
                     "jobId", jobId,

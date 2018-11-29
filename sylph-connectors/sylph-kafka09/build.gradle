@@ -1,10 +1,10 @@
 dependencies {
-    compileOnly(group: 'org.apache.flink', name: 'flink-streaming-scala_2.11', version: deps.flink) {
-        exclude(module: 'flink-shaded-hadoop2')
-    }
+  compileOnly(group: 'org.apache.flink', name: 'flink-streaming-scala_2.11', version: deps.flink) {
+    exclude(module: 'flink-shaded-hadoop2')
+  }
 
-    //--table sql---
-    compileOnly group: 'org.apache.flink', name: 'flink-table_2.11', version:deps.flink
+  //--table sql---
+  compileOnly group: 'org.apache.flink', name: 'flink-table_2.11', version: deps.flink
 
-    compile group: 'org.apache.flink', name: 'flink-connector-kafka-0.9_2.11', version:deps.flink
+  compile group: 'org.apache.flink', name: 'flink-connector-kafka-0.9_2.11', version: deps.flink
 }

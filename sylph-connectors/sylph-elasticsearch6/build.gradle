@@ -17,7 +17,7 @@ shadowJar {
   dependencies {
     exclude(dependency('junit:junit:'))
   }
-  
+
   //relocate 'com.google.protobuf', 'shaded.com.google.protobuf'
   relocate 'com.google.common', 'shaded.elasticsearch6.com.google.common'
   relocate 'io.netty', 'shaded.elasticsearch6.io.netty'

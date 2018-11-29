@@ -17,7 +17,7 @@ package ideal.sylph.runner.spark.etl.sparkstreaming
 
 import java.util.function.UnaryOperator
 
-import ideal.common.ioc.{Bean, Binds, IocFactory}
+import com.github.harbby.gadtry.ioc.{Bean, IocFactory}
 import ideal.sylph.etl.PipelinePlugin
 import ideal.sylph.etl.api._
 import ideal.sylph.runner.spark.etl.{SparkRow, SparkUtil}

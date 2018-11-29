@@ -15,7 +15,7 @@
  */
 package ideal.sylph.runner.flink.sql;
 
-import ideal.common.ioc.IocFactory;
+import com.github.harbby.gadtry.ioc.IocFactory;
 import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.etl.api.RealTimeTransForm;
 import ideal.sylph.etl.join.JoinContext;

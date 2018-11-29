@@ -1,11 +1,17 @@
 ext.moduleName = 'ideal.sylph.main'
 
+apply plugin: 'application'
+
 dependencies {
   compile project(':sylph-controller')
   compile(project(':sylph-spi'))
-  compile project(':ideal-common')
 
-
-  
   testCompile group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
+}
+
+application {
+  mainClassName = "ideal.sylph.main.SylphMaster"
+  applicationName = "sylph"
+  applicationDefaultJvmArgs = ["-Dconfig=etc/sylph/sylph.properties", "-Dlog4j.file=etc/sylph/sylph-log4j.properties"]
+  //applicationDefaultJvmArgs = ["-Xms512m", "-Xmx512m"]
 }

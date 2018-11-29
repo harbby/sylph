@@ -15,7 +15,7 @@
  */
 package ideal.sylph.runner.flink.yarn;
 
-import ideal.common.ioc.Autowired;
+import com.github.harbby.gadtry.ioc.Autowired;
 import ideal.sylph.runner.flink.FlinkJobConfig;
 import ideal.sylph.runner.flink.FlinkJobHandle;
 import ideal.sylph.runner.flink.FlinkRunner;

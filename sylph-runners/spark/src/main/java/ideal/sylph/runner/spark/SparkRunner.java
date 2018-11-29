@@ -15,8 +15,8 @@
  */
 package ideal.sylph.runner.spark;
 
-import ideal.common.classloader.DirClassLoader;
-import ideal.common.ioc.IocFactory;
+import com.github.harbby.gadtry.classloader.DirClassLoader;
+import com.github.harbby.gadtry.ioc.IocFactory;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.ContainerFactory;
@@ -57,7 +57,7 @@ public class SparkRunner
                         binder.bind(SparkSubmitActuator.class).withSingle();
                         //------------------------
                         binder.bind(PipelinePluginManager.class)
-                                .byCreater(() -> createPipelinePluginManager(context))
+                                .byCreator(() -> createPipelinePluginManager(context))
                                 .withSingle();
                     });
 

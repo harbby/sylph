@@ -15,9 +15,9 @@
  */
 package ideal.sylph.runner.spark;
 
-import ideal.common.ioc.Bean;
-import ideal.common.jvm.JVMLauncher;
-import ideal.common.jvm.JVMLaunchers;
+import com.github.harbby.gadtry.ioc.Bean;
+import com.github.harbby.gadtry.jvm.JVMLauncher;
+import com.github.harbby.gadtry.jvm.JVMLaunchers;
 import ideal.sylph.runner.spark.etl.sparkstreaming.StreamNodeLoader;
 import ideal.sylph.runner.spark.etl.structured.StructuredNodeLoader;
 import ideal.sylph.spi.App;

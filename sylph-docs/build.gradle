@@ -32,17 +32,17 @@ node {
   nodeModulesDir = file("${project.projectDir}/src/main/docs")
 }
 
-task clear(type: Delete){
+task clear(type: Delete) {
   delete file("${project.projectDir}/src/main/docs/node_modules"),
           file("${project.projectDir}/src/main/docs/public")
 }
 clean.dependsOn 'clear'
 
-task build_docs(type:YarnTask, dependsOn: yarn_install){
+task build_docs(type: YarnTask, dependsOn: yarn_install) {
   //只安装快递包
-  args = [ 'run', 'build' ]
+  args = ['run', 'build']
 }
 
-task run(type:YarnTask, dependsOn: build_docs){
-  args = [ 'run', 'server' ]
+task run(type: YarnTask, dependsOn: build_docs) {
+  args = ['run', 'server']
 }

@@ -10,7 +10,6 @@ rootProject.name = 'sylph'
 
 include 'sylph-spi'
 include 'sylph-main'
-include 'ideal-common'
 include 'sylph-controller'
 
 include 'sylph-runners'

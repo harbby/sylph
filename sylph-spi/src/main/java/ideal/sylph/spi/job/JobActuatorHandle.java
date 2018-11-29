@@ -15,6 +15,7 @@
  */
 package ideal.sylph.spi.job;
 
+import com.github.harbby.gadtry.jvm.JVMException;
 import ideal.sylph.spi.model.PipelinePluginManager;
 
 import javax.validation.constraints.NotNull;
@@ -35,7 +36,7 @@ public interface JobActuatorHandle
      * @param jobConfig job config
      * @param jobId job id
      * @return JobHandel
-     * @throws ideal.common.jvm.JVMException Throw it if the child process fails to compile
+     * @throws JVMException Throw it if the child process fails to compile
      */
     @NotNull
     default JobHandle formJob(String jobId, Flow flow, JobConfig jobConfig, URLClassLoader jobClassLoader)

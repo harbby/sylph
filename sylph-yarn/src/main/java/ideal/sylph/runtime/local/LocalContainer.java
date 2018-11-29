@@ -15,8 +15,8 @@
  */
 package ideal.sylph.runtime.local;
 
-import ideal.common.jvm.JVMLauncher;
-import ideal.common.jvm.JVMLaunchers;
+import com.github.harbby.gadtry.jvm.JVMLauncher;
+import com.github.harbby.gadtry.jvm.JVMLaunchers;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobContainer;
 import org.slf4j.Logger;

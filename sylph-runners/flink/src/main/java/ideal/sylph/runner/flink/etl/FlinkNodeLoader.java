@@ -15,8 +15,8 @@
  */
 package ideal.sylph.runner.flink.etl;
 
-import ideal.common.ioc.IocFactory;
-import ideal.common.utils.ParameterizedTypeImpl;
+import com.github.harbby.gadtry.base.JavaType;
+import com.github.harbby.gadtry.ioc.IocFactory;
 import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.etl.api.RealTimeSink;
 import ideal.sylph.etl.api.RealTimeTransForm;
@@ -78,8 +78,8 @@ public final class FlinkNodeLoader
 
     private static void checkDataStreamRow(Class<?> pluginInterface, Class<?> driverClass)
     {
-        Type streamRow = ParameterizedTypeImpl.make(DataStream.class, new Type[] {Row.class}, null);
-        Type checkType = ParameterizedTypeImpl.make(pluginInterface, new Type[] {streamRow}, null);
+        Type streamRow = JavaType.make(DataStream.class, new Type[] {Row.class}, null);
+        Type checkType = JavaType.make(pluginInterface, new Type[] {streamRow}, null);
 
         for (Type type : driverClass.getGenericInterfaces()) {
             if (checkType.equals(type)) {

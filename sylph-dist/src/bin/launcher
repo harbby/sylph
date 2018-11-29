@@ -2,7 +2,7 @@
 MAIN_HOME=$(cd `dirname $0`; pwd)/..
 
 
-runCmd=$MAIN_HOME/bin/run.sh
+runCmd=$MAIN_HOME/bin/sylph
 pidFile=$MAIN_HOME/logs/server.pid
 logFile=$MAIN_HOME/logs/server.log
 

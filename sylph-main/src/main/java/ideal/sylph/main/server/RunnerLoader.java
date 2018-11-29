@@ -15,10 +15,10 @@
  */
 package ideal.sylph.main.server;
 
+import com.github.harbby.gadtry.classloader.PluginClassLoader;
+import com.github.harbby.gadtry.classloader.ThreadContextClassLoader;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
-import ideal.common.classloader.PluginClassLoader;
-import ideal.common.classloader.ThreadContextClassLoader;
 import ideal.sylph.main.service.RunnerManager;
 import ideal.sylph.spi.Runner;
 import org.apache.commons.io.FileUtils;
@@ -39,7 +39,7 @@ public class RunnerLoader
 {
     private static final ImmutableList<String> SPI_PACKAGES = ImmutableList.<String>builder()
             .add("ideal.sylph.spi.")
-            .add("ideal.common.")
+            .add("com.github.harbby.")
             .add("ideal.sylph.annotation.")
             .add("ideal.sylph.etl.")  // etl api ?
             //-------------------------------------------------
