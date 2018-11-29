@@ -15,7 +15,7 @@
  */
 package ideal.sylph.controller;
 
-import ideal.common.base.Throwables;
+import com.github.harbby.gadtry.base.Throwables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

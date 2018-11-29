@@ -20,7 +20,8 @@ public interface RealTimePipeline
     /**
      * partition级别的初始化
      **/
-    boolean open(long partitionId, long version) throws Exception;
+    boolean open(long partitionId, long version)
+            throws Exception;
 
     /**
      * partition级别的资源释放

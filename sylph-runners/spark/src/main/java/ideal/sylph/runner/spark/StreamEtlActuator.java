@@ -15,7 +15,7 @@
  */
 package ideal.sylph.runner.spark;
 
-import ideal.common.ioc.Autowired;
+import com.github.harbby.gadtry.ioc.Autowired;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.spi.job.EtlFlow;

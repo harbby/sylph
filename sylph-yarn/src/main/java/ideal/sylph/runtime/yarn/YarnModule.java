@@ -15,10 +15,10 @@
  */
 package ideal.sylph.runtime.yarn;
 
-import ideal.common.function.Creater;
-import ideal.common.ioc.Autowired;
-import ideal.common.ioc.Bean;
-import ideal.common.ioc.Binder;
+import com.github.harbby.gadtry.function.Creator;
+import com.github.harbby.gadtry.ioc.Autowired;
+import com.github.harbby.gadtry.ioc.Bean;
+import com.github.harbby.gadtry.ioc.Binder;
 import ideal.sylph.spi.exception.SylphException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.client.api.TimelineClient;
@@ -41,12 +41,12 @@ public class YarnModule
     @Override
     public void configure(Binder binder)
     {
-        binder.bind(YarnConfiguration.class).byCreater(YarnModule::loadYarnConfiguration).withSingle();
-        binder.bind(YarnClient.class).byCreater(YarnClientProvider.class).withSingle();
+        binder.bind(YarnConfiguration.class).byCreator(YarnModule::loadYarnConfiguration).withSingle();
+        binder.bind(YarnClient.class).byCreator(YarnClientProvider.class).withSingle();
     }
 
     private static class YarnClientProvider
-            implements Creater<YarnClient>
+            implements Creator<YarnClient>
     {
         @Autowired private YarnConfiguration yarnConfiguration;
 

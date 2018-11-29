@@ -1,48 +1,43 @@
 ext.moduleName = 'ideal.sylph.runner.spark'
 apply plugin: 'scala'
 
-
 configurations.all {
-  resolutionStrategy {  preferProjectModules() }
+  resolutionStrategy { preferProjectModules() }
 }
 
 tasks.compileJava.dependsOn compileScala
 tasks.compileScala.dependsOn.remove("compileJava")
 
 dependencies {
-  runtime(project(':sylph-spi')){
+  runtime(project(':sylph-spi')) {
     exclude(group: 'com.fasterxml.jackson.dataformat')
     exclude(group: 'com.fasterxml.jackson.core')
     exclude(module: 'guava')
     exclude(module: 'validation-api')
     exclude(module: 'commons-io')
-    exclude(module: 'ideal-common')
-  }
-  runtime(project(':ideal-common')){
-    exclude(module: '*')
   }
 
-  compileOnly (group: 'org.apache.spark', name: 'spark-sql_2.11', version: deps.spark){
+  compileOnly(group: 'org.apache.spark', name: 'spark-sql_2.11', version: deps.spark) {
     exclude(module: 'spark-core_2.11')
   }
-  compileOnly (group: 'org.apache.spark', name: 'spark-streaming_2.11', version: deps.spark){
+  compileOnly(group: 'org.apache.spark', name: 'spark-streaming_2.11', version: deps.spark) {
     exclude(module: 'spark-core_2.11')
   }
-  compileOnly (group: 'org.apache.spark', name: 'spark-core_2.11', version: deps.spark){
+  compileOnly(group: 'org.apache.spark', name: 'spark-core_2.11', version: deps.spark) {
     exclude(module: 'hadoop-client')
   }
-  compileOnly ("org.apache.spark:spark-yarn_2.11:$deps.spark"){
+  compileOnly("org.apache.spark:spark-yarn_2.11:$deps.spark") {
     exclude(module: 'hadoop-client')
   }
   compileOnly group: 'org.apache.hadoop', name: 'hadoop-client', version: '2.7.3'
 
-  compileOnly (group: 'org.apache.spark', name: 'spark-streaming-kafka-0-10_2.11', version: deps.spark){
+  compileOnly(group: 'org.apache.spark', name: 'spark-streaming-kafka-0-10_2.11', version: deps.spark) {
     //exclude(group: '*')
   }
 
   //--other--
   compile group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
-  compile (project(':sylph-yarn'))
+  compile(project(':sylph-yarn'))
 
   //--- add scala class
   compileOnly files("$sourceSets.main.scala.outputDir")

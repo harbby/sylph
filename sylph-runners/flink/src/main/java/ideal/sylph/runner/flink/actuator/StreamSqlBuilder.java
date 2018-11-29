@@ -15,9 +15,9 @@
  */
 package ideal.sylph.runner.flink.actuator;
 
+import com.github.harbby.gadtry.ioc.IocFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import ideal.common.ioc.IocFactory;
 import ideal.sylph.etl.SinkContext;
 import ideal.sylph.parser.SqlParserException;
 import ideal.sylph.parser.antlr.AntlrSqlParser;

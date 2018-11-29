@@ -15,9 +15,9 @@
  */
 package ideal.sylph.spi;
 
-import ideal.common.graph.Graph;
-import ideal.common.graph.GraphBuilder;
-import ideal.common.graph.impl.DagNode;
+import com.github.harbby.gadtry.graph.Graph;
+import com.github.harbby.gadtry.graph.GraphBuilder;
+import com.github.harbby.gadtry.graph.impl.DagNode;
 import ideal.sylph.spi.job.EtlFlow;
 import ideal.sylph.spi.model.EdgeInfo;
 import ideal.sylph.spi.model.NodeInfo;

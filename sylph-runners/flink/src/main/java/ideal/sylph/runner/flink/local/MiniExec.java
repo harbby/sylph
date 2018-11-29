@@ -15,7 +15,7 @@
  */
 package ideal.sylph.runner.flink.local;
 
-import ideal.common.jvm.VmCallable;
+import com.github.harbby.gadtry.jvm.VmCallable;
 import org.apache.flink.api.common.JobExecutionResult;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.RestOptions;

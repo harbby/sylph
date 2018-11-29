@@ -15,8 +15,8 @@
  */
 package ideal.sylph.runner.flink;
 
-import ideal.common.ioc.Bean;
-import ideal.common.ioc.Binder;
+import com.github.harbby.gadtry.ioc.Bean;
+import com.github.harbby.gadtry.ioc.Binder;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 
 public class FlinkBean

@@ -15,8 +15,8 @@
  */
 package ideal.sylph.runner.flink;
 
-import ideal.common.classloader.DirClassLoader;
-import ideal.common.ioc.IocFactory;
+import com.github.harbby.gadtry.classloader.DirClassLoader;
+import com.github.harbby.gadtry.ioc.IocFactory;
 import ideal.sylph.runner.flink.actuator.FlinkStreamEtlActuator;
 import ideal.sylph.runner.flink.actuator.FlinkStreamSqlActuator;
 import ideal.sylph.spi.Runner;
@@ -66,7 +66,7 @@ public class FlinkRunner
                 binder.bind(FlinkStreamEtlActuator.class).withSingle();
                 binder.bind(FlinkStreamSqlActuator.class).withSingle();
                 //----------------------------------
-                binder.bind(PipelinePluginManager.class).byCreater(() -> createPipelinePluginManager(context)).withSingle();
+                binder.bind(PipelinePluginManager.class).byCreator(() -> createPipelinePluginManager(context)).withSingle();
             });
 
             return Stream.of(FlinkStreamEtlActuator.class, FlinkStreamSqlActuator.class)

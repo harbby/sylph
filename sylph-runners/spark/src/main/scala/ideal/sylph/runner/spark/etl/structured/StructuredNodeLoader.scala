@@ -18,7 +18,7 @@ package ideal.sylph.runner.spark.etl.structured
 import java.util
 import java.util.function.UnaryOperator
 
-import ideal.common.ioc.{Bean, IocFactory}
+import com.github.harbby.gadtry.ioc.{Bean, IocFactory}
 import ideal.sylph.etl.PipelinePlugin
 import ideal.sylph.etl.api.{RealTimeSink, RealTimeTransForm, Sink, TransForm}
 import ideal.sylph.runner.spark.etl.{SparkRow, SparkUtil}

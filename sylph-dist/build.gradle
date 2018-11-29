@@ -1,12 +1,12 @@
-dependencies{
+dependencies {
   compile project(':sylph-main')
 }
 
-task copyLibs(type: Copy){
+task copyLibs(type: Copy) {
   from(configurations.runtime)
-  into project.buildDir.path+'/lib'
+  into project.buildDir.path + '/lib'
 }
-task copyFiles(type: Copy,dependsOn: copyLibs){
+task copyFiles(type: Copy, dependsOn: copyLibs) {
   from('src')
   into project.buildDir
 }
@@ -18,34 +18,34 @@ task dist(type: Tar) {
   classifier = 'bin'
   extension = 'tgz'
   compression = Compression.GZIP
-  def tarpath = baseName+"-${rootProject.version}"
+  def tarpath = baseName + "-${rootProject.version}"
 
   from(configurations.runtime) {
-    into tarpath+"/lib"
+    into tarpath + "/lib"
   }
 
   from(project.files('src/bin')) {
-    into(tarpath+"/bin")
+    into(tarpath + "/bin")
     fileMode = 0755
   }
   from(project.files('src/etc')) {
-    into(tarpath+"/etc")
+    into(tarpath + "/etc")
   }
 
   from(project.files('src/jobs')) {
-    into(tarpath+"/jobs")
+    into(tarpath + "/jobs")
   }
 
   from(project.files('build/webapp')) {
-    into(tarpath+"/webapp")
+    into(tarpath + "/webapp")
   }
 
-  from(project.files('build/modules')){
-    into tarpath+"/modules"
+  from(project.files('build/modules')) {
+    into tarpath + "/modules"
   }
 
   from(project.files('build/etl-plugins')) {
-    into(tarpath+"/etl-plugins")
+    into(tarpath + "/etl-plugins")
   }
 }
 
