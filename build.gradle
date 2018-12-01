@@ -30,6 +30,7 @@ allprojects {
           joda_time: '2.9.3',
           log4j12  : '1.7.21',
           guice    : '4.2.1',
+          gadtry   : '1.0.1',
           guava    : '25.1-jre',
           jackson  : '2.9.5',
           jersey   : '2.27'
@@ -60,7 +61,7 @@ subprojects {
   }
 
   checkstyle {
-    toolVersion '8.11'
+    toolVersion '8.12'
     showViolations true
   }
 

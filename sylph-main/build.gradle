@@ -3,6 +3,8 @@ ext.moduleName = 'ideal.sylph.main'
 apply plugin: 'application'
 
 dependencies {
+  compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.8.1'
+  
   compile project(':sylph-controller')
   compile(project(':sylph-spi'))
 

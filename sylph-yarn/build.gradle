@@ -16,5 +16,5 @@ dependencies {
 
   compileOnly(project(':sylph-spi'))
 
-  runtime group: 'com.github.harbby', name: 'gadtry', version: '1.0.0'
+  compile group: 'com.github.harbby', name: 'gadtry', version: deps.gadtry
 }
