@@ -41,7 +41,7 @@ import static com.google.common.base.Preconditions.checkState;
 @Description("this is hbase Sink, if table not execit ze create table")
 public class HbaseSink  implements RealTimeSink {
     private String tableName;
-    private HbaseHelper hbaseHelper;
+    private transient HbaseHelper hbaseHelper;
     private int rowkeyIndex = -1;
     private final Row.Schema schema;
     private final HbaseConfig config;
@@ -106,7 +106,6 @@ public class HbaseSink  implements RealTimeSink {
     public void close(Throwable errorOrNull) {
         try {
             hbaseHelper.flush();
-            System.out.println("flush....................................");
         } catch (IOException e) {
             logger.error("flush records fail.", e);
         }
