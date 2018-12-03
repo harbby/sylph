@@ -67,6 +67,7 @@ public class HbaseSink  implements RealTimeSink {
                 this.rowkeyIndex = fieldIndex;
             }
                 checkState(rowkeyIndex != -1, "`rowkey` must be set");
+            hbaseHelper.closeConnection();
         }
     }
 

@@ -190,7 +190,7 @@ public class HbaseHelper {
     /**
      * close hbase connection.
      */
-    private void closeConnection() {
+    public void closeConnection() {
         try{
             if (null != connection && !connection.isClosed()) {
                 connection.close();
