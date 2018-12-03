@@ -1,25 +1,25 @@
 apply plugin: 'antlr'
 
 dependencies {
-    antlr "org.antlr:antlr4:4.7.1"
+  antlr "org.antlr:antlr4:4.7.1"
 
-    compile group: 'com.google.guava', name: 'guava', version: deps.guava
+  compile group: 'com.google.guava', name: 'guava', version: deps.guava
 
   //
-    compile (group: 'org.apache.calcite', name: 'calcite-core', version: '1.16.0'){
-      exclude(module : 'guava')
-      exclude(module : 'jsr305')
-      exclude(module: 'jackson-core')
-      exclude(module: 'jackson-annotations')
-      exclude(module: 'commons-logging')
-    }
+  compile(group: 'org.apache.calcite', name: 'calcite-core', version: '1.16.0') {
+    exclude(module: 'guava')
+    exclude(module: 'jsr305')
+    exclude(module: 'jackson-core')
+    exclude(module: 'jackson-annotations')
+    exclude(module: 'commons-logging')
+  }
 }
-generateGrammarSource.dependsOn 'licenseMain','licenseTest'
+generateGrammarSource.dependsOn 'licenseMain', 'licenseTest'
 licenseMain.dependsOn 'clean'
 licenseTest.dependsOn 'clean'
 
 license {
-    excludes(["**/*.g4","**/*.tokens"])
+  excludes(["**/*.g4", "**/*.tokens"])
 }
 
 //sourceSets {
@@ -42,7 +42,7 @@ license {
 //}
 
 generateGrammarSource {
-    maxHeapSize = "64m"
-    arguments += ["-visitor", "-long-messages"]
+  maxHeapSize = "64m"
+  arguments += ["-visitor", "-long-messages"]
 }
 

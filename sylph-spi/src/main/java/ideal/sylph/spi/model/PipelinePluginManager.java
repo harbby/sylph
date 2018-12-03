@@ -15,10 +15,10 @@
  */
 package ideal.sylph.spi.model;
 
+import com.github.harbby.gadtry.classloader.DirClassLoader;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableTable;
-import ideal.common.classloader.DirClassLoader;
 import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.spi.Runner;
 import org.slf4j.Logger;

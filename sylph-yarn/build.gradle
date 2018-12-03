@@ -1,23 +1,20 @@
-
 dependencies {
-    // conflict was found between the following modules:
-    compileOnly (group: 'org.apache.hadoop', name: 'hadoop-yarn-client', version: deps.hadoop){
-        exclude(module: '*')
-    }
-    compileOnly (group: 'org.apache.hadoop', name: 'hadoop-yarn-api', version: deps.hadoop){
-        exclude(module: '*')
-    }
-    compileOnly (group: 'org.apache.hadoop', name: 'hadoop-yarn-common', version: deps.hadoop){
-        exclude(module: '*')
-    }
+  // conflict was found between the following modules:
+  compileOnly(group: 'org.apache.hadoop', name: 'hadoop-yarn-client', version: deps.hadoop) {
+    exclude(module: '*')
+  }
+  compileOnly(group: 'org.apache.hadoop', name: 'hadoop-yarn-api', version: deps.hadoop) {
+    exclude(module: '*')
+  }
+  compileOnly(group: 'org.apache.hadoop', name: 'hadoop-yarn-common', version: deps.hadoop) {
+    exclude(module: '*')
+  }
 
-    compileOnly (group: 'org.apache.hadoop', name: 'hadoop-common', version: deps.hadoop){
-        exclude(module: '*')
-    }
+  compileOnly(group: 'org.apache.hadoop', name: 'hadoop-common', version: deps.hadoop) {
+    exclude(module: '*')
+  }
 
-    compileOnly(project(':sylph-spi'))
+  compileOnly(project(':sylph-spi'))
 
-    runtime(project(':ideal-common')){
-        exclude(module: '*')
-    }
+  compile group: 'com.github.harbby', name: 'gadtry', version: deps.gadtry
 }

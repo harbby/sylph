@@ -1,8 +1,0 @@
-
-dependencies {
-  compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.8.1'
-  
-  compile group: 'com.google.guava', name: 'guava', version: deps.guava
-
-  compile group: 'org.slf4j', name: 'slf4j-log4j12', version: deps.log4j12
-}

@@ -15,7 +15,7 @@
  */
 package ideal.sylph.spi;
 
-import ideal.common.ioc.IocFactory;
+import com.github.harbby.gadtry.ioc.IocFactory;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.etl.PluginConfig;
 import javassist.CannotCompileException;

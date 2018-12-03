@@ -15,8 +15,8 @@
  */
 package ideal.sylph.runtime.yarn;
 
-import ideal.common.classloader.ThreadContextClassLoader;
-import ideal.common.proxy.DynamicProxy;
+import com.github.harbby.gadtry.classloader.ThreadContextClassLoader;
+import com.github.harbby.gadtry.proxy.DynamicProxy;
 import ideal.sylph.spi.job.JobContainer;
 
 import java.lang.reflect.Method;

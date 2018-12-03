@@ -1,8 +1,7 @@
 ext.moduleName = 'ideal.sylph.runner.flink'
 
-
 configurations.all {
-  resolutionStrategy {  preferProjectModules() }
+  resolutionStrategy { preferProjectModules() }
 }
 
 dependencies {
@@ -23,8 +22,8 @@ dependencies {
   compile "org.apache.flink:flink-cep-scala_2.11:$deps.flink"
 
   //--- other----
-  compile (project(':sylph-yarn'))
-  compile (project(':sylph-parser')){
+  compile(project(':sylph-yarn'))
+  compile(project(':sylph-parser')) {
     exclude(module: 'guava')
     exclude(module: 'calcite-core')
   }
