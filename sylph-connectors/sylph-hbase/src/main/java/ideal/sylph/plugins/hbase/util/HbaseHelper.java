@@ -160,12 +160,12 @@ public class HbaseHelper {
      * @param tableName hbase table name.
      * @return existence returns true, otherwise returns false.
      **/
-    public boolean tableExist(String tableName) {
+    public boolean tableExist(String tableName) throws IOException {
         Boolean isTableExist = null;
         try (Admin admin = HbaseHelper.connection.getAdmin()) {
             isTableExist = admin.tableExists(TableName.valueOf(tableName));
         }catch (Exception e){
-            logger.error("Judgment table is exist exception.", e);
+            throw e;
         }
         return isTableExist;
     }
