@@ -15,6 +15,7 @@
  */
 package ideal.sylph.controller.action;
 
+import com.github.harbby.gadtry.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import ideal.sylph.spi.SylphContext;
 import ideal.sylph.spi.exception.SylphException;
@@ -66,8 +67,8 @@ public class EtlResource
     public Map saveJob(@Context HttpServletRequest request, @QueryParam("actuator") String actuator)
     {
         requireNonNull(actuator, "actuator is null");
+        String jobId = requireNonNull(request.getParameter("jobId"), "job jobId 不能为空");
         try {
-            String jobId = requireNonNull(request.getParameter("jobId"), "job jobId 不能为空");
             String flow = request.getParameter("graph");
             String configString = request.getParameter("config");
 
@@ -82,12 +83,12 @@ public class EtlResource
             return ImmutableMap.copyOf(out);
         }
         catch (Exception e) {
-            Map out = ImmutableMap.of("type", "save",
+            logger.warn("save job {} failed: {}", jobId, e);
+            String message = Throwables.getStackTraceAsString(Throwables.getRootCause(e));
+            return ImmutableMap.of("type", "save",
                     "status", "error",
-                    "msg", "任务创建失败: " + e.toString()
+                    "msg", message
             );
-            logger.warn("job 创建失败", e);
-            return ImmutableMap.copyOf(out);
         }
     }
 
