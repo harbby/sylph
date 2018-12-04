@@ -26,6 +26,7 @@ include 'sylph-connectors:sylph-kafka'
 include 'sylph-connectors:sylph-mysql'
 include 'sylph-connectors:sylph-hdfs'
 include 'sylph-connectors:sylph-kafka09'
+include 'sylph-connectors:sylph-hbase'
 include 'sylph-connectors:sylph-elasticsearch6'
 
 //----
