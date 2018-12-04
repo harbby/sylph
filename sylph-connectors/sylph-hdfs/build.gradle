@@ -1,6 +1,5 @@
 dependencies {
   compile group: 'org.apache.parquet', name: 'parquet-hadoop', version: '1.8.3'
-  compileOnly group: 'org.scala-lang', name: 'scala-library', version: deps.scala
   compile group: 'joda-time', name: 'joda-time', version: deps.joda_time
   compileOnly group: 'org.apache.hadoop', name: 'hadoop-common', version: deps.hadoop
 

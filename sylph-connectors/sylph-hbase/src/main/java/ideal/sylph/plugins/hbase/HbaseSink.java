@@ -15,31 +15,32 @@
  */
 package ideal.sylph.plugins.hbase;
 
-import com.google.common.base.Strings;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.etl.PluginConfig;
 import ideal.sylph.etl.Row;
 import ideal.sylph.etl.SinkContext;
 import ideal.sylph.etl.api.RealTimeSink;
-
 import ideal.sylph.plugins.hbase.tuple.Tuple2;
 import ideal.sylph.plugins.hbase.util.BytesUtil;
 import ideal.sylph.plugins.hbase.util.ColumUtil;
 import ideal.sylph.plugins.hbase.util.HbaseHelper;
 import org.apache.hadoop.hbase.TableNotFoundException;
 import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.shaded.com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Map;
 
-import static com.google.common.base.Preconditions.checkState;
+import static org.apache.hadoop.hbase.shaded.com.google.common.base.Preconditions.checkState;
 
 @Name("hbase")
 @Description("this is hbase Sink, if table not execit ze create table")
-public class HbaseSink  implements RealTimeSink {
+public class HbaseSink
+        implements RealTimeSink
+{
     private String tableName;
     private transient HbaseHelper hbaseHelper;
     private int rowkeyIndex = -1;
@@ -48,16 +49,18 @@ public class HbaseSink  implements RealTimeSink {
     private Map<String, Tuple2<String, String>> columMapping;
     private static final Logger logger = LoggerFactory.getLogger(HbaseSink.class);
 
-    public HbaseSink(SinkContext context, HbaseConfig config) throws Exception {
+    public HbaseSink(SinkContext context, HbaseConfig config)
+            throws Exception
+    {
         {
             this.config = config;
             schema = context.getSchema();
             tableName = context.getSinkTable();
-            if(config.nameSpace != null){
-                tableName = config.nameSpace +":" + tableName;
+            if (config.nameSpace != null) {
+                tableName = config.nameSpace + ":" + tableName;
             }
             hbaseHelper = new HbaseHelper(tableName, config.zookeeper, config.zkNodeParent);
-            if(! hbaseHelper.tableExist(tableName)){
+            if (!hbaseHelper.tableExist(tableName)) {
                 throw new TableNotFoundException("table does not exist, table name " + tableName);
             }
             columMapping = ColumUtil.mapping(schema, config.columnMapping);
@@ -66,48 +69,57 @@ public class HbaseSink  implements RealTimeSink {
                 checkState(fieldIndex != -1, config.rowkey + " does not exist, only " + schema.getFields());
                 this.rowkeyIndex = fieldIndex;
             }
-                checkState(rowkeyIndex != -1, "`rowkey` must be set");
+            checkState(rowkeyIndex != -1, "`rowkey` must be set");
             hbaseHelper.closeConnection();
         }
     }
 
     @Override
-    public boolean open(long partitionId, long version) throws Exception {
-        if(hbaseHelper == null){
+    public boolean open(long partitionId, long version)
+            throws Exception
+    {
+        if (hbaseHelper == null) {
             hbaseHelper = new HbaseHelper(tableName, config.zookeeper, config.zkNodeParent);
         }
         return true;
     }
 
     @Override
-    public void process(Row value) {
+    public void process(Row value)
+    {
         Object rowkey = value.getAs(rowkeyIndex);
-        if(rowkey == null) return;
+        if (rowkey == null) {
+            return;
+        }
         Put put = new Put(BytesUtil.toBytes(rowkey));
-        try{
+        try {
             for (String fieldName : schema.getFieldNames()) {
-                if(!config.rowkey.equals(fieldName)){
+                if (!config.rowkey.equals(fieldName)) {
                     Tuple2<String, String> tuple2 = columMapping.get(fieldName);
-                    if(tuple2 != null){
+                    if (tuple2 != null) {
                         hbaseHelper.addColumn(tuple2.f0(), tuple2.f1(), value.getAs(fieldName), put);
-                    }else{
-                        logger.warn("Field:"+ fieldName + " not defined in table " + tableName);
+                    }
+                    else {
+                        logger.warn("Field:" + fieldName + " not defined in table " + tableName);
                     }
                 }
             }
-            if(!put.isEmpty()){
-               hbaseHelper.store(put);
+            if (!put.isEmpty()) {
+                hbaseHelper.store(put);
             }
-        }catch (Exception e){
+        }
+        catch (Exception e) {
             logger.error("put record to hbase fail.", e);
         }
     }
 
     @Override
-    public void close(Throwable errorOrNull) {
+    public void close(Throwable errorOrNull)
+    {
         try {
             hbaseHelper.flush();
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             logger.error("flush records fail.", e);
         }
     }
@@ -145,10 +157,19 @@ public class HbaseSink  implements RealTimeSink {
             return zkNodeParent;
         }
 
-        public String getNameSpace(){return nameSpace;}
+        public String getNameSpace()
+        {
+            return nameSpace;
+        }
 
-        public String getRowkey(){return rowkey;}
+        public String getRowkey()
+        {
+            return rowkey;
+        }
 
-        public String getColumnMapping(){return columnMapping;}
+        public String getColumnMapping()
+        {
+            return columnMapping;
+        }
     }
 }

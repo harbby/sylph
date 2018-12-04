@@ -16,7 +16,6 @@
 package ideal.sylph.controller.action;
 
 import com.github.harbby.gadtry.base.Throwables;
-import com.github.harbby.gadtry.jvm.JVMException;
 import com.google.common.collect.ImmutableMap;
 import ideal.sylph.spi.SylphContext;
 import ideal.sylph.spi.exception.SylphException;
@@ -95,15 +94,9 @@ public class StreamSqlResource
             logger.info("save job {}", jobId);
             return out;
         }
-        catch (JVMException e) {
-            logger.warn("save job {} failed: {}", jobId, e.getMessage());
-            return ImmutableMap.of("type", "save",
-                    "status", "error",
-                    "msg", e.getMessage());
-        }
         catch (Exception e) {
-            String message = Throwables.getStackTraceAsString(e);
-            logger.warn(message);
+            logger.warn("save job {} failed: {}", jobId, e);
+            String message = Throwables.getStackTraceAsString(Throwables.getRootCause(e));
             return ImmutableMap.of("type", "save",
                     "status", "error",
                     "msg", message);

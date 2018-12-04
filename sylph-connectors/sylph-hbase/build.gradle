@@ -2,9 +2,7 @@ dependencies {
     compile group: 'org.slf4j', name: 'slf4j-api', version: deps.log4j12
 
     compile group: 'org.apache.hbase', name: 'hbase-shaded-client', version: deps.hbase
-
-    compile group: 'org.apache.hbase', name: 'hbase-shaded-common', version: deps.hbase
-
+    
     compile group: 'org.apache.hbase', name: 'hbase-shaded-server', version: deps.hbase
 }
 
