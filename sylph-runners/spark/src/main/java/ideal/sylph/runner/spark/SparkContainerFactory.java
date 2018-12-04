@@ -21,7 +21,6 @@ import com.github.harbby.gadtry.jvm.JVMLaunchers;
 import ideal.sylph.runner.spark.yarn.SparkAppLauncher;
 import ideal.sylph.runtime.local.LocalContainer;
 import ideal.sylph.runtime.yarn.YarnJobContainer;
-import ideal.sylph.runtime.yarn.YarnJobContainerProxy;
 import ideal.sylph.runtime.yarn.YarnModule;
 import ideal.sylph.spi.App;
 import ideal.sylph.spi.job.ContainerFactory;
@@ -64,7 +63,7 @@ public class SparkContainerFactory
             }
         };
         //----create JobContainer Proxy
-        return YarnJobContainerProxy.get(yarnJobContainer);
+        return YarnJobContainer.proxy(yarnJobContainer);
     }
 
     @Override

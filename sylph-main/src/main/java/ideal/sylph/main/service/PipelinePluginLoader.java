@@ -16,7 +16,6 @@
 package ideal.sylph.main.service;
 
 import com.github.harbby.gadtry.classloader.DirClassLoader;
-import com.github.harbby.gadtry.ioc.ClassScanner;
 import com.google.common.annotations.Beta;
 import com.google.common.collect.ImmutableSet;
 import ideal.sylph.annotation.Description;
@@ -78,7 +77,7 @@ public class PipelinePluginLoader
             DirClassLoader dirClassLoader = new DirClassLoader(null, this.getClass().getClassLoader());
             dirClassLoader.addDir(it);
 
-            Set<Class<?>> classSet = ClassScanner.getClasses("ideal.sylph.plugins", dirClassLoader, (classString, error) -> {});
+            //Set<Class<?>> classSet = ClassScanner.getClasses("ideal.sylph.plugins", dirClassLoader, (classString, error) -> {});
 
             Set<Class<? extends PipelinePlugin>> plugins = loadPipelinePlugins(dirClassLoader);
             Set<PipelinePluginInfo> tmp = plugins.stream().map(javaClass -> {

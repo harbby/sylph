@@ -24,7 +24,6 @@ import ideal.sylph.runner.flink.yarn.FlinkYarnJobLauncher;
 import ideal.sylph.runner.flink.yarn.YarnClusterConfiguration;
 import ideal.sylph.runtime.local.LocalContainer;
 import ideal.sylph.runtime.yarn.YarnJobContainer;
-import ideal.sylph.runtime.yarn.YarnJobContainerProxy;
 import ideal.sylph.runtime.yarn.YarnModule;
 import ideal.sylph.spi.job.ContainerFactory;
 import ideal.sylph.spi.job.Job;
@@ -65,6 +64,7 @@ public class FlinkContainerFactory
     public JobContainer getYarnContainer(Job job, String lastRunid)
     {
         FlinkYarnJobLauncher jobLauncher = yarnLauncher.get();
+
         JobContainer yarnJobContainer = new YarnJobContainer(jobLauncher.getYarnClient(), lastRunid)
         {
             @Override
@@ -78,7 +78,7 @@ public class FlinkContainerFactory
                 return Optional.of(applicationId.toString());
             }
         };
-        return YarnJobContainerProxy.get(yarnJobContainer);
+        return YarnJobContainer.proxy(yarnJobContainer);
     }
 
     @Override

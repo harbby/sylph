@@ -15,7 +15,10 @@
  */
 package ideal.sylph.runtime.yarn;
 
+import com.github.harbby.gadtry.aop.AopFactory;
+import com.github.harbby.gadtry.classloader.ThreadContextClassLoader;
 import ideal.sylph.spi.exception.SylphException;
+import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobContainerAbs;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
@@ -113,5 +116,22 @@ public abstract class YarnJobContainer
         catch (YarnException | IOException e) {
             throw new SylphException(CONNECTION_ERROR, e);
         }
+    }
+
+    public static JobContainer proxy(JobContainer yarnJobContainer)
+    {
+        //----create JobContainer Proxy
+        return AopFactory.proxy(JobContainer.class)
+                .byInstance(yarnJobContainer)
+                .around(proxyContext -> {
+                    /*
+                     * 通过这个 修改当前YarnClient的ClassLoader的为当前sdk的加载器
+                     * 默认hadoop Configuration使用jvm的AppLoader,会出现 akka.version not setting的错误 原因是找不到akka相关jar包
+                     * 原因是hadoop Configuration 初始化: this.classLoader = Thread.currentThread().getContextClassLoader();
+                     * */
+                    try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(yarnJobContainer.getClass().getClassLoader())) {
+                        proxyContext.proceed();
+                    }
+                });
     }
 }
