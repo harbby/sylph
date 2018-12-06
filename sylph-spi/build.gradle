@@ -5,7 +5,7 @@ dependencies {
 
   compile(project(':sylph-etl-api'))
   compile group: 'com.github.harbby', name: 'gadtry', version: deps.gadtry
-  compile group: 'org.javassist', name: 'javassist', version: '3.23.1-GA'
+  compile group: 'org.javassist', name: 'javassist', version: '3.24.0-GA'
   compile group: 'commons-io', name: 'commons-io', version: '2.6'
 
   compile group: 'com.google.guava', name: 'guava', version: deps.guava

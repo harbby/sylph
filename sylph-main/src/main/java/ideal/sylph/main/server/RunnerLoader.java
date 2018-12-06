@@ -17,8 +17,8 @@ package ideal.sylph.main.server;
 
 import com.github.harbby.gadtry.classloader.PluginClassLoader;
 import com.github.harbby.gadtry.classloader.ThreadContextClassLoader;
+import com.github.harbby.gadtry.ioc.Autowired;
 import com.google.common.collect.ImmutableList;
-import com.google.inject.Inject;
 import ideal.sylph.main.service.RunnerManager;
 import ideal.sylph.spi.Runner;
 import org.apache.commons.io.FileUtils;
@@ -55,7 +55,7 @@ public class RunnerLoader
     private static final Logger logger = LoggerFactory.getLogger(RunnerLoader.class);
     private final RunnerManager runnerManager;
 
-    @Inject
+    @Autowired
     public RunnerLoader(
             final RunnerManager runnerManager
     )

@@ -15,21 +15,21 @@
  */
 package ideal.sylph.main;
 
-import com.google.common.collect.ImmutableList;
-import com.google.inject.Injector;
-import com.google.inject.Module;
+import com.github.harbby.gadtry.ioc.Bean;
+import com.github.harbby.gadtry.ioc.IocFactory;
 import ideal.sylph.controller.ControllerApp;
-import ideal.sylph.main.bootstrap.Bootstrap;
 import ideal.sylph.main.server.RunnerLoader;
-import ideal.sylph.main.server.ServerMainModule;
+import ideal.sylph.main.server.SylphBean;
 import ideal.sylph.main.service.JobManager;
 import ideal.sylph.main.service.PipelinePluginLoader;
+import ideal.sylph.main.util.PropertiesUtil;
 import ideal.sylph.spi.job.JobStore;
 import org.apache.log4j.PropertyConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
+import java.io.File;
+import java.io.IOException;
 
 import static java.util.Objects.requireNonNull;
 
@@ -49,17 +49,19 @@ public final class SylphMaster
             " *---------------------------------------------------*";
 
     public static void main(String[] args)
+            throws IOException
     {
         PropertyConfigurator.configure(requireNonNull(System.getProperty("log4j.file"), "log4j.file not setting"));
-        List<Module> modules = ImmutableList.of(new ServerMainModule());
+        String configFile = System.getProperty("config");
+        Bean sylphBean = new SylphBean(PropertiesUtil.loadProperties(new File(configFile)));
 
         /*2 Initialize Guice Injector */
         try {
-            Injector injector = new Bootstrap(modules)
-                    .name(SylphMaster.class.getSimpleName())
-                    .strictConfig()
-                    .requireExplicitBindings(false)
-                    .initialize();
+            logger.info("========={} Bootstrap initialize...========", SylphMaster.class.getCanonicalName());
+            IocFactory injector = IocFactory.create(sylphBean,
+                    binder -> binder.bind(ControllerApp.class).withSingle()
+            );
+
             injector.getInstance(PipelinePluginLoader.class).loadPlugins();
             injector.getInstance(RunnerLoader.class).loadPlugins();
             injector.getInstance(JobStore.class).loadJobs();

@@ -16,9 +16,8 @@
 package ideal.sylph.main.service;
 
 import com.github.harbby.gadtry.base.Throwables;
+import com.github.harbby.gadtry.ioc.Autowired;
 import com.github.harbby.gadtry.memory.collection.OffHeapMap;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import ideal.sylph.main.server.ServerMainConfig;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Flow;
@@ -62,11 +61,10 @@ public class LocalJobStore
             ConcurrentHashMap.class
     );
 
-    @Inject
+    @Autowired
     public LocalJobStore(
             ServerMainConfig config,
-            RunnerManager runnerManger,
-            JobStoreConfig jobStoreConfig
+            RunnerManager runnerManger
     )
     {
         this.config = requireNonNull(config, "server config is null");
@@ -139,13 +137,5 @@ public class LocalJobStore
                     }
                 });
         logger.info("loading ok jobs {},but fail load {}", jobs.size(), errorJob);
-    }
-
-    /**
-     * 绑定 JobStoreConfig
-     */
-    @Singleton
-    public static class JobStoreConfig
-    {
     }
 }

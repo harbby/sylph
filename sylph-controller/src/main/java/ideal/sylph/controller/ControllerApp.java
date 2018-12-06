@@ -15,26 +15,28 @@
  */
 package ideal.sylph.controller;
 
-import com.google.inject.Inject;
+import com.github.harbby.gadtry.ioc.Autowired;
 import ideal.sylph.spi.SylphContext;
+
+import java.util.Properties;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * 视图层目前 为实验功能
+ *
  */
 public class ControllerApp
 {
     private ServerConfig config;
     private SylphContext sylphContext;
 
-    @Inject
+    @Autowired
     public ControllerApp(
-            ServerConfig config,
+            Properties properties,
             SylphContext sylphContext
     )
     {
-        this.config = requireNonNull(config, "config is null");
+        this.config = new ServerConfig(requireNonNull(properties, "config is null"));
         this.sylphContext = requireNonNull(sylphContext, "jobManager is null");
     }
 

@@ -57,20 +57,7 @@ assemble.dependsOn 'build_webapp'
 dependencies {
   compile group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'
   compile(project(':sylph-spi'))
-
-  compile('io.airlift:configuration:0.172') {
-    exclude(module: 'guice')
-    exclude(module: 'guava')
-    exclude(module: "guice-multibindings")
-    exclude(module: 'commons-lang3')
-  }
-  compile(group: 'com.google.inject.extensions', name: 'guice-multibindings', version: deps.guice) {
-    exclude(module: "guava")
-  }
-  compile(group: 'com.google.inject', name: 'guice', version: deps.guice) {
-    exclude(module: 'guava')
-  }
-
+  
   compile group: 'org.eclipse.jetty', name: 'jetty-server', version: deps.jetty
   compile group: 'org.eclipse.jetty', name: 'jetty-webapp', version: deps.jetty
   compile group: 'org.eclipse.jetty', name: 'jetty-servlets', version: deps.jetty

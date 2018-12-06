@@ -15,20 +15,31 @@
  */
 package ideal.sylph.main.util;
 
+import com.google.common.collect.ImmutableMap;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Enumeration;
 import java.util.Map;
 import java.util.Properties;
-
-import static com.google.common.collect.Maps.fromProperties;
 
 public final class PropertiesUtil
 {
     private PropertiesUtil() {}
 
-    public static Map<String, String> loadProperties(File file)
+    public static Properties loadProperties(File file)
+            throws IOException
+    {
+        Properties properties = new Properties();
+        try (InputStream in = new FileInputStream(file)) {
+            properties.load(in);
+        }
+        return properties;
+    }
+
+    public static Map<String, String> loadPropertiesAsMap(File file)
             throws IOException
     {
         Properties properties = new Properties();
@@ -36,5 +47,17 @@ public final class PropertiesUtil
             properties.load(in);
         }
         return fromProperties(properties);
+    }
+
+    public static ImmutableMap<String, String> fromProperties(Properties properties)
+    {
+        ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+
+        for (Enumeration<?> e = properties.propertyNames(); e.hasMoreElements(); ) {
+            String key = (String) e.nextElement();
+            builder.put(key, properties.getProperty(key));
+        }
+
+        return builder.build();
     }
 }

@@ -15,49 +15,41 @@
  */
 package ideal.sylph.main.server;
 
-import io.airlift.configuration.Config;
-import io.airlift.configuration.ConfigDescription;
+import com.github.harbby.gadtry.ioc.Autowired;
+import ideal.sylph.main.util.PropertiesUtil;
 
 import javax.validation.constraints.NotNull;
 
+import java.util.Map;
+import java.util.Properties;
+
+import static java.util.Objects.requireNonNull;
+
 public class ServerMainConfig
 {
-    private String metadataPath;
-    private String jobWorkDir;
-    private String runMode = "yarn";
+    private final String metadataPath;
+    private final String jobWorkDir;
+    private final String runMode;
 
-    @Config("server.metadata.path")
-    @ConfigDescription("server.metadata.path location")
-    public ServerMainConfig setMetadataPath(String metadataPath)
+    @Autowired
+    public ServerMainConfig(Properties properties)
     {
-        this.metadataPath = metadataPath;
-        return this;
+        Map<String, String> config = PropertiesUtil.fromProperties(properties);
+
+        this.metadataPath = config.get("server.metadata.path");
+        this.jobWorkDir = requireNonNull(config.get("server.jobstore.workpath"), "server.jobstore.workpath not setting");
+        this.runMode = config.getOrDefault("job.runtime.mode", "yarn");
     }
 
-    @NotNull(message = "server.metadata.path not setting")
     public String getMetadataPath()
     {
         return metadataPath;
-    }
-
-    @Config("server.jobstore.workpath")
-    @ConfigDescription("server.jobstore.workpath is job local working dir")
-    public void setJobWorkDir(String jobWorkDir)
-    {
-        this.jobWorkDir = jobWorkDir;
     }
 
     @NotNull(message = "server.jobstore.workpath not setting")
     public String getJobWorkDir()
     {
         return jobWorkDir;
-    }
-
-    @Config("job.runtime.mode")
-    @ConfigDescription("job.runtime.mode, yarn or local")
-    public void setRunMode(String runMode)
-    {
-        this.runMode = runMode;
     }
 
     @NotNull(message = "job.runtime.mode not setting")
