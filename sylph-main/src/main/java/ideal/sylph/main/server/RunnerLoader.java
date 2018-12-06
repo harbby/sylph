@@ -39,7 +39,7 @@ public class RunnerLoader
 {
     private static final ImmutableList<String> SPI_PACKAGES = ImmutableList.<String>builder()
             .add("ideal.sylph.spi.")
-            .add("com.github.harbby.")
+            .add("com.github.harbby.gadtry")
             .add("ideal.sylph.annotation.")
             .add("ideal.sylph.etl.")  // etl api ?
             //-------------------------------------------------
@@ -47,7 +47,7 @@ public class RunnerLoader
             .add("com.fasterxml.jackson.")
             .add("org.openjdk.jol.")
             //----------test-------------
-            .add("com.google.inject.")
+            //.add("com.google.inject.")
             .add("com.google.common.")
             .add("org.slf4j.")
             .add("org.apache.log4j.")
