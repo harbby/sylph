@@ -17,7 +17,7 @@ package ideal.sylph.main.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.inject.Inject;
+import com.github.harbby.gadtry.ioc.Autowired;
 import ideal.sylph.main.server.ServerMainConfig;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.utils.GenericTypeReference;
@@ -46,7 +46,7 @@ public class MetadataManager
     private final ServerMainConfig config;
     private final File metadataFile;
 
-    @Inject
+    @Autowired
     public MetadataManager(ServerMainConfig serverMainConfig)
     {
         this.config = requireNonNull(serverMainConfig, "serverMainConfig is null");

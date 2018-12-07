@@ -15,7 +15,7 @@
  */
 package ideal.sylph.main.service;
 
-import com.google.inject.Inject;
+import com.github.harbby.gadtry.ioc.Autowired;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobContainer;
@@ -50,9 +50,9 @@ public final class JobManager
     private static final Logger logger = LoggerFactory.getLogger(JobManager.class);
     private static final int MaxSubmitJobNum = 10;
 
-    @Inject private JobStore jobStore;
-    @Inject private RunnerManager runnerManger;
-    @Inject private MetadataManager metadataManager;
+    @Autowired private JobStore jobStore;
+    @Autowired private RunnerManager runnerManger;
+    @Autowired private MetadataManager metadataManager;
 
     private final ConcurrentMap<String, JobContainer> runningContainers = new ConcurrentHashMap<>();
 

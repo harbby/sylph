@@ -17,8 +17,8 @@ package ideal.sylph.main.server;
 
 import com.github.harbby.gadtry.classloader.PluginClassLoader;
 import com.github.harbby.gadtry.classloader.ThreadContextClassLoader;
+import com.github.harbby.gadtry.ioc.Autowired;
 import com.google.common.collect.ImmutableList;
-import com.google.inject.Inject;
 import ideal.sylph.main.service.RunnerManager;
 import ideal.sylph.spi.Runner;
 import org.apache.commons.io.FileUtils;
@@ -39,7 +39,7 @@ public class RunnerLoader
 {
     private static final ImmutableList<String> SPI_PACKAGES = ImmutableList.<String>builder()
             .add("ideal.sylph.spi.")
-            .add("com.github.harbby.")
+            .add("com.github.harbby.gadtry")
             .add("ideal.sylph.annotation.")
             .add("ideal.sylph.etl.")  // etl api ?
             //-------------------------------------------------
@@ -47,7 +47,7 @@ public class RunnerLoader
             .add("com.fasterxml.jackson.")
             .add("org.openjdk.jol.")
             //----------test-------------
-            .add("com.google.inject.")
+            //.add("com.google.inject.")
             .add("com.google.common.")
             .add("org.slf4j.")
             .add("org.apache.log4j.")
@@ -55,7 +55,7 @@ public class RunnerLoader
     private static final Logger logger = LoggerFactory.getLogger(RunnerLoader.class);
     private final RunnerManager runnerManager;
 
-    @Inject
+    @Autowired
     public RunnerLoader(
             final RunnerManager runnerManager
     )

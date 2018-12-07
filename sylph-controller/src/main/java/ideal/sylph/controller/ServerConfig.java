@@ -15,36 +15,24 @@
  */
 package ideal.sylph.controller;
 
-import io.airlift.configuration.Config;
-
-import javax.validation.constraints.Min;
+import java.util.Properties;
 
 public class ServerConfig
 {
-    private int serverPort = 8080;
-    private int maxFormContentSize = 100;
+    private final int serverPort;
+    private final int maxFormContentSize;
 
-    @Config("web.server.port")
-    public ServerConfig setServerPort(int serverPort)
+    public ServerConfig(Properties properties)
     {
-        this.serverPort = serverPort;
-        return this;
+        this.serverPort = Integer.parseInt(properties.getProperty("web.server.port", "8080"));
+        this.maxFormContentSize = Integer.parseInt(properties.getProperty("server.http.maxFormContentSize", "100"));
     }
 
-    @Min(1000)
     public int getServerPort()
     {
         return serverPort;
     }
 
-    @Config("server.http.maxFormContentSize")
-    public ServerConfig setMaxFormContentSize(int maxFormContentSize)
-    {
-        this.maxFormContentSize = maxFormContentSize;
-        return this;
-    }
-
-    @Min(10)
     public int getMaxFormContentSize()
     {
         return maxFormContentSize;

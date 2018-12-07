@@ -19,9 +19,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.github.harbby.gadtry.classloader.DirClassLoader;
 import com.github.harbby.gadtry.classloader.ThreadContextClassLoader;
+import com.github.harbby.gadtry.ioc.Autowired;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.google.inject.Inject;
 import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.main.server.ServerMainConfig;
 import ideal.sylph.spi.Runner;
@@ -66,7 +66,7 @@ public class RunnerManager
     private final PipelinePluginLoader pluginLoader;
     private final ServerMainConfig config;
 
-    @Inject
+    @Autowired
     public RunnerManager(PipelinePluginLoader pluginLoader, ServerMainConfig config)
     {
         this.pluginLoader = requireNonNull(pluginLoader, "pluginLoader is null");
