@@ -28,11 +28,11 @@ include 'sylph-connectors:sylph-hdfs'
 include 'sylph-connectors:sylph-kafka09'
 include 'sylph-connectors:sylph-hbase'
 include 'sylph-connectors:sylph-elasticsearch6'
-
+include 'sylph-connectors:sylph-clickhouse'
 //----
 include 'sylph-dist'
 include 'sylph-parser'
 include 'sylph-docs'
 include 'sylph-yarn'
-
+//include 'sylph-clickhouse'
 
