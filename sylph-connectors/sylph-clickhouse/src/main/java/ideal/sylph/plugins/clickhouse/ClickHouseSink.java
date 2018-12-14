@@ -30,6 +30,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.flink.shaded.guava18.com.google.common.base.Preconditions;
+import org.apache.flink.shaded.guava18.com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,15 +49,17 @@ public class ClickHouseSink
     private final ClickHouseSinkConfig config;
     private final String prepareStatementQuery;
     private final String[] keys;
-
+    private final Row.Schema schema;
+    private int idIndex = -1;
     private transient Connection connection;
     private transient PreparedStatement statement;
     private int num = 0;
 
-    public ClickHouseSink(ClickHouseSinkConfig clickHouseSinkConfig)
+    public ClickHouseSink(SinkContext context,ClickHouseSinkConfig clickHouseSinkConfig)
     {
         this.config = clickHouseSinkConfig;
         checkState(config.getQuery() != null, "insert into query not setting");
+        logger.info("query  >>>  " +config.getQuery());
         this.prepareStatementQuery = config.getQuery().replaceAll("\\$\\{.*?}", "?");
         // parser sql query ${key}
         Matcher matcher = Pattern.compile("(?<=\\$\\{)(.+?)(?=\\})").matcher(config.getQuery());
@@ -62,46 +67,38 @@ public class ClickHouseSink
         while (matcher.find()) {
             builder.add(matcher.group());
         }
+
+        schema = context.getSchema();
+        if (!Strings.isNullOrEmpty(config.idField)) {
+            int fieldIndex = schema.getFieldIndex(config.idField);
+            Preconditions.checkState(fieldIndex != -1, config.idField + " does not exist, only " + schema.getFields());
+            this.idIndex = fieldIndex;
+        }
         this.keys = builder.toArray(new String[0]);
     }
 
     @Override
     public void process(Row row){
 
-        // type convert
-
-//        case "DateTime" | "Date" | "String" => statement.setString(i + 1, item.getAs[String](field))
-//        case "Int8" | "Int16" | "Int32" | "UInt8" | "UInt16" => statement.setInt(i + 1, item.getAs[Int](field))
-//        case "UInt64" | "Int64" | "UInt32" => statement.setLong(i + 1, item.getAs[Long](field))
-//        case "Float32" | "Float64" => statement.setDouble(i + 1, item.getAs[Double](field))
-//        case _ => statement.setString(i + 1, item.getAs[String](field))
-
-
-//         pstmt.setString(1, lines[1]);
-//         pstmt.setString(2, lines[3]);
-//         pstmt.setString(3, lines[4]);
-//         pstmt.setString(4, lines[6]);
-//         pstmt.addBatch();
-
-
         try {
             int i = 1;
-            for (String key : keys) {
-                Object value = isNumeric(key) ? row.getAs(Integer.parseInt(key)) : row.getAs(key);
-                statement.setObject(i, value);
-                i += 1;
+            //后期利用反射  CK 类型转换
+            for (String fieldName : schema.getFieldNames()) {
+                    if (fieldName.equals("event_time")){
+                         statement.setDate(i, java.sql.Date.valueOf(row.getAs(fieldName).toString()));
+                    }else{
+                        statement.setString(i, row.getAs(fieldName));
+                    }
+                    i += 1;
             }
             statement.addBatch();
-            // submit batch
-            if (num++ >= 50) {
+            if (num++ >= 100000) {//暂时
                 statement.executeBatch();
                 num = 0;
             }
-        }
-        catch (SQLException e) {
+        }catch (SQLException e) {
             throw new RuntimeException(e);
         }
-
     }
 
     @Override
@@ -148,6 +145,14 @@ public class ClickHouseSink
         @Name("query")
         @Description("this is ck save query")
         private String query = null;
+
+        @Name("id_field")
+        @Description("this is ck id_field")
+        private String idField;
+
+        @Name("eventDate_field")
+        @Description("this is your data eventDate_field, 必须是 YYYY-mm--dd位时间戳")
+        private String eventTimeName;
 
         public String getJdbcUrl() {
             return jdbcUrl;
