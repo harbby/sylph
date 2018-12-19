@@ -31,6 +31,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+//import ideal.sylph.plugins.hbase.tuple.Tuple2;
+//import ideal.sylph.plugins.clickhouse.tuple.Tuple2;
 import org.apache.flink.shaded.guava18.com.google.common.base.Preconditions;
 import org.apache.flink.shaded.guava18.com.google.common.base.Strings;
 import org.slf4j.Logger;
@@ -48,56 +50,52 @@ public class ClickHouseSink
 
     private final ClickHouseSinkConfig config;
     private final String prepareStatementQuery;
-    private final String[] keys;
     private final Row.Schema schema;
     private int idIndex = -1;
     private transient Connection connection;
     private transient PreparedStatement statement;
     private int num = 0;
+    private final Map<String,String>  nametypes;
 
     public ClickHouseSink(SinkContext context,ClickHouseSinkConfig clickHouseSinkConfig)
     {
         this.config = clickHouseSinkConfig;
         checkState(config.getQuery() != null, "insert into query not setting");
-        logger.info("query  >>>  " +config.getQuery());
         this.prepareStatementQuery = config.getQuery().replaceAll("\\$\\{.*?}", "?");
-        // parser sql query ${key}
-        Matcher matcher = Pattern.compile("(?<=\\$\\{)(.+?)(?=\\})").matcher(config.getQuery());
-        List<String> builder = new ArrayList<>();
-        while (matcher.find()) {
-            builder.add(matcher.group());
-        }
-
         schema = context.getSchema();
-        if (!Strings.isNullOrEmpty(config.idField)) {
-            int fieldIndex = schema.getFieldIndex(config.idField);
-            Preconditions.checkState(fieldIndex != -1, config.idField + " does not exist, only " + schema.getFields());
-            this.idIndex = fieldIndex;
+        Map<String,String>  nt =new HashMap<String,String>();
+        for (int i=0;i<schema.getFieldNames().size();i++) {
+            nt.put(schema.getFieldNames().get(i),schema.getFieldTypes().get(i).toString().split(" ")[1]);
         }
-        this.keys = builder.toArray(new String[0]);
+        this.nametypes=nt;
     }
 
     @Override
-    public void process(Row row){
-
+    public void process(Row row) {
+        int ith=1;
         try {
-            int i = 1;
-            //后期利用反射  CK 类型转换
             for (String fieldName : schema.getFieldNames()) {
-                    if (fieldName.equals("event_time")){
-                         statement.setDate(i, java.sql.Date.valueOf(row.getAs(fieldName).toString()));
-                    }else{
-                        statement.setString(i, row.getAs(fieldName));
-                    }
-                    i += 1;
+                //Byte  Double  String  Date  Long
+                if (nametypes.get(fieldName).equals("java.sql.Date")) {
+                    statement.setDate(ith, java.sql.Date.valueOf(row.getAs(fieldName).toString()));
+                } else if ((nametypes.get(fieldName).equals("java.lang.Long"))) {
+                    statement.setLong(ith, row.getAs(fieldName));
+                } else if ((nametypes.get(fieldName).equals("java.lang.Double"))) {
+                    statement.setDouble(ith, row.getAs(fieldName));
+                } else if ((nametypes.get(fieldName).equals("java.lang.Integer"))) {
+                    statement.setByte(ith, Byte.valueOf(row.getAs(fieldName)));
+                } else {
+                    statement.setString(ith, row.getAs(fieldName));
+                }
+                ith += 1;
             }
-            statement.addBatch();
-            if (num++ >= 100000) {//暂时
-                statement.executeBatch();
-                num = 0;
-            }
-        }catch (SQLException e) {
-            throw new RuntimeException(e);
+               statement.addBatch();
+               if (num++ >= config.bulkSize) {
+                  statement.executeBatch();
+                   num = 0;
+               }
+            } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
@@ -146,9 +144,9 @@ public class ClickHouseSink
         @Description("this is ck save query")
         private String query = null;
 
-        @Name("id_field")
-        @Description("this is ck id_field")
-        private String idField;
+        @Name("bulkSize")
+        @Description("this is ck bulkSize")
+        private int bulkSize;
 
         @Name("eventDate_field")
         @Description("this is your data eventDate_field, 必须是 YYYY-mm--dd位时间戳")
@@ -179,6 +177,11 @@ public class ClickHouseSink
             }
         }
         return true;
+    }
+
+    public enum MyStrings{
+
+
     }
 
 

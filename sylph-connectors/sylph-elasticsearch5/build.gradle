@@ -1,16 +1,28 @@
 plugins {
-    id 'java'
-}
-
-group 'ideal'
-version '0.4.0-SNAPSHOT'
-
-sourceCompatibility = 1.8
-
-repositories {
-    mavenCentral()
+    id "com.github.johnrengelman.shadow" version "4.0.3"
 }
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+    shadow group: 'org.apache.flink', name: 'flink-shaded-guava', version: '18.0-4.0'
+    compile 'org.elasticsearch.client:transport:5.6.0'
 }
+
+shadowJar {
+    baseName = project.name
+    classifier = 'shaded'
+    version = project.version
+
+    configurations = [project.configurations.compile]
+
+    dependencies {
+        exclude(dependency('junit:junit:'))
+    }
+
+    //relocate 'com.google.protobuf', 'shaded.com.google.protobuf'
+    relocate 'com.google.common', 'shaded.elasticsearch6.com.google.common'
+    relocate 'io.netty', 'shaded.elasticsearch5.io.netty'
+    relocate 'io.netty', 'shaded.elasticsearch5.io.netty'
+    relocate 'org.apache.logging', 'shaded.elasticsearch5.org.apache.logging'
+}
+assemble.dependsOn shadowJar
+buildPlugins.dependsOn shadowJar

@@ -1,16 +1,3 @@
-plugins {
-    id 'java'
-}
-
-group 'ideal'
-version '0.4.0-SNAPSHOT'
-
-sourceCompatibility = 1.8
-
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     compileOnly(group: 'org.apache.flink', name: 'flink-streaming-scala_2.11', version: deps.flink) {
         exclude(module: 'flink-shaded-hadoop2')

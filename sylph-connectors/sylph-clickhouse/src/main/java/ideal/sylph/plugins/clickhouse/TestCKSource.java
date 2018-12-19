@@ -75,15 +75,12 @@ public class TestCKSource
         {
             Random random = new Random(1000000);
             int numKeys = 10;
-//            long count = 1L;
             while (running) {
-                LocalDate now=LocalDate.now();
-//                String userId = "uid_" + count;
-                String msg="https://mp.weixin.qq.com/s";
-                Row row = Row.of("https://mp.weixin.qq.com/s" + random.nextLong(), msg, now.toString());
+                java.time.LocalDate date = java.time.LocalDate.now();
+                java.sql.Date now = java.sql.Date.valueOf(date);
+                String msg="https://github.com/harbby/sylph/"+ random.nextLong();
+                Row row = Row.of("github.com" + random.nextLong(), msg, now);
                 sourceContext.collect(row);
-//                count = count > numKeys ? 1L : count + 1;
-//                TimeUnit.MILLISECONDS.sleep(100);
             }
         }
 
@@ -93,11 +90,10 @@ public class TestCKSource
             TypeInformation<?>[] types = new TypeInformation<?>[] {
                     TypeExtractor.createTypeInfo(String.class),
                     TypeExtractor.createTypeInfo(String.class),
-                    TypeExtractor.createTypeInfo(String.class)
+                    TypeExtractor.createTypeInfo(java.sql.Date.class)
             };
 
-            RowTypeInfo rowTypeInfo = new RowTypeInfo(types, new String[] {"key", "message", "event_time"});
-            //createTypeInformation[Row]
+            RowTypeInfo rowTypeInfo = new RowTypeInfo(types, new String[] {"key", "message", "mes_time"});
             return rowTypeInfo;
         }
 
