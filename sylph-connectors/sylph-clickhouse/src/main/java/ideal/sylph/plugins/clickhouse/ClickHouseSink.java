@@ -73,29 +73,29 @@ public class ClickHouseSink
     @Override
     public void process(Row row) {
         int ith=1;
-        try {
-            for (String fieldName : schema.getFieldNames()) {
-                //Byte  Double  String  Date  Long
-                if (nametypes.get(fieldName).equals("java.sql.Date")) {
-                    statement.setDate(ith, java.sql.Date.valueOf(row.getAs(fieldName).toString()));
-                } else if ((nametypes.get(fieldName).equals("java.lang.Long"))) {
-                    statement.setLong(ith, row.getAs(fieldName));
-                } else if ((nametypes.get(fieldName).equals("java.lang.Double"))) {
-                    statement.setDouble(ith, row.getAs(fieldName));
-                } else if ((nametypes.get(fieldName).equals("java.lang.Integer"))) {
-                    statement.setByte(ith, Byte.valueOf(row.getAs(fieldName)));
-                } else {
-                    statement.setString(ith, row.getAs(fieldName));
-                }
-                ith += 1;
-            }
+            try {
+                for (String fieldName : schema.getFieldNames()) {
+                     //Byte  Double  String  Date  Long  .....
+                     if (nametypes.get(fieldName).equals("java.sql.Date")) {
+                          statement.setDate(ith, java.sql.Date.valueOf(row.getAs(fieldName).toString()));
+                     } else if ((nametypes.get(fieldName).equals("java.lang.Long"))) {
+                          statement.setLong(ith, row.getAs(fieldName));
+                     } else if ((nametypes.get(fieldName).equals("java.lang.Double"))) {
+                          statement.setDouble(ith, row.getAs(fieldName));
+                     } else if ((nametypes.get(fieldName).equals("java.lang.Integer"))) {
+                          statement.setByte(ith, Byte.valueOf(row.getAs(fieldName)));
+                     } else {
+                          statement.setString(ith, row.getAs(fieldName));
+                     }
+                  ith += 1;
+               }
                statement.addBatch();
                if (num++ >= config.bulkSize) {
                   statement.executeBatch();
                    num = 0;
                }
             } catch (SQLException e) {
-            e.printStackTrace();
+               e.printStackTrace();
         }
     }
 
@@ -146,7 +146,7 @@ public class ClickHouseSink
 
         @Name("bulkSize")
         @Description("this is ck bulkSize")
-        private int bulkSize;
+        private int bulkSize=20000;
 
         @Name("eventDate_field")
         @Description("this is your data eventDate_field, 必须是 YYYY-mm--dd位时间戳")
@@ -168,21 +168,4 @@ public class ClickHouseSink
             return query;
         }
     }
-
-    private static boolean isNumeric(String str)
-    {
-        for (int i = str.length(); --i >= 0; ) {
-            if (!Character.isDigit(str.charAt(i))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public enum MyStrings{
-
-
-    }
-
-
 }
