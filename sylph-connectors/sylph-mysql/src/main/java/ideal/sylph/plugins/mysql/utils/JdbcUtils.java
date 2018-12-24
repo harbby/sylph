@@ -29,10 +29,10 @@ public class JdbcUtils
     private JdbcUtils() {}
 
     /**
-     * jdbc ResultSet to List<Map></>
+     * jdbc ResultSet to List[Map]
      *
      * @param rs input jdbc ResultSet
-     * @return List<Map>
+     * @return List[Map]
      */
     public static List<Map<String, Object>> resultToList(ResultSet rs)
             throws SQLException

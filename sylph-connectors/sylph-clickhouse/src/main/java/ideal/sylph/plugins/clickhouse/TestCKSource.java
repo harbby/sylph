@@ -25,7 +25,6 @@ import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.api.java.typeutils.TypeExtractor;
 import org.apache.flink.shaded.guava18.com.google.common.base.Supplier;
 import org.apache.flink.shaded.guava18.com.google.common.base.Suppliers;
-import org.apache.flink.shaded.guava18.com.google.common.collect.ImmutableMap;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -34,9 +33,7 @@ import org.apache.flink.types.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.LocalDate;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 
 /**
  * test source
@@ -78,7 +75,7 @@ public class TestCKSource
             while (running) {
                 java.time.LocalDate date = java.time.LocalDate.now();
                 java.sql.Date now = java.sql.Date.valueOf(date);
-                String msg="https://github.com/harbby/sylph/"+ random.nextLong();
+                String msg = "https://github.com/harbby/sylph/" + random.nextLong();
                 Row row = Row.of("github.com" + random.nextLong(), msg, now);
                 sourceContext.collect(row);
             }

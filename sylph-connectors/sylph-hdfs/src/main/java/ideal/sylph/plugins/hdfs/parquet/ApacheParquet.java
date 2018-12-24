@@ -124,9 +124,6 @@ public class ApacheParquet
         return writer.getDataSize();
     }
 
-    /**
-     * 入参list<Object>
-     */
     @Override
     public void writeLine(List<Object> evalRow)
     {
@@ -146,9 +143,6 @@ public class ApacheParquet
         }
     }
 
-    /**
-     * 入参list<Object>
-     */
     @Override
     public void writeLine(Row row)
     {

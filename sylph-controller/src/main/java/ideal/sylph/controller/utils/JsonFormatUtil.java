@@ -26,9 +26,7 @@ public final class JsonFormatUtil
     /**
      * 打印输入到控制台
      *
-     * @param jsonStr
-     * @author lizhgb
-     * @Date 2015-10-14 下午1:17:22
+     * @param jsonStr json text
      */
     public static String printJson(String jsonStr)
     {
@@ -38,10 +36,8 @@ public final class JsonFormatUtil
     /**
      * 格式化
      *
-     * @param jsonStr
-     * @return
-     * @author lizhgb
-     * @Date 2015-10-14 下午1:17:35
+     * @param jsonStr json text
+     * @return String
      */
     public static String formatJson(String jsonStr)
     {
@@ -85,14 +81,6 @@ public final class JsonFormatUtil
         return sb.toString();
     }
 
-    /**
-     * 添加space
-     *
-     * @param sb
-     * @param indent
-     * @author lizhgb
-     * @Date 2015-10-14 上午10:38:04
-     */
     private static void addIndentBlank(StringBuilder sb, int indent)
     {
         for (int i = 0; i < indent; i++) {

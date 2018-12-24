@@ -104,4 +104,19 @@ subprojects {
   //assemble.dependsOn 'licenseMain','licenseTest'
   //licenseMain.includes
   //license.mapping('javascript', 'JAVADOC_STYLE')
+
+  task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+  }
+
+  task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+    //javadoc.failOnError = false
+  }
+
+  artifacts {
+    archives sourcesJar, javadocJar
+  }
 }

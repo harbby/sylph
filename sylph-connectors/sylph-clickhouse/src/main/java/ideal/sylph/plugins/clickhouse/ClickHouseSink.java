@@ -21,15 +21,18 @@ import ideal.sylph.etl.PluginConfig;
 import ideal.sylph.etl.Row;
 import ideal.sylph.etl.SinkContext;
 import ideal.sylph.etl.api.RealTimeSink;
-
-import java.sql.*;
-import java.util.HashMap;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.flink.calcite.shaded.com.google.common.base.Preconditions.checkState;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.HashMap;
+import java.util.Map;
 
+import static org.apache.flink.calcite.shaded.com.google.common.base.Preconditions.checkState;
 
 @Name("ClickHouseSink")
 @Description("this is ClickHouseSink sink plugin")
@@ -45,52 +48,59 @@ public class ClickHouseSink
     private transient Connection connection;
     private transient PreparedStatement statement;
     private int num = 0;
-    private final Map<String,String>  nametypes;
+    private final Map<String, String> nametypes;
 
-    public ClickHouseSink(SinkContext context,ClickHouseSinkConfig clickHouseSinkConfig)
+    public ClickHouseSink(SinkContext context, ClickHouseSinkConfig clickHouseSinkConfig)
     {
         this.config = clickHouseSinkConfig;
         checkState(config.getQuery() != null, "insert into query not setting");
         this.prepareStatementQuery = config.getQuery().replaceAll("\\$\\{.*?}", "?");
         schema = context.getSchema();
-        Map<String,String>  nt =new HashMap<String,String>();
-        for (int i=0;i<schema.getFieldNames().size();i++) {
-            nt.put(schema.getFieldNames().get(i),schema.getFieldTypes().get(i).toString().split(" ")[1]);
+        Map<String, String> nt = new HashMap<String, String>();
+        for (int i = 0; i < schema.getFieldNames().size(); i++) {
+            nt.put(schema.getFieldNames().get(i), schema.getFieldTypes().get(i).toString().split(" ")[1]);
         }
-        this.nametypes=nt;
+        this.nametypes = nt;
     }
 
     @Override
-    public void process(Row row) {
-        int ith=1;
-            try {
-                for (String fieldName : schema.getFieldNames()) {
-                     //Byte  Double  String  Date  Long  .....
-                     if (nametypes.get(fieldName).equals("java.sql.Date")) {
-                          statement.setDate(ith, java.sql.Date.valueOf(row.getAs(fieldName).toString()));
-                     } else if ((nametypes.get(fieldName).equals("java.lang.Long"))) {
-                          statement.setLong(ith, row.getAs(fieldName));
-                     } else if ((nametypes.get(fieldName).equals("java.lang.Double"))) {
-                          statement.setDouble(ith, row.getAs(fieldName));
-                     } else if ((nametypes.get(fieldName).equals("java.lang.Integer"))) {
-                          statement.setByte(ith, Byte.valueOf(row.getAs(fieldName)));
-                     } else {
-                          statement.setString(ith, row.getAs(fieldName));
-                     }
-                  ith += 1;
-               }
-               statement.addBatch();
-               if (num++ >= config.bulkSize) {
-                  statement.executeBatch();
-                   num = 0;
-               }
-            } catch (SQLException e) {
-               e.printStackTrace();
+    public void process(Row row)
+    {
+        int ith = 1;
+        try {
+            for (String fieldName : schema.getFieldNames()) {
+                //Byte  Double  String  Date  Long  .....
+                if (nametypes.get(fieldName).equals("java.sql.Date")) {
+                    statement.setDate(ith, java.sql.Date.valueOf(row.getAs(fieldName).toString()));
+                }
+                else if ((nametypes.get(fieldName).equals("java.lang.Long"))) {
+                    statement.setLong(ith, row.getAs(fieldName));
+                }
+                else if ((nametypes.get(fieldName).equals("java.lang.Double"))) {
+                    statement.setDouble(ith, row.getAs(fieldName));
+                }
+                else if ((nametypes.get(fieldName).equals("java.lang.Integer"))) {
+                    statement.setByte(ith, Byte.valueOf(row.getAs(fieldName)));
+                }
+                else {
+                    statement.setString(ith, row.getAs(fieldName));
+                }
+                ith += 1;
+            }
+            statement.addBatch();
+            if (num++ >= config.bulkSize) {
+                statement.executeBatch();
+                num = 0;
+            }
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
     @Override
-    public boolean open(long partitionId, long version) throws SQLException, ClassNotFoundException
+    public boolean open(long partitionId, long version)
+            throws SQLException, ClassNotFoundException
     {
         Class.forName("com.github.housepower.jdbc.ClickHouseDriver");
         this.connection = DriverManager.getConnection(config.jdbcUrl, config.user, config.password);
@@ -99,8 +109,8 @@ public class ClickHouseSink
     }
 
     @Override
-    public void close(Throwable errorOrNull){
-
+    public void close(Throwable errorOrNull)
+    {
         try (Connection conn = connection) {
             try (Statement stmt = statement) {
                 if (stmt != null) {
@@ -116,8 +126,9 @@ public class ClickHouseSink
         }
     }
 
-    public static class ClickHouseSinkConfig extends PluginConfig{
-
+    public static class ClickHouseSinkConfig
+            extends PluginConfig
+    {
         @Name("url")
         @Description("this is ck jdbc url")
         private String jdbcUrl = "jdbc:clickhouse://localhost:9000";
@@ -136,25 +147,29 @@ public class ClickHouseSink
 
         @Name("bulkSize")
         @Description("this is ck bulkSize")
-        private int bulkSize=20000;
+        private int bulkSize = 20000;
 
         @Name("eventDate_field")
         @Description("this is your data eventDate_field, 必须是 YYYY-mm--dd位时间戳")
         private String eventTimeName;
 
-        public String getJdbcUrl() {
+        public String getJdbcUrl()
+        {
             return jdbcUrl;
         }
 
-        public String getUser() {
+        public String getUser()
+        {
             return user;
         }
 
-        public String getPassword() {
+        public String getPassword()
+        {
             return password;
         }
 
-        public String getQuery() {
+        public String getQuery()
+        {
             return query;
         }
     }

@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2018 The Sylph Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ideal.sylph.plugins.kafka.flink.utils;
 
 import com.google.common.base.Joiner;
@@ -11,9 +26,15 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
-public class KafkaProducer implements IProducer {
+public class KafkaProducer
+        implements IProducer
+{
     private static final Logger log = LoggerFactory.getLogger(KafkaProducer.class);
 
     private String brokersString;
@@ -21,8 +42,8 @@ public class KafkaProducer implements IProducer {
     private String partitionKey = "";
     private org.apache.kafka.clients.producer.KafkaProducer<String, String> producer;
 
-
-    public KafkaProducer(String zkConnect,  String topic) {
+    public KafkaProducer(String zkConnect, String topic)
+    {
         this.topic = topic;
 
         RetryPolicy retryPolicy = new ExponentialBackoffRetry(1000, 3);
@@ -35,7 +56,8 @@ public class KafkaProducer implements IProducer {
 
         try {
             ids = client.getChildren().forPath("/brokers/ids");
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             log.error("Couldn't get brokers ids", ex);
         }
 
@@ -45,7 +67,8 @@ public class KafkaProducer implements IProducer {
 
             try {
                 jsonString = new String(client.getData().forPath("/brokers/ids/" + id), "UTF-8");
-            } catch (Exception ex) {
+            }
+            catch (Exception ex) {
                 log.error("Couldn't parse brokers data", ex);
             }
 
@@ -56,7 +79,8 @@ public class KafkaProducer implements IProducer {
                     Double port = (Double) json.get("port");
                     String host = json.get("host") + ":" + port.intValue();
                     hosts.add(host);
-                } catch (NullPointerException e) {
+                }
+                catch (NullPointerException e) {
                     log.error("Failed converting a JSON tuple to a Map class", e);
                 }
             }
@@ -82,12 +106,14 @@ public class KafkaProducer implements IProducer {
     }
 
     @Override
-    public void close() {
+    public void close()
+    {
         producer.close();
     }
 
     @Override
-    public void send(String message) {
+    public void send(String message)
+    {
         ProducerRecord<String, String> record = new ProducerRecord<>(topic, message);
         producer.send(record);
     }

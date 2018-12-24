@@ -58,16 +58,16 @@ public final class SylphMaster
         /*2 Initialize Guice Injector */
         try {
             logger.info("========={} Bootstrap initialize...========", SylphMaster.class.getCanonicalName());
-            IocFactory injector = IocFactory.create(sylphBean,
+            IocFactory app = IocFactory.create(sylphBean,
                     binder -> binder.bind(ControllerApp.class).withSingle()
             );
 
-            injector.getInstance(PipelinePluginLoader.class).loadPlugins();
-            injector.getInstance(RunnerLoader.class).loadPlugins();
-            injector.getInstance(JobStore.class).loadJobs();
+            app.getInstance(PipelinePluginLoader.class).loadPlugins();
+            app.getInstance(RunnerLoader.class).loadPlugins();
+            app.getInstance(JobStore.class).loadJobs();
 
-            injector.getInstance(JobManager.class).start();
-            injector.getInstance(ControllerApp.class).start();
+            app.getInstance(JobManager.class).start();
+            app.getInstance(ControllerApp.class).start();
             //ProcessHandle.current().pid()
             logger.info("\n" + logo);
             logger.info("======== SERVER STARTED this pid is {}========");

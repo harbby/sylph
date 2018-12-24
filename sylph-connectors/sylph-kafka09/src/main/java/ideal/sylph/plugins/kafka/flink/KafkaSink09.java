@@ -32,20 +32,20 @@ import java.util.Map;
 
 import static org.apache.flink.shaded.guava18.com.google.common.base.Preconditions.checkState;
 
-
 @Name("kafka09")
 @Description("this is kafka09 Sink plugin")
 public class KafkaSink09
-        implements RealTimeSink {
-
+        implements RealTimeSink
+{
     private static final Logger logger = LoggerFactory.getLogger(KafkaSink09.class);
     private final Kafka09SinkConfig config;
     private final Row.Schema schema;
     private int idIndex = -1;
     private KafkaProducer kafkaProducer;
     private final String topic;
-    public KafkaSink09(SinkContext context, Kafka09SinkConfig config) {
 
+    public KafkaSink09(SinkContext context, Kafka09SinkConfig config)
+    {
         schema = context.getSchema();
         if (!Strings.isNullOrEmpty(config.idField)) {
             int fieldIndex = schema.getFieldIndex(config.idField);
@@ -53,13 +53,12 @@ public class KafkaSink09
             this.idIndex = fieldIndex;
         }
         this.config = config;
-        this.topic=config.topics;
-
+        this.topic = config.topics;
     }
 
     @Override
-    public void process(Row value) {
-
+    public void process(Row value)
+    {
         Gson gson = new Gson();
         Map<String, Object> map = new HashMap<>();
         for (String fieldName : schema.getFieldNames()) {
@@ -70,18 +69,22 @@ public class KafkaSink09
     }
 
     @Override
-    public boolean open(long partitionId, long version) throws Exception {
+    public boolean open(long partitionId, long version)
+            throws Exception
+    {
         //config.zookeeper,config.brokers  至少一个  暂时 zookeeper
-        this.kafkaProducer = new KafkaProducer(config.zookeeper,config.topics);
+        this.kafkaProducer = new KafkaProducer(config.zookeeper, config.topics);
         return true;
     }
 
     @Override
-    public void close(Throwable errorOrNull) {
+    public void close(Throwable errorOrNull)
+    {
         kafkaProducer.close();
     }
 
-    public static class Kafka09SinkConfig  extends PluginConfig
+    public static class Kafka09SinkConfig
+            extends PluginConfig
     {
         private static final long serialVersionUID = 2L;
         @Name("kafka_topic")

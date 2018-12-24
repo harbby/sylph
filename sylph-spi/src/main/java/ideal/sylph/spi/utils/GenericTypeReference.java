@@ -16,14 +16,14 @@
 package ideal.sylph.spi.utils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
+import com.github.harbby.gadtry.base.JavaType;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
 /**
  * demo:
- * Map<String, Object> config = MAPPER.readValue(json, new GenericTypeReference(Map.class, String.class, Object.class));
+ * Map[String, Object] config = MAPPER.readValue(json, new GenericTypeReference(Map.class, String.class, Object.class));
  */
 public class GenericTypeReference
         extends TypeReference<Object>
@@ -33,7 +33,8 @@ public class GenericTypeReference
     public GenericTypeReference(Class<?> rawType, Type... typeArguments)
     {
         //this.type = new MoreTypes.ParameterizedTypeImpl(null, rawType, typeArguments);
-        this.type = ParameterizedTypeImpl.make(rawType, typeArguments, null);
+        //sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl.make(rawType, typeArguments, null);
+        this.type = JavaType.make(rawType, typeArguments, null);
     }
 
     @Override
