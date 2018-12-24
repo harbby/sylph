@@ -23,18 +23,8 @@ import ideal.sylph.etl.SinkContext;
 import ideal.sylph.etl.api.RealTimeSink;
 
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-//import ideal.sylph.plugins.hbase.tuple.Tuple2;
-//import ideal.sylph.plugins.clickhouse.tuple.Tuple2;
-import org.apache.flink.shaded.guava18.com.google.common.base.Preconditions;
-import org.apache.flink.shaded.guava18.com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
