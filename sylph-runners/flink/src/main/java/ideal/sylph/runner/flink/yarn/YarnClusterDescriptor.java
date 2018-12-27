@@ -131,27 +131,23 @@ public class YarnClusterDescriptor
     }
 
     public ClusterClient<ApplicationId> deploy()
+            throws Exception
     {
-        try {
-            YarnClientApplication application = yarnClient.createApplication();
-            ApplicationReport report = startAppMaster(application);
+        YarnClientApplication application = yarnClient.createApplication();
+        ApplicationReport report = startAppMaster(application);
 
-            Configuration flinkConfiguration = getFlinkConfiguration();
-            flinkConfiguration.setString(JobManagerOptions.ADDRESS.key(), report.getHost());
-            flinkConfiguration.setInteger(JobManagerOptions.PORT.key(), report.getRpcPort());
+        Configuration flinkConfiguration = getFlinkConfiguration();
+        flinkConfiguration.setString(JobManagerOptions.ADDRESS.key(), report.getHost());
+        flinkConfiguration.setInteger(JobManagerOptions.PORT.key(), report.getRpcPort());
 
-            flinkConfiguration.setString(RestOptions.ADDRESS, report.getHost());
-            flinkConfiguration.setInteger(RestOptions.PORT, report.getRpcPort());
+        flinkConfiguration.setString(RestOptions.ADDRESS, report.getHost());
+        flinkConfiguration.setInteger(RestOptions.PORT, report.getRpcPort());
 
-            //return new RestClusterClient<>(flinkConfiguration, report.getApplicationId()).getMaxSlots();
-            return new YarnClusterClient(this,
-                    appConf.getTaskManagerCount(),
-                    appConf.getTaskManagerSlots(),
-                    report, clusterConf.flinkConfiguration(), false);
-        }
-        catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        //return new RestClusterClient<>(flinkConfiguration, report.getApplicationId()).getMaxSlots();
+        return new YarnClusterClient(this,
+                appConf.getTaskManagerCount(),
+                appConf.getTaskManagerSlots(),
+                report, clusterConf.flinkConfiguration(), false);
     }
 
     private ApplicationReport startAppMaster(YarnClientApplication application)

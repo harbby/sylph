@@ -16,8 +16,9 @@
 package ideal.sylph.runner.spark.yarn;
 
 import com.github.harbby.gadtry.base.Serializables;
+import com.github.harbby.gadtry.base.Throwables;
+import com.github.harbby.gadtry.ioc.Autowired;
 import com.google.common.collect.ImmutableList;
-import com.google.inject.Inject;
 import ideal.sylph.runner.spark.SparkJobHandle;
 import ideal.sylph.spi.job.Job;
 import org.apache.commons.lang3.StringUtils;
@@ -27,17 +28,22 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.deploy.yarn.Client;
 import org.apache.spark.deploy.yarn.ClientArguments;
 import org.apache.spark.ideal.deploy.yarn.SylphSparkYarnClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class SparkAppLauncher
 {
-    @Inject private YarnClient yarnClient;
+    private static final Logger logger = LoggerFactory.getLogger(SparkAppLauncher.class);
+
+    @Autowired private YarnClient yarnClient;
     private static final String sparkHome = System.getenv("SPARK_HOME");
 
     public YarnClient getYarnClient()
@@ -45,7 +51,7 @@ public class SparkAppLauncher
         return yarnClient;
     }
 
-    public ApplicationId run(Job job)
+    public Optional<ApplicationId> run(Job job)
             throws Exception
     {
         System.setProperty("SPARK_YARN_MODE", "true");
@@ -63,7 +69,19 @@ public class SparkAppLauncher
         ClientArguments clientArguments = new ClientArguments(args);   // spark-2.0.0
         //yarnClient.getConfig().iterator().forEachRemaining(x -> sparkConf.set("spark.hadoop." + x.getKey(), x.getValue()));
         Client appClient = new SylphSparkYarnClient(clientArguments, sparkConf, yarnClient);
-        return appClient.submitApplication();
+        try {
+            return Optional.of(appClient.submitApplication());
+        }
+        catch (Exception e) {
+            Thread thread = Thread.currentThread();
+            if (thread.isInterrupted() || Throwables.getRootCause(e) instanceof InterruptedException) {
+                logger.warn("job {} Canceled submission", job.getId());
+                return Optional.empty();
+            }
+            else {
+                throw e;
+            }
+        }
     }
 
     private static void setDistJars(Job job, SparkConf sparkConf)

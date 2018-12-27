@@ -33,14 +33,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.ILLEGAL_OPERATION;
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_START_ERROR;
-import static ideal.sylph.spi.job.Job.Status.KILLING;
 import static ideal.sylph.spi.job.Job.Status.RUNNING;
 import static ideal.sylph.spi.job.Job.Status.STARTED_ERROR;
 import static ideal.sylph.spi.job.Job.Status.STARTING;
+import static ideal.sylph.spi.job.Job.Status.STOP;
 
 /**
  * JobManager
@@ -54,53 +55,35 @@ public final class JobManager
     @Autowired private RunnerManager runnerManger;
     @Autowired private MetadataManager metadataManager;
 
-    private final ConcurrentMap<String, JobContainer> runningContainers = new ConcurrentHashMap<>();
-
-    private volatile boolean run;
+    private final ConcurrentMap<String, JobContainer> containers = new ConcurrentHashMap<>();
 
     /**
-     * 用来做耗时的->任务启动提交到yarn的操作
+     * Used to do time-consuming task submit operations
      */
     private ExecutorService jobStartPool = Executors.newFixedThreadPool(MaxSubmitJobNum);
 
     private final Thread monitorService = new Thread(() -> {
-        while (run) {
+        while (true) {
             Thread.currentThread().setName("job_monitor");
-            runningContainers.forEach((jobId, container) -> {
-                try {
-                    Job.Status status = container.getStatus();
-                    switch (status) {
-                        case STOP: {
-                            jobStartPool.submit(() -> {
-                                try {
-                                    Thread.currentThread().setName("job_submit_" + jobId);
-                                    logger.warn("Job {}[{}] Status is {}, Soon to start", jobId,
-                                            container.getRunId(), status);
-                                    container.setStatus(STARTING);
-                                    Optional<String> runId = container.run();
-                                    if (container.getStatus() == KILLING) {
-                                        container.shutdown();
-                                    }
-                                    else {
-                                        container.setStatus(RUNNING);
-                                        runId.ifPresent(result -> metadataManager.addMetadata(jobId, result));
-                                    }
-                                }
-                                catch (Exception e) {
-                                    container.setStatus(STARTED_ERROR);
-                                    logger.warn("job {} start error", jobId, e);
-                                }
-                            }); //需要重启 Job
+            containers.forEach((jobId, container) -> {
+                Job.Status status = container.getStatus();
+                if (status == STOP) {
+                    Future future = jobStartPool.submit(() -> {
+                        try {
+                            Thread.currentThread().setName("job_submit_" + jobId);
+                            logger.warn("Job {}[{}] Status is {}, Soon to start", jobId,
+                                    container.getRunId(), status);
+                            container.setStatus(STARTING);
+                            Optional<String> runId = container.run();
+                            container.setStatus(RUNNING);
+                            runId.ifPresent(result -> metadataManager.addMetadata(jobId, result));
                         }
-                        case RUNNING:
-                        case STARTED_ERROR:
-                        case STARTING:
-                        case KILLING:
-                        default:
-                    }
-                }
-                catch (Exception e) {
-                    logger.warn("Check job {} status error", jobId, e);
+                        catch (Exception e) {
+                            container.setStatus(STARTED_ERROR);
+                            logger.warn("job {} start error", jobId, e);
+                        }
+                    });
+                    container.setFuture(future);
                 }
             });
 
@@ -118,12 +101,12 @@ public final class JobManager
      */
     public synchronized void startJob(String jobId)
     {
-        if (runningContainers.containsKey(jobId)) {
+        if (containers.containsKey(jobId)) {
             throw new SylphException(JOB_START_ERROR, "Job " + jobId + " already started");
         }
         Job job = this.getJob(jobId).orElseThrow(() -> new SylphException(JOB_START_ERROR, "Job " + jobId + " not found with jobStore"));
-        runningContainers.computeIfAbsent(jobId, k -> runnerManger.createJobContainer(job, null));
-        logger.info("runningContainers size:{}", runningContainers.size());
+        containers.computeIfAbsent(jobId, k -> runnerManger.createJobContainer(job, null));
+        logger.info("deploy job :{}", jobId);
     }
 
     /**
@@ -132,8 +115,9 @@ public final class JobManager
     public synchronized void stopJob(String jobId)
             throws Exception
     {
-        JobContainer container = runningContainers.remove(jobId);
+        JobContainer container = containers.remove(jobId);
         if (container != null) {
+            logger.warn("job {} Cancel submission", jobId);
             metadataManager.removeMetadata(jobId);
             container.shutdown();
         }
@@ -147,7 +131,7 @@ public final class JobManager
     public void removeJob(String jobId)
             throws IOException
     {
-        if (runningContainers.containsKey(jobId)) {
+        if (containers.containsKey(jobId)) {
             throw new SylphException(ILLEGAL_OPERATION, "Can only delete tasks that have been offline");
         }
         jobStore.removeJob(jobId);
@@ -176,15 +160,13 @@ public final class JobManager
     public void start()
             throws IOException
     {
-        this.run = true;
         monitorService.setDaemon(false);
         monitorService.start();
         //---------  init  read metadata job status  ---------------
         Map<String, String> metadatas = metadataManager.loadMetadata();
         metadatas.forEach((jobId, jobInfo) -> this.getJob(jobId).ifPresent(job -> {
             JobContainer container = runnerManger.createJobContainer(job, jobInfo);
-            runningContainers.put(job.getId(), container);
-            logger.info("runningContainers size:{}", runningContainers.size());
+            containers.put(job.getId(), container);
         }));
     }
 
@@ -193,7 +175,7 @@ public final class JobManager
      */
     public Optional<JobContainer> getJobContainer(@NotNull String jobId)
     {
-        return Optional.ofNullable(runningContainers.get(jobId));
+        return Optional.ofNullable(containers.get(jobId));
     }
 
     /**
@@ -201,7 +183,7 @@ public final class JobManager
      */
     public Optional<JobContainer> getJobContainerWithRunId(@NotNull String runId)
     {
-        for (JobContainer container : runningContainers.values()) {
+        for (JobContainer container : containers.values()) {
             if (runId.equals(container.getRunId())) {
                 return Optional.ofNullable(container);
             }

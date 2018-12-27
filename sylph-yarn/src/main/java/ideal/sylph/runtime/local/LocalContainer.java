@@ -26,13 +26,14 @@ import java.lang.reflect.Field;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class LocalContainer
         implements JobContainer
 {
     private static final Logger logger = LoggerFactory.getLogger(LocalContainer.class);
 
-    private final ExecutorService pool = Executors.newSingleThreadExecutor();
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private final JVMLaunchers.VmBuilder<Boolean> vmBuilder;
 
@@ -74,7 +75,7 @@ public class LocalContainer
     public synchronized Optional<String> run()
             throws Exception
     {
-        pool.submit(() -> {
+        executor.submit(() -> {
             launcher.startAndGet();
             return true;
         });
@@ -89,6 +90,11 @@ public class LocalContainer
         if (launcher.getProcess() != null) {
             launcher.getProcess().destroy();
         }
+    }
+
+    @Override
+    public void setFuture(Future future)
+    {
     }
 
     @Override
