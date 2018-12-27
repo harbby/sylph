@@ -18,8 +18,8 @@ package ideal.sylph.runtime.yarn;
 import com.github.harbby.gadtry.aop.AopFactory;
 import com.github.harbby.gadtry.classloader.ThreadContextClassLoader;
 import ideal.sylph.spi.exception.SylphException;
+import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobContainer;
-import ideal.sylph.spi.job.JobContainerAbs;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
@@ -31,20 +31,29 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.CONNECTION_ERROR;
-import static ideal.sylph.spi.job.Job.Status.KILLING;
 import static ideal.sylph.spi.job.Job.Status.RUNNING;
+import static ideal.sylph.spi.job.Job.Status.STOP;
+import static java.util.Objects.requireNonNull;
 
-public abstract class YarnJobContainer
-        extends JobContainerAbs
+public class YarnJobContainer
+        implements JobContainer
 {
     private static final Logger logger = LoggerFactory.getLogger(YarnJobContainer.class);
     private ApplicationId yarnAppId;
     private YarnClient yarnClient;
+    private volatile Job.Status status = STOP;
+    private volatile Future future;
 
-    protected YarnJobContainer(YarnClient yarnClient, String jobInfo)
+    private final Callable<Optional<ApplicationId>> runnable;
+
+    private YarnJobContainer(YarnClient yarnClient, String jobInfo, Callable<Optional<ApplicationId>> runnable)
     {
+        this.runnable = runnable;
         this.yarnClient = yarnClient;
         if (jobInfo != null) {
             this.yarnAppId = Apps.toAppID(jobInfo);
@@ -55,8 +64,11 @@ public abstract class YarnJobContainer
     @Override
     public synchronized void shutdown()
     {
+        if (!future.isDone() && !future.isCancelled()) {
+            future.cancel(true);
+        }
+
         try {
-            this.setStatus(KILLING);
             if (yarnAppId != null) {
                 yarnClient.killApplication(yarnAppId);
             }
@@ -64,6 +76,16 @@ public abstract class YarnJobContainer
         catch (Exception e) {
             logger.error("kill yarn id {} failed", yarnAppId, e);
         }
+    }
+
+    @Override
+    public Optional<String> run()
+            throws Exception
+    {
+        this.setYarnAppId(null);
+        Optional<ApplicationId> applicationId = runnable.call();
+        applicationId.ifPresent(this::setYarnAppId);
+        return applicationId.map(ApplicationId::toString);
     }
 
     @Override
@@ -83,13 +105,6 @@ public abstract class YarnJobContainer
     }
 
     @Override
-    public boolean isRunning()
-    {
-        YarnApplicationState yarnAppStatus = getYarnAppStatus(yarnAppId);
-        return YarnApplicationState.ACCEPTED.equals(yarnAppStatus) || YarnApplicationState.RUNNING.equals(yarnAppStatus);
-    }
-
-    @Override
     public String getJobUrl()
     {
         try {
@@ -101,35 +116,59 @@ public abstract class YarnJobContainer
         }
     }
 
+    @Override
+    public synchronized void setStatus(Job.Status status)
+    {
+        this.status = requireNonNull(status, "status is null");
+    }
+
+    @Override
+    public synchronized Job.Status getStatus()
+    {
+        if (status == RUNNING) {
+            return isRunning() ? RUNNING : STOP;
+        }
+        return status;
+    }
+
+    @Override
+    public void setFuture(Future future)
+    {
+        this.future = future;
+    }
+
     /**
      * 获取yarn Job运行情况
      */
-    private YarnApplicationState getYarnAppStatus(ApplicationId applicationId)
+    private boolean isRunning()
     {
         try {
-            ApplicationReport app = yarnClient.getApplicationReport(applicationId); //获取某个指定的任务
-            return app.getYarnApplicationState();
+            ApplicationReport app = yarnClient.getApplicationReport(getYarnAppId()); //获取某个指定的任务
+            YarnApplicationState state = app.getYarnApplicationState();
+            return YarnApplicationState.ACCEPTED.equals(state) || YarnApplicationState.RUNNING.equals(state);
         }
         catch (ApplicationNotFoundException e) {  //app 不存在与yarn上面
-            return null;
+            return false;
         }
         catch (YarnException | IOException e) {
             throw new SylphException(CONNECTION_ERROR, e);
         }
     }
 
-    public static JobContainer proxy(JobContainer yarnJobContainer)
+    public static JobContainer of(YarnClient yarnClient, String jobInfo, Callable<Optional<ApplicationId>> runnable)
     {
+        JobContainer container = new YarnJobContainer(yarnClient, jobInfo, runnable);
+
         //----create JobContainer Proxy
         return AopFactory.proxy(JobContainer.class)
-                .byInstance(yarnJobContainer)
+                .byInstance(container)
                 .around(proxyContext -> {
                     /*
                      * 通过这个 修改当前YarnClient的ClassLoader的为当前sdk的加载器
                      * 默认hadoop Configuration使用jvm的AppLoader,会出现 akka.version not setting的错误 原因是找不到akka相关jar包
                      * 原因是hadoop Configuration 初始化: this.classLoader = Thread.currentThread().getContextClassLoader();
                      * */
-                    try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(yarnJobContainer.getClass().getClassLoader())) {
+                    try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(YarnJobContainer.class.getClassLoader())) {
                         proxyContext.proceed();
                     }
                 });

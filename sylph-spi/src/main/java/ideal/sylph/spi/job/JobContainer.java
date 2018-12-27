@@ -18,6 +18,7 @@ package ideal.sylph.spi.job;
 import javax.validation.constraints.NotNull;
 
 import java.util.Optional;
+import java.util.concurrent.Future;
 
 /**
  * Job Container
@@ -43,6 +44,8 @@ public interface JobContainer
      * offline job
      */
     void shutdown();
+
+    void setFuture(Future future);
 
     /**
      * 获取job的状态

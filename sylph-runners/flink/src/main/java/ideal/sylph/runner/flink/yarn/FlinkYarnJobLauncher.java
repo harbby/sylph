@@ -15,6 +15,7 @@
  */
 package ideal.sylph.runner.flink.yarn;
 
+import com.github.harbby.gadtry.base.Throwables;
 import com.github.harbby.gadtry.ioc.Autowired;
 import ideal.sylph.runner.flink.FlinkJobConfig;
 import ideal.sylph.runner.flink.FlinkJobHandle;
@@ -22,7 +23,6 @@ import ideal.sylph.runner.flink.FlinkRunner;
 import ideal.sylph.runner.flink.actuator.JobParameter;
 import ideal.sylph.spi.job.Job;
 import org.apache.flink.api.common.JobID;
-import org.apache.flink.client.deployment.ClusterSpecification;
 import org.apache.flink.client.program.ClusterClient;
 import org.apache.flink.runtime.clusterframework.messages.ShutdownClusterAfterJob;
 import org.apache.flink.runtime.jobgraph.JobGraph;
@@ -38,10 +38,12 @@ import scala.concurrent.duration.FiniteDuration;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -65,7 +67,7 @@ public class FlinkYarnJobLauncher
         return yarnClient;
     }
 
-    public ApplicationId start(Job job)
+    public Optional<ApplicationId> start(Job job)
             throws Exception
     {
         FlinkJobHandle jobHandle = (FlinkJobHandle) job.getJobHandle();
@@ -81,31 +83,35 @@ public class FlinkYarnJobLauncher
         JobGraph jobGraph = jobHandle.getJobGraph();
         //todo: How to use `savepoints` to restore a job
         //jobGraph.setSavepointRestoreSettings(SavepointRestoreSettings.forPath("hdfs:///tmp/sylph/apps/savepoints"));
-        return start(descriptor, jobGraph).getClusterId();
+        return start(descriptor, jobGraph);
     }
 
-    private ClusterClient<ApplicationId> start(YarnClusterDescriptor descriptor, JobGraph job)
+    private Optional<ApplicationId> start(YarnClusterDescriptor descriptor, JobGraph job)
             throws Exception
     {
         ApplicationId applicationId = null;
         try {
-            ClusterClient<ApplicationId> client = descriptor.deploy();  //create app master
+            ClusterClient<ApplicationId> client = descriptor.deploy();  //create yarn appMaster
             applicationId = client.getClusterId();
-            ClusterSpecification specification = new ClusterSpecification.ClusterSpecificationBuilder()
-                    .setMasterMemoryMB(1024)
-                    .setNumberTaskManagers(2)
-                    .setSlotsPerTaskManager(2)
-                    .setTaskManagerMemoryMB(1024)
-                    .createClusterSpecification();
-            client.runDetached(job, null);  //submit graph to yarn appMaster 并运行分离
+            client.runDetached(job, null);  //submit graph to appMaster 并分离
             stopAfterJob(client, job.getJobID());
-            return client;
+            client.shutdown();
+            return Optional.of(applicationId);
         }
         catch (Exception e) {
             if (applicationId != null) {
                 yarnClient.killApplication(applicationId);
             }
-            throw e;
+            Thread thread = Thread.currentThread();
+            if (e instanceof InterruptedIOException ||
+                    thread.isInterrupted() ||
+                    Throwables.getRootCause(e) instanceof InterruptedException) {
+                logger.warn("job {} Canceled submission", job.getJobID());
+                return Optional.empty();
+            }
+            else {
+                throw e;
+            }
         }
         finally {
             //Clear temporary directory
@@ -114,6 +120,7 @@ public class FlinkYarnJobLauncher
                     FileSystem hdfs = FileSystem.get(clusterConf.yarnConf());
                     Path appDir = new Path(clusterConf.appRootDir(), applicationId.toString());
                     hdfs.delete(appDir, true);
+                    logger.info("clear tmp dir: {}", appDir);
                 }
             }
             catch (IOException e) {

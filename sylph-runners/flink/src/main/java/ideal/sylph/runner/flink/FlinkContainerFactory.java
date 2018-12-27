@@ -30,7 +30,6 @@ import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobContainer;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,20 +64,7 @@ public class FlinkContainerFactory
     {
         FlinkYarnJobLauncher jobLauncher = yarnLauncher.get();
 
-        JobContainer yarnJobContainer = new YarnJobContainer(jobLauncher.getYarnClient(), lastRunid)
-        {
-            @Override
-            public Optional<String> run()
-                    throws Exception
-            {
-                logger.info("Instantiating SylphFlinkJob {} at yarnId {}", job.getId());
-                this.setYarnAppId(null);
-                ApplicationId applicationId = jobLauncher.start(job);
-                this.setYarnAppId(applicationId);
-                return Optional.of(applicationId.toString());
-            }
-        };
-        return YarnJobContainer.proxy(yarnJobContainer);
+        return YarnJobContainer.of(jobLauncher.getYarnClient(), lastRunid, () -> jobLauncher.start(job));
     }
 
     @Override

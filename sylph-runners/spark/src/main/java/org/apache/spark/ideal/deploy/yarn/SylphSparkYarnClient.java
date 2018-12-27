@@ -37,7 +37,7 @@ public class SylphSparkYarnClient
             throws NoSuchFieldException, IllegalAccessException
     {
         super(clientArgs, spConf);
-        String key = DRIVER_MEMORY; //test
+        //String key = DRIVER_MEMORY; //test
         Field field = this.getClass().getSuperclass().getDeclaredField("org$apache$spark$deploy$yarn$Client$$hadoopConf");
         field.setAccessible(true);
         YarnConfiguration yarnConfiguration = new YarnConfiguration(yarnClient.getConfig());

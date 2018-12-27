@@ -26,13 +26,11 @@ import ideal.sylph.spi.App;
 import ideal.sylph.spi.job.ContainerFactory;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobContainer;
-import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.streaming.StreamingContext;
 
-import java.util.Optional;
 import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -50,20 +48,8 @@ public class SparkContainerFactory
     public JobContainer getYarnContainer(Job job, String lastRunid)
     {
         SparkAppLauncher appLauncher = yarnLauncher.get();
-        final JobContainer yarnJobContainer = new YarnJobContainer(appLauncher.getYarnClient(), lastRunid)
-        {
-            @Override
-            public Optional<String> run()
-                    throws Exception
-            {
-                this.setYarnAppId(null);
-                ApplicationId yarnAppId = appLauncher.run(job);
-                this.setYarnAppId(yarnAppId);
-                return Optional.of(yarnAppId.toString());
-            }
-        };
         //----create JobContainer Proxy
-        return YarnJobContainer.proxy(yarnJobContainer);
+        return YarnJobContainer.of(appLauncher.getYarnClient(), lastRunid, () -> appLauncher.run(job));
     }
 
     @Override
