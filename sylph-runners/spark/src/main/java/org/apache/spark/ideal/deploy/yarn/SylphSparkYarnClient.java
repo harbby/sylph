@@ -27,8 +27,6 @@ import org.apache.spark.deploy.yarn.ClientArguments;
 
 import java.lang.reflect.Field;
 
-import static org.apache.spark.launcher.SparkLauncher.DRIVER_MEMORY;
-
 public class SylphSparkYarnClient
         extends Client
 {
