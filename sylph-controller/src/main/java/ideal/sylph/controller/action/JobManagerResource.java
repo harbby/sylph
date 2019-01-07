@@ -45,15 +45,15 @@ import static java.util.Objects.requireNonNull;
 
 @javax.inject.Singleton
 @Path("/job_manger")
-public class JobManagerResurce
+public class JobManagerResource
 {
-    private static final Logger logger = LoggerFactory.getLogger(JobManagerResurce.class);
+    private static final Logger logger = LoggerFactory.getLogger(JobManagerResource.class);
 
     @Context private ServletContext servletContext;
     @Context private UriInfo uriInfo;
     private SylphContext sylphContext;
 
-    public JobManagerResurce(
+    public JobManagerResource(
             @Context ServletContext servletContext,
             @Context UriInfo uriInfo)
     {
