@@ -18,8 +18,9 @@ package ideal.sylph.plugins.kafka.flink;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.annotation.Version;
-import ideal.sylph.etl.PluginConfig;
+import ideal.sylph.etl.SourceContext;
 import ideal.sylph.etl.api.Source;
+import ideal.sylph.plugins.kafka.KafkaSourceConfig;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
@@ -53,29 +54,31 @@ public class KafkaSource
     /**
      * 初始化(driver阶段执行)
      **/
-    public KafkaSource(StreamExecutionEnvironment execEnv, KafkaSourceConfig config)
+    public KafkaSource(StreamExecutionEnvironment execEnv, KafkaSourceConfig config, SourceContext context)
     {
         requireNonNull(execEnv, "execEnv is null");
         requireNonNull(config, "config is null");
         loadStream = Suppliers.memoize(() -> {
-            String topics = config.topics;
-            String brokers = config.brokers; //需要把集群的host 配置到程序所在机器
-            String groupid = config.groupid; //消费者的名字
-            String offset = config.offsetMode; //latest earliest
+            String topics = config.getTopics();
+            String groupId = config.getGroupid(); //消费者的名字
+            String offsetMode = config.getOffsetMode(); //latest earliest
 
             Properties properties = new Properties();
-            properties.put("bootstrap.servers", brokers);
+            properties.put("bootstrap.servers", config.getBrokers());  //需要把集群的host 配置到程序所在机器
             //"enable.auto.commit" -> (false: java.lang.Boolean), //不自动提交偏移量
             //      "session.timeout.ms" -> "30000", //session默认是30秒 超过5秒不提交offect就会报错
             //      "heartbeat.interval.ms" -> "5000", //10秒提交一次 心跳周期
-            properties.put("group.id", groupid); //注意不同的流 group.id必须要不同 否则会出现offect commit提交失败的错误
-            properties.put("auto.offset.reset", offset); //latest   earliest
+            properties.put("group.id", groupId); //注意不同的流 group.id必须要不同 否则会出现offect commit提交失败的错误
+            properties.put("auto.offset.reset", offsetMode); //latest   earliest
+
+            KeyedDeserializationSchema<Row> deserializationSchema = "json".equals(config.getValueType()) ?
+                    new JsonSchema(context) : new RowDeserializer();
 
             List<String> topicSets = Arrays.asList(topics.split(","));
             //org.apache.flink.streaming.api.checkpoint.CheckpointedFunction
             DataStream<Row> stream = execEnv.addSource(new FlinkKafkaConsumer010<Row>(
                     topicSets,
-                    new RowDeserializer(),
+                    deserializationSchema,
                     properties)
             );
             return stream;
@@ -109,6 +112,7 @@ public class KafkaSource
             );
         }
 
+        @Override
         public TypeInformation<Row> getProducedType()
         {
             TypeInformation<?>[] types = new TypeInformation<?>[] {
@@ -120,29 +124,5 @@ public class KafkaSource
             };
             return new RowTypeInfo(types, KAFKA_COLUMNS);
         }
-    }
-
-    public static class KafkaSourceConfig
-            extends PluginConfig
-    {
-        private static final long serialVersionUID = 2L;
-
-        @Name("kafka_topic")
-        @Description("this is kafka topic list")
-        private String topics = "test1";
-
-        @Name("kafka_broker")
-        @Description("this is kafka broker list")
-        private String brokers = "localhost:9092";
-
-        @Name("kafka_group_id")
-        @Description("this is kafka_group_id")
-        private String groupid = "sylph_streamSql_test1";
-
-        @Name("auto.offset.reset")
-        @Description("this is auto.offset.reset mode")
-        private String offsetMode = "latest";
-
-        private KafkaSourceConfig() {}
     }
 }

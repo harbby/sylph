@@ -19,6 +19,7 @@ import com.github.harbby.gadtry.ioc.IocFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import ideal.sylph.etl.SinkContext;
+import ideal.sylph.etl.SourceContext;
 import ideal.sylph.parser.SqlParserException;
 import ideal.sylph.parser.antlr.AntlrSqlParser;
 import ideal.sylph.parser.antlr.ParsingException;
@@ -159,6 +160,22 @@ public class StreamSqlBuilder
 
         final IocFactory iocFactory = IocFactory.create(new FlinkBean(tableEnv),
                 binder -> binder.bind(SinkContext.class, new SinkContext()
+                {
+                    private final ideal.sylph.etl.Row.Schema schema = buildSylphSchema(tableTypeInfo);
+
+                    @Override
+                    public ideal.sylph.etl.Row.Schema getSchema()
+                    {
+                        return schema;
+                    }
+
+                    @Override
+                    public String getSinkTable()
+                    {
+                        return tableName;
+                    }
+                }),
+                binder -> binder.bind(SourceContext.class, new SourceContext()
                 {
                     private final ideal.sylph.etl.Row.Schema schema = buildSylphSchema(tableTypeInfo);
 
