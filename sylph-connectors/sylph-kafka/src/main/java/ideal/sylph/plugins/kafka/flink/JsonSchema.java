@@ -15,11 +15,11 @@
  */
 package ideal.sylph.plugins.kafka.flink;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import ideal.sylph.etl.SourceContext;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.api.java.typeutils.TypeExtractor;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema;
 import org.apache.flink.types.Row;
 
