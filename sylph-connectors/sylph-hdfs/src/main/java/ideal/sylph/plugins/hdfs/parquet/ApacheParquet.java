@@ -304,7 +304,7 @@ public class ApacheParquet
         }
     }
 
-    public static Builder builder()
+    public static Builder create()
     {
         return new Builder();
     }
@@ -333,7 +333,7 @@ public class ApacheParquet
             return this;
         }
 
-        public ApacheParquet build()
+        public ApacheParquet get()
                 throws IOException
         {
             return new ApacheParquet(writePath, schema, parquetVersion);
