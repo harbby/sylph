@@ -216,7 +216,7 @@ public class TextFileFactory
 
     private class FileChannel
     {
-        private final static int batchSize = 1024; //1k = 1024*1
+        private static final int batchSize = 1024; //1k = 1024*1
         private final OutputStream outputStream;
         private long bufferSize;
 
