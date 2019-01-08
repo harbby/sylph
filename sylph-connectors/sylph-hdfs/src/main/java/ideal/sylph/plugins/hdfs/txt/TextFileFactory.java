@@ -33,7 +33,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static ideal.sylph.plugins.hdfs.factory.HDFSFactorys.getRowKey;
@@ -82,17 +81,12 @@ public class TextFileFactory
             Thread.currentThread().setName("Text_Factory_Consumer");
             try {
                 while (!closed) {
-                    Tuple2<String, Long> tuple2 = streamData.poll();
-                    if (tuple2 != null) {
-                        long eventTime = tuple2.f2();
-                        String value = tuple2.f1();
-                        FileChannel writer = getTxtFileWriter(eventTime);
-                        byte[] bytes = (value + "\n").getBytes(StandardCharsets.UTF_8); //先写入换行符
-                        writer.write(bytes);
-                    }
-                    else {
-                        TimeUnit.MILLISECONDS.sleep(1);
-                    }
+                    Tuple2<String, Long> tuple2 = streamData.take();
+                    long eventTime = tuple2.f2();
+                    String value = tuple2.f1();
+                    FileChannel writer = getTxtFileWriter(eventTime);
+                    byte[] bytes = (value + "\n").getBytes(StandardCharsets.UTF_8); //先写入换行符
+                    writer.write(bytes);
                 }
             }
             catch (Exception e) {
