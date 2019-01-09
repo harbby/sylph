@@ -37,13 +37,13 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 @javax.inject.Singleton
 @Path("/plugin")
-public class PluginMangerResource
+public class PluginManagerResource
 {
     @Context private ServletContext servletContext;
     @Context private UriInfo uriInfo;
     private SylphContext sylphContext;
 
-    public PluginMangerResource(
+    public PluginManagerResource(
             @Context ServletContext servletContext,
             @Context UriInfo uriInfo)
     {

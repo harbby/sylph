@@ -53,16 +53,6 @@ class SocketSource(@transient private val ssc: StreamingContext, private val con
     }).reduce((x, y) => x.union(y))
   }
 
-  def addSink(sink: Sink[JavaRDD[Row]], transForms: List[TransForm[DStream[Row]]]): Unit = {
-
-    var transStream = loadStream
-    transForms.foreach(transForm => {
-      transStream = transForm.transform(transStream)
-    })
-
-    transStream.foreachRDD(rdd => sink.run(rdd))
-  }
-
   override def getSource: DStream[Row] = loadStream
 }
 

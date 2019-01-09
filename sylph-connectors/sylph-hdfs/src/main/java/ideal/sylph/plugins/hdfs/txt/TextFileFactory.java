@@ -18,13 +18,13 @@ package ideal.sylph.plugins.hdfs.txt;
 import ideal.sylph.etl.Row;
 import ideal.sylph.plugins.hdfs.parquet.HDFSFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -33,7 +33,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import static ideal.sylph.plugins.hdfs.factory.HDFSFactorys.getRowKey;
@@ -46,7 +45,7 @@ public class TextFileFactory
         implements HDFSFactory
 {
     private static final Logger logger = LoggerFactory.getLogger(TextFileFactory.class);
-    private final Map<String, FSDataOutputStream> writerManager = new HashCache();
+    private final Map<String, FileChannel> writerManager = new HashCache();
     private final BlockingQueue<Tuple2<String, Long>> streamData = new LinkedBlockingQueue<>(1000);
     private final ExecutorService executorPool = Executors.newSingleThreadExecutor();
 
@@ -80,35 +79,38 @@ public class TextFileFactory
 
         executorPool.submit(() -> {
             Thread.currentThread().setName("Text_Factory_Consumer");
-            while (!closed) {
-                Tuple2<String, Long> tuple2 = streamData.poll();
-                if (tuple2 != null) {
+            try {
+                while (!closed) {
+                    Tuple2<String, Long> tuple2 = streamData.take();
                     long eventTime = tuple2.f2();
                     String value = tuple2.f1();
-                    FSDataOutputStream outputStream = getTxtFileWriter(eventTime);
-                    writeString(outputStream, value);
+                    FileChannel writer = getTxtFileWriter(eventTime);
+                    byte[] bytes = (value + "\n").getBytes(StandardCharsets.UTF_8); //先写入换行符
+                    writer.write(bytes);
                 }
-                else {
-                    TimeUnit.MILLISECONDS.sleep(1);
-                }
+            }
+            catch (Exception e) {
+                logger.error("TextFileFactory error", e);
+                System.exit(-1);
             }
             return null;
         });
     }
 
-    private FSDataOutputStream getTxtFileWriter(long eventTime)
+    private FileChannel getTxtFileWriter(long eventTime)
     {
         TextTimeParser timeParser = new TextTimeParser(eventTime);
         String rowKey = getRowKey(table, timeParser);
 
         return getTxtFileWriter(rowKey, () -> {
             try {
-                FileSystem hdfs = FileSystem.get(new Configuration());
-                //CompressionCodec codec = ReflectionUtils.newInstance(GzipCodec.class, hdfs.getConf());
                 String outputPath = writeTableDir + timeParser.getPartionPath();
                 logger.info("create text file {}", outputPath);
                 Path path = new Path(outputPath);
-                FSDataOutputStream outputStream = hdfs.exists(path) ? hdfs.append(path) : hdfs.create(path, false);
+                FileSystem hdfs = path.getFileSystem(new Configuration());
+                //CompressionCodec codec = ReflectionUtils.newInstance(GzipCodec.class, hdfs.getConf());
+
+                OutputStream outputStream = hdfs.exists(path) ? hdfs.append(path) : hdfs.create(path, false);
                 //return codec.createOutputStream(outputStream);
                 return outputStream;
             }
@@ -118,16 +120,16 @@ public class TextFileFactory
         });
     }
 
-    private FSDataOutputStream getTxtFileWriter(String rowKey, Supplier<FSDataOutputStream> builder)
+    private FileChannel getTxtFileWriter(String rowKey, Supplier<OutputStream> builder)
     {
         //2,检查流是否存在 不存在就新建立一个
-        FSDataOutputStream writer = writerManager.get(rowKey);
+        FileChannel writer = writerManager.get(rowKey);
         if (writer != null) {
             return writer;
         }
         else {
             synchronized (writerManager) {
-                return writerManager.computeIfAbsent(rowKey, (key) -> builder.get());
+                return writerManager.computeIfAbsent(rowKey, (key) -> new FileChannel(builder.get()));
             }
         }
     }
@@ -179,17 +181,6 @@ public class TextFileFactory
         }
     }
 
-    private static void writeString(FSDataOutputStream outputStream, String string)
-            throws IOException
-    {
-        byte[] bytes = (string + "\n").getBytes(StandardCharsets.UTF_8); //先写入换行符
-        outputStream.write(bytes); //经过测试 似乎是线程安全的
-        int batchSize = 1024; //1k = 1024*1
-        if (outputStream.size() % batchSize == 0) {
-            outputStream.flush();
-        }
-    }
-
     @Override
     public void close()
             throws IOException
@@ -223,9 +214,39 @@ public class TextFileFactory
         }
     }
 
+    private class FileChannel
+    {
+        private static final int batchSize = 1024; //1k = 1024*1
+        private final OutputStream outputStream;
+        private long bufferSize;
+
+        public FileChannel(OutputStream outputStream)
+        {
+            this.outputStream = outputStream;
+        }
+
+        private void write(byte[] bytes)
+                throws IOException
+        {
+            outputStream.write(bytes);
+            bufferSize += bytes.length;
+
+            if (bufferSize > batchSize) {
+                outputStream.flush();
+                bufferSize = 0;
+            }
+        }
+
+        public void close()
+                throws IOException
+        {
+            outputStream.close();
+        }
+    }
+
     // An LRU cache using a linked hash map
     private static class HashCache
-            extends LinkedHashMap<String, FSDataOutputStream>
+            extends LinkedHashMap<String, FileChannel>
     {
         private static final int CACHE_SIZE = 64;
         private static final int INIT_SIZE = 32;
@@ -239,7 +260,7 @@ public class TextFileFactory
         private static final long serialVersionUID = 1;
 
         @Override
-        protected boolean removeEldestEntry(Map.Entry<String, FSDataOutputStream> eldest)
+        protected boolean removeEldestEntry(Map.Entry<String, FileChannel> eldest)
         {
             if (size() > CACHE_SIZE) {
                 try {

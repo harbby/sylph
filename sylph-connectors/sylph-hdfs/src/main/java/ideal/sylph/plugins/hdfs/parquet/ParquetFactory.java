@@ -103,21 +103,27 @@ public class ParquetFactory
          * */
         final Callable<Void> consumer = () -> {
             Thread.currentThread().setName("Parquet_Factory_Consumer");
-            while (!closed) {
-                Runnable value = streamData.poll();
-                //事件1
-                if (value != null) {
-                    value.run(); //put data line
+            try {
+                while (!closed) {
+                    Runnable value = streamData.poll();
+                    //事件1
+                    if (value != null) {
+                        value.run(); //put data line
+                    }
+                    //事件2 读取指示序列
+                    Runnable event = monitorEvent.poll();
+                    if (event != null) {
+                        event.run();
+                    }
+                    //事件3
+                    if (value == null && event == null) {
+                        TimeUnit.MILLISECONDS.sleep(1);
+                    }
                 }
-                //事件2 读取指示序列
-                Runnable event = monitorEvent.poll();
-                if (event != null) {
-                    event.run();
-                }
-                //事件3
-                if (value == null && event == null) {
-                    TimeUnit.MILLISECONDS.sleep(1);
-                }
+            }
+            catch (Exception e) {
+                logger.error("Parquet_Factory_Consumer error", e);
+                System.exit(-1);
             }
             return null;
         };
@@ -309,11 +315,11 @@ public class ParquetFactory
         String rowKey = HDFSFactorys.getRowKey(table, timeParser);
         return getParquetWriter(rowKey, () -> {
             try {
-                return ApacheParquet.builder()
+                return ApacheParquet.create()
                         .parquetVersion(parquetVersion)
                         .schema(schema)
                         .writePath(parquetPath)
-                        .build();
+                        .get();
             }
             catch (IOException e) {
                 throw new RuntimeException("parquet writer create failed", e);

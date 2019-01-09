@@ -84,7 +84,7 @@ public class LocalContainer
     }
 
     @Override
-    public void shutdown()
+    public synchronized void shutdown()
     {
         //url+ "jobs/{job_id}/yarn-cancel/";
         if (launcher.getProcess() != null) {
