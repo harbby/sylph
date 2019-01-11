@@ -53,7 +53,6 @@ public final class SylphBean
         //  --- Binding parameter
         binder.bind(PipelinePluginLoader.class).withSingle();
         binder.bind(RunnerManager.class).withSingle();
-        binder.bind(RunnerLoader.class).withSingle();
         binder.bind(JobManager.class).withSingle();
 
         binder.bind(SylphContext.class).byCreator(SylphContextProvider.class).withSingle();

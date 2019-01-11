@@ -18,6 +18,7 @@ package ideal.sylph.main.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.github.harbby.gadtry.classloader.DirClassLoader;
+import com.github.harbby.gadtry.classloader.PluginLoader;
 import com.github.harbby.gadtry.classloader.ThreadContextClassLoader;
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.google.common.collect.ImmutableList;
@@ -42,6 +43,7 @@ import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collection;
@@ -66,6 +68,22 @@ public class RunnerManager
     private final PipelinePluginLoader pluginLoader;
     private final ServerMainConfig config;
 
+    private static final List<String> SPI_PACKAGES = com.github.harbby.gadtry.collection.ImmutableList.<String>builder()
+            .add("ideal.sylph.spi.")
+            .add("com.github.harbby.gadtry")
+            .add("ideal.sylph.annotation.")
+            .add("ideal.sylph.etl.")  // etl api ?
+            //-------------------------------------------------
+            .add("com.fasterxml.jackson.annotation.")
+            .add("com.fasterxml.jackson.")
+            .add("org.openjdk.jol.")
+            //----------test-------------
+            //.add("com.google.inject.")
+            .add("com.google.common.")
+            .add("org.slf4j.")
+            .add("org.apache.log4j.")
+            .build();
+
     @Autowired
     public RunnerManager(PipelinePluginLoader pluginLoader, ServerMainConfig config)
     {
@@ -73,7 +91,29 @@ public class RunnerManager
         this.config = requireNonNull(config, "config is null");
     }
 
-    public void createRunner(final Runner runner)
+    public void loadRunners()
+            throws IOException
+    {
+        PluginLoader.<Runner>newScanner()
+                .setPlugin(Runner.class)
+                .setScanDir(new File("modules"))
+                .setSpiPackages(SPI_PACKAGES)
+                .setLoadHandler(module -> {
+                    logger.info("Found module dir directory {} Try to loading the runner", module.getModulePath());
+                    List<Runner> plugins = module.getPlugins();
+                    if (plugins.isEmpty()) {
+                        logger.warn("No service providers of type {}", Runner.class.getName());
+                    }
+                    else {
+                        for (Runner runner : plugins) {
+                            logger.info("Installing runner {} with dir{}", runner.getClass().getName(), runner);
+                            createRunner(runner);
+                        }
+                    }
+                }).build();
+    }
+
+    private void createRunner(final Runner runner)
     {
         RunnerContext runnerContext = pluginLoader::getPluginsInfo;
 

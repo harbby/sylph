@@ -18,10 +18,10 @@ package ideal.sylph.main;
 import com.github.harbby.gadtry.ioc.Bean;
 import com.github.harbby.gadtry.ioc.IocFactory;
 import ideal.sylph.controller.ControllerApp;
-import ideal.sylph.main.server.RunnerLoader;
 import ideal.sylph.main.server.SylphBean;
 import ideal.sylph.main.service.JobManager;
 import ideal.sylph.main.service.PipelinePluginLoader;
+import ideal.sylph.main.service.RunnerManager;
 import ideal.sylph.main.util.PropertiesUtil;
 import ideal.sylph.spi.job.JobStore;
 import org.apache.log4j.PropertyConfigurator;
@@ -63,7 +63,7 @@ public final class SylphMaster
             );
 
             app.getInstance(PipelinePluginLoader.class).loadPlugins();
-            app.getInstance(RunnerLoader.class).loadPlugins();
+            app.getInstance(RunnerManager.class).loadRunners();
             app.getInstance(JobStore.class).loadJobs();
 
             app.getInstance(JobManager.class).start();

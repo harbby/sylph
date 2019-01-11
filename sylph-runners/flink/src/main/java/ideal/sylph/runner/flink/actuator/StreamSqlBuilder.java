@@ -15,6 +15,7 @@
  */
 package ideal.sylph.runner.flink.actuator;
 
+import com.github.harbby.gadtry.ioc.Bean;
 import com.github.harbby.gadtry.ioc.IocFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -56,7 +57,6 @@ import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
-import static ideal.sylph.parser.antlr.tree.CreateTable.Type.BATCH;
 import static ideal.sylph.parser.antlr.tree.CreateTable.Type.SINK;
 import static ideal.sylph.parser.antlr.tree.CreateTable.Type.SOURCE;
 import static ideal.sylph.runner.flink.actuator.StreamSqlUtil.buildSylphSchema;
@@ -158,40 +158,45 @@ public class StreamSqlBuilder
         final Map<String, Object> config = ImmutableMap.copyOf(withConfig);
         final String driverClass = (String) withConfig.get("type");
 
-        final IocFactory iocFactory = IocFactory.create(new FlinkBean(tableEnv),
-                binder -> binder.bind(SinkContext.class, new SinkContext()
+        Bean bean = binder -> {};
+        if (SINK == createStream.getType()) {
+            bean = binder -> binder.bind(SinkContext.class, new SinkContext()
+            {
+                private final ideal.sylph.etl.Row.Schema schema = buildSylphSchema(tableTypeInfo);
+
+                @Override
+                public ideal.sylph.etl.Row.Schema getSchema()
                 {
-                    private final ideal.sylph.etl.Row.Schema schema = buildSylphSchema(tableTypeInfo);
+                    return schema;
+                }
 
-                    @Override
-                    public ideal.sylph.etl.Row.Schema getSchema()
-                    {
-                        return schema;
-                    }
-
-                    @Override
-                    public String getSinkTable()
-                    {
-                        return tableName;
-                    }
-                }),
-                binder -> binder.bind(SourceContext.class, new SourceContext()
+                @Override
+                public String getSinkTable()
                 {
-                    private final ideal.sylph.etl.Row.Schema schema = buildSylphSchema(tableTypeInfo);
+                    return tableName;
+                }
+            });
+        }
+        else if (SOURCE == createStream.getType()) {
+            bean = binder -> binder.bind(SourceContext.class, new SourceContext()
+            {
+                private final ideal.sylph.etl.Row.Schema schema = buildSylphSchema(tableTypeInfo);
 
-                    @Override
-                    public ideal.sylph.etl.Row.Schema getSchema()
-                    {
-                        return schema;
-                    }
+                @Override
+                public ideal.sylph.etl.Row.Schema getSchema()
+                {
+                    return schema;
+                }
 
-                    @Override
-                    public String getSinkTable()
-                    {
-                        return tableName;
-                    }
-                }));
+                @Override
+                public String getSinkTable()
+                {
+                    return tableName;
+                }
+            });
+        }
 
+        final IocFactory iocFactory = IocFactory.create(new FlinkBean(tableEnv), bean);
         NodeLoader<DataStream<Row>> loader = new FlinkNodeLoader(pluginManager, iocFactory);
 
         if (SOURCE == createStream.getType()) {  //Source.class.isAssignableFrom(driver)
@@ -203,9 +208,6 @@ public class StreamSqlBuilder
             UnaryOperator<DataStream<Row>> outputStream = loader.loadSink(driverClass, config);
             SylphTableSink tableSink = new SylphTableSink(tableTypeInfo, outputStream);
             tableEnv.registerTableSink(tableName, tableSink.getFieldNames(), tableSink.getFieldTypes(), tableSink);
-        }
-        else if (BATCH == createStream.getType()) {
-            throw new UnsupportedOperationException("this method have't support!");
         }
         else {
             throw new IllegalArgumentException("this driver class " + withConfig.get("type") + " have't support!");
