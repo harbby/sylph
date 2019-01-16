@@ -22,22 +22,16 @@ import ideal.sylph.runner.flink.FlinkJobHandle;
 import ideal.sylph.runner.flink.FlinkRunner;
 import ideal.sylph.runner.flink.actuator.JobParameter;
 import ideal.sylph.spi.job.Job;
-import org.apache.flink.api.common.JobID;
 import org.apache.flink.client.program.ClusterClient;
-import org.apache.flink.runtime.clusterframework.messages.ShutdownClusterAfterJob;
 import org.apache.flink.runtime.jobgraph.JobGraph;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.concurrent.Await;
-import scala.concurrent.Future;
 import scala.concurrent.duration.FiniteDuration;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.URI;
 import java.net.URL;
@@ -46,8 +40,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  *
@@ -74,7 +66,7 @@ public class FlinkYarnJobLauncher
         JobParameter jobConfig = ((FlinkJobConfig) job.getConfig()).getConfig();
 
         Iterable<Path> userProvidedJars = getUserAdditionalJars(job.getDepends());
-        final YarnClusterDescriptor descriptor = new YarnClusterDescriptor(
+        final YarnJobDescriptor descriptor = new YarnJobDescriptor(
                 clusterConf,
                 yarnClient,
                 jobConfig,
@@ -86,15 +78,14 @@ public class FlinkYarnJobLauncher
         return start(descriptor, jobGraph);
     }
 
-    private Optional<ApplicationId> start(YarnClusterDescriptor descriptor, JobGraph job)
+    private Optional<ApplicationId> start(YarnJobDescriptor descriptor, JobGraph job)
             throws Exception
     {
         ApplicationId applicationId = null;
         try {
-            ClusterClient<ApplicationId> client = descriptor.deploy();  //create yarn appMaster
+            logger.info("start flink job {}", job.getJobID());
+            ClusterClient<ApplicationId> client = descriptor.deploy(job, true);  //create yarn appMaster
             applicationId = client.getClusterId();
-            client.runDetached(job, null);  //submit graph to appMaster 并分离
-            stopAfterJob(client, job.getJobID());
             client.shutdown();
             return Optional.of(applicationId);
         }
@@ -112,39 +103,6 @@ public class FlinkYarnJobLauncher
             else {
                 throw e;
             }
-        }
-        finally {
-            //Clear temporary directory
-            try {
-                if (applicationId != null) {
-                    FileSystem hdfs = FileSystem.get(clusterConf.yarnConf());
-                    Path appDir = new Path(clusterConf.appRootDir(), applicationId.toString());
-                    hdfs.delete(appDir, true);
-                    logger.info("clear tmp dir: {}", appDir);
-                }
-            }
-            catch (IOException e) {
-                logger.error("clear tmp dir is fail", e);
-            }
-        }
-    }
-
-    /**
-     * 如何异常挂掉了,则直接退出yarn程序
-     */
-    private void stopAfterJob(ClusterClient client, JobID jobID)
-    {
-        requireNonNull(jobID, "The flinkLoadJob id must not be null");
-        try {
-            Future<Object> replyFuture =
-                    client.getJobManagerGateway().ask(
-                            new ShutdownClusterAfterJob(jobID),
-                            AKKA_TIMEOUT);
-            Await.ready(replyFuture, AKKA_TIMEOUT);
-        }
-        catch (Exception e) {
-            throw new RuntimeException("Unable to tell application master to stop"
-                    + " once the specified flinkLoadJob has been finished", e);
         }
     }
 

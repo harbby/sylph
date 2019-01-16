@@ -54,7 +54,11 @@ public class AstBuilder
     @Override
     public Node visitProperty(SqlBaseParser.PropertyContext context)
     {
-        return new Property(getLocation(context), (Identifier) visit(context.identifier()), (Expression) visit(context.expression()));
+        String withKey = visit(context.qualifiedName().identifier(), Identifier.class).stream()
+                .map(Identifier::getValue)
+                .collect(Collectors.joining("."));
+
+        return new Property(getLocation(context), withKey, (Expression) visit(context.expression()));
     }
 
     @Override

@@ -82,7 +82,8 @@ properties
     ;
 
 property
-    : identifier EQ expression
+//    : identifier EQ expression
+    : qualifiedName EQ expression
     ;
 
 sampleType

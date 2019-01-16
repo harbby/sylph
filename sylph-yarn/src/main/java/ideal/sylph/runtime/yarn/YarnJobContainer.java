@@ -64,7 +64,7 @@ public class YarnJobContainer
     @Override
     public synchronized void shutdown()
     {
-        if (!future.isDone() && !future.isCancelled()) {
+        if (future != null && !future.isDone() && !future.isCancelled()) {
             future.cancel(true);
         }
 

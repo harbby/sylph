@@ -59,7 +59,7 @@ public class HdfsSink
                 break;
             }
         }
-        checkState(eventTimeIndex != -1, config.eventTimeName + " does not exist,but only " + schema.getFieldNames());
+        checkState(eventTimeIndex != -1, "eventTime_field " + config.eventTimeName + " does not exist,but only " + schema.getFieldNames());
 
         checkState("text".equals(config.format.toLowerCase()) || "parquet".equals(config.format.toLowerCase()),
                 "Hdfs sink format only supports text and parquet");

@@ -23,13 +23,16 @@ import org.apache.flink.client.program.rest.RestClusterClient;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.JobManagerOptions;
 import org.apache.flink.configuration.RestOptions;
+import org.apache.flink.configuration.TaskManagerOptions;
+import org.apache.flink.runtime.clusterframework.BootstrapTools;
+import org.apache.flink.runtime.entrypoint.ClusterEntrypoint;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.util.ShutdownHookUtil;
 import org.apache.flink.yarn.AbstractYarnClusterDescriptor;
 import org.apache.flink.yarn.Utils;
-import org.apache.flink.yarn.YarnApplicationMasterRunner;
-import org.apache.flink.yarn.YarnClusterClient;
 import org.apache.flink.yarn.YarnConfigKeys;
+import org.apache.flink.yarn.entrypoint.YarnJobClusterEntrypoint;
+import org.apache.flink.yarn.entrypoint.YarnSessionClusterEntrypoint;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -52,7 +55,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -62,11 +67,11 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
-public class YarnClusterDescriptor
+public class YarnJobDescriptor
         extends AbstractYarnClusterDescriptor
 {
     private static final String APPLICATION_TYPE = "Sylph_FLINK";
-    private static final Logger LOG = LoggerFactory.getLogger(YarnClusterDescriptor.class);
+    private static final Logger LOG = LoggerFactory.getLogger(YarnJobDescriptor.class);
     private static final int MAX_ATTEMPT = 2;
 
     private final YarnClusterConfiguration clusterConf;
@@ -78,7 +83,7 @@ public class YarnClusterDescriptor
 
     private Path flinkJar;
 
-    YarnClusterDescriptor(
+    YarnJobDescriptor(
             final YarnClusterConfiguration clusterConf,
             final YarnClient yarnClient,
             final JobParameter appConf,
@@ -97,7 +102,7 @@ public class YarnClusterDescriptor
     @Override
     protected String getYarnSessionClusterEntrypoint()
     {
-        return YarnApplicationMasterRunner.class.getName();
+        return YarnSessionClusterEntrypoint.class.getName();
     }
 
     /**
@@ -106,7 +111,7 @@ public class YarnClusterDescriptor
     @Override
     protected String getYarnJobClusterEntrypoint()
     {
-        return YarnApplicationMasterRunner.class.getName();
+        return YarnJobClusterEntrypoint.class.getName();
     }
 
     @Override
@@ -119,9 +124,7 @@ public class YarnClusterDescriptor
             boolean perJobCluster)
             throws Exception
     {
-        return new RestClusterClient<>(
-                flinkConfiguration,
-                report.getApplicationId());
+        return new RestClusterClient<>(flinkConfiguration, report.getApplicationId());
     }
 
     @Override
@@ -130,38 +133,38 @@ public class YarnClusterDescriptor
         return this.yarnClient;
     }
 
-    public ClusterClient<ApplicationId> deploy()
+    public ClusterClient<ApplicationId> deploy(JobGraph jobGraph, boolean detached)
             throws Exception
     {
+        jobGraph.setAllowQueuedScheduling(true);
         YarnClientApplication application = yarnClient.createApplication();
-        ApplicationReport report = startAppMaster(application);
+        ApplicationReport report = startAppMaster(application, jobGraph);
 
         Configuration flinkConfiguration = getFlinkConfiguration();
-        flinkConfiguration.setString(JobManagerOptions.ADDRESS.key(), report.getHost());
-        flinkConfiguration.setInteger(JobManagerOptions.PORT.key(), report.getRpcPort());
 
-        flinkConfiguration.setString(RestOptions.ADDRESS, report.getHost());
-        flinkConfiguration.setInteger(RestOptions.PORT, report.getRpcPort());
-
-        //return new RestClusterClient<>(flinkConfiguration, report.getApplicationId()).getMaxSlots();
-        return new YarnClusterClient(this,
-                appConf.getTaskManagerCount(),
-                appConf.getTaskManagerSlots(),
-                report, clusterConf.flinkConfiguration(), false);
+        ClusterEntrypoint.ExecutionMode executionMode = detached ? ClusterEntrypoint.ExecutionMode.DETACHED : ClusterEntrypoint.ExecutionMode.NORMAL;
+        flinkConfiguration.setString(ClusterEntrypoint.EXECUTION_MODE, executionMode.toString());
+        String host = report.getHost();
+        int port = report.getRpcPort();
+        flinkConfiguration.setString(JobManagerOptions.ADDRESS, host);
+        flinkConfiguration.setInteger(JobManagerOptions.PORT, port);
+        flinkConfiguration.setString(RestOptions.ADDRESS, host);
+        flinkConfiguration.setInteger(RestOptions.PORT, port);
+        return new RestClusterClient<>(flinkConfiguration, report.getApplicationId());
     }
 
-    private ApplicationReport startAppMaster(YarnClientApplication application)
+    private ApplicationReport startAppMaster(YarnClientApplication application, JobGraph jobGraph)
             throws Exception
     {
         ApplicationSubmissionContext appContext = application.getApplicationSubmissionContext();
         ApplicationId appId = appContext.getApplicationId();
         appContext.setMaxAppAttempts(MAX_ATTEMPT);
 
-        Path appHomeDir = new Path(clusterConf.appRootDir(), appId.toString());
+        Path yarnAppDir = new Path(clusterConf.appRootDir(), appContext.getApplicationId().toString());
 
         Map<String, LocalResource> localResources = new HashMap<>();
         Set<Path> shippedPaths = new HashSet<>();
-        collectLocalResources(appHomeDir, localResources, shippedPaths);
+        collectLocalResources(yarnAppDir, localResources, shippedPaths, appId, jobGraph);
 
         final ContainerLaunchContext amContainer = setupApplicationMasterContainer(
                 getYarnJobClusterEntrypoint(),
@@ -181,13 +184,14 @@ public class YarnClusterDescriptor
 
         // Setup CLASSPATH and environment variables for ApplicationMaster
         final Map<String, String> appMasterEnv = setUpAmEnvironment(
-                appHomeDir,
+                yarnAppDir,
                 appId,
                 classPath,
                 shippedFiles,
                 getDynamicPropertiesEncoded()
         );
-
+        // set classpath from YARN configuration
+        Utils.setupYarnClassPath(this.yarnConfiguration, appMasterEnv);
         amContainer.setEnvironment(appMasterEnv);
 
         // Set up resource type requirements for ApplicationMaster
@@ -205,7 +209,6 @@ public class YarnClusterDescriptor
         }
 
         // add a hook to clean up in case deployment fails
-        Path yarnAppDir = new Path(clusterConf.appRootDir(), appContext.getApplicationId().toString());
         Thread deploymentFailureHook = new DeploymentFailureHook(yarnClient, application, yarnAppDir);
         Runtime.getRuntime().addShutdownHook(deploymentFailureHook);
         LOG.info("Submitting application master {}", appId);
@@ -262,19 +265,43 @@ public class YarnClusterDescriptor
     }
 
     private void collectLocalResources(
-            Path appHomeDir,
+            Path yarnAppDir,
             Map<String, LocalResource> resources,
-            Set<Path> shippedPaths
+            Set<Path> shippedPaths,
+            ApplicationId appId,
+            JobGraph jobGraph
     )
             throws IOException, URISyntaxException
     {
+        //---upload graph
+        File fp = File.createTempFile(appId.toString(), null);
+        fp.deleteOnExit();
+        try (FileOutputStream output = new FileOutputStream(fp);
+                ObjectOutputStream obOutput = new ObjectOutputStream(output)) {
+            obOutput.writeObject(jobGraph);
+        }
+        LocalResource graph = setupLocalResource(new Path(fp.toURI()), yarnAppDir, "");
+        resources.put("job.graph", graph);
+        shippedPaths.add(ConverterUtils.getPathFromYarnURL(graph.getResource()));
+        //------------------------------------------------------------------------
+        Configuration configuration = this.getFlinkConfiguration();
+        this.getFlinkConfiguration().setInteger(TaskManagerOptions.NUM_TASK_SLOTS, appConf.getTaskManagerSlots());
+        configuration.setString(TaskManagerOptions.TASK_MANAGER_HEAP_MEMORY, appConf.getTaskManagerMemoryMb() + "m");
+        File tmpConfigurationFile = File.createTempFile(appId + "-flink-conf.yaml", (String) null);
+        tmpConfigurationFile.deleteOnExit();
+        BootstrapTools.writeConfiguration(configuration, tmpConfigurationFile);
+        LocalResource remotePathConf = setupLocalResource(new Path(tmpConfigurationFile.toURI()), yarnAppDir, "");
+        resources.put("flink-conf.yaml", remotePathConf);
+        shippedPaths.add(ConverterUtils.getPathFromYarnURL(remotePathConf.getResource()));
+
+        //-------------uploading flink jar----------------
         Path flinkJar = clusterConf.flinkJar();
-        LocalResource flinkJarResource = setupLocalResource(flinkJar, appHomeDir, ""); //放到 Appid/根目录下
+        LocalResource flinkJarResource = setupLocalResource(flinkJar, yarnAppDir, ""); //放到 Appid/根目录下
         this.flinkJar = ConverterUtils.getPathFromYarnURL(flinkJarResource.getResource());
         resources.put("flink.jar", flinkJarResource);
 
         for (Path p : clusterConf.resourcesToLocalize()) {  //主要是 flink.jar log4f.propors 和 flink.yaml 三个文件
-            LocalResource resource = setupLocalResource(p, appHomeDir, ""); //这些需要放到根目录下
+            LocalResource resource = setupLocalResource(p, yarnAppDir, ""); //这些需要放到根目录下
             resources.put(p.getName(), resource);
             if ("log4j.properties".equals(p.getName())) {
                 shippedPaths.add(ConverterUtils.getPathFromYarnURL(resource.getResource()));
@@ -287,7 +314,7 @@ public class YarnClusterDescriptor
                 LOG.warn("Duplicated name in the shipped files {}", p);
             }
             else {
-                LocalResource resource = setupLocalResource(p, appHomeDir, "jars"); //这些放到 jars目录下
+                LocalResource resource = setupLocalResource(p, yarnAppDir, "jars"); //这些放到 jars目录下
                 resources.put(name, resource);
                 shippedPaths.add(ConverterUtils.getPathFromYarnURL(resource.getResource()));
             }
@@ -323,7 +350,6 @@ public class YarnClusterDescriptor
                 + "/" + localSrcPath.getName();
 
         Path dst = new Path(homedir, suffix);
-
         LOG.info("Uploading {}", dst);
 
         FileSystem hdfs = FileSystem.get(clusterConf.yarnConf());
@@ -335,7 +361,7 @@ public class YarnClusterDescriptor
     }
 
     private Map<String, String> setUpAmEnvironment(
-            Path appHomeDir,
+            Path yarnAppDir,
             ApplicationId appId,
             String amClassPath,
             String shipFiles,
@@ -352,22 +378,17 @@ public class YarnClusterDescriptor
         appMasterEnv.put(YarnConfigKeys.ENV_TM_MEMORY, String.valueOf(appConf.getTaskManagerMemoryMb()));
         appMasterEnv.put(YarnConfigKeys.FLINK_JAR_PATH, flinkJar.toString());
         appMasterEnv.put(YarnConfigKeys.ENV_APP_ID, appId.toString());
-        appMasterEnv.put(YarnConfigKeys.ENV_CLIENT_HOME_DIR, appHomeDir.toString()); //$home/.flink/appid 这个目录里面存放临时数据
+        appMasterEnv.put(YarnConfigKeys.ENV_CLIENT_HOME_DIR, clusterConf.appRootDir()); //$home/.flink/appid 这个目录里面存放临时数据
         appMasterEnv.put(YarnConfigKeys.ENV_CLIENT_SHIP_FILES, shipFiles);
         appMasterEnv.put(YarnConfigKeys.ENV_SLOTS, String.valueOf(appConf.getTaskManagerSlots()));
         appMasterEnv.put(YarnConfigKeys.ENV_DETACHED, String.valueOf(true));  //是否分离 分离就cluser模式 否则是client模式
-
-        // https://github.com/apache/hadoop/blob/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-site/src/site/markdown/YarnApplicationSecurity.md#identity-on-an-insecure-cluster-hadoop_user_name
+        appMasterEnv.put(YarnConfigKeys.FLINK_YARN_FILES, yarnAppDir.toUri().toString());
         appMasterEnv.put(YarnConfigKeys.ENV_HADOOP_USER_NAME,
                 UserGroupInformation.getCurrentUser().getUserName());
 
         if (dynamicProperties != null) {
             appMasterEnv.put(YarnConfigKeys.ENV_DYNAMIC_PROPERTIES, dynamicProperties);
         }
-
-        // set classpath from YARN configuration
-        Utils.setupYarnClassPath(clusterConf.yarnConf(), appMasterEnv);
-
         return appMasterEnv;
     }
 
