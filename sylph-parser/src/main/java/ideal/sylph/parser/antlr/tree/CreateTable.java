@@ -106,7 +106,7 @@ public class CreateTable
     {
         return this.getProperties().stream()
                 .collect(Collectors.toMap(
-                        k -> k.getName().getValue(),
+                        k -> k.getName(),
                         v -> Expression.getJavaValue(v.getValue())));
     }
 
