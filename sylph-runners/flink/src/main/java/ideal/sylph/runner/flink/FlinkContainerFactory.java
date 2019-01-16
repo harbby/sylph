@@ -114,7 +114,7 @@ public class FlinkContainerFactory
         {
             Path flinkJar = new Path(getFlinkJarFile().toURI());
             @SuppressWarnings("ConstantConditions") final Set<Path> resourcesToLocalize = Stream
-                    .of("conf/flink-conf.yaml", "conf/log4j.properties", "conf/logback.xml")
+                    .of("conf/log4j.properties", "conf/logback.xml")   //"conf/flink-conf.yaml"
                     .map(x -> new Path(new File(System.getenv("FLINK_HOME"), x).toURI()))
                     .collect(Collectors.toSet());
 

@@ -22,6 +22,8 @@ import com.github.harbby.gadtry.jvm.JVMLaunchers;
 import com.github.harbby.gadtry.jvm.VmFuture;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
+import ideal.sylph.etl.Row;
+import ideal.sylph.etl.SourceContext;
 import ideal.sylph.runner.flink.FlinkBean;
 import ideal.sylph.runner.flink.FlinkJobConfig;
 import ideal.sylph.runner.flink.FlinkJobHandle;
@@ -105,6 +107,20 @@ public class FlinkStreamEtlActuator
                     System.out.println("************ job start ***************");
                     StreamExecutionEnvironment execEnv = FlinkEnvFactory.getStreamEnv(jobParameter);
                     StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(execEnv);
+                    SourceContext sourceContext = new SourceContext()
+                    {
+                        @Override
+                        public Row.Schema getSchema()
+                        {
+                            throw new IllegalArgumentException("this method have't support!");
+                        }
+
+                        @Override
+                        public String getSinkTable()
+                        {
+                            throw new IllegalArgumentException("this method have't support!");
+                        }
+                    };
                     App<StreamTableEnvironment> app = new App<StreamTableEnvironment>()
                     {
                         @Override
@@ -117,7 +133,9 @@ public class FlinkStreamEtlActuator
                         public void build()
                                 throws Exception
                         {
-                            final IocFactory iocFactory = IocFactory.create(new FlinkBean(tableEnv));
+                            final IocFactory iocFactory = IocFactory.create(new FlinkBean(tableEnv), binder -> {
+                                binder.bind(SourceContext.class, sourceContext);
+                            });
                             FlinkNodeLoader loader = new FlinkNodeLoader(pluginManager, iocFactory);
                             buildGraph(loader, jobId, flow).run();
                         }
