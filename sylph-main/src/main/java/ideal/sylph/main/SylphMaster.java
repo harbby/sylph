@@ -45,7 +45,7 @@ public final class SylphMaster
             " |( | ) _\\__ \\ / /_/ / / / / /_/ / / / / /   ) ) ) ) |\n" +
             " | \\|/ /____/  \\__, / /_/ / .___/ /_/ /_/   / / / /  |\n" +
             " |  '         /____/     /_/               /_/_/_/   |\n" +
-            " |  :: Sylph ::  version = (v0.4.0-SNAPSHOT)         |\n" +
+            " |  :: Sylph ::  version = (v0.5.0-SNAPSHOT)         |\n" +
             " *---------------------------------------------------*";
 
     public static void main(String[] args)

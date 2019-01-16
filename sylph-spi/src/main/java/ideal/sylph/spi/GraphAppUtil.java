@@ -31,7 +31,7 @@ public class GraphAppUtil
 
     public static <R> Graph<R> buildGraph(final NodeLoader<R> loader, String jobId, EtlFlow flow)
     {
-        final GraphBuilder<R> graphx = Graph.<R>builder().name(jobId);
+        final GraphBuilder<R> graph = Graph.<R>builder().name(jobId);
         final List<NodeInfo> nodes = flow.getNodes();
         final List<EdgeInfo> edges = flow.getEdges();
 
@@ -42,25 +42,24 @@ public class GraphAppUtil
 
             switch (nodeInfo.getNodeType()) {
                 case "source":
-                    graphx.addNode(new DagNode<>(id, driverString, loader.loadSource(driverString, config)));
+                    graph.addNode(new DagNode<>(id, driverString, loader.loadSource(driverString, config)));
                     break;
                 case "transform":
-                    graphx.addNode(new DagNode<>(id, driverString, loader.loadTransform(driverString, config)));
+                    graph.addNode(new DagNode<>(id, driverString, loader.loadTransform(driverString, config)));
                     break;
                 case "sink":
-                    graphx.addNode(new DagNode<>(id, driverString, loader.loadSink(driverString, config)));
+                    graph.addNode(new DagNode<>(id, driverString, loader.loadSink(driverString, config)));
                     break;
                 default:
                     System.out.println("错误的类型算子 + " + nodeInfo);
             }
         });
 
-        //TODO:  .split("-")[0] 目前是为了兼容yaml中的冗余信息
-        edges.forEach(edgeInfo -> graphx.addEdge(
+        edges.forEach(edgeInfo -> graph.addEdge(
                 edgeInfo.getInNodeId().split("-")[0],
                 edgeInfo.getOutNodeId().split("-")[0]
         ));
 
-        return graphx.build();
+        return graph.build();
     }
 }
