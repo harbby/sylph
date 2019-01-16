@@ -1,4 +1,4 @@
--- 本例子测试 如何数据源带有event_time 直接设置 WATERMARK
+-- 本例子测试 json kafka message
 create function get_json_object as 'ideal.sylph.runner.flink.udf.UDFJson';
 
 create source table topic1(
@@ -16,7 +16,6 @@ create source table topic1(
   	zookeeper.connect = 'localhost:2181',
     value_type = 'json'
 );
--- 定义 WATERMARK,通常您应该从kafka message中解析出event_time字段
 
 -- 定义数据流输出位置
 create sink table print_table_sink(
