@@ -42,10 +42,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static com.github.harbby.gadtry.base.Throwables.noCatch;
+import static com.github.harbby.gadtry.base.Throwables.throwsException;
 import static ideal.sylph.etl.join.JoinContext.JoinType.LEFT;
 import static org.apache.flink.shaded.guava18.com.google.common.base.Preconditions.checkState;
 
@@ -128,51 +129,48 @@ public class MysqlAsyncJoin
     @Override
     public void process(Row input, Collector<Row> collector)
     {
-        try {
-            checkState(connection != null, " connection is null");
-            StringBuilder builder = new StringBuilder();
-            for (int index : joinOnMapping.keySet()) {
-                builder.append(input.<Object>getField(index)).append("\u0001");
-            }
-            List<Map<String, Object>> cacheData = cache.get(builder.toString(), () -> {
-                //-- 这里进行真正的数据库查询
-                List<Integer> indexs = ImmutableList.copyOf(joinOnMapping.keySet());
-                try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                    for (int i = 0; i < indexs.size(); i++) {
-                        statement.setObject(i + 1, input.getField(indexs.get(i)));
-                    }
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Thread is  {}, this {}", Thread.currentThread().getId(), this);
-                    }
-                    try (ResultSet rs = statement.executeQuery()) {
-                        List<Map<String, Object>> result = JdbcUtils.resultToList(rs);
-                        if (result.isEmpty() && joinType == LEFT) { // left join and inter join
-                            return ImmutableList.of(ImmutableMap.of());
-                        }
-                        return result;
-                    }
-                }
-                catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }
-            });
+        checkState(connection != null, " connection is null");
 
-            for (Map<String, Object> map : cacheData) {
-                Object[] row = new Object[selectFieldCnt];
-                for (int i = 0; i < selectFieldCnt; i++) {
-                    SelectField field = selectFields.get(i);
-                    if (field.isBatchTableField()) {
-                        row[i] = map.get(field.getFieldName());
-                    }
-                    else {
-                        row[i] = input.getField(field.getFieldIndex());
-                    }
-                }
-                collector.collect(Row.of(row));
-            }
+        StringBuilder builder = new StringBuilder();
+        for (int index : joinOnMapping.keySet()) {
+            builder.append(input.<Object>getField(index)).append("\u0001");
         }
-        catch (ExecutionException e) {
-            throw new RuntimeException(e);
+
+        List<Map<String, Object>> cacheData = noCatch(() -> cache.get(builder.toString(), () -> {
+            //-- 这里进行真正的数据库查询
+            List<Integer> indexs = ImmutableList.copyOf(joinOnMapping.keySet());
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                for (int i = 0; i < indexs.size(); i++) {
+                    statement.setObject(i + 1, input.getField(indexs.get(i)));
+                }
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Thread is  {}, this {}", Thread.currentThread().getId(), this);
+                }
+                try (ResultSet rs = statement.executeQuery()) {
+                    List<Map<String, Object>> result = JdbcUtils.resultToList(rs);
+                    if (result.isEmpty() && joinType == LEFT) { // left join and inter join
+                        return ImmutableList.of(ImmutableMap.of());
+                    }
+                    return result;
+                }
+            }
+            catch (SQLException e) {
+                throw throwsException(e);
+            }
+        }));
+
+        for (Map<String, Object> map : cacheData) {
+            Object[] row = new Object[selectFieldCnt];
+            for (int i = 0; i < selectFieldCnt; i++) {
+                SelectField field = selectFields.get(i);
+                if (field.isBatchTableField()) {
+                    row[i] = map.get(field.getFieldName());
+                }
+                else {
+                    row[i] = input.getField(field.getFieldIndex());
+                }
+            }
+            collector.collect(Row.of(row));
         }
     }
 

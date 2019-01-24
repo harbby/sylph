@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.github.harbby.gadtry.base.Throwables.throwsException;
 import static org.apache.flink.shaded.guava18.com.google.common.base.Preconditions.checkState;
 
 @Name("mysql")
@@ -105,7 +106,7 @@ public class MysqlSink
             }
         }
         catch (SQLException e) {
-            throw new RuntimeException(e);
+            throwsException(e);
         }
     }
 

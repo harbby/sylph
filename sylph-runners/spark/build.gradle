@@ -16,23 +16,24 @@ dependencies {
     exclude(module: 'validation-api')
     exclude(module: 'commons-io')
   }
+  
+  compileOnly 'org.scala-lang:scala-reflect:2.11.8'
 
   compileOnly(group: 'org.apache.spark', name: 'spark-sql_2.11', version: deps.spark) {
-    exclude(module: 'spark-core_2.11')
+    exclude(module: 'hadoop-client')
+    exclude (module: 'scala-library')
+    exclude module:  'scala-reflect'
   }
   compileOnly(group: 'org.apache.spark', name: 'spark-streaming_2.11', version: deps.spark) {
-    exclude(module: 'spark-core_2.11')
-  }
-  compileOnly(group: 'org.apache.spark', name: 'spark-core_2.11', version: deps.spark) {
-    exclude(module: 'hadoop-client')
+    exclude(module: '*')
   }
   compileOnly("org.apache.spark:spark-yarn_2.11:$deps.spark") {
-    exclude(module: 'hadoop-client')
+    exclude(module: '*')
   }
   compileOnly group: 'org.apache.hadoop', name: 'hadoop-client', version: '2.7.3'
 
   compileOnly(group: 'org.apache.spark', name: 'spark-streaming-kafka-0-10_2.11', version: deps.spark) {
-    //exclude(group: '*')
+    exclude (module: 'scala-library')
   }
 
   //--other--

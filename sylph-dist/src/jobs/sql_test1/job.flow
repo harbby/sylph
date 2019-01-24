@@ -9,7 +9,7 @@ create source table topic1(
 ) with (
     type = 'kafka09',
     kafka_topic = 'test1,test2',
-    "auto.offset.reset" = latest,
+    auto.offset.reset = latest,
     kafka_broker = 'localhost:9092',
     kafka_group_id = 'streamSql_test11',
   	"zookeeper.connect" = 'localhost:2181'

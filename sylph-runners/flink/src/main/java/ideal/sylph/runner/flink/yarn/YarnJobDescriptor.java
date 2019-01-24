@@ -352,7 +352,8 @@ public class YarnJobDescriptor
         Path dst = new Path(homedir, suffix);
         LOG.info("Uploading {}", dst);
 
-        FileSystem hdfs = FileSystem.get(clusterConf.yarnConf());
+        FileSystem hdfs = FileSystem.get(yarnClient.getConfig());
+        //hdfs.getHomeDirectory();
         hdfs.copyFromLocalFile(false, true, localSrcPath, dst);
 
         // now create the resource instance

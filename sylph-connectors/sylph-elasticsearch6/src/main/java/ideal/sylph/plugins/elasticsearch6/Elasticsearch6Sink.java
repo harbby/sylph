@@ -35,7 +35,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.apache.flink.shaded.guava18.com.google.common.base.Preconditions.checkState;
+import static com.github.harbby.gadtry.base.Checks.checkState;
 
 @Name("elasticsearch6")
 @Description("this is elasticsearch6 sink plugin")

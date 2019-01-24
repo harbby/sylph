@@ -86,7 +86,7 @@ public class FlinkRow
             return org.apache.flink.types.Row.of(((DefaultRow) row).getValues());
         }
         else {
-            throw new RuntimeException(" not souch row type: " + row.getClass());
+            throw new UnsupportedOperationException("Not Unsupported row type: " + row.getClass());
         }
     }
 

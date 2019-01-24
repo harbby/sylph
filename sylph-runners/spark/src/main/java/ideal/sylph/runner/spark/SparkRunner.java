@@ -29,8 +29,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.github.harbby.gadtry.base.Throwables.throwsException;
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Throwables.throwIfUnchecked;
 import static ideal.sylph.spi.model.PipelinePluginManager.filterRunnerPlugins;
 import static java.util.Objects.requireNonNull;
 
@@ -65,8 +65,7 @@ public class SparkRunner
                     .map(injector::getInstance).collect(Collectors.toSet());
         }
         catch (Exception e) {
-            throwIfUnchecked(e);
-            throw new RuntimeException(e);
+            throw throwsException(e);
         }
     }
 

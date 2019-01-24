@@ -54,6 +54,8 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.github.harbby.gadtry.base.Checks.checkState;
+import static com.github.harbby.gadtry.base.Throwables.throwsException;
 import static ideal.sylph.spi.exception.StandardErrorCode.LOAD_MODULE_ERROR;
 import static java.util.Objects.requireNonNull;
 
@@ -67,9 +69,8 @@ public class PipelinePluginLoader
             throws InvocationTargetException, NoSuchMethodException, IllegalAccessException, IOException
     {
         File pluginsDir = new File("etl-plugins");
-        if (!pluginsDir.exists() || !pluginsDir.isDirectory()) {
-            throw new RuntimeException(pluginsDir + " not exists or isDirectory");
-        }
+        checkState(pluginsDir.exists() && pluginsDir.isDirectory(), pluginsDir + " not exists or isDirectory");
+
         File[] pluginFiles = requireNonNull(pluginsDir.listFiles(), pluginsDir + " not exists or isDirectory");
 
         ImmutableSet.Builder<PipelinePluginInfo> builder = ImmutableSet.builder();
@@ -90,7 +91,7 @@ public class PipelinePluginLoader
                     return getPluginInfo(it, javaClass, false, typeArguments);
                 }
                 catch (IncompleteAnnotationException e) {
-                    throw new RuntimeException(it + " Annotation value not set, Please check scala code", e);
+                    throw new IllegalStateException(it + " Annotation value not set, Please check scala code", e);
                 }
             }).collect(Collectors.toSet());
             builder.addAll(tmp);
@@ -161,7 +162,7 @@ public class PipelinePluginLoader
             //Type[] javaTypes = classRepository.getSuperInterfaces();
         }
         catch (Exception e) {
-            throw new RuntimeException(e);
+            throw throwsException(e);
         }
     }
 

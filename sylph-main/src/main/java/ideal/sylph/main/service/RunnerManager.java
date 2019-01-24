@@ -53,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.github.harbby.gadtry.base.Throwables.throwsException;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
@@ -125,7 +126,7 @@ public class RunnerManager
             factory = runner.getContainerFactory().newInstance();
         }
         catch (InstantiationException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+            throw throwsException(e);
         }
 
         runner.create(runnerContext).forEach(jobActuatorHandle -> {

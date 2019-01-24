@@ -35,6 +35,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Supplier;
 
+import static com.github.harbby.gadtry.base.Throwables.throwsException;
 import static ideal.sylph.plugins.hdfs.factory.HDFSFactorys.getRowKey;
 import static java.util.Objects.requireNonNull;
 
@@ -269,7 +270,7 @@ public class TextFileFactory
                     return true;
                 }
                 catch (IOException e) {
-                    throw new RuntimeException(e);
+                    throw throwsException(e);
                 }
             }
             else {

@@ -42,9 +42,7 @@ public final class StreamSqlUtil
 
     static DataStream<Row> checkStream(DataStream<Row> inputStream, RowTypeInfo tableTypeInfo)
     {
-        if (!(inputStream.getType() instanceof RowTypeInfo)) {
-            throw new RuntimeException("sourceType not is RowTypeInfo");
-        }
+        checkState(inputStream.getType() instanceof RowTypeInfo, "DataStream type not is RowTypeInfo");
         RowTypeInfo sourceType = (RowTypeInfo) inputStream.getType();
 
         List<Integer> indexs = Arrays.stream(tableTypeInfo.getFieldNames())

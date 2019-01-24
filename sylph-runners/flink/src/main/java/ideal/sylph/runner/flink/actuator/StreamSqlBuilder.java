@@ -21,9 +21,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import ideal.sylph.etl.SinkContext;
 import ideal.sylph.etl.SourceContext;
-import ideal.sylph.parser.SqlParserException;
 import ideal.sylph.parser.antlr.AntlrSqlParser;
-import ideal.sylph.parser.antlr.ParsingException;
 import ideal.sylph.parser.antlr.tree.CreateFunction;
 import ideal.sylph.parser.antlr.tree.CreateStreamAsSelect;
 import ideal.sylph.parser.antlr.tree.CreateTable;
@@ -91,14 +89,7 @@ public class StreamSqlBuilder
                 .setTableEnv(tableEnv)
                 .setBatchPluginManager(pluginManager)
                 .build();
-
-        Statement statement;
-        try {
-            statement = sqlParser.createStatement(sql);
-        }
-        catch (ParsingException e) {
-            throw new SqlParserException("Sylph sql parser error", e);
-        }
+        Statement statement = sqlParser.createStatement(sql);
 
         if (statement instanceof CreateStreamAsSelect) {
             CreateStreamAsSelect createStreamAsSelect = (CreateStreamAsSelect) statement;

@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.github.harbby.gadtry.base.Checks.checkState;
 import static java.util.Objects.requireNonNull;
 
 public class SylphTableSource
@@ -48,16 +49,13 @@ public class SylphTableSource
     {
         DataStream<Row> source = inputStream;
         TypeInformation<Row> sourceType = source.getType();
-        if (sourceType instanceof RowTypeInfo) {
-            List<Integer> indexs = Arrays.stream(rowTypeInfo.getFieldNames())
-                    .map(((RowTypeInfo) sourceType)::getFieldIndex)
-                    .collect(Collectors.toList());
-            return source.map(inRow -> Row.of(indexs.stream().map(index -> index == -1 ? null : inRow.getField(index)).toArray()))
-                    .returns(rowTypeInfo);
-        }
-        else {
-            throw new RuntimeException("sourceType not is RowTypeInfo");
-        }
+        checkState(sourceType instanceof RowTypeInfo, "DataStream type not is RowTypeInfo");
+
+        List<Integer> indexs = Arrays.stream(rowTypeInfo.getFieldNames())
+                .map(((RowTypeInfo) sourceType)::getFieldIndex)
+                .collect(Collectors.toList());
+        return source.map(inRow -> Row.of(indexs.stream().map(index -> index == -1 ? null : inRow.getField(index)).toArray()))
+                .returns(rowTypeInfo);
     }
 
     @Override
