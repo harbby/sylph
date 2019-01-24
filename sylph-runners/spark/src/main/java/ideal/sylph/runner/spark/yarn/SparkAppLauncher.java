@@ -21,7 +21,9 @@ import com.github.harbby.gadtry.ioc.Autowired;
 import com.google.common.collect.ImmutableList;
 import ideal.sylph.runner.spark.SparkJobHandle;
 import ideal.sylph.spi.job.Job;
+import ideal.sylph.spi.job.JobConfig;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.spark.SparkConf;
@@ -54,8 +56,20 @@ public class SparkAppLauncher
     public Optional<ApplicationId> run(Job job)
             throws Exception
     {
+        JobConfig jobConfig = job.getConfig();
+
         System.setProperty("SPARK_YARN_MODE", "true");
         SparkConf sparkConf = new SparkConf();
+        sparkConf.set("spark.yarn.stagingDir", FileSystem.get(yarnClient.getConfig()).getHomeDirectory().toString());
+        //-------------
+        sparkConf.set("spark.executor.instances", "1");   //EXECUTOR_COUNT
+        sparkConf.set("spark.executor.memory", "1600m");  //EXECUTOR_MEMORY
+        sparkConf.set("spark.executor.cores", "2");
+
+        sparkConf.set("spark.driver.cores", "1");
+        sparkConf.set("spark.driver.memory", "1600m");
+        //--------------
+
         sparkConf.setSparkHome(sparkHome);
 
         sparkConf.setMaster("yarn");
