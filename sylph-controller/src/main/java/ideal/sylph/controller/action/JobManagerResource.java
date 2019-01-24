@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static ideal.sylph.spi.job.Job.Status.STOP;
 import static java.util.Objects.requireNonNull;
 
@@ -112,7 +113,7 @@ public class JobManagerResource
         }
         catch (Exception e) {
             logger.error("", Throwables.getRootCause(e));
-            throw new RuntimeException(Throwables.getRootCause(e));
+            throw throwsThrowable(Throwables.getRootCause(e));
         }
     }
 

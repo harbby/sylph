@@ -35,6 +35,7 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
+import static com.github.harbby.gadtry.base.Throwables.throwsException;
 import static ideal.sylph.spi.exception.StandardErrorCode.CONNECTION_ERROR;
 import static ideal.sylph.spi.job.Job.Status.RUNNING;
 import static ideal.sylph.spi.job.Job.Status.STOP;
@@ -112,7 +113,7 @@ public class YarnJobContainer
             return originalUrl;
         }
         catch (YarnException | IOException e) {
-            throw new RuntimeException(e);
+            throw throwsException(e);
         }
     }
 

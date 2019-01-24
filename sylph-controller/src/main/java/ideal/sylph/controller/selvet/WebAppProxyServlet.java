@@ -54,6 +54,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static com.github.harbby.gadtry.base.Checks.checkState;
 import static com.google.common.base.Preconditions.checkArgument;
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_CONFIG_ERROR;
 import static java.util.Objects.requireNonNull;
@@ -200,11 +201,8 @@ public class WebAppProxyServlet
                         new SylphException(JOB_CONFIG_ERROR, "job " + id + " not Online"))
                 );
         Job.Status status = container.getStatus();
-        if (status == Job.Status.RUNNING) {
-            return container.getJobUrl();
-        }
-        else {
-            throw new RuntimeException("job " + id + " Status " + status + ",is not RUNNING");
-        }
+        checkState(status == Job.Status.RUNNING, "job " + id + " Status " + status + ",but not RUNNING");
+
+        return container.getJobUrl();
     }
 }

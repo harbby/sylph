@@ -57,6 +57,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.github.harbby.gadtry.base.Throwables.throwsException;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 import static org.apache.calcite.sql.SqlKind.AS;
@@ -137,7 +138,7 @@ public class FlinkSqlParser
             plan = sqlParser.getPlan(query, sqlParserConfig);
         }
         catch (SqlParseException e) {
-            throw new RuntimeException(query, e);
+            throw throwsException(e);
         }
 
         List<String> registerViews = new ArrayList<>();
@@ -230,7 +231,7 @@ public class FlinkSqlParser
             driver = pluginManager.loadPluginDriver(driverOrName, PipelinePlugin.PipelineType.transform);
         }
         catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
+            throwsException(e);
         }
         checkState(RealTimeTransForm.class.isAssignableFrom(driver), "batch table type driver must is RealTimeTransForm");
 

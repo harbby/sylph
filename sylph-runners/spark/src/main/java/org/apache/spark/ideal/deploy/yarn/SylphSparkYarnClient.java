@@ -31,10 +31,11 @@ public class SylphSparkYarnClient
         extends Client
 {
     // ApplicationMaster
-    public SylphSparkYarnClient(ClientArguments clientArgs, SparkConf spConf, YarnClient yarnClient)
+    public SylphSparkYarnClient(ClientArguments clientArgs, SparkConf sparkConf, YarnClient yarnClient)
             throws NoSuchFieldException, IllegalAccessException
     {
-        super(clientArgs, spConf);
+        super(clientArgs, sparkConf);
+
         //String key = DRIVER_MEMORY; //test
         Field field = this.getClass().getSuperclass().getDeclaredField("org$apache$spark$deploy$yarn$Client$$hadoopConf");
         field.setAccessible(true);
