@@ -62,6 +62,7 @@ public class MetadataManager
         if (metadataFile.exists()) {
             Map<String, String> jobInfoMaps = MAPPER.readValue(metadataFile, new GenericTypeReference(Map.class, String.class, String.class));
             logger.info("loading metadata with {}", metadataFile);
+            jobInfoMetaData.putAll(jobInfoMaps);
             return jobInfoMaps;
         }
         return Collections.emptyMap();
