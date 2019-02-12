@@ -15,8 +15,10 @@
  */
 package ideal.sylph.main;
 
+import com.github.harbby.gadtry.GadTry;
 import com.github.harbby.gadtry.ioc.Bean;
 import com.github.harbby.gadtry.ioc.IocFactory;
+import ideal.sylph.controller.AuthAspect;
 import ideal.sylph.controller.ControllerApp;
 import ideal.sylph.main.server.SylphBean;
 import ideal.sylph.main.service.JobManager;
@@ -58,9 +60,9 @@ public final class SylphMaster
         /*2 Initialize Guice Injector */
         try {
             logger.info("========={} Bootstrap initialize...========", SylphMaster.class.getCanonicalName());
-            IocFactory app = IocFactory.create(sylphBean,
+            IocFactory app = GadTry.create(sylphBean,
                     binder -> binder.bind(ControllerApp.class).withSingle()
-            );
+            ).aop(new AuthAspect()).initialize();
 
             app.getInstance(PipelinePluginLoader.class).loadPlugins();
             app.getInstance(RunnerManager.class).loadRunners();
