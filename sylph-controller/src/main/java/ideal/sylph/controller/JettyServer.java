@@ -17,6 +17,7 @@ package ideal.sylph.controller;
 
 import ideal.sylph.controller.selvet.WebAppProxyServlet;
 import ideal.sylph.spi.SylphContext;
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.servlet.DefaultServlet;
@@ -27,13 +28,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.MultipartConfigElement;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.UnavailableException;
 
+import static ideal.sylph.controller.AuthAspect.SESSION_THREAD_LOCAL;
 import static java.util.Objects.requireNonNull;
 
 /**
  * Created by ideal on 17-3-15.
  */
-@Deprecated
 public final class JettyServer
 {
     private static final Logger logger = LoggerFactory.getLogger(JettyServer.class);
@@ -53,11 +58,9 @@ public final class JettyServer
     public void start()
             throws Exception
     {
-        //-------初始化------获取Context句柄------
         int jettyPort = serverConfig.getServerPort();
         int maxFormContentSize = serverConfig.getMaxFormContentSize();
 
-        // 创建Server
         this.server = new Server(jettyPort);
         server.setAttribute("org.eclipse.jetty.server.Request.maxFormContentSize",
                 maxFormContentSize);
@@ -71,12 +74,20 @@ public final class JettyServer
     private HandlerList loadHandlers()
     {
         HandlerList handlers = new HandlerList();
-        ServletHolder servlet = new ServletHolder(new ServletContainer(new WebApplication()));
+        ServletHolder servlet = new ServletHolder(new ServletContainer(new WebApplication()))
+        {
+            @Override
+            protected void prepare(Request baseRequest, ServletRequest request, ServletResponse response)
+                    throws ServletException, UnavailableException
+            {
+                SESSION_THREAD_LOCAL.set(baseRequest.getSession(true));
+                super.prepare(baseRequest, request, response);
+            }
+        };
         servlet.getRegistration().setMultipartConfig(new MultipartConfigElement("data/tmp", 1048576, 1048576, 262144));
 
         //--------------------plblic----------------------
-        ServletContextHandler contextHandler = new ServletContextHandler(
-                ServletContextHandler.NO_SESSIONS);
+        ServletContextHandler contextHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);  //NO_SESSIONS
         contextHandler.setContextPath("/");
         contextHandler.setAttribute("sylphContext", sylphContext);
 

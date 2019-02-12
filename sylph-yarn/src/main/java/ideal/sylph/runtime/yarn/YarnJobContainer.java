@@ -165,12 +165,12 @@ public class YarnJobContainer
                 .byInstance(container)
                 .around(proxyContext -> {
                     /*
-                     * 通过这个 修改当前YarnClient的ClassLoader的为当前sdk的加载器
+                     * 通过这个 修改当前YarnClient的ClassLoader的为当前runner的加载器
                      * 默认hadoop Configuration使用jvm的AppLoader,会出现 akka.version not setting的错误 原因是找不到akka相关jar包
                      * 原因是hadoop Configuration 初始化: this.classLoader = Thread.currentThread().getContextClassLoader();
                      * */
                     try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(YarnJobContainer.class.getClassLoader())) {
-                        proxyContext.proceed();
+                        return proxyContext.proceed();
                     }
                 });
     }

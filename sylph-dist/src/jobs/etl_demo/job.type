@@ -1,5 +1,5 @@
 ---
-type: "StreamETL"
+type: "FlinkStream"
 config:
   taskManagerMemoryMb: 1024
   taskManagerCount: 2

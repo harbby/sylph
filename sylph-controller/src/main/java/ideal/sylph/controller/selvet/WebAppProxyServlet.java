@@ -29,7 +29,8 @@ import org.apache.http.client.params.ClientPNames;
 import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.conn.params.ConnRoutePNames;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +44,6 @@ import javax.ws.rs.core.UriBuilder;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -96,21 +96,6 @@ public class WebAppProxyServlet
             HttpServletResponse resp, URI link, Cookie cookie, String proxyHost)
             throws IOException
     {
-        DefaultHttpClient client = new DefaultHttpClient();
-        client
-                .getParams()
-                .setParameter(ClientPNames.COOKIE_POLICY,
-                        CookiePolicy.BROWSER_COMPATIBILITY)
-                .setBooleanParameter(ClientPNames.ALLOW_CIRCULAR_REDIRECTS, true);
-        // Make sure we send the request from the proxy address in the config
-        // since that is what the AM filter checks against. IP aliasing or
-        // similar could cause issues otherwise.
-        InetAddress localAddress = InetAddress.getByName(proxyHost);
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("local InetAddress for proxy host: {}", localAddress);
-        }
-        client.getParams()
-                .setParameter(ConnRoutePNames.LOCAL_ADDRESS, localAddress);
         HttpGet httpGet = new HttpGet(link);
         @SuppressWarnings("unchecked")
         Enumeration<String> names = req.getHeaderNames();
@@ -130,8 +115,21 @@ public class WebAppProxyServlet
             httpGet.setHeader("Cookie",
                     PROXY_USER_COOKIE_NAME + "=" + URLEncoder.encode(user, "ASCII"));
         }
-        OutputStream out = resp.getOutputStream();
-        try {
+
+        try (CloseableHttpClient client = HttpClients.createMinimal()) {
+            client.getParams()
+                    .setParameter(ClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY)
+                    .setBooleanParameter(ClientPNames.ALLOW_CIRCULAR_REDIRECTS, true);
+            // Make sure we send the request from the proxy address in the config
+            // since that is what the AM filter checks against. IP aliasing or
+            // similar could cause issues otherwise.
+            InetAddress localAddress = InetAddress.getByName(proxyHost);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("local InetAddress for proxy host: {}", localAddress);
+            }
+            client.getParams()
+                    .setParameter(ConnRoutePNames.LOCAL_ADDRESS, localAddress);
+
             HttpResponse httpResp = client.execute(httpGet);
             resp.setStatus(httpResp.getStatusLine().getStatusCode());
             for (Header header : httpResp.getAllHeaders()) {
@@ -142,7 +140,7 @@ public class WebAppProxyServlet
             }
             InputStream in = httpResp.getEntity().getContent();
             if (in != null) {
-                IOUtils.copyBytes(in, out, 4096, true);
+                IOUtils.copyBytes(in, resp.getOutputStream(), 4096, true);
             }
         }
         finally {
@@ -158,7 +156,7 @@ public class WebAppProxyServlet
             this.doGet1(req, resp);
         }
         catch (Exception e) {
-            resp.sendError(500, Throwables.getRootCause(e).toString());
+            resp.sendError(500, Throwables.getStackTraceAsString(e));
         }
     }
 
