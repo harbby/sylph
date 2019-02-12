@@ -81,7 +81,7 @@ $(function () {
             send.type = 'delete'
         }
         else if ($(this).hasClass('refresh_all')) {
-            send = {"type": "refresh_all"};
+            //send = {"type": "refresh_all"};
         }
         else {
             return;
