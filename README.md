@@ -61,7 +61,7 @@ After opening the project in IntelliJ, double check that the Java SDK is properl
 * Open the File menu and select Project Structure
 * In the SDKs section, ensure that a 1.8 JDK is selected (create one if none exist)
 * In the Project section, ensure the Project language level is set to 8.0 as Sylph makes use of several Java 8 language features
-* HADOOP_HOME(2.6.x+) SPARK_HOME(2.3.x+) FLINK_HOME(1.5.x+)
+* HADOOP_HOME(2.6.x+) SPARK_HOME(2.4.x+) FLINK_HOME(1.7.x+)
 
 Sylph comes with sample configuration that should work out-of-the-box for development. Use the following options to create a run configuration:
 
@@ -80,5 +80,4 @@ Sylph comes with sample configuration that should work out-of-the-box for develo
 We need more power to improve the view layer. If you are interested, you can contact me by email.
 
 ## Other
-* sylph被设计来处理分布式实时ETL,实时StreamSql计算,分布式程序监控和托管.
-* 加入QQ群 438625067
+* QQ Group: 438625067
