@@ -107,6 +107,7 @@ public class YarnJobDescriptor
 
     /**
      * 提交到yarn时 任务启动入口类
+     * YarnApplicationMasterRunner
      */
     @Override
     protected String getYarnJobClusterEntrypoint()

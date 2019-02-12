@@ -55,7 +55,7 @@ import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
 import static org.fusesource.jansi.Ansi.Color.GREEN;
 import static org.fusesource.jansi.Ansi.Color.YELLOW;
 
-@Name("StreamETL")
+@Name("FlinkStream")
 @Description("this is stream etl Actuator")
 @JobActuator.Mode(JobActuator.ModeType.STREAM_ETL)
 public class FlinkStreamEtlActuator
