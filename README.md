@@ -1,12 +1,34 @@
 # Sylph [![Build Status](http://img.shields.io/travis/harbby/sylph.svg?style=flat&branch=master)](https://travis-ci.org/harbby/sylph)
-The Sylph is Stream Job management platform. 
-The Sylph core idea is to build distributed applications through workflow descriptions.
-Support for 
-* spark1.x Spark-Streaming
-* spark2.x Structured-Streaming 
-* flink stream
+The Sylph is Streaming Job Manager. 
 
-## StreamSql
+Sylph uses SQL Query to describe calculations and bind multiple source(input)/sink(output) to visually develop and deploy streaming applications.
+Through Web IDE makes it easy to develop, deploy, monitor streaming applications and analyze streaming application behavior at any time.  
+Sylph has rich source/sink support and flexible extensions to visually develop and deploy stream analysis applications and visualized streaming application lifecycle management.
+
+The Sylph core is to build distributed applications through workflow descriptions.
+Support for 
+* Spark-Streaming (Spark1.x)
+* Structured-Streaming (Spark2.x)
+* Flink Streaming
+
+##License
+```
+Copyright (C) 2018 The Sylph Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
+
+## StreamingSql
 ```sql
 create function get_json_object as 'ideal.sylph.runner.flink.udf.UDFJson';
 
@@ -76,8 +98,7 @@ Sylph comes with sample configuration that should work out-of-the-box for develo
 1. yezhixinghai@gmail.com - For discussions about code, design and features
 2. lydata_jia@163.com -  For discussions about code, design and features
 3. jeific@outlook.com - For discussions about code, design and features
-## Help
-We need more power to improve the view layer. If you are interested, you can contact me by email.
 
-## Other
-* QQ Group: 438625067
+## Getting Help
+* Send message to [Google Group](https://groups.google.com/forum/#!forum/sylph-streaming)
+* Add QQ Group: 438625067
