@@ -11,7 +11,7 @@ Support for
 * Structured-Streaming (Spark2.x)
 * Flink Streaming
 
-##License
+## License
 ```
 Copyright (C) 2018 The Sylph Authors
 
