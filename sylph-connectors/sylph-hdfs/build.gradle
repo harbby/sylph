@@ -6,7 +6,7 @@ dependencies {
   compile 'commons-collections:commons-collections:3.2.2'
   // https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro
   compile group: 'org.apache.parquet', name: 'parquet-avro', version: '1.10.0'
-  compile group: 'org.apache.flink', name: 'flink-formats', ext: 'pom'
+  compile group: 'org.apache.flink', name: 'flink-formats',version:deps.flink , ext: 'pom'
   //  compile group: 'org.apache.flink', name: 'flink-orc_2.11', version: '1.6.1'
   compile group: 'org.apache.flink', name: 'flink-parquet',version:deps.flink
 

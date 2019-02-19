@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Gradle: org.apache.flink:flink-formats:pom:1.7.1">
+    <CLASSES>
+      <root url="file://$MAVEN_REPOSITORY$/org/apache/flink/flink-formats/1.7.1/flink-formats-1.7.1.pom" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
