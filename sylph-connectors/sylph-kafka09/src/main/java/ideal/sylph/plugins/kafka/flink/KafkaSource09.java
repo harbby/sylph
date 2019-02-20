@@ -19,7 +19,9 @@ import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.annotation.Version;
 import ideal.sylph.etl.PluginConfig;
+import ideal.sylph.etl.SourceContext;
 import ideal.sylph.etl.api.Source;
+import ideal.sylph.plugins.kafka.flink.utils.JsonSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
@@ -53,7 +55,7 @@ public class KafkaSource09
     /**
      * 初始化(driver执行)
      **/
-    public KafkaSource09(StreamTableEnvironment tableEnv, KafkaSource09Config config)
+    public KafkaSource09(StreamTableEnvironment tableEnv, KafkaSource09Config config, SourceContext context)
     {
         requireNonNull(tableEnv, "tableEnv is null");
         requireNonNull(config, "config is null");
@@ -73,7 +75,7 @@ public class KafkaSource09
             //org.apache.flink.streaming.api.checkpoint.CheckpointedFunction
             DataStream<Row> stream = tableEnv.execEnv().addSource(new FlinkKafkaConsumer09<Row>(
                     topicSets,
-                    new RowDeserializer(),
+                    new JsonSchema(context),
                     properties)
             );
             return stream;
