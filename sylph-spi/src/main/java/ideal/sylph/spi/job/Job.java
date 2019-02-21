@@ -35,6 +35,8 @@ public interface Job
 
     Collection<URL> getDepends();
 
+    ClassLoader getJobClassLoader();
+
     @NotNull
     String getActuatorName();
 
