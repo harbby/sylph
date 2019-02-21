@@ -51,9 +51,10 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.noCatch;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
@@ -121,15 +122,10 @@ public class RunnerManager
         logger.info("Runner: {} starts loading {}", runner.getClass().getName(), PipelinePlugin.class.getName());
 
         checkArgument(runner.getContainerFactory() != null, runner.getClass() + " getContainerFactory() return null");
-        final ContainerFactory factory;
-        try {
-            factory = runner.getContainerFactory().newInstance();
-        }
-        catch (InstantiationException | IllegalAccessException e) {
-            throw throwsException(e);
-        }
 
-        runner.create(runnerContext).forEach(jobActuatorHandle -> {
+        Set<JobActuatorHandle> jobActuators = runner.create(runnerContext);
+        final ContainerFactory factory = noCatch(() -> runner.getContainerFactory().newInstance());
+        jobActuators.forEach(jobActuatorHandle -> {
             JobActuator jobActuator = new JobActuatorImpl(jobActuatorHandle, factory);
             String name = jobActuator.getInfo().getName();
             checkState(!jobActuatorMap.containsKey(name), String.format("Multiple entries with same key: %s=%s and %s=%s", name, jobActuatorMap.get(name), name, jobActuator));
@@ -146,12 +142,12 @@ public class RunnerManager
         String jobType = requireNonNull(job.getActuatorName(), "job Actuator Name is null " + job.getId());
         JobActuator jobActuator = jobActuatorMap.get(jobType);
         checkArgument(jobActuator != null, jobType + " not exists");
-        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(jobActuator.getHandleClassLoader())) {
+        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(job.getJobClassLoader())) {
             switch (config.getRunMode().toLowerCase()) {
                 case "yarn":
-                    return jobActuator.getFactory().getYarnContainer(job, jobInfo);
+                    return jobActuator.getFactory().createYarnContainer(job, jobInfo);
                 case "local":
-                    return jobActuator.getFactory().getLocalContainer(job, jobInfo);
+                    return jobActuator.getFactory().createLocalContainer(job, jobInfo);
                 default:
                     throw new IllegalArgumentException("this job.runtime.mode " + config.getRunMode() + " have't support!");
             }
@@ -236,6 +232,12 @@ public class RunnerManager
                 public Collection<URL> getDepends()
                 {
                     return dependFiles;
+                }
+
+                @Override
+                public ClassLoader getJobClassLoader()
+                {
+                    return jobClassLoader;
                 }
 
                 @NotNull
