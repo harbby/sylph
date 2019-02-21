@@ -42,9 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static org.apache.parquet.hadoop.ParquetWriter.DEFAULT_BLOCK_SIZE;
 import static org.apache.parquet.hadoop.ParquetWriter.DEFAULT_IS_DICTIONARY_ENABLED;
@@ -60,9 +57,6 @@ public class ApacheParquet
     private final SimpleGroupFactory groupFactory;
     private final MessageType schema;
     private final String outputPath;
-
-    private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
-    private final Lock lock = rwLock.writeLock();
 
     private long createTime = System.currentTimeMillis();
     private long lastTime = createTime;
@@ -204,14 +198,8 @@ public class ApacheParquet
         if (group == null) {
             return;
         }
-        try {
-            lock.lock();  //加锁
-            lastTime = System.currentTimeMillis();
-            writer.write(group);
-        }
-        finally {
-            lock.unlock(); //解锁
-        }
+        lastTime = System.currentTimeMillis();
+        writer.write(group);
     }
 
     /**
@@ -222,7 +210,6 @@ public class ApacheParquet
             throws IOException
     {
         try {
-            lock.lock();
             writer.close();
             //1,修改文件名称
             FileSystem hdfs = FileSystem.get(java.net.URI.create(outputPath), new Configuration());
@@ -234,9 +221,6 @@ public class ApacheParquet
             logger.error("关闭Parquet输出流异常", e);
             FileSystem hdfs = FileSystem.get(java.net.URI.create(outputPath), new Configuration());
             hdfs.rename(new Path(outputPath), new Path(outputPath + ".err"));
-        }
-        finally {
-            lock.unlock();
         }
     }
 
