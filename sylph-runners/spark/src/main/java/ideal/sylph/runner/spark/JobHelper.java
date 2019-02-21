@@ -20,8 +20,8 @@ import com.github.harbby.gadtry.jvm.JVMLauncher;
 import com.github.harbby.gadtry.jvm.JVMLaunchers;
 import ideal.sylph.runner.spark.etl.sparkstreaming.StreamNodeLoader;
 import ideal.sylph.runner.spark.etl.structured.StructuredNodeLoader;
-import ideal.sylph.spi.App;
 import ideal.sylph.spi.job.EtlFlow;
+import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.Dataset;
@@ -55,110 +55,80 @@ final class JobHelper
 
     private static final Logger logger = LoggerFactory.getLogger(JobHelper.class);
 
-    static SparkJobHandle<App<SparkSession>> build2xJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
+    static JobHandle build2xJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
             throws Exception
     {
         final AtomicBoolean isCompile = new AtomicBoolean(true);
-        Supplier<App<SparkSession>> appGetter = (Supplier<App<SparkSession>> & Serializable) () -> new App<SparkSession>()
-        {
-            private final SparkSession spark = getSparkSession();
+        Supplier<SparkSession> appGetter = (Supplier<SparkSession> & JobHandle & Serializable) () -> {
+            logger.info("========create spark SparkSession mode isCompile = " + isCompile.get() + "============");
+            SparkSession spark = isCompile.get() ? SparkSession.builder()
+                    .appName("sparkCompile")
+                    .master("local[*]")
+                    .getOrCreate()
+                    : SparkSession.builder().getOrCreate();
 
-            private SparkSession getSparkSession()
+            Bean bean = binder -> binder.bind(SparkSession.class, spark);
+            StructuredNodeLoader loader = new StructuredNodeLoader(pluginManager, bean)
             {
-                logger.info("========create spark SparkSession mode isCompile = " + isCompile.get() + "============");
-                return isCompile.get() ? SparkSession.builder()
-                        .appName("sparkCompile")
-                        .master("local[*]")
-                        .getOrCreate()
-                        : SparkSession.builder().getOrCreate();
-            }
-
-            @Override
-            public SparkSession getContext()
-            {
-                return spark;
-            }
-
-            @Override
-            public void build()
-                    throws Exception
-            {
-                Bean bean = binder -> binder.bind(SparkSession.class, spark);
-                StructuredNodeLoader loader = new StructuredNodeLoader(pluginManager, bean)
+                @Override
+                public UnaryOperator<Dataset<Row>> loadSink(String driverStr, Map<String, Object> config)
                 {
-                    @Override
-                    public UnaryOperator<Dataset<Row>> loadSink(String driverStr, Map<String, Object> config)
-                    {
-                        return isCompile.get() ? (stream) -> {
-                            super.loadSinkWithComplic(driverStr, config).apply(stream);
-                            return null;
-                        } : super.loadSink(driverStr, config);
-                    }
-                };
-                buildGraph(loader, jobId, flow).run();
-            }
+                    return isCompile.get() ? (stream) -> {
+                        super.loadSinkWithComplic(driverStr, config).apply(stream);
+                        return null;
+                    } : super.loadSink(driverStr, config);
+                }
+            };
+            buildGraph(loader, jobId, flow);
+            return spark;
         };
 
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
                 .setCallable(() -> {
-                    appGetter.get().build();
+                    appGetter.get();
                     return 1;
                 })
                 .setConsole((line) -> System.out.println(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
                 .addUserURLClassLoader(jobClassLoader)
                 .notDepThisJvmClassPath()
+                .setClassLoader(jobClassLoader)
                 .build();
-        launcher.startAndGet(jobClassLoader);
+        launcher.startAndGet();
         isCompile.set(false);
-        return new SparkJobHandle<>(appGetter);
+        return (JobHandle) appGetter;
     }
 
-    static SparkJobHandle<App<StreamingContext>> build1xJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
+    static JobHandle build1xJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
             throws Exception
     {
         final AtomicBoolean isCompile = new AtomicBoolean(true);
-        final Supplier<App<StreamingContext>> appGetter = (Supplier<App<StreamingContext>> & Serializable) () -> new App<StreamingContext>()
-        {
-            private final StreamingContext spark = getStreamingContext();
+        final Supplier<StreamingContext> appGetter = (Supplier<StreamingContext> & JobHandle & Serializable) () -> {
+            logger.info("========create spark StreamingContext mode isCompile = " + isCompile.get() + "============");
+            SparkConf sparkConf = isCompile.get() ?
+                    new SparkConf().setMaster("local[*]").setAppName("sparkCompile")
+                    : new SparkConf();
+            //todo: 5s is default
+            SparkSession sparkSession = SparkSession.builder().config(sparkConf).getOrCreate();
+            StreamingContext spark = new StreamingContext(sparkSession.sparkContext(), Seconds.apply(5));
 
-            private StreamingContext getStreamingContext()
-            {
-                logger.info("========create spark StreamingContext mode isCompile = " + isCompile.get() + "============");
-                SparkConf sparkConf = isCompile.get() ?
-                        new SparkConf().setMaster("local[*]").setAppName("sparkCompile")
-                        : new SparkConf();
-                //todo: 5s is default
-                SparkSession sparkSession = SparkSession.builder().config(sparkConf).getOrCreate();
-                return new StreamingContext(sparkSession.sparkContext(), Seconds.apply(5));
-            }
-
-            @Override
-            public StreamingContext getContext()
-            {
-                return spark;
-            }
-
-            @Override
-            public void build()
-                    throws Exception
-            {
-                Bean bean = binder -> binder.bind(StreamingContext.class, spark);
-                StreamNodeLoader loader = new StreamNodeLoader(pluginManager, bean);
-                buildGraph(loader, jobId, flow).run();
-            }
+            Bean bean = binder -> binder.bind(StreamingContext.class, spark);
+            StreamNodeLoader loader = new StreamNodeLoader(pluginManager, bean);
+            buildGraph(loader, jobId, flow);
+            return spark;
         };
 
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
                 .setCallable(() -> {
-                    appGetter.get().build();
+                    appGetter.get();
                     return 1;
                 })
                 .setConsole((line) -> System.out.println(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
                 .addUserURLClassLoader(jobClassLoader)
                 .notDepThisJvmClassPath()
+                .setClassLoader(jobClassLoader)
                 .build();
-        launcher.startAndGet(jobClassLoader);
+        launcher.startAndGet();
         isCompile.set(false);
-        return new SparkJobHandle<>(appGetter);
+        return (JobHandle) appGetter;
     }
 }

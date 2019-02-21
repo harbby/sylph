@@ -19,7 +19,6 @@ import com.github.harbby.gadtry.base.Serializables;
 import com.github.harbby.gadtry.base.Throwables;
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.google.common.collect.ImmutableList;
-import ideal.sylph.runner.spark.SparkJobHandle;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobConfig;
 import org.apache.commons.lang3.StringUtils;
@@ -36,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -44,9 +44,18 @@ import java.util.stream.Collectors;
 public class SparkAppLauncher
 {
     private static final Logger logger = LoggerFactory.getLogger(SparkAppLauncher.class);
-
-    @Autowired private YarnClient yarnClient;
     private static final String sparkHome = System.getenv("SPARK_HOME");
+
+    private final YarnClient yarnClient;
+    private final String appHome;
+
+    @Autowired
+    public SparkAppLauncher(YarnClient yarnClient)
+            throws IOException
+    {
+        this.yarnClient = yarnClient;
+        this.appHome = FileSystem.get(yarnClient.getConfig()).getHomeDirectory().toString();
+    }
 
     public YarnClient getYarnClient()
     {
@@ -60,7 +69,7 @@ public class SparkAppLauncher
 
         System.setProperty("SPARK_YARN_MODE", "true");
         SparkConf sparkConf = new SparkConf();
-        sparkConf.set("spark.yarn.stagingDir", FileSystem.get(yarnClient.getConfig()).getHomeDirectory().toString());
+        sparkConf.set("spark.yarn.stagingDir", appHome);
         //-------------
         sparkConf.set("spark.executor.instances", "1");   //EXECUTOR_COUNT
         sparkConf.set("spark.executor.memory", "1600m");  //EXECUTOR_MEMORY
@@ -102,7 +111,7 @@ public class SparkAppLauncher
             throws IOException
     {
         File byt = new File(job.getWorkDir(), "job_handle.byt");
-        byte[] bytes = Serializables.serialize((SparkJobHandle) job.getJobHandle());
+        byte[] bytes = Serializables.serialize((Serializable) job.getJobHandle());
         try (FileOutputStream outputStream = new FileOutputStream(byt)) {
             outputStream.write(bytes);
         }
