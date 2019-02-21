@@ -43,6 +43,8 @@ public class JobParameter
      */
     private int checkpointInterval = -1;   //see: CheckpointConfig.checkpointInterval;
     private long checkpointTimeout = CheckpointConfig.DEFAULT_TIMEOUT;
+    private String checkpointDir = "hdfs:///tmp/sylph/flink/savepoints/";
+    private long minPauseBetweenCheckpoints = CheckpointConfig.DEFAULT_MIN_PAUSE_BETWEEN_CHECKPOINTS;
 
     public JobParameter() {}
 
@@ -131,6 +133,26 @@ public class JobParameter
         return checkpointInterval;
     }
 
+    public void setCheckpointDir(String checkpointDir)
+    {
+        this.checkpointDir = checkpointDir;
+    }
+
+    public String getCheckpointDir()
+    {
+        return checkpointDir;
+    }
+
+    public void setMinPauseBetweenCheckpoints(long minPauseBetweenCheckpoints)
+    {
+        this.minPauseBetweenCheckpoints = minPauseBetweenCheckpoints;
+    }
+
+    public long getMinPauseBetweenCheckpoints()
+    {
+        return minPauseBetweenCheckpoints;
+    }
+
     public void setCheckpointInterval(int checkpointInterval)
     {
         this.checkpointInterval = checkpointInterval;
@@ -157,6 +179,7 @@ public class JobParameter
                 .add("parallelism", parallelism)
                 .add("vCores", taskManagerSlots)
                 .add("checkpointInterval", checkpointInterval)
+                .add("checkpointDir", checkpointDir)
                 .add("checkpointTimeout", checkpointTimeout)
                 .toString();
     }

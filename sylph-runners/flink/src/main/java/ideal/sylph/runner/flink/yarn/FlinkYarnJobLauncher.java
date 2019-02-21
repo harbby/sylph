@@ -27,9 +27,9 @@ import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.client.api.YarnClient;
+import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.concurrent.duration.FiniteDuration;
 
 import java.io.File;
 import java.io.InterruptedIOException;
@@ -38,7 +38,6 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -47,12 +46,12 @@ import java.util.stream.Collectors;
 public class FlinkYarnJobLauncher
 {
     private static final Logger logger = LoggerFactory.getLogger(FlinkYarnJobLauncher.class);
-    private static final FiniteDuration AKKA_TIMEOUT = new FiniteDuration(1, TimeUnit.MINUTES);
 
     @Autowired
-    private YarnClusterConfiguration clusterConf;
+    private FlinkConfiguration flinkConf;
     @Autowired
     private YarnClient yarnClient;
+    @Autowired YarnConfiguration yarnConfiguration;
 
     public YarnClient getYarnClient()
     {
@@ -62,19 +61,17 @@ public class FlinkYarnJobLauncher
     public Optional<ApplicationId> start(Job job)
             throws Exception
     {
-        FlinkJobHandle jobHandle = (FlinkJobHandle) job.getJobHandle();
+        JobGraph jobGraph = ((FlinkJobHandle) job.getJobHandle()).getJobGraph();
         JobParameter jobConfig = ((FlinkJobConfig) job.getConfig()).getConfig();
 
         Iterable<Path> userProvidedJars = getUserAdditionalJars(job.getDepends());
         final YarnJobDescriptor descriptor = new YarnJobDescriptor(
-                clusterConf,
+                flinkConf,
                 yarnClient,
+                yarnConfiguration,
                 jobConfig,
                 job.getId(),
                 userProvidedJars);
-        JobGraph jobGraph = jobHandle.getJobGraph();
-        //todo: How to use `savepoints` to restore a job
-        //jobGraph.setSavepointRestoreSettings(SavepointRestoreSettings.forPath("hdfs:///tmp/sylph/apps/savepoints"));
         return start(descriptor, jobGraph);
     }
 

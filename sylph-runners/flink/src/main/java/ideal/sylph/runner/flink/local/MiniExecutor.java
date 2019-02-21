@@ -20,22 +20,28 @@ import org.apache.flink.api.common.JobExecutionResult;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.RestOptions;
 import org.apache.flink.configuration.TaskManagerOptions;
+import org.apache.flink.runtime.client.JobExecutionException;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.runtime.minicluster.MiniCluster;
 import org.apache.flink.runtime.minicluster.MiniClusterConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
+
 /**
  * see {@link org.apache.flink.streaming.api.environment.LocalStreamEnvironment#execute(String)}
  */
-public class MiniExec
+public class MiniExecutor
+        implements AutoCloseable
 {
-    private MiniExec() {}
+    private static final Logger logger = LoggerFactory.getLogger(MiniExecutor.class);
+    public static final String FLINK_WEB = "Sylph FLink Local Job Web at ";
 
-    private static final Logger logger = LoggerFactory.getLogger(MiniExec.class);
+    private final MiniCluster miniCluster;
+    private final JobGraph jobGraph;
 
-    public static JobExecutionResult execute(JobGraph jobGraph)
+    public MiniExecutor(JobGraph jobGraph)
             throws Exception
     {
         jobGraph.setAllowQueuedScheduling(true);
@@ -62,23 +68,46 @@ public class MiniExec
             logger.info("Running job on local embedded Flink mini cluster");
         }
 
-        MiniCluster miniCluster = new MiniCluster(cfg);
+        this.miniCluster = new MiniCluster(cfg);
+        this.jobGraph = jobGraph;
 
-        try {
-            miniCluster.start();
-            configuration.setInteger(RestOptions.PORT, miniCluster.getRestAddress().getPort());
+        miniCluster.start();
+        configuration.setInteger(RestOptions.PORT, miniCluster.getRestAddress().getPort());
+    }
 
-            return miniCluster.executeJobBlocking(jobGraph);
-        }
-        finally {
-            miniCluster.close();
+    public URI getWebUi()
+    {
+        return miniCluster.getRestAddress();
+    }
+
+    public JobExecutionResult executeJobBlocking()
+            throws JobExecutionException, InterruptedException
+    {
+        return miniCluster.executeJobBlocking(jobGraph);
+    }
+
+    @Override
+    public void close()
+            throws Exception
+    {
+        miniCluster.close();
+    }
+
+    public static JobExecutionResult execute(JobGraph jobGraph)
+            throws Exception
+    {
+        try (MiniExecutor localExecutor = new MiniExecutor(jobGraph)) {
+            return localExecutor.executeJobBlocking();
         }
     }
 
-    public static VmCallable<Boolean> getLocalRunner(JobGraph jobGraph)
+    public static VmCallable<Boolean> createVmCallable(JobGraph jobGraph)
     {
         return () -> {
-            MiniExec.execute(jobGraph);
+            try (MiniExecutor executor = new MiniExecutor(jobGraph)) {
+                System.out.println(FLINK_WEB + executor.getWebUi());
+                executor.executeJobBlocking();
+            }
             return true;
         };
     }
