@@ -54,7 +54,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.github.harbby.gadtry.base.Checks.checkState;
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static com.google.common.base.Preconditions.checkArgument;
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_CONFIG_ERROR;
 import static java.util.Objects.requireNonNull;
@@ -170,10 +170,10 @@ public class WebAppProxyServlet
             String[] parts = pathInfo.split("/", 3);
             checkArgument(parts.length >= 2, remoteUser + " gave an invalid proxy path " + pathInfo);
             //parts[0] is empty because path info always starts with a /
-            String runId = requireNonNull(parts[1], "runId not setting");
+            String jobId = requireNonNull(parts[1], "runId not setting");
             String rest = parts.length > 2 ? parts[2] : "";
 
-            URI trackingUri = new URI(getJobUrl(runId));
+            URI trackingUri = new URI(getJobUrl(jobId));
 
             // Append the user-provided path and query parameter to the original
             // tracking url.
@@ -195,9 +195,7 @@ public class WebAppProxyServlet
     public String getJobUrl(String id)
     {
         JobContainer container = sylphContext.getJobContainer(id)
-                .orElseGet(() -> sylphContext.getJobContainerWithRunId(id).orElseThrow(() ->
-                        new SylphException(JOB_CONFIG_ERROR, "job " + id + " not Online"))
-                );
+                .orElseThrow(() -> new SylphException(JOB_CONFIG_ERROR, "job " + id + " not Online"));
         Job.Status status = container.getStatus();
         checkState(status == Job.Status.RUNNING, "job " + id + " Status " + status + ",but not RUNNING");
 
