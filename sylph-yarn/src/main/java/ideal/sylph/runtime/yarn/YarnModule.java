@@ -19,7 +19,6 @@ import com.github.harbby.gadtry.function.Creator;
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.github.harbby.gadtry.ioc.Bean;
 import com.github.harbby.gadtry.ioc.Binder;
-import ideal.sylph.spi.exception.SylphException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.client.api.TimelineClient;
 import org.apache.hadoop.yarn.client.api.YarnClient;
@@ -28,10 +27,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.stream.Stream;
+import java.io.FileNotFoundException;
 
-import static ideal.sylph.spi.exception.StandardErrorCode.CONFIG_ERROR;
-import static java.util.Objects.requireNonNull;
+import static com.github.harbby.gadtry.base.Throwables.throwsException;
 
 public class YarnModule
         implements Bean
@@ -73,17 +71,26 @@ public class YarnModule
     {
         Configuration hadoopConf = new Configuration();
         hadoopConf.set("fs.hdfs.impl", "org.apache.hadoop.hdfs.DistributedFileSystem");
-
-        Stream.of("yarn-site.xml", "core-site.xml", "hdfs-site.xml").forEach(file -> {
-            File site = new File(requireNonNull(System.getenv("HADOOP_CONF_DIR"), "ENV HADOOP_CONF_DIR is not setting"), file);
-            if (site.exists() && site.isFile()) {
-                hadoopConf.addResource(new org.apache.hadoop.fs.Path(site.toURI()));
+        String hadoopConfDir = System.getenv("HADOOP_CONF_DIR");
+        if (hadoopConfDir == null) {
+            logger.error("ENV HADOOP_CONF_DIR {} is not setting");
+        }
+        else {
+            for (String file : new String[] {"yarn-site.xml", "core-site.xml", "hdfs-site.xml"}) {
+                File site = new File(hadoopConfDir, file);
+                if (site.exists() && site.isFile()) {
+                    hadoopConf.addResource(new org.apache.hadoop.fs.Path(site.toURI()));
+                }
+                else {
+                    try {
+                        throw new FileNotFoundException("ENV HADOOP_CONF_DIR error, NOT Found HADOOP file: " + site);
+                    }
+                    catch (FileNotFoundException e) {
+                        throwsException(e);
+                    }
+                }
             }
-            else {
-                throw new SylphException(CONFIG_ERROR, site + " not exists");
-            }
-        });
-
+        }
         return new YarnConfiguration(hadoopConf);
     }
 }
