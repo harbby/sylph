@@ -79,7 +79,9 @@ public class FlinkContainerFactory
 
         FlinkYarnJobLauncher jobLauncher = injector.getInstance(FlinkYarnJobLauncher.class);
         return YarnJobContainer.of(jobLauncher.getYarnClient(), lastRunid, () -> {
-            setSavepoint(jobGraph, appCheckPath, jobLauncher.getYarnClient().getConfig());
+            if (jobConfig.isEnableSavepoint()) {
+                setSavepoint(jobGraph, appCheckPath, jobLauncher.getYarnClient().getConfig());
+            }
             return jobLauncher.start(job);
         });
     }
@@ -118,7 +120,9 @@ public class FlinkContainerFactory
                     throws Exception
             {
                 url.set(null);
-                setSavepoint(jobGraph, appCheckPath, yarnConfiguration);
+                if (jobConfig.isEnableSavepoint()) {
+                    setSavepoint(jobGraph, appCheckPath, yarnConfiguration);
+                }
                 VmCallable<Boolean> taskCallable = createVmCallable(jobGraph);
                 return launcher.startAsync(taskCallable);
             }
