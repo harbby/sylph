@@ -15,7 +15,6 @@
  */
 package ideal.sylph.runner.spark;
 
-import ideal.sylph.spi.App;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.streaming.StreamingContext;
 
@@ -23,6 +22,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
@@ -40,11 +40,9 @@ public final class SparkAppMain
         System.out.println("spark on yarn app starting...");
 
         @SuppressWarnings("unchecked")
-        SparkJobHandle<App<?>> sparkJobHandle = (SparkJobHandle<App<?>>) byteToObject(new FileInputStream("job_handle.byt"));
+        Supplier<?> sparkJobHandle = (Supplier<?>) byteToObject(new FileInputStream("job_handle.byt"));
 
-        App<?> app = requireNonNull(sparkJobHandle, "sparkJobHandle is null").getApp().get();
-        app.build();
-        Object appContext = app.getContext();
+        Object appContext = requireNonNull(sparkJobHandle, "sparkJobHandle is null").get();
         if (appContext instanceof SparkSession) {
             checkArgument(((SparkSession) appContext).streams().active().length > 0, "no stream pipeline");
             ((SparkSession) appContext).streams().awaitAnyTermination();

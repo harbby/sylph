@@ -74,8 +74,7 @@ public class YarnJobDescriptor
     private static final Logger LOG = LoggerFactory.getLogger(YarnJobDescriptor.class);
     private static final int MAX_ATTEMPT = 2;
 
-    private final YarnClusterConfiguration clusterConf;
-    private final YarnConfiguration yarnConfiguration;
+    private final FlinkConfiguration flinkConf;
     private final YarnClient yarnClient;
     private final JobParameter appConf;
     private final String jobName;
@@ -84,19 +83,19 @@ public class YarnJobDescriptor
     private Path flinkJar;
 
     YarnJobDescriptor(
-            final YarnClusterConfiguration clusterConf,
-            final YarnClient yarnClient,
-            final JobParameter appConf,
+            FlinkConfiguration flinkConf,
+            YarnClient yarnClient,
+            YarnConfiguration yarnConfiguration,
+            JobParameter appConf,
             String jobName,
             Iterable<Path> userProvidedJars)
     {
-        super(clusterConf.flinkConfiguration(), clusterConf.yarnConf(), clusterConf.appRootDir(), yarnClient, false);
+        super(flinkConf.flinkConfiguration(), yarnConfiguration, flinkConf.getConfigurationDirectory(), yarnClient, false);
         this.jobName = jobName;
-        this.clusterConf = clusterConf;
+        this.flinkConf = flinkConf;
         this.yarnClient = yarnClient;
         this.appConf = appConf;
         this.userProvidedJars = userProvidedJars;
-        this.yarnConfiguration = clusterConf.yarnConf();
     }
 
     @Override
@@ -137,7 +136,7 @@ public class YarnJobDescriptor
     public ClusterClient<ApplicationId> deploy(JobGraph jobGraph, boolean detached)
             throws Exception
     {
-        jobGraph.setAllowQueuedScheduling(true);
+        //jobGraph.setAllowQueuedScheduling(true);
         YarnClientApplication application = yarnClient.createApplication();
         ApplicationReport report = startAppMaster(application, jobGraph);
 
@@ -161,11 +160,12 @@ public class YarnJobDescriptor
         ApplicationId appId = appContext.getApplicationId();
         appContext.setMaxAppAttempts(MAX_ATTEMPT);
 
-        Path yarnAppDir = new Path(clusterConf.appRootDir(), appContext.getApplicationId().toString());
+        FileSystem fileSystem = FileSystem.get(yarnClient.getConfig());
+        Path uploadingDir = new Path(new Path(fileSystem.getHomeDirectory(), ".sylph"), appId.toString());
 
         Map<String, LocalResource> localResources = new HashMap<>();
         Set<Path> shippedPaths = new HashSet<>();
-        collectLocalResources(yarnAppDir, localResources, shippedPaths, appId, jobGraph);
+        collectLocalResources(uploadingDir, localResources, shippedPaths, appId, jobGraph);
 
         final ContainerLaunchContext amContainer = setupApplicationMasterContainer(
                 getYarnJobClusterEntrypoint(),
@@ -185,14 +185,14 @@ public class YarnJobDescriptor
 
         // Setup CLASSPATH and environment variables for ApplicationMaster
         final Map<String, String> appMasterEnv = setUpAmEnvironment(
-                yarnAppDir,
+                uploadingDir,
                 appId,
                 classPath,
                 shippedFiles,
                 getDynamicPropertiesEncoded()
         );
         // set classpath from YARN configuration
-        Utils.setupYarnClassPath(this.yarnConfiguration, appMasterEnv);
+        Utils.setupYarnClassPath(yarnClient.getConfig(), appMasterEnv);
         amContainer.setEnvironment(appMasterEnv);
 
         // Set up resource type requirements for ApplicationMaster
@@ -210,7 +210,7 @@ public class YarnJobDescriptor
         }
 
         // add a hook to clean up in case deployment fails
-        Thread deploymentFailureHook = new DeploymentFailureHook(yarnClient, application, yarnAppDir);
+        Thread deploymentFailureHook = new DeploymentFailureHook(yarnClient, application, uploadingDir);
         Runtime.getRuntime().addShutdownHook(deploymentFailureHook);
         LOG.info("Submitting application master {}", appId);
         yarnClient.submitApplication(appContext);
@@ -266,7 +266,7 @@ public class YarnJobDescriptor
     }
 
     private void collectLocalResources(
-            Path yarnAppDir,
+            Path uploadingDir,
             Map<String, LocalResource> resources,
             Set<Path> shippedPaths,
             ApplicationId appId,
@@ -281,7 +281,7 @@ public class YarnJobDescriptor
                 ObjectOutputStream obOutput = new ObjectOutputStream(output)) {
             obOutput.writeObject(jobGraph);
         }
-        LocalResource graph = setupLocalResource(new Path(fp.toURI()), yarnAppDir, "");
+        LocalResource graph = setupLocalResource(new Path(fp.toURI()), uploadingDir, "");
         resources.put("job.graph", graph);
         shippedPaths.add(ConverterUtils.getPathFromYarnURL(graph.getResource()));
         //------------------------------------------------------------------------
@@ -291,18 +291,18 @@ public class YarnJobDescriptor
         File tmpConfigurationFile = File.createTempFile(appId + "-flink-conf.yaml", (String) null);
         tmpConfigurationFile.deleteOnExit();
         BootstrapTools.writeConfiguration(configuration, tmpConfigurationFile);
-        LocalResource remotePathConf = setupLocalResource(new Path(tmpConfigurationFile.toURI()), yarnAppDir, "");
+        LocalResource remotePathConf = setupLocalResource(new Path(tmpConfigurationFile.toURI()), uploadingDir, "");
         resources.put("flink-conf.yaml", remotePathConf);
         shippedPaths.add(ConverterUtils.getPathFromYarnURL(remotePathConf.getResource()));
 
         //-------------uploading flink jar----------------
-        Path flinkJar = clusterConf.flinkJar();
-        LocalResource flinkJarResource = setupLocalResource(flinkJar, yarnAppDir, ""); //放到 Appid/根目录下
+        Path flinkJar = flinkConf.flinkJar();
+        LocalResource flinkJarResource = setupLocalResource(flinkJar, uploadingDir, ""); //放到 Appid/根目录下
         this.flinkJar = ConverterUtils.getPathFromYarnURL(flinkJarResource.getResource());
         resources.put("flink.jar", flinkJarResource);
 
-        for (Path p : clusterConf.resourcesToLocalize()) {  //主要是 flink.jar log4f.propors 和 flink.yaml 三个文件
-            LocalResource resource = setupLocalResource(p, yarnAppDir, ""); //这些需要放到根目录下
+        for (Path p : flinkConf.resourcesToLocalize()) {  //主要是 flink.jar log4f.propors 和 flink.yaml 三个文件
+            LocalResource resource = setupLocalResource(p, uploadingDir, ""); //这些需要放到根目录下
             resources.put(p.getName(), resource);
             if ("log4j.properties".equals(p.getName())) {
                 shippedPaths.add(ConverterUtils.getPathFromYarnURL(resource.getResource()));
@@ -315,7 +315,7 @@ public class YarnJobDescriptor
                 LOG.warn("Duplicated name in the shipped files {}", p);
             }
             else {
-                LocalResource resource = setupLocalResource(p, yarnAppDir, "jars"); //这些放到 jars目录下
+                LocalResource resource = setupLocalResource(p, uploadingDir, "jars"); //这些放到 jars目录下
                 resources.put(name, resource);
                 shippedPaths.add(ConverterUtils.getPathFromYarnURL(resource.getResource()));
             }
@@ -337,7 +337,7 @@ public class YarnJobDescriptor
 
     private LocalResource setupLocalResource(
             Path localSrcPath,
-            Path homedir,
+            Path uploadingDir,
             String relativeTargetPath)
             throws IOException
     {
@@ -350,11 +350,10 @@ public class YarnJobDescriptor
         String suffix = "." + (relativeTargetPath.isEmpty() ? "" : "/" + relativeTargetPath)
                 + "/" + localSrcPath.getName();
 
-        Path dst = new Path(homedir, suffix);
+        FileSystem hdfs = FileSystem.get(yarnClient.getConfig());
+        Path dst = new Path(uploadingDir, suffix);
         LOG.info("Uploading {}", dst);
 
-        FileSystem hdfs = FileSystem.get(yarnClient.getConfig());
-        //hdfs.getHomeDirectory();
         hdfs.copyFromLocalFile(false, true, localSrcPath, dst);
 
         // now create the resource instance
@@ -363,7 +362,7 @@ public class YarnJobDescriptor
     }
 
     private Map<String, String> setUpAmEnvironment(
-            Path yarnAppDir,
+            Path uploadingDir,
             ApplicationId appId,
             String amClassPath,
             String shipFiles,
@@ -372,7 +371,6 @@ public class YarnJobDescriptor
     {
         final Map<String, String> appMasterEnv = new HashMap<>();
 
-        // set Flink app class path
         appMasterEnv.put(YarnConfigKeys.ENV_FLINK_CLASSPATH, amClassPath);
 
         // set Flink on YARN internal configuration values
@@ -380,13 +378,12 @@ public class YarnJobDescriptor
         appMasterEnv.put(YarnConfigKeys.ENV_TM_MEMORY, String.valueOf(appConf.getTaskManagerMemoryMb()));
         appMasterEnv.put(YarnConfigKeys.FLINK_JAR_PATH, flinkJar.toString());
         appMasterEnv.put(YarnConfigKeys.ENV_APP_ID, appId.toString());
-        appMasterEnv.put(YarnConfigKeys.ENV_CLIENT_HOME_DIR, clusterConf.appRootDir()); //$home/.flink/appid 这个目录里面存放临时数据
+        appMasterEnv.put(YarnConfigKeys.ENV_CLIENT_HOME_DIR, uploadingDir.getParent().toString()); //$home/.flink/appid 这个目录里面存放临时数据
         appMasterEnv.put(YarnConfigKeys.ENV_CLIENT_SHIP_FILES, shipFiles);
         appMasterEnv.put(YarnConfigKeys.ENV_SLOTS, String.valueOf(appConf.getTaskManagerSlots()));
         appMasterEnv.put(YarnConfigKeys.ENV_DETACHED, String.valueOf(true));  //是否分离 分离就cluser模式 否则是client模式
-        appMasterEnv.put(YarnConfigKeys.FLINK_YARN_FILES, yarnAppDir.toUri().toString());
-        appMasterEnv.put(YarnConfigKeys.ENV_HADOOP_USER_NAME,
-                UserGroupInformation.getCurrentUser().getUserName());
+        appMasterEnv.put(YarnConfigKeys.FLINK_YARN_FILES, uploadingDir.toUri().toString());
+        appMasterEnv.put(YarnConfigKeys.ENV_HADOOP_USER_NAME, UserGroupInformation.getCurrentUser().getUserName());
 
         if (dynamicProperties != null) {
             appMasterEnv.put(YarnConfigKeys.ENV_DYNAMIC_PROPERTIES, dynamicProperties);
@@ -441,7 +438,7 @@ public class YarnJobDescriptor
             failSessionDuringDeployment(yarnClient, yarnApplication);
             LOG.info("Deleting files in {}.", yarnFilesDir);
             try {
-                FileSystem fs = FileSystem.get(yarnConfiguration);
+                FileSystem fs = FileSystem.get(yarnClient.getConfig());
 
                 if (!fs.delete(yarnFilesDir, true)) {
                     throw new IOException("Deleting files in " + yarnFilesDir + " was unsuccessful");

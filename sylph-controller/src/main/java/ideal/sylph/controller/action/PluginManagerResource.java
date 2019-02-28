@@ -69,7 +69,7 @@ public class PluginManagerResource
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
     public Map getAllPlugins(@QueryParam("actuator") String actuator)
     {
-        checkArgument(!Strings.isNullOrEmpty(actuator), "actuator not setting");
+        checkArgument(!Strings.isNullOrEmpty(actuator), "actuator [" + actuator + "] not setting");
         return sylphContext.getPlugins(actuator).stream().map(pluginInfo -> {
             Map config = pluginInfo.getPluginConfig().stream()
                     .collect(Collectors.toMap(

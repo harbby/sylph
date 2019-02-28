@@ -54,7 +54,7 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.github.harbby.gadtry.base.Checks.checkState;
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static com.github.harbby.gadtry.base.Throwables.throwsException;
 import static ideal.sylph.spi.exception.StandardErrorCode.LOAD_MODULE_ERROR;
 import static java.util.Objects.requireNonNull;

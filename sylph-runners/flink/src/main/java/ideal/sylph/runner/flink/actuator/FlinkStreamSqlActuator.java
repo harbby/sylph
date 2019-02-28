@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.github.harbby.gadtry.jvm.JVMLauncher;
 import com.github.harbby.gadtry.jvm.JVMLaunchers;
-import com.github.harbby.gadtry.jvm.VmFuture;
 import com.google.common.collect.ImmutableSet;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
@@ -28,7 +27,6 @@ import ideal.sylph.parser.antlr.AntlrSqlParser;
 import ideal.sylph.parser.antlr.tree.CreateTable;
 import ideal.sylph.runner.flink.FlinkJobConfig;
 import ideal.sylph.runner.flink.FlinkJobHandle;
-import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobHandle;
@@ -37,6 +35,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.graph.StreamGraph;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.fusesource.jansi.Ansi;
@@ -52,7 +51,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.fusesource.jansi.Ansi.Color.GREEN;
@@ -127,17 +125,21 @@ public class FlinkStreamSqlActuator
                 .setConsole((line) -> System.out.println(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
                 .setCallable(() -> {
                     System.out.println("************ job start ***************");
-                    StreamExecutionEnvironment execEnv = FlinkEnvFactory.getStreamEnv(jobConfig);
+                    StreamExecutionEnvironment execEnv = FlinkEnvFactory.getStreamEnv(jobConfig, jobId);
                     StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(execEnv);
                     StreamSqlBuilder streamSqlBuilder = new StreamSqlBuilder(tableEnv, pluginManager, new AntlrSqlParser());
                     Arrays.stream(sqlSplit).forEach(streamSqlBuilder::buildStreamBySql);
-                    return execEnv.getStreamGraph().getJobGraph();
+                    StreamGraph streamGraph = execEnv.getStreamGraph();
+                    streamGraph.setJobName(jobId);
+                    return streamGraph.getJobGraph();
                 })
                 .addUserURLClassLoader(jobClassLoader)
+                .setClassLoader(jobClassLoader)
                 .build();
 
-        VmFuture<JobGraph> result = launcher.startAndGet(jobClassLoader);
-        return result.get().orElseThrow(() -> new SylphException(JOB_BUILD_ERROR, result.getOnFailure()));
+        JobGraph jobGraph = launcher.startAndGet();
+        //setJobConfig(jobGraph, jobConfig, jobClassLoader, jobId);
+        return jobGraph;
     }
 
     public static class SqlFlow

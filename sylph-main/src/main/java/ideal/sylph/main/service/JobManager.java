@@ -70,12 +70,12 @@ public final class JobManager
                 containers.forEach((jobId, container) -> {
                     Job.Status status = container.getStatus();
                     if (status == STOP) {
+                        logger.warn("Job {}[{}] Status is {}, Start Submit", jobId,
+                                container.getRunId(), status);
+                        container.setStatus(STARTING);
                         Future future = jobStartPool.submit(() -> {
                             try {
                                 Thread.currentThread().setName("job_submit_" + jobId);
-                                logger.warn("Job {}[{}] Status is {}, Soon to start", jobId,
-                                        container.getRunId(), status);
-                                container.setStatus(STARTING);
                                 Optional<String> runId = container.run();
                                 container.setStatus(RUNNING);
                                 runId.ifPresent(result -> metadataManager.addMetadata(jobId, result));

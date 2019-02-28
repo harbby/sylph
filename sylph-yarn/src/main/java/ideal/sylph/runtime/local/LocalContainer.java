@@ -15,80 +15,59 @@
  */
 package ideal.sylph.runtime.local;
 
-import com.github.harbby.gadtry.jvm.JVMLauncher;
-import com.github.harbby.gadtry.jvm.JVMLaunchers;
+import com.github.harbby.gadtry.jvm.VmFuture;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Field;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-public class LocalContainer
+public abstract class LocalContainer
         implements JobContainer
 {
     private static final Logger logger = LoggerFactory.getLogger(LocalContainer.class);
 
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
-
-    private final JVMLaunchers.VmBuilder<Boolean> vmBuilder;
-
-    protected JVMLauncher<Boolean> launcher;
-    protected String url = null;
-
-    public LocalContainer(JVMLaunchers.VmBuilder<Boolean> vmBuilder)
-    {
-        this.vmBuilder = vmBuilder;
-        this.launcher = vmBuilder.build();
-    }
+    private VmFuture vmFuture;
+    private Job.Status status = Job.Status.STOP;
 
     @Override
     public String getRunId()
     {
-        Process process = launcher.getProcess();
-        if (process == null) {
-            return "none";
+        if (vmFuture == null) {
+            return "node";
         }
+
+        Process process = vmFuture.getVmProcess();
         String system = process.getClass().getName();
         if ("java.lang.UNIXProcess".equals(system)) {
-            try {
-                Field field = process.getClass().getDeclaredField("pid");
-                field.setAccessible(true);
-                int pid = (int) field.get(process);
-                return String.valueOf(pid);
-            }
-            catch (NoSuchFieldException | IllegalAccessException ignored) {
-            }
+            int pid = vmFuture.getPid();
+            return String.valueOf(pid);
         }
         else {
             //todo: widnows get pid
             return "windows";
         }
-        return "none";
     }
 
     @Override
-    public synchronized Optional<String> run()
+    public final synchronized Optional<String> run()
             throws Exception
     {
-        executor.submit(() -> {
-            launcher.startAndGet();
-            return true;
-        });
-        this.setStatus(Job.Status.RUNNING);
-        return Optional.empty();
+        this.vmFuture = startAsyncExecutor();
+        return Optional.of(String.valueOf(vmFuture.getPid()));
     }
+
+    public abstract VmFuture startAsyncExecutor()
+            throws Exception;
 
     @Override
     public synchronized void shutdown()
     {
         //url+ "jobs/{job_id}/yarn-cancel/";
-        if (launcher.getProcess() != null) {
-            launcher.getProcess().destroy();
+        if (vmFuture != null) {
+            vmFuture.cancel();
         }
     }
 
@@ -100,21 +79,15 @@ public class LocalContainer
     @Override
     public Job.Status getStatus()
     {
-        Process process = launcher.getProcess();
-        if (process == null) {
-            return Job.Status.STOP;
+        if (status == Job.Status.RUNNING) {
+            return vmFuture.isRunning() ? Job.Status.RUNNING : Job.Status.STOP;
         }
-        return process.isAlive() ? Job.Status.RUNNING : Job.Status.STOP;
+        return status;
     }
 
     @Override
     public void setStatus(Job.Status status)
     {
-    }
-
-    @Override
-    public String getJobUrl()
-    {
-        return url;
+        this.status = status;
     }
 }

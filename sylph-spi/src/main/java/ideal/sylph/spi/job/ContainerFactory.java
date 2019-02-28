@@ -17,9 +17,12 @@ package ideal.sylph.spi.job;
 
 public interface ContainerFactory
 {
-    JobContainer getYarnContainer(Job job, String lastRunid);
+    JobContainer createYarnContainer(Job job, String lastRunid);
 
-    JobContainer getLocalContainer(Job job, String lastRunid);
+    JobContainer createLocalContainer(Job job, String lastRunid);
 
-    JobContainer getK8sContainer(Job job, String lastRunid);
+    default JobContainer createK8sContainer(Job job, String lastRunid)
+    {
+        throw new UnsupportedOperationException("this k8s have't support!");
+    }
 }

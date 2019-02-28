@@ -19,7 +19,6 @@ import com.github.harbby.gadtry.ioc.Autowired;
 import com.github.harbby.gadtry.ioc.IocFactory;
 import com.github.harbby.gadtry.jvm.JVMLauncher;
 import com.github.harbby.gadtry.jvm.JVMLaunchers;
-import com.github.harbby.gadtry.jvm.VmFuture;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.etl.Row;
@@ -28,8 +27,6 @@ import ideal.sylph.runner.flink.FlinkBean;
 import ideal.sylph.runner.flink.FlinkJobConfig;
 import ideal.sylph.runner.flink.FlinkJobHandle;
 import ideal.sylph.runner.flink.etl.FlinkNodeLoader;
-import ideal.sylph.spi.App;
-import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.EtlFlow;
 import ideal.sylph.spi.job.EtlJobActuatorHandle;
 import ideal.sylph.spi.job.Flow;
@@ -39,6 +36,7 @@ import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.graph.StreamGraph;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.fusesource.jansi.Ansi;
@@ -51,7 +49,6 @@ import java.net.URLClassLoader;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static ideal.sylph.spi.GraphAppUtil.buildGraph;
-import static ideal.sylph.spi.exception.StandardErrorCode.JOB_BUILD_ERROR;
 import static org.fusesource.jansi.Ansi.Color.GREEN;
 import static org.fusesource.jansi.Ansi.Color.YELLOW;
 
@@ -98,14 +95,14 @@ public class FlinkStreamEtlActuator
                 .toString();
     }
 
-    private static JobGraph compile(String jobId, EtlFlow flow, JobParameter jobParameter, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
+    private static JobGraph compile(String jobId, EtlFlow flow, JobParameter jobConfig, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
             throws Exception
     {
         //---- build flow----
         JVMLauncher<JobGraph> launcher = JVMLaunchers.<JobGraph>newJvm()
                 .setCallable(() -> {
                     System.out.println("************ job start ***************");
-                    StreamExecutionEnvironment execEnv = FlinkEnvFactory.getStreamEnv(jobParameter);
+                    StreamExecutionEnvironment execEnv = FlinkEnvFactory.getStreamEnv(jobConfig, jobId);
                     StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(execEnv);
                     SourceContext sourceContext = new SourceContext()
                     {
@@ -121,32 +118,22 @@ public class FlinkStreamEtlActuator
                             throw new IllegalArgumentException("this method have't support!");
                         }
                     };
-                    App<StreamTableEnvironment> app = new App<StreamTableEnvironment>()
-                    {
-                        @Override
-                        public StreamTableEnvironment getContext()
-                        {
-                            return tableEnv;
-                        }
 
-                        @Override
-                        public void build()
-                                throws Exception
-                        {
-                            final IocFactory iocFactory = IocFactory.create(new FlinkBean(tableEnv), binder -> {
-                                binder.bind(SourceContext.class, sourceContext);
-                            });
-                            FlinkNodeLoader loader = new FlinkNodeLoader(pluginManager, iocFactory);
-                            buildGraph(loader, jobId, flow).run();
-                        }
-                    };
-                    app.build();
-                    return execEnv.getStreamGraph().getJobGraph();
+                    final IocFactory iocFactory = IocFactory.create(new FlinkBean(tableEnv), binder -> {
+                        binder.bind(SourceContext.class, sourceContext);
+                    });
+                    FlinkNodeLoader loader = new FlinkNodeLoader(pluginManager, iocFactory);
+                    buildGraph(loader, jobId, flow);
+                    StreamGraph streamGraph = execEnv.getStreamGraph();
+                    streamGraph.setJobName(jobId);
+                    return streamGraph.getJobGraph();
                 })
                 .setConsole((line) -> System.out.println(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
                 .addUserURLClassLoader(jobClassLoader)
+                .setClassLoader(jobClassLoader)
                 .build();
-        VmFuture<JobGraph> result = launcher.startAndGet(jobClassLoader);
-        return result.get().orElseThrow(() -> new SylphException(JOB_BUILD_ERROR, result.getOnFailure()));
+        JobGraph jobGraph = launcher.startAndGet();
+        //setJobConfig(jobGraph, jobConfig, jobClassLoader, jobId);
+        return jobGraph;
     }
 }

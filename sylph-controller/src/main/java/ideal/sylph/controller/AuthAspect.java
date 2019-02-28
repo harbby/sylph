@@ -42,7 +42,12 @@ public class AuthAspect
                     String action = proxy.getInfo().getName();
                     logger.info("[auth] session:{}, action: {}, args: {}", id, action, proxy.getArgs());
                     Object value = proxy.proceed();
-                    return value;
+                    switch (proxy.getInfo().getName()) {
+                        case "getAllJobs":
+                            return value;  //按照权限进行过滤
+                        default:
+                            return value;
+                    }
                 });
     }
 }
