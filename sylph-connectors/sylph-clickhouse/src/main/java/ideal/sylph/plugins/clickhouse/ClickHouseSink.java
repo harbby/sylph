@@ -66,8 +66,9 @@ public class ClickHouseSink
     @Override
     public void process(Row row)
     {
-        int ith = 1;
+
         try {
+            int ith = 1;
             for (String fieldName : schema.getFieldNames()) {
                 //Byte  Double  String  Date  Long  .....
                 if (nametypes.get(fieldName).equals("java.sql.Date")) {
