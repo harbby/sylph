@@ -136,7 +136,9 @@ public class YarnJobDescriptor
     public ClusterClient<ApplicationId> deploy(JobGraph jobGraph, boolean detached)
             throws Exception
     {
-        //jobGraph.setAllowQueuedScheduling(true);
+        // this is required because the slots are allocated lazily
+        jobGraph.setAllowQueuedScheduling(true);
+        //
         YarnClientApplication application = yarnClient.createApplication();
         ApplicationReport report = startAppMaster(application, jobGraph);
 
@@ -392,7 +394,7 @@ public class YarnJobDescriptor
     }
 
     /**
-     * flink 1.5 add
+     * flink1.5 add
      */
     @Override
     public ClusterClient<ApplicationId> deployJobCluster(ClusterSpecification clusterSpecification, JobGraph jobGraph, boolean detached)

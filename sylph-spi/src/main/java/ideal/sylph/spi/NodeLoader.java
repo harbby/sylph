@@ -77,14 +77,13 @@ public interface NodeLoader<R>
 
         //Ignore the constructor in the configuration class
         try {
-            Constructor pluginConfigConstructor = type.getDeclaredConstructor();
-            logger.info("[PluginConfig] find 'no parameter' constructor with [{}]", type);
+            Constructor<? extends PluginConfig> pluginConfigConstructor = type.getDeclaredConstructor();
+            logger.debug("find 'no parameter' constructor with [{}]", type);
             pluginConfigConstructor.setAccessible(true);
-            PluginConfig pluginConfig = (PluginConfig) pluginConfigConstructor.newInstance();
-            return pluginConfig;
+            return pluginConfigConstructor.newInstance();
         }
         catch (NoSuchMethodException e) {
-            logger.warn("[PluginConfig] not find 'no parameter' constructor, use javassist inject with [{}]", type);
+            logger.info("Not find 'no parameter' constructor, use javassist inject with [{}]", type);
             ClassPool classPool = new ClassPool();
             classPool.appendClassPath(new LoaderClassPath(classLoader));
 

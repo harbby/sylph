@@ -16,11 +16,11 @@
 package ideal.sylph.spi.job;
 
 import com.github.harbby.gadtry.jvm.JVMException;
+import ideal.sylph.spi.model.PipelinePluginInfo;
 import ideal.sylph.spi.model.PipelinePluginManager;
 
 import javax.validation.constraints.NotNull;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URLClassLoader;
 import java.util.Collection;
@@ -50,7 +50,7 @@ public interface JobActuatorHandle
             throws IOException;
 
     @NotNull
-    default Collection<File> parserFlowDepends(Flow flow)
+    default Collection<PipelinePluginInfo> parserFlowDepends(Flow flow)
             throws IOException
     {
         return Collections.emptyList();
