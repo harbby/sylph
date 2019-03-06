@@ -1,3 +1,4 @@
 dependencies {
     compileOnly group: 'org.apache.flink', name: 'flink-connector-kafka-0.9_2.11', version: deps.flink
+    compileOnly group: 'com.google.code.gson', name: 'gson', version: '2.2.4'
 }

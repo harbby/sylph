@@ -100,9 +100,6 @@ public class FElasticSearch5Sink
                         map.put(schema.getFieldNames().get(i), element.getField(i));
                     }
 
-//                    for (String fieldName : schema.getFieldNames()) {
-//                        map.put(fieldName, value.getAs(fieldName));
-//                    }
                     return Requests.indexRequest()
                                 .index(index)
                                 .type(type)

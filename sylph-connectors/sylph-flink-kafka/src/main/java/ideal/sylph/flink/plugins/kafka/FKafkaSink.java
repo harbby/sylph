@@ -44,6 +44,7 @@ public class FKafkaSink
     @Override
     public void run(DataStream<Row> stream) {
 
+        //later support
     }
 
     public static class FKafka09SinkConfig

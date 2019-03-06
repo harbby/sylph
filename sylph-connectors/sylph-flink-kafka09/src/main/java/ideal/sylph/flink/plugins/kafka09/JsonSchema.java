@@ -15,6 +15,7 @@
  */
 package ideal.sylph.flink.plugins.kafka09;
 
+import com.google.gson.Gson;
 import ideal.sylph.etl.SourceContext;
 import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -26,27 +27,28 @@ import org.apache.flink.types.Row;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 
 public class JsonSchema
         implements SerializationSchema<Row>
 {
-    private static final ObjectMapper MAPPER = new ObjectMapper();
-    private final RowTypeInfo rowTypeInfo;
+    private   String[] names;
 
     public JsonSchema(SourceContext context)
     {
-        ideal.sylph.etl.Row.Schema schema = context.getSchema();
-        TypeInformation<?>[] types = schema.getFieldTypes().stream().map(TypeExtractor::createTypeInfo).toArray(TypeInformation<?>[]::new);
-        String[] names = schema.getFieldNames().toArray(new String[0]);
-        this.rowTypeInfo = new RowTypeInfo(types, names);
+         ideal.sylph.etl.Row.Schema schema = context.getSchema();
+         names = schema.getFieldNames().toArray(new String[0]);
     }
     @Override
     public byte[] serialize(Row element) {
         StringBuffer seriMsg=new StringBuffer();
-        for (int i=0;i<element.getArity();i++){
-            seriMsg.append(element.getField(i)).append(",");
+        Gson gson = new Gson();
+        Map<String, Object> map = new HashMap<>();
+        for (int i=0;i<names.length;i++){
+            map.put(names[i], element.getField(i));
         }
-        return seriMsg.toString().substring(0,seriMsg.toString().length() - 1).getBytes(StandardCharsets.UTF_8);
+        String message = gson.toJson(map);
+        return message.getBytes(StandardCharsets.UTF_8);
     }
 }
