@@ -1,6 +1,7 @@
 package ideal.sylph.flink.plugins.elasticsearch6;
 
-public class T {
+//later support
+public class FElasticSearch6Sink {
 
     public static void main(String[] args) {
         System.err.println("this is test");
