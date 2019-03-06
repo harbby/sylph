@@ -30,11 +30,15 @@ include 'sylph-connectors:sylph-hbase'
 include 'sylph-connectors:sylph-elasticsearch6'
 include 'sylph-connectors:sylph-elasticsearch5'
 include 'sylph-connectors:sylph-clickhouse'
-//----
+include 'sylph-connectors:sylph-flink-kafka09'
+include 'sylph-connectors:sylph-flink-kafka'
+include 'sylph-connectors:sylph-flink-elasticsearch5'
+include 'sylph-connectors:sylph-flink-elasticsearch6'
+include 'sylph-connectors:sylph-flink-hdfs'
+
 include 'sylph-dist'
 include 'sylph-parser'
 include 'sylph-docs'
 include 'sylph-yarn'
-//include 'sylph-clickhouse'
-//include 'sylph-elasticsearch5'
+
 

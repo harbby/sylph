@@ -4,6 +4,9 @@ dependencies {
     }
     compileOnly group: 'org.apache.flink', name: 'flink-table_2.11', version: deps.flink
     compileOnly group: 'org.slf4j', name: 'slf4j-api', version: deps.log4j12
-    compile group: 'com.github.housepower', name: 'clickhouse-native-jdbc', version: '1.5-stable'
+//    compile group: 'com.github.housepower', name: 'clickhouse-native-jdbc', version: '1.6-stable'
+    // https://mvnrepository.com/artifact/ru.yandex.clickhouse/clickhouse-jdbc
+    compile group: 'ru.yandex.clickhouse', name: 'clickhouse-jdbc', version: '0.1.50'
+
 
 }
