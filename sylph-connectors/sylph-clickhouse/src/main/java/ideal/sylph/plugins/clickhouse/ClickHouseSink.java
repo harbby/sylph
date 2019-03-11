@@ -81,8 +81,9 @@ public class ClickHouseSink
                 i += 1;
             }
             statement.addBatch();
-            if (num++ >= 2000) {
+            if (num++ >= config.bulkSize) {
                 statement.executeBatch();
+                statement.clearBatch();
                 num = 0;
             }
         }
