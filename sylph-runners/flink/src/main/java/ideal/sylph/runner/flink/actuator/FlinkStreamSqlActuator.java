@@ -30,8 +30,8 @@ import ideal.sylph.runner.flink.FlinkJobHandle;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobHandle;
+import ideal.sylph.spi.model.PipelinePluginInfo;
 import ideal.sylph.spi.model.PipelinePluginManager;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -44,7 +44,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.validation.constraints.NotNull;
 
-import java.io.File;
 import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.Collection;
@@ -73,10 +72,10 @@ public class FlinkStreamSqlActuator
 
     @NotNull
     @Override
-    public Collection<File> parserFlowDepends(Flow inFlow)
+    public Collection<PipelinePluginInfo> parserFlowDepends(Flow inFlow)
     {
         SqlFlow flow = (SqlFlow) inFlow;
-        ImmutableSet.Builder<File> builder = ImmutableSet.builder();
+        ImmutableSet.Builder<PipelinePluginInfo> builder = ImmutableSet.builder();
         AntlrSqlParser parser = new AntlrSqlParser();
 
         Stream.of(flow.getSqlSplit())
@@ -94,9 +93,7 @@ public class FlinkStreamSqlActuator
                     Map<String, Object> withConfig = createTable.getWithConfig();
                     String driverOrName = (String) requireNonNull(withConfig.get("type"), "driver is null");
                     pluginManager.findPluginInfo(driverOrName, getPipeType(createTable.getType()))
-                            .ifPresent(plugin -> FileUtils
-                                    .listFiles(plugin.getPluginFile(), null, true)
-                                    .forEach(builder::add));
+                            .ifPresent(builder::add);
                 });
         return builder.build();
     }

@@ -84,7 +84,8 @@ public final class JettyServer
                 super.prepare(baseRequest, request, response);
             }
         };
-        servlet.getRegistration().setMultipartConfig(new MultipartConfigElement("data/tmp", 1048576, 1048576, 262144));
+        //1M = 1048576
+        servlet.getRegistration().setMultipartConfig(new MultipartConfigElement("data/tmp", 1048576_00, 1048576_00, 262144));
 
         //--------------------plblic----------------------
         ServletContextHandler contextHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);  //NO_SESSIONS

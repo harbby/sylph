@@ -45,8 +45,15 @@
         <input class="form-control" rows="1" name="type" style="display: none" value="add"/>
         <div class="form-group">
             <label for="inputEmail3" class="col-sm-2 control-label">jobId：</label>
-            <div class="col-sm-10">
-                <textarea class="form-control" rows="1" name="jobId"></textarea>
+            <div class="col-sm-10" style="width: 40%">
+                <input class="form-control" type="text" rows="1" name="jobId"/>
+            </div>
+            <label for="inputEmail3" class="col-sm-2 control-label">type：</label>
+            <div class="col-sm-10" style="width: 20%">
+                <select class="form-control" type="text" rows="1" name="jobType">
+                    <option value="StreamSql">StreamingSql</option>
+                    <option value="FlinkMainClass">FlinkMainClass</option>
+                </select>
             </div>
         </div>
         <div class="form-group">
@@ -89,18 +96,4 @@
 </body>
 
 <script type="text/javascript" src="./js/stream_sql.js"></script>
-<script>
-window.onload = function () {
-    CodeMirror.fromTextArea(document.getElementById("query"), {
-        mode: 'text/x-sql',
-        lineNumbers: true,
-        styleActiveLine: true,
-        matchBrackets: true
-    }).on('change', editor => {
-        document.getElementById('query').value = editor.getValue();
-        console.log('change up value:'+ editor.getValue());
-    });
-};
-
-</script>
 </html>

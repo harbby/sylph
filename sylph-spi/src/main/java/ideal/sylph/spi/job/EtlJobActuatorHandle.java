@@ -19,11 +19,9 @@ import com.google.common.collect.ImmutableSet;
 import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.spi.model.NodeInfo;
 import ideal.sylph.spi.model.PipelinePluginInfo;
-import org.apache.commons.io.FileUtils;
 
 import javax.validation.constraints.NotNull;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Optional;
@@ -41,18 +39,17 @@ public abstract class EtlJobActuatorHandle
 
     @NotNull
     @Override
-    public Collection<File> parserFlowDepends(Flow inFlow)
+    public Collection<PipelinePluginInfo> parserFlowDepends(Flow inFlow)
             throws IOException
     {
         EtlFlow flow = (EtlFlow) inFlow;
         //---- flow parser depends ----
-        ImmutableSet.Builder<File> builder = ImmutableSet.builder();
+        ImmutableSet.Builder<PipelinePluginInfo> builder = ImmutableSet.builder();
         for (NodeInfo nodeInfo : flow.getNodes()) {
             String driverOrName = nodeInfo.getDriverClass();
             PipelinePlugin.PipelineType type = PipelinePlugin.PipelineType.valueOf(nodeInfo.getNodeType());
             Optional<PipelinePluginInfo> pluginInfo = this.getPluginManager().findPluginInfo(driverOrName, type);
-            pluginInfo.ifPresent(plugin -> FileUtils.listFiles(plugin.getPluginFile(), null, true)
-                    .forEach(builder::add));
+            pluginInfo.ifPresent(builder::add);
         }
         return builder.build();
     }

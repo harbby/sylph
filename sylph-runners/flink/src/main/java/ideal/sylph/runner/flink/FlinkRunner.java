@@ -17,6 +17,7 @@ package ideal.sylph.runner.flink;
 
 import com.github.harbby.gadtry.classloader.DirClassLoader;
 import com.github.harbby.gadtry.ioc.IocFactory;
+import ideal.sylph.runner.flink.actuator.FlinkMainClassActuator;
 import ideal.sylph.runner.flink.actuator.FlinkStreamEtlActuator;
 import ideal.sylph.runner.flink.actuator.FlinkStreamSqlActuator;
 import ideal.sylph.spi.Runner;
@@ -63,13 +64,14 @@ public class FlinkRunner
                 ((DirClassLoader) classLoader).addDir(new File(flinkHome, "lib"));
             }
             IocFactory injector = IocFactory.create(binder -> {
+                binder.bind(FlinkMainClassActuator.class).withSingle();
                 binder.bind(FlinkStreamEtlActuator.class).withSingle();
                 binder.bind(FlinkStreamSqlActuator.class).withSingle();
                 //----------------------------------
                 binder.bind(PipelinePluginManager.class).byCreator(() -> createPipelinePluginManager(context)).withSingle();
             });
 
-            return Stream.of(FlinkStreamEtlActuator.class, FlinkStreamSqlActuator.class)
+            return Stream.of(FlinkMainClassActuator.class, FlinkStreamEtlActuator.class, FlinkStreamSqlActuator.class)
                     .map(injector::getInstance).collect(Collectors.toSet());
         }
         catch (Exception e) {

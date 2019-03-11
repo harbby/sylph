@@ -26,6 +26,18 @@ function getUrlParam(paramName) {
 
 /*页面加载*/
 $(function () {
+    var sql_editor = CodeMirror.fromTextArea(document.getElementById("query"), {
+        mode: 'text/x-sql',
+        lineNumbers: true,
+        styleActiveLine: true,
+        matchBrackets: true
+    });
+    sql_editor.on('change', editor => {
+        document.getElementById('query').value = editor.getValue();
+        console.log('change up value:'+ editor.getValue());
+    });
+
+
     /*add or edit*/
     var type = getUrlParam("type");
     if (type === "add") {
@@ -38,8 +50,11 @@ $(function () {
             data: {},
             cache: false,
             success: function (result) {
-                $("textarea[name=jobId]").val(result.jobId);
+                $("input[name=jobId]").val(result.jobId);
+                $("select[name=jobType]").val(result.jobType)
                 $("textarea[name=query]").val(result.query);
+                sql_editor.setValue(result.query);
+
                 var congfigString = "";
                 $.each(result.config.config, function (key, value) {
                     congfigString += key + "= " + value + "\n"
