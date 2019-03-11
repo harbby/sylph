@@ -40,7 +40,7 @@ public class FlinkEnvFactory
 
     public static StreamExecutionEnvironment getStreamEnv(JobParameter jobConfig, String jobId)
     {
-        StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.createLocalEnvironment();
+        StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.getExecutionEnvironment();
 
         return setJobConfig(execEnv, jobConfig, jobId);
     }

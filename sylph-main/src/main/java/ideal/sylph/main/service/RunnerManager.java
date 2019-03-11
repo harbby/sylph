@@ -36,6 +36,7 @@ import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.model.PipelinePluginInfo;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -210,7 +211,11 @@ public class RunnerManager
             jobClassLoader.addDir(jobWorkDir);
 
             Flow flow = jobActuatorHandle.formFlow(flowBytes);
-            jobClassLoader.addJarFiles(jobActuatorHandle.parserFlowDepends(flow));
+
+            Set<File> files = jobActuatorHandle.parserFlowDepends(flow).stream().flatMap(plugin ->
+                    FileUtils.listFiles(plugin.getPluginFile(), null, true).stream()
+            ).collect(Collectors.toSet());
+            jobClassLoader.addJarFiles(files);
             JobHandle jobHandle = jobActuatorHandle.formJob(jobId, flow, jobConfig, jobClassLoader);
             Collection<URL> dependFiles = getJobDependFiles(jobClassLoader);
             return new Job()

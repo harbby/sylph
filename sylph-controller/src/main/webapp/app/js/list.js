@@ -49,9 +49,9 @@ $(function () {
                 }
                 var tmp =
                     '<div class="row">' +
-                    '<div class="col-md-2">' + jobId + '</div>' +
+                    '<div class="col-md-3">' + jobId + '</div>' +
                     '<div class="col-md-3">' + yarnId + '</div>' +
-                    '<div class="col-md-1">' + type + '</div>' +
+                    '<div class="col-md-2">' + type + '</div>' +
                     // '<div class="col-md-2">' + create_time + '</div>' +
                     '<div class="col-md-1">' + status + '</div>' +
                     '<div class="col-md-3" jobId="' + jobId + '">' + button + '</div>' +
@@ -103,13 +103,12 @@ $(function () {
     $(document).on("click", ".btn_edit", function () {
         var id = $(this).attr("data-id");
         var type = $(this).attr("data-type");
-        if (type == 'StreamSql') {
+        if (type == 'StreamSql' || type == 'FlinkMainClass') {
             window.location.href = "stream_sql.html?type=edit&jobId=" + id;
         }
         else {
             window.location.href = "etl.html?jobId=" + id;
         }
-
     });
 
 });

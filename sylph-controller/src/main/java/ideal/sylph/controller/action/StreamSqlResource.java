@@ -16,16 +16,20 @@
 package ideal.sylph.controller.action;
 
 import com.github.harbby.gadtry.base.Throwables;
+import com.github.harbby.gadtry.io.IOUtils;
 import com.github.harbby.gadtry.jvm.JVMException;
 import com.google.common.collect.ImmutableMap;
 import ideal.sylph.spi.SylphContext;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Job;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.Part;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -38,7 +42,9 @@ import javax.ws.rs.core.UriInfo;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -84,9 +90,14 @@ public class StreamSqlResource
             jobId = requireNonNull(request.getParameter("jobId"), "job jobId is not empty");
             String flow = request.getParameter("query");
             String configString = request.getParameter("config");
+            String jobType = request.getParameter("jobType");
             checkState(isNotBlank(jobId), "JobId IS NULL");
             checkState(isNotBlank(flow), "SQL query IS NULL");
-            sylphContext.saveJob(jobId, flow, ImmutableMap.of("type", "StreamSql", "config", parserJobConfig(configString)));
+
+            File workDir = new File("jobs/" + jobId); //工作目录
+            saveFiles(workDir, request);
+
+            sylphContext.saveJob(jobId, flow, ImmutableMap.of("type", jobType, "config", parserJobConfig(configString)));
             Map out = ImmutableMap.of(
                     "jobId", jobId,
                     "type", "save",
@@ -95,16 +106,14 @@ public class StreamSqlResource
             logger.info("save job {}", jobId);
             return out;
         }
-        catch (JVMException e) {
-            logger.warn("save job {} failed: {}", jobId, e.getMessage());
-            String message = e.getMessage();
-            return ImmutableMap.of("type", "save",
-                    "status", "error",
-                    "msg", message);
-        }
         catch (Exception e) {
-            logger.warn("save job {} failed: {}", jobId, e);
-            String message = Throwables.getStackTraceAsString(e);
+            Throwable error = e;
+            if (e instanceof InvocationTargetException) {
+                error = ((InvocationTargetException) e).getTargetException();
+            }
+            String message = error instanceof JVMException ? error.getMessage() : Throwables.getStackTraceAsString(error);
+
+            logger.warn("save job {} failed: {}", jobId, message);
             return ImmutableMap.of("type", "save",
                     "status", "error",
                     "msg", message);
@@ -133,10 +142,34 @@ public class StreamSqlResource
                 .put("query", job.getFlow().toString())
                 .put("config", job.getConfig())
                 .put("msg", "Get job successfully")
+                .put("jobType", job.getActuatorName())
                 .put("status", "ok")
                 .put("files", files)
                 .put("jobId", jobId)
                 .build();
+    }
+
+    private void saveFiles(File workDir, HttpServletRequest request)
+            throws IOException, ServletException
+    {
+        //通过表单中的name属性获取表单域中的文件
+        //name 为 selectFile(file的里面可能有删除的)的文件
+        List<Part> parts = request.getParts().stream()
+                .filter(part -> "file".equals(part.getName()) && isNotBlank(part.getSubmittedFileName()))
+                .collect(Collectors.toList());
+        if (parts.isEmpty()) {
+            return;
+        }
+
+        File downDir = new File(workDir, "files");
+        FileUtils.deleteDirectory(downDir);
+        downDir.mkdirs();
+        for (Part part : parts) {
+            IOUtils.copyBytes(part.getInputStream(),
+                    new FileOutputStream(new File(downDir, part.getSubmittedFileName()), false),
+                    1024,
+                    true);
+        }
     }
 
     static Map parserJobConfig(String configString)
