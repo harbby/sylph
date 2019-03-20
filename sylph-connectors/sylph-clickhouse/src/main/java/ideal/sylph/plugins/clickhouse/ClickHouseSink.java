@@ -83,7 +83,6 @@ public class ClickHouseSink
             statement.addBatch();
             if (num++ >= config.bulkSize) {
                 statement.executeBatch();
-                statement.clearBatch();
                 num = 0;
             }
         }
@@ -141,7 +140,7 @@ public class ClickHouseSink
 
         @Name("bulkSize")
         @Description("this is ck bulkSize")
-        private int bulkSize = 20000;
+        private long bulkSize = 20000;
 
         public String getJdbcUrl()
         {
@@ -161,6 +160,10 @@ public class ClickHouseSink
         public String getQuery()
         {
             return query;
+        }
+
+        public long getBulkSize() {
+            return bulkSize;
         }
     }
 
