@@ -17,75 +17,68 @@ package ideal.sylph.plugins.clickhouse;
 
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
+import ideal.sylph.etl.CheckHandler;
 import ideal.sylph.etl.PluginConfig;
 import ideal.sylph.etl.Row;
-import ideal.sylph.etl.SinkContext;
 import ideal.sylph.etl.api.RealTimeSink;
+import org.apache.flink.shaded.guava18.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.apache.flink.calcite.shaded.com.google.common.base.Preconditions.checkState;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Name("ClickHouseSink")
 @Description("this is ClickHouseSink sink plugin")
 public class ClickHouseSink
-        implements RealTimeSink
+        implements RealTimeSink , CheckHandler
 {
     private static final Logger logger = LoggerFactory.getLogger(ClickHouseSink.class);
 
     private final ClickHouseSinkConfig config;
     private final String prepareStatementQuery;
-    private final Row.Schema schema;
-    private int idIndex = -1;
+    private final String[] keys;
+
     private transient Connection connection;
     private transient PreparedStatement statement;
     private int num = 0;
-    private final Map<String, String> nametypes;
 
-    public ClickHouseSink(SinkContext context, ClickHouseSinkConfig clickHouseSinkConfig)
+    public ClickHouseSink(ClickHouseSinkConfig clickHouseSinkConfig)
     {
         this.config = clickHouseSinkConfig;
-        checkState(config.getQuery() != null, "insert into query not setting");
+        Preconditions.checkState(config.getQuery() != null, "insert into query not setting");
         this.prepareStatementQuery = config.getQuery().replaceAll("\\$\\{.*?}", "?");
-        schema = context.getSchema();
-        Map<String, String> nt = new HashMap<String, String>();
-        for (int i = 0; i < schema.getFieldNames().size(); i++) {
-            nt.put(schema.getFieldNames().get(i), schema.getFieldTypes().get(i).toString().split(" ")[1]);
+        Matcher matcher = Pattern.compile("(?<=\\$\\{)(.+?)(?=\\})").matcher(config.getQuery());
+        List<String> builder = new ArrayList<>();
+        while (matcher.find()) {
+            builder.add(matcher.group());
         }
-        this.nametypes = nt;
-    }
+        this.keys = builder.toArray(new String[0]);
 
+    }
+    @Override
+    public void check()
+            throws Exception
+    {
+        try {
+            this.open(0, 9);
+        }
+        finally {
+            this.close(null);
+        }
+    }
     @Override
     public void process(Row row)
     {
-        int ith = 1;
         try {
-            for (String fieldName : schema.getFieldNames()) {
-                //Byte  Double  String  Date  Long  .....
-                if (nametypes.get(fieldName).equals("java.sql.Date")) {
-                    statement.setDate(ith, java.sql.Date.valueOf(row.getAs(fieldName).toString()));
-                }
-                else if ((nametypes.get(fieldName).equals("java.lang.Long"))) {
-                    statement.setLong(ith, row.getAs(fieldName));
-                }
-                else if ((nametypes.get(fieldName).equals("java.lang.Double"))) {
-                    statement.setDouble(ith, row.getAs(fieldName));
-                }
-                else if ((nametypes.get(fieldName).equals("java.lang.Integer"))) {
-                    statement.setByte(ith, Byte.valueOf(row.getAs(fieldName)));
-                }
-                else {
-                    statement.setString(ith, row.getAs(fieldName));
-                }
-                ith += 1;
+            int i = 1;
+            for (String key : keys) {
+                Object value = isNumeric(key) ? row.getAs(Integer.parseInt(key)) : row.getAs(key);
+                statement.setObject(i, value);
+                i += 1;
             }
             statement.addBatch();
             if (num++ >= config.bulkSize) {
@@ -102,8 +95,8 @@ public class ClickHouseSink
     public boolean open(long partitionId, long version)
             throws SQLException, ClassNotFoundException
     {
-        Class.forName("com.github.housepower.jdbc.ClickHouseDriver");
-        this.connection = DriverManager.getConnection(config.jdbcUrl, config.user, config.password);
+        Class.forName("ru.yandex.clickhouse.ClickHouseDriver");
+        this.connection = (Connection)DriverManager.getConnection(config.jdbcUrl, config.user, config.password);
         this.statement = connection.prepareStatement(prepareStatementQuery);
         return true;
     }
@@ -131,7 +124,7 @@ public class ClickHouseSink
     {
         @Name("url")
         @Description("this is ck jdbc url")
-        private String jdbcUrl = "jdbc:clickhouse://localhost:9000";
+        private String jdbcUrl = "jdbc:clickhouse://localhost:8123";
 
         @Name("userName")
         @Description("this is ck userName")
@@ -147,11 +140,7 @@ public class ClickHouseSink
 
         @Name("bulkSize")
         @Description("this is ck bulkSize")
-        private int bulkSize = 20000;
-
-        @Name("eventDate_field")
-        @Description("this is your data eventDate_field, 必须是 YYYY-mm--dd位时间戳")
-        private String eventTimeName;
+        private long bulkSize = 20000;
 
         public String getJdbcUrl()
         {
@@ -172,5 +161,19 @@ public class ClickHouseSink
         {
             return query;
         }
+
+        public long getBulkSize() {
+            return bulkSize;
+        }
+    }
+
+    private static boolean isNumeric(String str)
+    {
+        for (int i = str.length(); --i >= 0; ) {
+            if (!Character.isDigit(str.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 }
