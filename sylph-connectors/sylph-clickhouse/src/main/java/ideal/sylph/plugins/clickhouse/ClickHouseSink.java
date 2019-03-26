@@ -19,6 +19,7 @@ import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.etl.PluginConfig;
 import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Schema;
 import ideal.sylph.etl.SinkContext;
 import ideal.sylph.etl.api.RealTimeSink;
 import org.slf4j.Logger;
@@ -43,7 +44,7 @@ public class ClickHouseSink
 
     private final ClickHouseSinkConfig config;
     private final String prepareStatementQuery;
-    private final Row.Schema schema;
+    private final Schema schema;
     private int idIndex = -1;
     private transient Connection connection;
     private transient PreparedStatement statement;

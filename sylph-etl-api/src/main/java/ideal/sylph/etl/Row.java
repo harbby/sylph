@@ -15,13 +15,7 @@
  */
 package ideal.sylph.etl;
 
-import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static java.util.Objects.requireNonNull;
 
 public interface Row
 {
@@ -91,90 +85,6 @@ public interface Row
         public int size()
         {
             return values.length;
-        }
-    }
-
-    public static final class Schema
-            implements Serializable
-    {
-        private final List<Field> fields;
-        private final List<String> fieldNames;
-        private final List<Class<?>> types;
-
-        private Schema(List<Field> fields)
-        {
-            this.fields = requireNonNull(fields, "fields must not null");
-            this.fieldNames = fields.stream().map(Field::getName).collect(Collectors.toList());
-            this.types = fields.stream().map(Field::getJavaType).collect(Collectors.toList());
-        }
-
-        public List<String> getFieldNames()
-        {
-            return fieldNames;
-        }
-
-        public int getFieldIndex(String fieldName)
-        {
-            for (int i = 0; i < fieldNames.size(); i++) {
-                if (fieldNames.get(i).equals(fieldName)) {
-                    return i;
-                }
-            }
-            return -1;
-        }
-
-        public List<Class<?>> getFieldTypes()
-        {
-            return types;
-        }
-
-        public List<Field> getFields()
-        {
-            return fields;
-        }
-
-        public static SchemaBuilder newBuilder()
-        {
-            return new SchemaBuilder();
-        }
-
-        public static class SchemaBuilder
-        {
-            private final List<Field> fields = new ArrayList<>();
-
-            public SchemaBuilder add(String name, Class<?> javaType)
-            {
-                fields.add(new Field(name, javaType));
-                return this;
-            }
-
-            public Schema build()
-            {
-                return new Schema(fields.stream().collect(Collectors.toList()));
-            }
-        }
-    }
-
-    public static final class Field
-            implements Serializable
-    {
-        private final String name;
-        private final Class<?> javaType;
-
-        private Field(String name, Class<?> javaType)
-        {
-            this.name = requireNonNull(name, "Field name must not null");
-            this.javaType = requireNonNull(javaType, "Field type must not null");
-        }
-
-        public String getName()
-        {
-            return name;
-        }
-
-        public Class<?> getJavaType()
-        {
-            return javaType;
         }
     }
 }

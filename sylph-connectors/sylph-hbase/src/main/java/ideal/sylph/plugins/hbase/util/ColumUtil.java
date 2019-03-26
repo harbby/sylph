@@ -15,7 +15,7 @@
  */
 package ideal.sylph.plugins.hbase.util;
 
-import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Schema;
 import ideal.sylph.plugins.hbase.HbaseSink;
 import ideal.sylph.plugins.hbase.exception.ColumMappingException;
 import ideal.sylph.plugins.hbase.tuple.Tuple2;
@@ -27,7 +27,7 @@ import java.util.Map;
 
 public class ColumUtil
 {
-    private ColumUtil(){}
+    private ColumUtil() {}
 
     private static final String FAMILY_DEFAULT = "0";
     private static final Logger log = LoggerFactory.getLogger(HbaseSink.class);
@@ -39,7 +39,7 @@ public class ColumUtil
      * @param columnMappingStr Field information to be mapped.
      * @return Table field mapping result.
      */
-    public static Map<String, Tuple2<String, String>> mapping(Row.Schema schema, String columnMappingStr)
+    public static Map<String, Tuple2<String, String>> mapping(Schema schema, String columnMappingStr)
             throws Exception
     {
         Map<String, Tuple2<String, String>> columnMapping = new HashMap<>();

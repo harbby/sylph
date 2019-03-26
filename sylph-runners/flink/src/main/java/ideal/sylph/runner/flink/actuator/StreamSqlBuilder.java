@@ -19,6 +19,7 @@ import com.github.harbby.gadtry.ioc.Bean;
 import com.github.harbby.gadtry.ioc.IocFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import ideal.sylph.etl.Schema;
 import ideal.sylph.etl.SinkContext;
 import ideal.sylph.etl.SourceContext;
 import ideal.sylph.parser.antlr.AntlrSqlParser;
@@ -57,10 +58,10 @@ import java.util.stream.Collectors;
 
 import static ideal.sylph.parser.antlr.tree.CreateTable.Type.SINK;
 import static ideal.sylph.parser.antlr.tree.CreateTable.Type.SOURCE;
-import static ideal.sylph.runner.flink.actuator.StreamSqlUtil.buildSylphSchema;
 import static ideal.sylph.runner.flink.actuator.StreamSqlUtil.buildWaterMark;
 import static ideal.sylph.runner.flink.actuator.StreamSqlUtil.checkStream;
-import static ideal.sylph.runner.flink.actuator.StreamSqlUtil.getTableRowTypeInfo;
+import static ideal.sylph.runner.flink.actuator.StreamSqlUtil.getTableSchema;
+import static ideal.sylph.runner.flink.actuator.StreamSqlUtil.schemaToRowTypeInfo;
 
 public class StreamSqlBuilder
 {
@@ -143,7 +144,8 @@ public class StreamSqlBuilder
     private void createStreamTable(CreateTable createStream)
     {
         final String tableName = createStream.getName();
-        RowTypeInfo tableTypeInfo = getTableRowTypeInfo(createStream);
+        Schema schema = getTableSchema(createStream);
+        RowTypeInfo tableTypeInfo = schemaToRowTypeInfo(schema);
 
         final Map<String, Object> withConfig = createStream.getWithConfig();
         final Map<String, Object> config = ImmutableMap.copyOf(withConfig);
@@ -153,10 +155,8 @@ public class StreamSqlBuilder
         if (SINK == createStream.getType()) {
             bean = binder -> binder.bind(SinkContext.class, new SinkContext()
             {
-                private final ideal.sylph.etl.Row.Schema schema = buildSylphSchema(tableTypeInfo);
-
                 @Override
-                public ideal.sylph.etl.Row.Schema getSchema()
+                public Schema getSchema()
                 {
                     return schema;
                 }
@@ -169,20 +169,11 @@ public class StreamSqlBuilder
             });
         }
         else if (SOURCE == createStream.getType()) {
-            bean = binder -> binder.bind(SourceContext.class, new SourceContext()
-            {
-                private final ideal.sylph.etl.Row.Schema schema = buildSylphSchema(tableTypeInfo);
-
+            bean = binder -> binder.bind(SourceContext.class, new SourceContext(){
                 @Override
-                public ideal.sylph.etl.Row.Schema getSchema()
+                public Schema getSchema()
                 {
                     return schema;
-                }
-
-                @Override
-                public String getSinkTable()
-                {
-                    return tableName;
                 }
             });
         }

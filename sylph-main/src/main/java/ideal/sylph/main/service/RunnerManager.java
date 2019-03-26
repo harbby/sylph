@@ -71,7 +71,7 @@ public class RunnerManager
     private final PipelinePluginLoader pluginLoader;
     private final ServerMainConfig config;
 
-    private static final List<String> SPI_PACKAGES = com.github.harbby.gadtry.collection.ImmutableList.<String>builder()
+    private static final List<String> SPI_PACKAGES = ImmutableList.<String>builder()
             .add("ideal.sylph.spi.")
             .add("com.github.harbby.gadtry")
             .add("ideal.sylph.annotation.")

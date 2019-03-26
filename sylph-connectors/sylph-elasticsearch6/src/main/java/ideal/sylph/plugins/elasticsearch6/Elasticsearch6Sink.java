@@ -19,6 +19,7 @@ import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.etl.PluginConfig;
 import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Schema;
 import ideal.sylph.etl.SinkContext;
 import ideal.sylph.etl.api.RealTimeSink;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
@@ -43,7 +44,7 @@ public class Elasticsearch6Sink
         implements RealTimeSink
 {
     private static final int MAX_BATCH_BULK = 50;
-    private final Row.Schema schema;
+    private final Schema schema;
     private final ElasticsearchSinkConfig config;
 
     private TransportClient client;

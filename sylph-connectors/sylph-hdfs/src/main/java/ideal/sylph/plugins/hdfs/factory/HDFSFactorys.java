@@ -15,7 +15,7 @@
  */
 package ideal.sylph.plugins.hdfs.factory;
 
-import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Schema;
 import ideal.sylph.plugins.hdfs.parquet.HDFSFactory;
 import ideal.sylph.plugins.hdfs.parquet.ParquetFactory;
 import ideal.sylph.plugins.hdfs.txt.TextFileFactory;
@@ -73,7 +73,7 @@ public class HDFSFactorys
     {
         protected String tableName;
         protected String writeTableDir;
-        protected Row.Schema schema;
+        protected Schema schema;
 
         /**
          * 注意在两级key 这个是用来区分不同的表的 仅此而已
@@ -91,7 +91,7 @@ public class HDFSFactorys
             return this;
         }
 
-        public Builder schema(Row.Schema schema)
+        public Builder schema(Schema schema)
         {
             this.schema = schema;
             return this;
