@@ -24,7 +24,7 @@ import java.math.BigDecimal;
 
 public class BytesUtil
 {
-    private BytesUtil(){}
+    private BytesUtil() {}
 
     private static final Logger logger = LoggerFactory.getLogger(HbaseSink.class);
 

@@ -20,6 +20,7 @@ import ideal.sylph.annotation.Name;
 import ideal.sylph.annotation.Version;
 import ideal.sylph.etl.PluginConfig;
 import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Schema;
 import ideal.sylph.etl.SinkContext;
 import ideal.sylph.etl.api.RealTimeSink;
 import ideal.sylph.plugins.hdfs.factory.HDFSFactorys;
@@ -41,7 +42,7 @@ public class HdfsSink
     private static final Logger logger = LoggerFactory.getLogger(HdfsSink.class);
     private final HdfsSinkConfig config;
     private final String sinkTable;
-    private final Row.Schema schema;
+    private final Schema schema;
     private int eventTimeIndex = -1;
 
     private HDFSFactory hdfsFactory;

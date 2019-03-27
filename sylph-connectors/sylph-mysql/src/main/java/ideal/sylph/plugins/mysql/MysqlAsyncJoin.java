@@ -21,6 +21,7 @@ import ideal.sylph.etl.CheckHandler;
 import ideal.sylph.etl.Collector;
 import ideal.sylph.etl.PluginConfig;
 import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Schema;
 import ideal.sylph.etl.api.RealTimeTransForm;
 import ideal.sylph.etl.join.JoinContext;
 import ideal.sylph.etl.join.SelectField;
@@ -66,7 +67,7 @@ public class MysqlAsyncJoin
     private final JoinContext.JoinType joinType;
     private final int selectFieldCnt;
     private final MysqlJoinConfig config;
-    private final Row.Schema schema;
+    private final Schema schema;
 
     private Connection connection;
     private Cache<String, List<Map<String, Object>>> cache;
@@ -175,7 +176,7 @@ public class MysqlAsyncJoin
     }
 
     @Override
-    public Row.Schema getSchema()
+    public Schema getSchema()
     {
         return schema;
     }

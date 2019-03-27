@@ -20,7 +20,13 @@ import java.io.Serializable;
 public interface SourceContext
         extends Serializable
 {
-    public Row.Schema getSchema();
+    public default Schema getSchema()
+    {
+        throw new IllegalArgumentException("this method have't support!");
+    }
 
-    public String getSinkTable();
+    public default String getSourceTable()
+    {
+        throw new IllegalArgumentException("this method have't support!");
+    }
 }

@@ -15,7 +15,7 @@
  */
 package ideal.sylph.etl.join;
 
-import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Schema;
 
 import java.util.List;
 import java.util.Map;
@@ -39,5 +39,5 @@ public interface JoinContext
 
     public Map<Integer, String> getJoinOnMapping();
 
-    public Row.Schema getSchema();
+    public Schema getSchema();
 }

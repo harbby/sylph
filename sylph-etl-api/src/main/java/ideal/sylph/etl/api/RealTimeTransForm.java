@@ -18,6 +18,7 @@ package ideal.sylph.etl.api;
 import ideal.sylph.etl.Collector;
 import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Schema;
 
 public interface RealTimeTransForm
         extends PipelinePlugin, RealTimePipeline
@@ -30,5 +31,5 @@ public interface RealTimeTransForm
     /**
      * driver 上运行
      */
-    Row.Schema getSchema();
+    Schema getSchema();
 }

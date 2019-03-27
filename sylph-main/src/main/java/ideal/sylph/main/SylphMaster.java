@@ -60,9 +60,11 @@ public final class SylphMaster
         /*2 Initialize Guice Injector */
         try {
             logger.info("========={} Bootstrap initialize...========", SylphMaster.class.getCanonicalName());
-            IocFactory app = GadTry.create(sylphBean,
-                    binder -> binder.bind(ControllerApp.class).withSingle()
+            IocFactory app = GadTry.create(sylphBean, binder ->
+                    binder.bind(ControllerApp.class).withSingle()
             ).aop(new AuthAspect()).initialize();
+            //----analysis
+            logger.info("Analysis App dependencys {}", String.join("\n", app.analysis().printShow()));
 
             app.getInstance(PipelinePluginLoader.class).loadPlugins();
             app.getInstance(RunnerManager.class).loadRunners();

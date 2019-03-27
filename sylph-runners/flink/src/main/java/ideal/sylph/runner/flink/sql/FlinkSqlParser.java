@@ -204,7 +204,7 @@ public class FlinkSqlParser
 
         //get batch table schema
         CreateTable batchTable = requireNonNull(batchTables.get(joinInfo.getBatchTable().getName()), "batch table [" + joinInfo.getJoinTableName() + "] not exits");
-        RowTypeInfo batchTableRowType = StreamSqlUtil.getTableRowTypeInfo(batchTable);
+        RowTypeInfo batchTableRowType = StreamSqlUtil.schemaToRowTypeInfo(StreamSqlUtil.getTableSchema(batchTable));
         List<SelectField> joinSelectFields = getAllSelectFields(joinInfo, streamRowType, batchTableRowType);
 
         //It is recommended to do keyby first.

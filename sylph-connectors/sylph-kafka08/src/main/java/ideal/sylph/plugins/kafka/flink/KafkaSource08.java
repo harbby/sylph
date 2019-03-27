@@ -20,7 +20,7 @@ import ideal.sylph.annotation.Name;
 import ideal.sylph.annotation.Version;
 import ideal.sylph.etl.SourceContext;
 import ideal.sylph.etl.api.Source;
-import ideal.sylph.plugins.kafka.KafkaSourceConfig;
+import ideal.sylph.plugins.kafka.KafkaSourceConfig08;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
@@ -29,7 +29,7 @@ import org.apache.flink.shaded.guava18.com.google.common.base.Supplier;
 import org.apache.flink.shaded.guava18.com.google.common.base.Suppliers;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer08;
 import org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema;
 import org.apache.flink.types.Row;
 
@@ -40,10 +40,10 @@ import java.util.Properties;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
-@Name(value = "kafka")
+@Name(value = "kafka08")
 @Version("1.0.0")
-@Description("this flink kafka source inputStream")
-public class KafkaSource
+@Description("this flink kafka0.8 source inputStream")
+public class KafkaSource08
         implements Source<DataStream<Row>>
 {
     private static final long serialVersionUID = 2L;
@@ -54,7 +54,7 @@ public class KafkaSource
     /**
      * 初始化(driver阶段执行)
      **/
-    public KafkaSource(StreamExecutionEnvironment execEnv, KafkaSourceConfig config, SourceContext context)
+    public KafkaSource08(StreamExecutionEnvironment execEnv, KafkaSourceConfig08 config, SourceContext context)
     {
         requireNonNull(execEnv, "execEnv is null");
         requireNonNull(config, "config is null");
@@ -65,6 +65,7 @@ public class KafkaSource
 
             Properties properties = new Properties();
             properties.put("bootstrap.servers", config.getBrokers());  //需要把集群的host 配置到程序所在机器
+            properties.put("zookeeper.connect", config.getZookeeper());
             //"enable.auto.commit" -> (false: java.lang.Boolean), //不自动提交偏移量
             //      "session.timeout.ms" -> "30000", //session默认是30秒 超过5秒不提交offect就会报错
             //      "heartbeat.interval.ms" -> "5000", //10秒提交一次 心跳周期
@@ -76,12 +77,11 @@ public class KafkaSource
 
             List<String> topicSets = Arrays.asList(topics.split(","));
             //org.apache.flink.streaming.api.checkpoint.CheckpointedFunction
-            DataStream<Row> stream = execEnv.addSource(new FlinkKafkaConsumer010<Row>(
+            return execEnv.addSource(new FlinkKafkaConsumer08<Row>(
                     topicSets,
                     deserializationSchema,
                     properties)
             );
-            return stream;
         });
     }
 

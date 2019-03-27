@@ -15,7 +15,7 @@
  */
 package ideal.sylph.runner.flink.sql;
 
-import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Schema;
 import ideal.sylph.etl.join.JoinContext;
 import ideal.sylph.etl.join.SelectField;
 import ideal.sylph.parser.calcite.JoinInfo;
@@ -69,9 +69,9 @@ public class JoinContextImpl
     }
 
     @Override
-    public Row.Schema getSchema()
+    public Schema getSchema()
     {
-        return Row.Schema.newBuilder().build();
+        return Schema.newBuilder().build();
     }
 
     public static JoinContext createContext(JoinInfo joinInfo, RowTypeInfo streamRowType, List<SelectField> joinSelectFields)

@@ -15,10 +15,14 @@
  */
 package ideal.sylph.runner.flink.etl;
 
+import ideal.sylph.etl.Field;
 import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Schema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.api.java.typeutils.TypeExtractor;
+
+import java.lang.reflect.Type;
 
 public class FlinkRow
         implements Row
@@ -94,12 +98,12 @@ public class FlinkRow
     {
         String[] fieldNames = schema.getFields().stream().map(Field::getName).toArray(String[]::new);
         return new RowTypeInfo(schema.getFields().stream().map(field -> {
-            Class<?> javaType = field.getJavaType();
+            Type javaType = field.getJavaType();
             return parserType(javaType);
         }).toArray(TypeInformation[]::new), fieldNames);
     }
 
-    private static TypeInformation<?> parserType(Class<?> javaType)
+    private static TypeInformation<?> parserType(Type javaType)
     {
         return TypeExtractor.createTypeInfo(javaType);
     }

@@ -17,6 +17,7 @@ package ideal.sylph.plugins.mysql;
 
 import ideal.sylph.etl.Collector;
 import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Schema;
 import ideal.sylph.etl.api.RealTimeTransForm;
 
 public class TestTrans
@@ -29,7 +30,7 @@ public class TestTrans
     }
 
     @Override
-    public Row.Schema getSchema()
+    public Schema getSchema()
     {
         return null;
     }

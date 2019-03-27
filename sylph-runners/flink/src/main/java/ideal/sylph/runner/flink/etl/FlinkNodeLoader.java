@@ -15,9 +15,10 @@
  */
 package ideal.sylph.runner.flink.etl;
 
-import com.github.harbby.gadtry.base.JavaType;
+import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.ioc.IocFactory;
 import ideal.sylph.etl.PipelinePlugin;
+import ideal.sylph.etl.Schema;
 import ideal.sylph.etl.api.RealTimeSink;
 import ideal.sylph.etl.api.RealTimeTransForm;
 import ideal.sylph.etl.api.Sink;
@@ -78,8 +79,8 @@ public final class FlinkNodeLoader
 
     private static void checkDataStreamRow(Class<?> pluginInterface, Class<?> driverClass)
     {
-        Type streamRow = JavaType.make(DataStream.class, new Type[] {Row.class}, null);
-        Type checkType = JavaType.make(pluginInterface, new Type[] {streamRow}, null);
+        Type streamRow = JavaTypes.make(DataStream.class, new Type[] {Row.class}, null);
+        Type checkType = JavaTypes.make(pluginInterface, new Type[] {streamRow}, null);
 
         for (Type type : driverClass.getGenericInterfaces()) {
             if (checkType.equals(type)) {
@@ -184,7 +185,7 @@ public final class FlinkNodeLoader
             final SingleOutputStreamOperator<Row> tmp = stream
                     .flatMap(new FlinkTransFrom(realTimeTransForm, stream.getType()));
             // schema必须要在driver上面指定
-            ideal.sylph.etl.Row.Schema schema = realTimeTransForm.getSchema();
+            Schema schema = realTimeTransForm.getSchema();
             if (schema != null) {
                 RowTypeInfo outPutStreamType = FlinkRow.parserRowType(schema);
                 return tmp.returns(outPutStreamType);

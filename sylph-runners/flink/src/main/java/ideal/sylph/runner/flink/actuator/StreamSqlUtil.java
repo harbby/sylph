@@ -15,22 +15,32 @@
  */
 package ideal.sylph.runner.flink.actuator;
 
+import com.github.harbby.gadtry.base.JavaTypes;
+import ideal.sylph.etl.Schema;
 import ideal.sylph.parser.antlr.tree.ColumnDefinition;
 import ideal.sylph.parser.antlr.tree.CreateTable;
 import ideal.sylph.parser.antlr.tree.WaterMark;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.common.typeinfo.Types;
+import org.apache.flink.api.java.typeutils.MapTypeInfo;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.api.java.typeutils.TypeExtractor;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
 import org.apache.flink.streaming.api.watermark.Watermark;
-import org.apache.flink.table.api.Types;
 import org.apache.flink.types.Row;
 
 import javax.annotation.Nullable;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.sql.Date;
+import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -116,64 +126,101 @@ public final class StreamSqlUtil
         }
     }
 
-    public static RowTypeInfo getTableRowTypeInfo(CreateTable createStream)
+    public static Schema getTableSchema(CreateTable createStream)
     {
         final List<ColumnDefinition> columns = createStream.getElements();
-        return parserColumns(columns);
+        Schema.SchemaBuilder builder = Schema.newBuilder();
+        columns.forEach(columnDefinition -> {
+            builder.add(columnDefinition.getName().getValue(), parserSqlType(columnDefinition.getType()));
+        });
+        return builder.build();
     }
 
-    private static RowTypeInfo parserColumns(List<ColumnDefinition> columns)
+    private static Type parserSqlType(String type)
     {
-        String[] fieldNames = columns.stream().map(columnDefinition -> columnDefinition.getName().getValue())
-                .toArray(String[]::new);
-
-        TypeInformation[] fieldTypes = columns.stream().map(columnDefinition -> parserSqlType(columnDefinition.getType()))
-                .toArray(TypeInformation[]::new);
-
-        return new RowTypeInfo(fieldTypes, fieldNames);
-    }
-
-    private static TypeInformation<?> parserSqlType(String type)
-    {
+        type = type.trim().toLowerCase();
         switch (type) {
             case "varchar":
             case "string":
-                return Types.STRING();
+                return String.class;
             case "integer":
             case "int":
-                return Types.INT();
+                return int.class;
             case "long":
             case "bigint":
-                return Types.LONG();
+                return long.class;
             case "boolean":
             case "bool":
-                return Types.BOOLEAN();
+                return boolean.class;
             case "double":
-                return Types.DOUBLE();
+                return double.class;
             case "float":
-                return Types.FLOAT();
+                return float.class;
             case "byte":
-                return Types.BYTE();
+                return byte.class;
             case "timestamp":
-                return Types.SQL_TIMESTAMP();
+                return Timestamp.class;
             case "date":
-                return Types.SQL_DATE();
+                return Date.class;
             case "binary":
-                return TypeExtractor.createTypeInfo(byte[].class); //Types.OBJECT_ARRAY(Types.BYTE());
+                return byte[].class; //TypeExtractor.createTypeInfo(byte[].class) or Types.OBJECT_ARRAY(Types.BYTE());
+            case "object":
+                return Object.class;
             default:
-                throw new IllegalArgumentException("this TYPE " + type + " have't support!");
+                return defaultArrayOrMap(type);
         }
     }
 
-    public static ideal.sylph.etl.Row.Schema buildSylphSchema(RowTypeInfo rowTypeInfo)
+    private static Type defaultArrayOrMap(String type)
     {
-        String[] names = rowTypeInfo.getFieldNames();
-        ideal.sylph.etl.Row.Schema.SchemaBuilder builder = ideal.sylph.etl.Row.Schema.newBuilder();
-        for (int i = 0; i < rowTypeInfo.getArity(); i++) {
-            Class<?> type = rowTypeInfo.getTypeAt(i).getTypeClass();
-            String name = names[i];
-            builder.add(name, type);
+        //final String arrayRegularExpression = "array\\((\\w*?)\\)";
+        //final String mapRegularExpression = "map\\((\\w*?),(\\w*?)\\)";
+        final String arrayRegularExpression = "(?<=array\\().*(?=\\))";
+        final String mapRegularExpression = "(?<=map\\()(\\w*?),(.*(?=\\)))";
+
+        Matcher item = Pattern.compile(arrayRegularExpression).matcher(type);
+        while (item.find()) {
+            Type arrayType = parserSqlType(item.group(0));
+            return JavaTypes.make(List.class, new Type[] {arrayType}, null);
         }
-        return builder.build();
+
+        item = Pattern.compile(mapRegularExpression).matcher(type);
+        while (item.find()) {
+            Type keyClass = parserSqlType(item.group(1));
+            Type valueClass = parserSqlType(item.group(2));
+            return JavaTypes.make(Map.class, new Type[] {keyClass, valueClass}, null);
+        }
+
+        throw new IllegalArgumentException("this TYPE " + type + " have't support!");
+    }
+
+    public static RowTypeInfo schemaToRowTypeInfo(Schema schema)
+    {
+        TypeInformation<?>[] types = schema.getFieldTypes().stream().map(StreamSqlUtil::getFlinkType)
+                .toArray(TypeInformation<?>[]::new);
+        String[] names = schema.getFieldNames().toArray(new String[0]);
+        return new RowTypeInfo(types, names);
+    }
+
+    private static TypeInformation<?> getFlinkType(Type type)
+    {
+        if (type instanceof ParameterizedType && ((ParameterizedType) type).getRawType() == Map.class) {
+            Type[] arguments = ((ParameterizedType) type).getActualTypeArguments();
+            Type valueType = arguments[1];
+            TypeInformation<?> valueInfo = getFlinkType(valueType);
+            return new MapTypeInfo<>(TypeExtractor.createTypeInfo(arguments[0]), valueInfo);
+        }
+        else if (type instanceof ParameterizedType && ((ParameterizedType) type).getRawType() == List.class) {
+            TypeInformation<?> typeInformation = getFlinkType(((ParameterizedType) type).getActualTypeArguments()[0]);
+            if (typeInformation.isBasicType() && typeInformation != Types.STRING) {
+                return Types.PRIMITIVE_ARRAY(typeInformation);
+            }
+            else {
+                return Types.OBJECT_ARRAY(typeInformation);
+            }
+        }
+        else {
+            return TypeExtractor.createTypeInfo(type);
+        }
     }
 }
