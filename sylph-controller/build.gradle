@@ -32,13 +32,6 @@ node {
   nodeModulesDir = file("${project.projectDir}/src/main/webapp")
 }
 
-task clear(type: Delete) {
-  delete file("${project.projectDir}/src/main/webapp/node_modules"),
-          file("${project.projectDir}/src/main/webapp/app/libs")
-}
-
-clean.dependsOn 'clear'
-
 //default yarn_install
 task package_install(type: YarnTask) {
   // add the express package only
