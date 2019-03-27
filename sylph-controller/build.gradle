@@ -37,12 +37,12 @@ task clear(type: Delete) {
           file("${project.projectDir}/src/main/webapp/app/libs")
 }
 
-//clean.dependsOn 'clear'
+clean.dependsOn 'clear'
 
 //default yarn_install
 task package_install(type: YarnTask) {
   // add the express package only
-  args = ['install', '--modules-folder', './app/libs']
+  args = ['install', '--modules-folder', project.buildDir.path + '/webapp/app/libs']
 }
 task build_package(type: YarnTask, dependsOn: package_install) {
   //只安装快递包
@@ -50,7 +50,7 @@ task build_package(type: YarnTask, dependsOn: package_install) {
 }
 task build_webapp(type: Copy, dependsOn: build_package) {
   from('src/main/webapp/app')
-  //from('src/main/webapp/node_modules')
+  from(project.buildDir.path + '/webapp/app')
   into project(':sylph-dist').buildDir.path + '/webapp'
 }
 assemble.dependsOn 'build_webapp'
