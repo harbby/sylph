@@ -67,7 +67,7 @@ public interface PipelinePluginManager
             throws ClassNotFoundException
     {
         PipelinePluginInfo info = findPluginInfo(requireNonNull(driverOrName, "driverOrName is null"), pipelineType)
-                .orElseThrow(() -> new ClassNotFoundException("no such driver class " + driverOrName));
+                .orElseThrow(() -> new ClassNotFoundException("pipelineType:" + pipelineType + " no such driver class: " + driverOrName));
         return Class.forName(info.getDriverClass());
     }
 

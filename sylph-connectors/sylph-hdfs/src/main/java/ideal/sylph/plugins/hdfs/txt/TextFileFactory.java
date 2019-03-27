@@ -16,6 +16,7 @@
 package ideal.sylph.plugins.hdfs.txt;
 
 import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Schema;
 import ideal.sylph.plugins.hdfs.parquet.HDFSFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -52,14 +53,14 @@ public class TextFileFactory
 
     private final String writeTableDir;
     private final String table;
-    private final Row.Schema schema;
+    private final Schema schema;
 
     private volatile boolean closed = false;
 
     public TextFileFactory(
             final String writeTableDir,
             final String table,
-            final Row.Schema schema)
+            final Schema schema)
     {
         requireNonNull(writeTableDir, "writeTableDir is null");
         this.writeTableDir = writeTableDir.endsWith("/") ? writeTableDir : writeTableDir + "/";

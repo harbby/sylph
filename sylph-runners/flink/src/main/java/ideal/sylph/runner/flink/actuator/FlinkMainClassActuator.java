@@ -112,7 +112,6 @@ public class FlinkMainClassActuator
                     m1.invoke(null, streamFactory);
                     //---
                     Class<?> mainClass = Class.forName(flow.mainClass);
-                    System.out.println("this flink job Main class: " + mainClass);
                     Method main = mainClass.getMethod("main", String[].class);
                     try {
                         main.invoke(null, (Object) new String[0]);

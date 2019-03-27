@@ -20,7 +20,7 @@ import java.io.Serializable;
 public interface SinkContext
         extends Serializable
 {
-    public Row.Schema getSchema();
+    public Schema getSchema();
 
     public String getSinkTable();
 }

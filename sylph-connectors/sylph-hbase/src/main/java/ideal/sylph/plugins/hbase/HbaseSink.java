@@ -19,6 +19,7 @@ import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.etl.PluginConfig;
 import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Schema;
 import ideal.sylph.etl.SinkContext;
 import ideal.sylph.etl.api.RealTimeSink;
 import ideal.sylph.plugins.hbase.tuple.Tuple2;
@@ -44,7 +45,7 @@ public class HbaseSink
     private String tableName;
     private transient HbaseHelper hbaseHelper;
     private int rowkeyIndex = -1;
-    private final Row.Schema schema;
+    private final Schema schema;
     private final HbaseConfig config;
     private Map<String, Tuple2<String, String>> columMapping;
     private static final Logger logger = LoggerFactory.getLogger(HbaseSink.class);

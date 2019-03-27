@@ -37,7 +37,7 @@ task clear(type: Delete) {
           file("${project.projectDir}/src/main/webapp/app/libs")
 }
 
-clean.dependsOn 'clear'
+//clean.dependsOn 'clear'
 
 //default yarn_install
 task package_install(type: YarnTask) {

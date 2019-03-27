@@ -16,6 +16,8 @@
 package ideal.sylph.runner.flink.sqlTest;
 
 import ideal.sylph.etl.Collector;
+import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Schema;
 import ideal.sylph.etl.api.RealTimeTransForm;
 import ideal.sylph.etl.join.JoinContext;
 import ideal.sylph.parser.antlr.AntlrSqlParser;
@@ -28,16 +30,12 @@ import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.flink.calcite.shaded.com.google.common.collect.ImmutableList;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.table.sources.TableSource;
-import org.apache.flink.types.Row;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.List;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -49,96 +47,147 @@ import static com.google.common.base.Preconditions.checkState;
 public class JoinTest
 {
     private StreamTableEnvironment tableEnv;
+    private CreateTable dimTable;
 
     @Before
     public void init()
     {
         StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.getExecutionEnvironment();
-        execEnv.setParallelism(2);
+        execEnv.setParallelism(4);
         execEnv.setStreamTimeCharacteristic(TimeCharacteristic.ProcessingTime);
         tableEnv = TableEnvironment.getTableEnvironment(execEnv);
-    }
 
-    @Test
-    public void appendStreamTest()
-            throws Exception
-    {
-        Table table = tableEnv.sqlQuery("SELECT * FROM (VALUES ('Bob'), ('Bob')) AS NameTable(name)");  //这个例子是append模式
-        tableEnv.toAppendStream(table, Row.class).print();
-        Assert.assertTrue(true);
-        //tableEnv.execEnv().execute();
-    }
+        tableEnv = TableEnvironment.getTableEnvironment(tableEnv.execEnv());
+        tableEnv.registerFunction("from_unixtime", new TimeUtil.FromUnixTime());
 
-    @Test
-    public void RetractStreamTest()
-            throws Exception
-    {
-        //--- no keyBy group is toRetractStream mode
-        // this is global window
-        Table table = tableEnv.sqlQuery("SELECT name, count(1) FROM (VALUES ('Bob'), ('Bob')) AS NameTable(name) GROUP BY name");
-        Assert.assertNotNull(tableEnv.toRetractStream(table, Row.class).print());
+        TableSource<org.apache.flink.types.Row> tableSource = new TestTableSource();
+        tableEnv.registerTableSource("tb1", tableSource);
+        tableEnv.registerTableSource("tb0", new TestTableSource());
 
-        //tableEnv.execEnv().execute();
-    }
-
-    @Test
-    public void joinTest()
-            throws Exception
-    {
         final AntlrSqlParser sqlParser = new AntlrSqlParser();
-        CreateTable createTable = (CreateTable) sqlParser.createStatement("create batch table users(id string, name string, city string) with(type = '" + TestMysqlJoin.class.getName() + "')");
+        this.dimTable = (CreateTable) sqlParser.createStatement("create batch table users(id string, name string, city string) with(type = '" + JoinOperator.class.getName() + "')");
+    }
 
-        List<String> querys = ImmutableList.<String>builder()
-                .add("select tb1.*,users.* from tb1 left join users on tb1.user_id=users.id")
-                .add("select tb2.user_id as uid,tb2.*,users.* from (select tb1.* from tb1 join users on tb1.user_id=users.id) as tb2 left join users on tb2.user_id=users.id")
-                .add("with tb2 as (select tb1.* from tb1 join users on tb1.user_id=users.id) select tb2.user_id as uid,tb2.*,users.* from tb2 left join users on tb2.user_id=users.id having user_id = 'uid_1' or uid is not null")
-                .add("insert into sink1 with tb2 as (select tb1.* from tb1 join users on tb1.user_id=users.id) select tb2.user_id as uid,users.id,tb2.`time` from tb2 left join users on tb2.user_id=users.id")
-                .add("select tb1.*,tb0.user_id,from_unixtime(tb0.`time`) from tb1 join tb0 on tb1.user_id = (tb0.user_id||'0') ")
-                .add("select tb1.* from tb1 ")
+    @Test
+    public void leftJoinTest()
+    {
+        String leftJoin = "select tb1.*,users.* from tb1 left join users on tb1.user_id=users.id";
+
+        FlinkSqlParser flinkSqlParser = FlinkSqlParser.builder()
+                .setTableEnv(tableEnv)
+                .setBatchPluginManager(PipelinePluginManager.getDefault())
                 .build();
 
-        for (String query : querys) {
-            tableEnv = TableEnvironment.getTableEnvironment(tableEnv.execEnv());
-            tableEnv.registerFunction("from_unixtime", new TimeUtil.FromUnixTime());
-            tableEnv.execEnv().setParallelism(4);
+        flinkSqlParser.parser(leftJoin, ImmutableList.of(dimTable));
 
-            TableSource<Row> tableSource = new TestTableSource();
-            tableEnv.registerTableSource("tb1", tableSource);
-            tableEnv.registerTableSource("tb0", new TestTableSource());
-
-            PrintTableSink printSink = new PrintTableSink("/path/to/file");
-            tableEnv.registerTableSink("sink1", printSink.getFieldNames(), printSink.getFieldTypes(), printSink);
-
-            FlinkSqlParser flinkSqlParser = FlinkSqlParser.builder()
-                    .setTableEnv(tableEnv)
-                    .setBatchPluginManager(PipelinePluginManager.getDefault())
-                    .build();
-            flinkSqlParser.parser(query, ImmutableList.of(createTable));
-
-            String plan = tableEnv.execEnv().getExecutionPlan();
-            System.out.println(plan);
-            Assert.assertNotNull(plan);
-            //tableEnv.execEnv().execute();
-        }
+        String plan = tableEnv.execEnv().getExecutionPlan();
+        System.out.println(plan);
+        Assert.assertNotNull(plan);
     }
 
-    public static class TestMysqlJoin
+    @Test
+    public void leftJoinTest2()
+    {
+        String leftJoin = "select tb2.user_id as uid,tb2.*,users.* from (select tb1.* from tb1 join users on tb1.user_id=users.id) as tb2 left join users on tb2.user_id=users.id";
+
+        FlinkSqlParser flinkSqlParser = FlinkSqlParser.builder()
+                .setTableEnv(tableEnv)
+                .setBatchPluginManager(PipelinePluginManager.getDefault())
+                .build();
+
+        flinkSqlParser.parser(leftJoin, ImmutableList.of(dimTable));
+
+        String plan = tableEnv.execEnv().getExecutionPlan();
+        System.out.println(plan);
+        Assert.assertNotNull(plan);
+    }
+
+    @Test
+    public void leftJoinTest3()
+    {
+        String leftJoin = "with tb2 as (select tb1.* from tb1 join users on tb1.user_id=users.id) select tb2.user_id as uid,tb2.*,users.* from tb2 left join users on tb2.user_id=users.id having user_id = 'uid_1' or uid is not null";
+
+        FlinkSqlParser flinkSqlParser = FlinkSqlParser.builder()
+                .setTableEnv(tableEnv)
+                .setBatchPluginManager(PipelinePluginManager.getDefault())
+                .build();
+
+        flinkSqlParser.parser(leftJoin, ImmutableList.of(dimTable));
+
+        String plan = tableEnv.execEnv().getExecutionPlan();
+        System.out.println(plan);
+        Assert.assertNotNull(plan);
+    }
+
+    @Test
+    public void insetIntoTest4()
+    {
+        PrintTableSink printSink = new PrintTableSink();
+        tableEnv.registerTableSink("sink1", printSink.getFieldNames(), printSink.getFieldTypes(), printSink);
+
+        String leftJoin = "insert into sink1 with tb2 as (select tb1.* from tb1 join users on tb1.user_id=users.id) select tb2.user_id as uid,users.id,tb2.`time` from tb2 left join users on tb2.user_id=users.id";
+
+        FlinkSqlParser flinkSqlParser = FlinkSqlParser.builder()
+                .setTableEnv(tableEnv)
+                .setBatchPluginManager(PipelinePluginManager.getDefault())
+                .build();
+
+        flinkSqlParser.parser(leftJoin, ImmutableList.of(dimTable));
+
+        String plan = tableEnv.execEnv().getExecutionPlan();
+        System.out.println(plan);
+        Assert.assertNotNull(plan);
+    }
+
+    @Test
+    public void leftJoinTest5()
+    {
+        String leftJoin = "select tb1.*,tb0.user_id,from_unixtime(tb0.`time`) from tb1 join tb0 on tb1.user_id = (tb0.user_id||'0') ";
+
+        FlinkSqlParser flinkSqlParser = FlinkSqlParser.builder()
+                .setTableEnv(tableEnv)
+                .setBatchPluginManager(PipelinePluginManager.getDefault())
+                .build();
+
+        flinkSqlParser.parser(leftJoin, ImmutableList.of(dimTable));
+
+        String plan = tableEnv.execEnv().getExecutionPlan();
+        System.out.println(plan);
+        Assert.assertNotNull(plan);
+    }
+
+    @Test
+    public void easySqlTest()
+    {
+        String leftJoin = "select tb1.* from tb1";
+
+        FlinkSqlParser flinkSqlParser = FlinkSqlParser.builder()
+                .setTableEnv(tableEnv)
+                .setBatchPluginManager(PipelinePluginManager.getDefault())
+                .build();
+
+        flinkSqlParser.parser(leftJoin, ImmutableList.of(dimTable));
+
+        String plan = tableEnv.execEnv().getExecutionPlan();
+        System.out.println(plan);
+        Assert.assertNotNull(plan);
+    }
+
+    public static class JoinOperator
             implements RealTimeTransForm
     {
-        public TestMysqlJoin(JoinContext context)
+        public JoinOperator(JoinContext context)
         {
-            //--check context
             checkState(context != null, "context is null");
         }
 
         @Override
-        public void process(ideal.sylph.etl.Row input, Collector<ideal.sylph.etl.Row> collector)
+        public void process(Row input, Collector<Row> collector)
         {
-
         }
 
         @Override
-        public ideal.sylph.etl.Row.Schema getSchema()
+        public Schema getSchema()
         {
             return null;
         }
@@ -153,7 +202,6 @@ public class JoinTest
         @Override
         public void close(Throwable errorOrNull)
         {
-
         }
     }
 }
