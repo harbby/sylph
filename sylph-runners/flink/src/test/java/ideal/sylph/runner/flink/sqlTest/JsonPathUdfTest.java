@@ -61,7 +61,6 @@ public class JsonPathUdfTest
     public void jsonPathUdfTestReturn123()
             throws Exception
     {
-
         String jsonKey = "$.key1.key2";
         //Table table = tableEnv.sqlQuery("select cast(json['store'] as double) from tp , LATERAL TABLE(json_parser(message, 'store', 'ip')) as T(json) ");
         Table table1 = tableEnv.sqlQuery("select get_json_object(message,'" + jsonKey + "') from " + table);
