@@ -27,7 +27,6 @@ public class SqlSplit
     {
         String code = "a1;a2;'12;34';\"a4;a8\";10";
         String[] split = code.split(SQL_REGEX);
-        Assert.assertEquals(split.length, 5);
         Assert.assertArrayEquals(split, new String[] {"a1", "a2", "'12;34'", "\"a4;a8\"", "10"});
     }
 }

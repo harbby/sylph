@@ -19,8 +19,7 @@ import java.util.Objects
 
 import ideal.sylph.annotation.{Description, Name, Version}
 import ideal.sylph.etl.PluginConfig
-import ideal.sylph.etl.api.{Sink, Source, TransForm}
-import org.apache.spark.api.java.JavaRDD
+import ideal.sylph.etl.api.Source
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.types.{StringType, StructField, StructType}

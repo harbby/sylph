@@ -15,7 +15,6 @@
  */
 package ideal.sylph.runner.flink.sqlTest;
 
-import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.Table;
@@ -57,7 +56,6 @@ public class TestStreamMode
         // this is global window
         Table table = tableEnv.sqlQuery("SELECT name, count(1) FROM (VALUES ('Bob'), ('Bob')) AS NameTable(name) GROUP BY name");
         Assert.assertNotNull(tableEnv.toRetractStream(table, Row.class).print());
-
         //tableEnv.execEnv().execute();
     }
 }

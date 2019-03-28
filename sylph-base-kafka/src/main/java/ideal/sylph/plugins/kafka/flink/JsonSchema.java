@@ -17,19 +17,15 @@ package ideal.sylph.plugins.kafka.flink;
 
 import ideal.sylph.etl.Schema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.api.common.typeinfo.Types;
-import org.apache.flink.api.java.typeutils.MapTypeInfo;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
-import org.apache.flink.api.java.typeutils.TypeExtractor;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema;
 import org.apache.flink.types.Row;
 
 import java.io.IOException;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.List;
 import java.util.Map;
+
+import static ideal.sylph.runner.flink.actuator.StreamSqlUtil.schemaToRowTypeInfo;
 
 public class JsonSchema
         implements KeyedDeserializationSchema<Row>
@@ -40,36 +36,6 @@ public class JsonSchema
     public JsonSchema(Schema schema)
     {
         this.rowTypeInfo = schemaToRowTypeInfo(schema);
-    }
-
-    public static RowTypeInfo schemaToRowTypeInfo(Schema schema)
-    {
-        TypeInformation<?>[] types = schema.getFieldTypes().stream().map(JsonSchema::getFlinkType)
-                .toArray(TypeInformation<?>[]::new);
-        String[] names = schema.getFieldNames().toArray(new String[0]);
-        return new RowTypeInfo(types, names);
-    }
-
-    private static TypeInformation<?> getFlinkType(Type type)
-    {
-        if (type instanceof ParameterizedType && ((ParameterizedType) type).getRawType() == Map.class) {
-            Type[] arguments = ((ParameterizedType) type).getActualTypeArguments();
-            Type valueType = arguments[1];
-            TypeInformation<?> valueInfo = getFlinkType(valueType);
-            return new MapTypeInfo<>(TypeExtractor.createTypeInfo(arguments[0]), valueInfo);
-        }
-        else if (type instanceof ParameterizedType && ((ParameterizedType) type).getRawType() == List.class) {
-            TypeInformation<?> typeInformation = getFlinkType(((ParameterizedType) type).getActualTypeArguments()[0]);
-            if (typeInformation.isBasicType() && typeInformation != Types.STRING) {
-                return Types.PRIMITIVE_ARRAY(typeInformation);
-            }
-            else {
-                return Types.OBJECT_ARRAY(typeInformation);
-            }
-        }
-        else {
-            return TypeExtractor.createTypeInfo(type);
-        }
     }
 
     @Override
