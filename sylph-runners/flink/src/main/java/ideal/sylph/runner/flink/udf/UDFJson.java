@@ -15,8 +15,9 @@
  */
 package ideal.sylph.runner.flink.udf;
 
+import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.PathNotFoundException;
+import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.ReadContext;
 import ideal.sylph.annotation.Name;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -31,7 +32,8 @@ import java.util.Map;
 public class UDFJson
         extends ScalarFunction
 {
-    private HashCache<String, ReadContext> cache = new HashCache<>();
+    private static final Configuration jsonConf = Configuration.defaultConfiguration().addOptions(Option.SUPPRESS_EXCEPTIONS);
+    private final HashCache<String, ReadContext> cache = new HashCache<>();
 
     /**
      * @return json string or null
@@ -43,14 +45,8 @@ public class UDFJson
         if (!pathString.startsWith("$")) {
             pathString = "$." + pathString;
         }
-        ReadContext context = cache.computeIfAbsent(jsonString, JsonPath::parse);
-
-        Object value = null;
-        try {
-            value = context.read(pathString);
-        }
-        catch (PathNotFoundException ignored) {
-        }
+        ReadContext context = cache.computeIfAbsent(jsonString, key -> JsonPath.using(jsonConf).parse(jsonString));
+        Object value = context.read(pathString);
 
         if (value == null) {
             return null;

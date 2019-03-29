@@ -20,69 +20,40 @@ import ideal.sylph.annotation.Name;
 import ideal.sylph.annotation.Version;
 import ideal.sylph.etl.SourceContext;
 import ideal.sylph.etl.api.Source;
-import ideal.sylph.plugins.kafka.KafkaSourceConfig08;
-import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.api.common.typeinfo.Types;
-import org.apache.flink.api.java.typeutils.RowTypeInfo;
-import org.apache.flink.api.java.typeutils.TypeExtractor;
 import org.apache.flink.shaded.guava18.com.google.common.base.Supplier;
 import org.apache.flink.shaded.guava18.com.google.common.base.Suppliers;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer08;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumerBase;
 import org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema;
 import org.apache.flink.types.Row;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
 @Name(value = "kafka08")
 @Version("1.0.0")
 @Description("this flink kafka0.8 source inputStream")
 public class KafkaSource08
+        extends KafkaBaseSource
         implements Source<DataStream<Row>>
 {
     private static final long serialVersionUID = 2L;
-    private static final String[] KAFKA_COLUMNS = new String[] {"_topic", "_key", "_message", "_partition", "_offset"};
-
     private final transient Supplier<DataStream<Row>> loadStream;
+    private final KafkaSourceConfig config;
 
     /**
      * 初始化(driver阶段执行)
      **/
-    public KafkaSource08(StreamExecutionEnvironment execEnv, KafkaSourceConfig08 config, SourceContext context)
+    public KafkaSource08(StreamExecutionEnvironment execEnv, KafkaSourceConfig config, SourceContext context)
     {
         requireNonNull(execEnv, "execEnv is null");
         requireNonNull(config, "config is null");
-        loadStream = Suppliers.memoize(() -> {
-            String topics = config.getTopics();
-            String groupId = config.getGroupid(); //消费者的名字
-            String offsetMode = config.getOffsetMode(); //latest earliest
-
-            Properties properties = new Properties();
-            properties.put("bootstrap.servers", config.getBrokers());  //需要把集群的host 配置到程序所在机器
-            properties.put("zookeeper.connect", config.getZookeeper());
-            //"enable.auto.commit" -> (false: java.lang.Boolean), //不自动提交偏移量
-            //      "session.timeout.ms" -> "30000", //session默认是30秒 超过5秒不提交offect就会报错
-            //      "heartbeat.interval.ms" -> "5000", //10秒提交一次 心跳周期
-            properties.put("group.id", groupId); //注意不同的流 group.id必须要不同 否则会出现offect commit提交失败的错误
-            properties.put("auto.offset.reset", offsetMode); //latest   earliest
-
-            KeyedDeserializationSchema<Row> deserializationSchema = "json".equals(config.getValueType()) ?
-                    new JsonSchema(context.getSchema()) : new RowDeserializer();
-
-            List<String> topicSets = Arrays.asList(topics.split(","));
-            //org.apache.flink.streaming.api.checkpoint.CheckpointedFunction
-            return execEnv.addSource(new FlinkKafkaConsumer08<Row>(
-                    topicSets,
-                    deserializationSchema,
-                    properties)
-            );
-        });
+        this.config = config;
+        loadStream = Suppliers.memoize(() -> this.createSource(execEnv, config, context));
     }
 
     @Override
@@ -91,38 +62,11 @@ public class KafkaSource08
         return loadStream.get();
     }
 
-    private static class RowDeserializer
-            implements KeyedDeserializationSchema<Row>
+    @Override
+    public FlinkKafkaConsumerBase<Row> getKafkaConsumerBase(List<String> topicSets, KeyedDeserializationSchema<Row> deserializationSchema, Properties properties)
     {
-        @Override
-        public boolean isEndOfStream(Row nextElement)
-        {
-            return false;
-        }
-
-        @Override
-        public Row deserialize(byte[] messageKey, byte[] message, String topic, int partition, long offset)
-        {
-            return Row.of(
-                    topic, //topic
-                    messageKey == null ? null : new String(messageKey, UTF_8), //key
-                    new String(message, UTF_8), //message
-                    partition,
-                    offset
-            );
-        }
-
-        @Override
-        public TypeInformation<Row> getProducedType()
-        {
-            TypeInformation<?>[] types = new TypeInformation<?>[] {
-                    TypeExtractor.createTypeInfo(String.class),
-                    TypeExtractor.createTypeInfo(String.class), //createTypeInformation[String]
-                    TypeExtractor.createTypeInfo(String.class),
-                    Types.INT,
-                    Types.LONG
-            };
-            return new RowTypeInfo(types, KAFKA_COLUMNS);
-        }
+        //kafka08 kafka09 需要设置 zk
+        properties.put("zookeeper.connect", config.getZookeeper());
+        return new FlinkKafkaConsumer08<>(topicSets, deserializationSchema, properties);
     }
 }

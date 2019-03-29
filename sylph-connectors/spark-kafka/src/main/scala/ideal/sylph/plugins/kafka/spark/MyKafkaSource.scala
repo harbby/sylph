@@ -16,9 +16,7 @@
 package ideal.sylph.plugins.kafka.spark
 
 import ideal.sylph.annotation.{Description, Name, Version}
-import ideal.sylph.etl.PluginConfig
 import ideal.sylph.etl.api.Source
-import ideal.sylph.plugins.kafka.KafkaSourceConfig
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema

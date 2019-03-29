@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.plugins.kafka;
+package ideal.sylph.plugins.kafka.flink;
 
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
@@ -40,6 +40,10 @@ public class KafkaSourceConfig
     @Description("this is auto.offset.reset mode")
     private String offsetMode = "latest";
 
+    @Name("zookeeper.connect")
+    @Description("this is kafka zk list, kafka08 and kafka09 Must need to set")
+    private String zookeeper = null;   //"localhost:2181"
+
     @Name("value_type")
     @Description("this is kafka String value Type, use json")
     private String valueType;
@@ -62,6 +66,11 @@ public class KafkaSourceConfig
     public String getOffsetMode()
     {
         return offsetMode;
+    }
+
+    public String getZookeeper()
+    {
+        return zookeeper;
     }
 
     public String getValueType()

@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.plugins.kafka;
+package ideal.sylph.plugins.kafka.spark;
 
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.etl.PluginConfig;
 
-public class KafkaSourceConfig08
+public class KafkaSourceConfig
         extends PluginConfig
 {
     private static final long serialVersionUID = 2L;
@@ -40,10 +40,6 @@ public class KafkaSourceConfig08
     @Description("this is auto.offset.reset mode")
     private String offsetMode = "latest";
 
-    @Name("zookeeper.connect")
-    @Description("this is kafka zk list")
-    private String zookeeper = "localhost:2181";
-
     @Name("value_type")
     @Description("this is kafka String value Type, use json")
     private String valueType;
@@ -56,11 +52,6 @@ public class KafkaSourceConfig08
     public String getBrokers()
     {
         return brokers;
-    }
-
-    public String getZookeeper()
-    {
-        return zookeeper;
     }
 
     public String getGroupid()
@@ -78,5 +69,5 @@ public class KafkaSourceConfig08
         return valueType;
     }
 
-    private KafkaSourceConfig08() {}
+    private KafkaSourceConfig() {}
 }
