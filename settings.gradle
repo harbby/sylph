@@ -27,16 +27,17 @@ include 'sylph-connectors:sylph-mysql'
 include 'sylph-connectors:sylph-hdfs'
 include 'sylph-connectors:sylph-kafka08'
 include 'sylph-connectors:sylph-kafka09'
-include 'sylph-connectors:sylph-hbase'
+//include 'sylph-connectors:sylph-hbase'
 include 'sylph-connectors:sylph-elasticsearch6'
 include 'sylph-connectors:sylph-elasticsearch5'
 include 'sylph-connectors:sylph-clickhouse'
+include 'sylph-connectors:spark-kafka'
+include 'sylph-connectors:sylph-kudu'
+
 //----
 include 'sylph-dist'
 include 'sylph-parser'
 include 'sylph-docs'
 include 'sylph-yarn'
-//include 'sylph-clickhouse'
-//include 'sylph-elasticsearch5'
-
+include 'sylph-base-kafka'
 

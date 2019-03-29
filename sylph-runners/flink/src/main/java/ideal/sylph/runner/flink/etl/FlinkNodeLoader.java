@@ -62,7 +62,7 @@ public final class FlinkNodeLoader
         try {
             final Class<?> driverClass = pluginManager.loadPluginDriver(driverStr, PipelinePlugin.PipelineType.source);
             checkState(Source.class.isAssignableFrom(driverClass),
-                    "driverStr must is RealTimeSink.class or Sink.class");
+                    "The Source driver must is Source.class, But your " + driverClass);
             checkDataStreamRow(Source.class, driverClass);
 
             @SuppressWarnings("unchecked") final Source<DataStream<Row>> source = (Source<DataStream<Row>>) getPluginInstance(driverClass, config);
@@ -98,7 +98,7 @@ public final class FlinkNodeLoader
         try {
             Class<?> driverClass = pluginManager.loadPluginDriver(driverStr, PipelinePlugin.PipelineType.sink);
             checkState(RealTimeSink.class.isAssignableFrom(driverClass) || Sink.class.isAssignableFrom(driverClass),
-                    "driverStr must is RealTimeSink.class or Sink.class");
+                    "The Sink driver must is RealTimeSink.class or Sink.class, But your " + driverClass);
             if (Sink.class.isAssignableFrom(driverClass)) {
                 checkDataStreamRow(Sink.class, driverClass);
             }
@@ -176,7 +176,7 @@ public final class FlinkNodeLoader
     private static Sink<DataStream<Row>> loadRealTimeSink(RealTimeSink realTimeSink)
     {
         // or user stream.addSink(new FlinkSink(realTimeSink, stream.getType()));
-        return (Sink<DataStream<Row>>) stream -> stream.addSink(new FlinkSink(realTimeSink, stream.getType()));
+        return (Sink<DataStream<Row>>) stream -> stream.addSink(new FlinkSink(realTimeSink, stream.getType())).name(realTimeSink.getClass().getName());
     }
 
     private static TransForm<DataStream<Row>> loadRealTimeTransForm(RealTimeTransForm realTimeTransForm)

@@ -16,7 +16,6 @@
 package ideal.sylph.runner.flink.sqlTest;
 
 import ideal.sylph.etl.Collector;
-import ideal.sylph.etl.Row;
 import ideal.sylph.etl.Schema;
 import ideal.sylph.etl.api.RealTimeTransForm;
 import ideal.sylph.etl.join.JoinContext;
@@ -24,18 +23,24 @@ import ideal.sylph.parser.antlr.AntlrSqlParser;
 import ideal.sylph.parser.antlr.tree.CreateTable;
 import ideal.sylph.runner.flink.sql.FlinkSqlParser;
 import ideal.sylph.runner.flink.sqlTest.utils.PrintTableSink;
-import ideal.sylph.runner.flink.sqlTest.utils.TestTableSource;
+import ideal.sylph.runner.flink.table.SylphTableSource;
 import ideal.sylph.runner.flink.udf.TimeUtil;
 import ideal.sylph.spi.model.PipelinePluginManager;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.calcite.shaded.com.google.common.collect.ImmutableList;
 import org.apache.flink.streaming.api.TimeCharacteristic;
+import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableEnvironment;
+import org.apache.flink.table.api.Types;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
-import org.apache.flink.table.sources.TableSource;
+import org.apache.flink.types.Row;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.ArrayList;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -60,9 +65,14 @@ public class JoinTest
         tableEnv = TableEnvironment.getTableEnvironment(tableEnv.execEnv());
         tableEnv.registerFunction("from_unixtime", new TimeUtil.FromUnixTime());
 
-        TableSource<org.apache.flink.types.Row> tableSource = new TestTableSource();
-        tableEnv.registerTableSource("tb1", tableSource);
-        tableEnv.registerTableSource("tb0", new TestTableSource());
+        //---create stream source
+        TypeInformation[] fieldTypes = {Types.STRING(), Types.STRING(), Types.LONG()};
+        String[] fieldNames = {"topic", "user_id", "time"};
+        RowTypeInfo rowTypeInfo = new RowTypeInfo(fieldTypes, fieldNames);
+        DataStream<Row> dataSource = execEnv.fromCollection(new ArrayList<>(), rowTypeInfo);
+
+        tableEnv.registerTableSource("tb1", new SylphTableSource(rowTypeInfo, dataSource));
+        tableEnv.registerTableSource("tb0", new SylphTableSource(rowTypeInfo, dataSource));
 
         final AntlrSqlParser sqlParser = new AntlrSqlParser();
         this.dimTable = (CreateTable) sqlParser.createStatement("create batch table users(id string, name string, city string) with(type = '" + JoinOperator.class.getName() + "')");
@@ -182,7 +192,7 @@ public class JoinTest
         }
 
         @Override
-        public void process(Row input, Collector<Row> collector)
+        public void process(ideal.sylph.etl.Row input, Collector<ideal.sylph.etl.Row> collector)
         {
         }
 

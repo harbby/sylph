@@ -1,0 +1,10 @@
+
+dependencies {
+    compile 'org.apache.kudu:kudu-client:1.7.0'
+
+    testCompile project(':sylph-runners:sylph-runner-flink')
+    testCompile project(':sylph-spi')
+    testCompile(group: 'org.apache.flink', name: 'flink-streaming-scala_2.11', version: deps.flink) {
+        exclude(module: 'flink-shaded-hadoop2')
+    }
+}
