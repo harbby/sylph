@@ -32,6 +32,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.UnaryOperator;
 
@@ -118,15 +119,17 @@ public interface NodeLoader<R>
         }
     }
 
-    static void injectConfig(PluginConfig pluginConfig, Map config)
-            throws IllegalAccessException
+    @SuppressWarnings("unchecked")
+    static void injectConfig(PluginConfig pluginConfig, Map<String, Object> config)
+            throws IllegalAccessException, NoSuchFieldException
     {
+        Map<String, Object> otherConfig = new HashMap<>(config);
         Class<?> typeClass = pluginConfig.getClass();
         for (Field field : typeClass.getDeclaredFields()) {
             Name name = field.getAnnotation(Name.class);
             if (name != null) {
                 field.setAccessible(true);
-                Object value = config.get(name.value());
+                Object value = otherConfig.remove(name.value());
                 if (value != null) {
                     field.set(pluginConfig, value);
                 }
@@ -138,6 +141,10 @@ public interface NodeLoader<R>
                 }
             }
         }
+
+        Field field = PluginConfig.class.getDeclaredField("otherConfig");
+        field.setAccessible(true);
+        ((Map<String, Object>) field.get(pluginConfig)).putAll(otherConfig);
         logger.info("inject pluginConfig Class [{}], outObj is {}", typeClass, pluginConfig);
     }
 
