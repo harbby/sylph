@@ -57,6 +57,8 @@ public class KafkaSource
     @Override
     public FlinkKafkaConsumerBase<Row> getKafkaConsumerBase(List<String> topicSets, KeyedDeserializationSchema<Row> deserializationSchema, Properties properties)
     {
+        //"enable.auto.commit"-> true
+        //"auto.commit.interval.ms" -> 90000
         return new FlinkKafkaConsumer010<>(
                 topicSets,
                 deserializationSchema,
