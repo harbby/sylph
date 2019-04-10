@@ -68,7 +68,7 @@ public class TimeParser
                 .toString();
     }
 
-    public String getPartionPath()
+    public String getPartitionPath()
     {
         //"/day="+getPartionDay+"/minute="+getPartionMinute +"/"+ getFileName
         return new StringBuilder("day=").append(getPartionDay()).append("/minute=")

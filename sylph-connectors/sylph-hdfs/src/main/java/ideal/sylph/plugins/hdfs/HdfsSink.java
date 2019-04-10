@@ -25,6 +25,7 @@ import ideal.sylph.etl.SinkContext;
 import ideal.sylph.etl.api.RealTimeSink;
 import ideal.sylph.plugins.hdfs.factory.HDFSFactorys;
 import ideal.sylph.plugins.hdfs.parquet.HDFSFactory;
+import org.apache.parquet.column.ParquetProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,15 +97,18 @@ public class HdfsSink
                 this.hdfsFactory = HDFSFactorys.getTextFileWriter()
                         .tableName(sinkTable)
                         .schema(schema)
-                        .writeTableDir(config.writeDir)
+                        .partition(partitionId)
+                        .config(config)
                         .getOrCreate();
                 break;
 
             case "parquet":
                 this.hdfsFactory = HDFSFactorys.getParquetWriter()
+                        .parquetVersion(ParquetProperties.WriterVersion.PARQUET_2_0)
                         .tableName(sinkTable)
                         .schema(schema)
-                        .writeTableDir(config.writeDir)
+                        .partition(partitionId)
+                        .config(config)
                         .getOrCreate();
                 break;
             default:
@@ -139,5 +143,38 @@ public class HdfsSink
         @Name("eventTime_field")
         @Description("this is your data eventTime_field, 必须是13位时间戳")
         private String eventTimeName;
+
+        @Name("file.split.size")
+        @Description("default:128MB")
+        private long fileSplitSize = 128L;
+
+        @Name("batchBufferSize")
+        @Description("default:5MB")
+        private long batchBufferSize = 5L;
+
+        public long getBatchBufferSize()
+        {
+            return this.batchBufferSize;
+        }
+
+        public long getFileSplitSize()
+        {
+            return this.fileSplitSize;
+        }
+
+        public String getEventTimeName()
+        {
+            return this.eventTimeName;
+        }
+
+        public String getFormat()
+        {
+            return this.format;
+        }
+
+        public String getWriteDir()
+        {
+            return this.writeDir;
+        }
     }
 }

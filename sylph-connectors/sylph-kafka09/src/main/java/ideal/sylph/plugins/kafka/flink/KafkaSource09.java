@@ -62,6 +62,8 @@ public class KafkaSource09
     {
         //kafka08 kafka09 需要设置 zk
         properties.put("zookeeper.connect", config.getZookeeper());
+        //"enable.auto.commit"-> true
+        //"auto.commit.interval.ms" -> 90000
         return new FlinkKafkaConsumer09<>(topicSets, deserializationSchema, properties);
     }
 
