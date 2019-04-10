@@ -38,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -119,14 +120,15 @@ public class ApacheParquet
     }
 
     @Override
-    public void writeLine(List<Object> evalRow)
+    public void writeLine(Collection<Object> evalRow)
     {
         Group group = groupFactory.newGroup();
 
         List<ColumnDescriptor> columns = schema.getColumns();
-        for (int i = 0; i < evalRow.size(); i++) {
-            Object value = evalRow.get(i);
+        int i = 0;
+        for (Object value : evalRow) {
             addValueToGroup(columns.get(i).getType().javaType, group, i, value);
+            i++;
         }
 
         try {

@@ -58,6 +58,8 @@ public class KuduSink
     private KuduTable kuduTable;
 
     private final int maxBatchSize;
+    private final int mutationBufferSpace;
+
     private int rowNumCnt = 0;
 
     private Supplier<Operation> operationCreater;
@@ -70,9 +72,11 @@ public class KuduSink
         this.fieldNames = context.getSchema().getFieldNames();
 
         this.maxBatchSize = (int) kuduSinkConfig.batchSize;
+        this.mutationBufferSpace = (int) kuduSinkConfig.mutationBufferSpace;
 
         //--check write mode
         getOperationCreater(kuduSinkConfig.mode, null);
+        logger.info("kudu config: {}", kuduSinkConfig);
     }
 
     private static Supplier<Operation> getOperationCreater(String mode, KuduTable kuduTable)
@@ -103,7 +107,7 @@ public class KuduSink
 
         kuduSession.setFlushMode(SessionConfiguration.FlushMode.MANUAL_FLUSH);
         //kuduSession.setFlushInterval();
-        kuduSession.setMutationBufferSpace(1024 * 1024 * 8); //8m
+        this.kuduSession.setMutationBufferSpace(this.mutationBufferSpace); //8m
         return true;
     }
 
@@ -220,6 +224,10 @@ public class KuduSink
 
         @Name("batchSize")
         @Description("this is kudu write batchSize")
-        private long batchSize = 100;
+        private long batchSize = 1000L;
+
+        @Name("mutationBufferSpace")
+        @Description("kuduSession.setMutationBufferSpace(?)")
+        private long mutationBufferSpace = 1024 * 1024 * 8;
     }
 }

@@ -36,9 +36,18 @@ public class TextTimeParser
     public String getFileName()
     {
         String ip = CommonUtil.getDefaultIpOrPid();
-        //"/_tmp_" + this.getPartionMinute + "_" + ip + "_" + UUID.randomUUID().toString
-        return new StringBuilder("/text_").append(this.getPartionMinute())
-                .append("_").append(ip).append("_").append(CommonUtil.getProcessID())
-                .toString();
+        return "/text_" + this.getPartionMinute() + "_" + ip + "_" + CommonUtil.getProcessID();
+    }
+
+    @Override
+    public String getWriterKey()
+    {
+        return this.getPartionDay();
+    }
+
+    @Override
+    public String getPartitionPath()
+    {
+        return this.getPartionDay() + this.getFileName();
     }
 }

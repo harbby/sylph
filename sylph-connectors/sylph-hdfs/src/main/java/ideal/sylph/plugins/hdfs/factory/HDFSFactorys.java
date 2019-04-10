@@ -16,6 +16,7 @@
 package ideal.sylph.plugins.hdfs.factory;
 
 import ideal.sylph.etl.Schema;
+import ideal.sylph.plugins.hdfs.HdfsSink;
 import ideal.sylph.plugins.hdfs.parquet.HDFSFactory;
 import ideal.sylph.plugins.hdfs.parquet.ParquetFactory;
 import ideal.sylph.plugins.hdfs.txt.TextFileFactory;
@@ -23,17 +24,12 @@ import org.apache.parquet.column.ParquetProperties;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.MessageTypeParser;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import static ideal.sylph.plugins.hdfs.utils.ParquetUtil.buildSchema;
 import static java.util.Objects.requireNonNull;
 
 public class HDFSFactorys
 {
     private HDFSFactorys() {}
-
-    private static final Map<Class<? extends HDFSFactory>, HDFSFactory> hdfsFactory = new HashMap<>();
 
     public static ParquetWriterBuilder getParquetWriter()
     {
@@ -53,27 +49,19 @@ public class HDFSFactorys
         {
             requireNonNull(schema, "schema is null");
             requireNonNull(tableName, "必须传入tableName,如表 xxx_log");
-            requireNonNull(writeTableDir, "必须传入writeTableDir,如: hdfs:///tmp/hive/xxx_log");
+            requireNonNull(sinkConfig.getWriteDir(), "必须传入writeTableDir,如: hdfs:///tmp/hive/xxx_log");
 
-            HDFSFactory factory = hdfsFactory.get(TextFileFactory.class);
-            if (factory != null) {
-                return factory;
-            }
-            else {
-                synchronized (hdfsFactory) {
-                    return hdfsFactory.computeIfAbsent(
-                            ParquetFactory.class,
-                            (k) -> new TextFileFactory(writeTableDir, tableName, schema));
-                }
-            }
+            return new TextFileFactory(tableName, schema, sinkConfig, partition);
         }
     }
 
     public abstract static class Builder
     {
         protected String tableName;
-        protected String writeTableDir;
         protected Schema schema;
+        protected HdfsSink.HdfsSinkConfig sinkConfig;
+        protected long partition;
+        protected String writeTableDir;
 
         /**
          * 注意在两级key 这个是用来区分不同的表的 仅此而已
@@ -88,6 +76,18 @@ public class HDFSFactorys
         public Builder writeTableDir(String writeTableDir)
         {
             this.writeTableDir = writeTableDir;
+            return this;
+        }
+
+        public Builder partition(long partition)
+        {
+            this.partition = partition;
+            return this;
+        }
+
+        public Builder config(HdfsSink.HdfsSinkConfig sinkConfig)
+        {
+            this.sinkConfig = sinkConfig;
             return this;
         }
 
@@ -116,21 +116,11 @@ public class HDFSFactorys
         {
             requireNonNull(schema, "schema is null");
             requireNonNull(tableName, "必须传入tableName,如表 xxx_log");
-            requireNonNull(writeTableDir, "必须传入writeTableDir,如: hdfs:///tmp/hive/xxx_log");
+            requireNonNull(sinkConfig.getWriteDir(), "必须传入writeTableDir,如: hdfs:///tmp/hive/xxx_log");
 
-            HDFSFactory factory = hdfsFactory.get(ParquetFactory.class);
-            if (factory != null) {
-                return factory;
-            }
-            else {
-                String schemaString = buildSchema(schema.getFields());
-                MessageType type = MessageTypeParser.parseMessageType(schemaString);
-                synchronized (hdfsFactory) {
-                    return hdfsFactory.computeIfAbsent(
-                            ParquetFactory.class,
-                            (k) -> new ParquetFactory(writeTableDir, tableName, parquetVersion, type));
-                }
-            }
+            String schemaString = buildSchema(schema.getFields());
+            MessageType type = MessageTypeParser.parseMessageType(schemaString);
+            return new ParquetFactory(sinkConfig.getWriteDir(), tableName, parquetVersion, type);
         }
     }
 

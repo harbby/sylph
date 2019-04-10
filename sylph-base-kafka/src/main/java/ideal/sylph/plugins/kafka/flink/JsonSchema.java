@@ -17,15 +17,18 @@ package ideal.sylph.plugins.kafka.flink;
 
 import ideal.sylph.etl.Schema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.java.typeutils.MapTypeInfo;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.streaming.util.serialization.KeyedDeserializationSchema;
 import org.apache.flink.types.Row;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 import static ideal.sylph.runner.flink.actuator.StreamSqlUtil.schemaToRowTypeInfo;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class JsonSchema
         implements KeyedDeserializationSchema<Row>
@@ -47,10 +50,40 @@ public class JsonSchema
         String[] names = rowTypeInfo.getFieldNames();
         Row row = new Row(names.length);
         for (int i = 0; i < names.length; i++) {
-            Object value = map.get(names[i]);
-            Class<?> aClass = rowTypeInfo.getTypeAt(i).getTypeClass();
-            if (aClass.isArray()) {
+            String key = names[i];
+            switch (key) {
+                case "_topic":
+                    row.setField(i, topic);
+                    continue;
+                case "_message":
+                    row.setField(i, new String(message, UTF_8));
+                    continue;
+                case "_key":
+                    row.setField(i, new String(messageKey, UTF_8));
+                    continue;
+                case "_partition":
+                    row.setField(i, partition);
+                    continue;
+                case "_offset":
+                    row.setField(i, offset);
+                    continue;
+            }
+
+            Object value = map.get(key);
+            TypeInformation<?> type = rowTypeInfo.getTypeAt(i);
+            Class<?> aClass = type.getTypeClass();
+            if (type instanceof MapTypeInfo && ((MapTypeInfo) type).getValueTypeInfo().getTypeClass() == String.class) {
+                Map convertValue = new HashMap();
+                for (Map.Entry entry : ((Map<?, ?>) value).entrySet()) {
+                    convertValue.put(entry.getKey(), entry.getValue() == null ? null : entry.getValue().toString());
+                }
+                row.setField(i, convertValue);
+            }
+            else if (aClass.isArray()) {
                 row.setField(i, MAPPER.convertValue(value, aClass));
+            }
+            else if (aClass == Long.class || aClass == Long.TYPE) {
+                row.setField(i, ((Number) value).longValue());
             }
             else {
                 row.setField(i, value);

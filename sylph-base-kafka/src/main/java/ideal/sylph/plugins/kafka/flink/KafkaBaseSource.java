@@ -53,6 +53,8 @@ public abstract class KafkaBaseSource
         String offsetMode = config.getOffsetMode(); //latest earliest
 
         Properties properties = new Properties();
+        properties.putAll(config.getOtherConfig());
+
         properties.put("bootstrap.servers", config.getBrokers());  //需要把集群的host 配置到程序所在机器
         //"enable.auto.commit" -> (false: java.lang.Boolean), //不自动提交偏移量
         //      "session.timeout.ms" -> "30000", //session默认是30秒 超过5秒不提交offect就会报错
