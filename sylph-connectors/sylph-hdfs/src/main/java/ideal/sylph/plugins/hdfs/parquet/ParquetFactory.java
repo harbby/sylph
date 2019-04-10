@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -248,7 +249,7 @@ public class ParquetFactory
     }
 
     @Override
-    public void writeLine(long eventTime, List<Object> evalRow)
+    public void writeLine(long eventTime, Collection<Object> evalRow)
     {
         try {
             streamData.put(() -> {
@@ -310,7 +311,7 @@ public class ParquetFactory
     private ApacheParquet getParquetWriter(long eventTime)
     {
         TimeParser timeParser = new TimeParser(eventTime);
-        String parquetPath = writeTableDir + timeParser.getPartionPath();
+        String parquetPath = writeTableDir + timeParser.getPartitionPath();
 
         String rowKey = HDFSFactorys.getRowKey(table, timeParser);
         return getParquetWriter(rowKey, () -> {
