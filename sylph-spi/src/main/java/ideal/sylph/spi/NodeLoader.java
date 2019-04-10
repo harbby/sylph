@@ -124,6 +124,7 @@ public interface NodeLoader<R>
             throws IllegalAccessException, NoSuchFieldException
     {
         Map<String, Object> otherConfig = new HashMap<>(config);
+        otherConfig.remove("type");
         Class<?> typeClass = pluginConfig.getClass();
         for (Field field : typeClass.getDeclaredFields()) {
             Name name = field.getAnnotation(Name.class);
