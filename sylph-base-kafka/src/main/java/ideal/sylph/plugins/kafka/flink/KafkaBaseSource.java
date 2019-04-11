@@ -28,6 +28,7 @@ import org.apache.flink.types.Row;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -53,7 +54,11 @@ public abstract class KafkaBaseSource
         String offsetMode = config.getOffsetMode(); //latest earliest
 
         Properties properties = new Properties();
-        properties.putAll(config.getOtherConfig());
+        for (Map.Entry<String, Object> entry : config.getOtherConfig().entrySet()) {
+            if (entry.getValue() != null) {
+                properties.setProperty(entry.getKey(), entry.getValue().toString());
+            }
+        }
 
         properties.put("bootstrap.servers", config.getBrokers());  //需要把集群的host 配置到程序所在机器
         //"enable.auto.commit" -> (false: java.lang.Boolean), //不自动提交偏移量
