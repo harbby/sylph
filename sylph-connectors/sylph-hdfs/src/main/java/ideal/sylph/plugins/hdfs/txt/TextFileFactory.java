@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static com.github.harbby.gadtry.base.Throwables.throwsException;
 import static ideal.sylph.plugins.hdfs.factory.HDFSFactorys.getRowKey;
 import static java.util.Objects.requireNonNull;
@@ -54,6 +55,7 @@ public class TextFileFactory
     private final long partition;
     private final int batchSize;
     private final long fileSplitSize;
+    private final int maxCloseMinute;           //文件创建多久就关闭
 
     public TextFileFactory(String table, Schema schema,
             HdfsSink.HdfsSinkConfig config,
@@ -64,6 +66,8 @@ public class TextFileFactory
         this.table = requireNonNull(table, "table is null");
         this.batchSize = (int) config.getBatchBufferSize() * 1024 * 1024;
         this.fileSplitSize = config.getFileSplitSize() * 1024L * 1024L * 8L;
+        this.maxCloseMinute = (int) config.getMaxCloseMinute();
+        checkState(maxCloseMinute > 0, "maxCloseMinute must > 0");
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             writerManager.entrySet().stream().parallel().forEach(x -> {
@@ -85,15 +89,16 @@ public class TextFileFactory
         String rowKey = getRowKey(this.table, timeParser) + "\u0001" + this.partition;
         FileChannel writer = this.writerManager.get(rowKey);
         if (writer == null) {
-            FileChannel fileChannel = new FileChannel(0L, this.createOutputStream(rowKey, timeParser, 0L));
+            FileChannel fileChannel = this.createOutputStream(rowKey, timeParser, 0L);
             this.writerManager.put(rowKey, fileChannel);
             return fileChannel;
         }
-        else if (writer.getWriteSize() > this.fileSplitSize) {
+        //todo: Increase time-division functionality
+        else if (writer.getWriteSize() > this.fileSplitSize || (System.currentTimeMillis() - writer.getCreateTime()) > maxCloseMinute) {
             writer.close();
-            logger.info("close textFile: {}, size:{}", rowKey, writer.getWriteSize());
+            logger.info("close textFile: {}, size:{}, createTime {}", rowKey, writer.getWriteSize(), writer.getCreateTime());
             long split = writer.getSplit() + 1L;
-            FileChannel fileChannel = new FileChannel(split, this.createOutputStream(rowKey, timeParser, split));
+            FileChannel fileChannel = this.createOutputStream(rowKey, timeParser, split);
             this.writerManager.put(rowKey, fileChannel);
             return fileChannel;
         }
@@ -102,18 +107,15 @@ public class TextFileFactory
         }
     }
 
-    private OutputStream createOutputStream(String rowKey, TextTimeParser timeParser, long split)
+    private FileChannel createOutputStream(String rowKey, TextTimeParser timeParser, long split)
     {
         Configuration hadoopConf = new Configuration();
         CompressionCodec codec = ReflectionUtils.newInstance(LzopCodec.class, hadoopConf);
         String outputPath = this.writeTableDir + timeParser.getPartitionPath() + "_partition_" + this.partition + "_split" + split + codec.getDefaultExtension();
         logger.info("create {} text file {}", rowKey, outputPath);
-
         try {
-            Path path = new Path(outputPath);
-            FileSystem hdfs = path.getFileSystem(hadoopConf);
-            OutputStream outputStream = hdfs.exists(path) ? hdfs.append(path) : hdfs.create(path, false);
-            return codec.createOutputStream(outputStream);
+            FileChannel fileChannel = new FileChannel(outputPath, split, codec, hadoopConf);
+            return fileChannel;
         }
         catch (IOException var11) {
             throw new RuntimeException("textFile " + outputPath + " writer create failed", var11);
@@ -185,16 +187,25 @@ public class TextFileFactory
 
     private class FileChannel
     {
+        private final long createTime = System.currentTimeMillis();
+        private final FileSystem hdfs;
+        private final String filePath;
         private final OutputStream outputStream;
 
         private long writeSize = 0L;
         private long bufferSize;
         private final long split;
 
-        public FileChannel(long split, OutputStream outputStream)
+        public FileChannel(String outputPath, long split, CompressionCodec codec, Configuration hadoopConf)
+                throws IOException
         {
+            Path path = new Path(outputPath);
+            this.hdfs = path.getFileSystem(hadoopConf);
+            OutputStream outputStream = hdfs.exists(path) ? hdfs.append(path) : hdfs.create(path, false);
+
+            this.filePath = outputPath;
             this.split = split;
-            this.outputStream = outputStream;
+            this.outputStream = codec.createOutputStream(outputStream);
         }
 
         private void write(byte[] bytes)
@@ -208,6 +219,16 @@ public class TextFileFactory
                 this.writeSize += this.bufferSize;
                 this.bufferSize = 0L;
             }
+        }
+
+        public String getFilePath()
+        {
+            return filePath;
+        }
+
+        public long getCreateTime()
+        {
+            return createTime;
         }
 
         public long getWriteSize()
@@ -224,6 +245,7 @@ public class TextFileFactory
                 throws IOException
         {
             outputStream.close();
+            hdfs.rename(new Path(filePath), new Path(filePath.replace("_tmp_", "text_")));
         }
     }
 
