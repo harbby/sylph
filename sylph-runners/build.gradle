@@ -6,8 +6,6 @@ subprojects {
   }
 
   dependencies {
-    compileOnly(project(':sylph-spi'))
-
     compile(project(":sylph-etl-api"))
   }
 

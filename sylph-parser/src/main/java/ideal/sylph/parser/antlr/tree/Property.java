@@ -15,13 +15,13 @@
  */
 package ideal.sylph.parser.antlr.tree;
 
-import com.google.common.collect.ImmutableList;
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.github.harbby.gadtry.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
 public class Property
@@ -60,7 +60,7 @@ public class Property
     @Override
     public List<? extends Node> getChildren()
     {
-        return ImmutableList.of(value);
+        return MutableList.of(value);
     }
 
     @Override

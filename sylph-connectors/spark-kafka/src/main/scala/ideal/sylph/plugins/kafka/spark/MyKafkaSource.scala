@@ -15,9 +15,10 @@
  */
 package ideal.sylph.plugins.kafka.spark
 
+import java.nio.charset.StandardCharsets.UTF_8
+
 import ideal.sylph.annotation.{Description, Name, Version}
-import ideal.sylph.etl.api.Source
-import org.apache.kafka.common.serialization.StringDeserializer
+import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.types._
@@ -33,9 +34,10 @@ import org.apache.spark.streaming.kafka010.LocationStrategies.PreferConsistent
   */
 @Name("kafka")
 @Version("1.0.0")
-@Description("this spark kafka source inputStream")
+@Description("this spark kafka 0.10+ source inputStream")
 @SerialVersionUID(1L)
-class MyKafkaSource(@transient private val ssc: StreamingContext, private val config: KafkaSourceConfig) extends Source[DStream[Row]] {
+@Deprecated
+class MyKafkaSource(@transient private val ssc: StreamingContext, private val config: KafkaSourceConfig) {
   /**
     * load stream
     **/
@@ -47,8 +49,8 @@ class MyKafkaSource(@transient private val ssc: StreamingContext, private val co
 
     val kafkaParams = Map[String, Object](
       "bootstrap.servers" -> brokers,
-      "key.deserializer" -> classOf[StringDeserializer],
-      "value.deserializer" -> classOf[StringDeserializer],
+      "key.deserializer" -> classOf[ByteArrayDeserializer], //StringDeserializer
+      "value.deserializer" -> classOf[ByteArrayDeserializer], //StringDeserializer
       "enable.auto.commit" -> (false: java.lang.Boolean), //不自动提交偏移量
       //      "session.timeout.ms" -> "30000", //session默认是30秒
       //      "heartbeat.interval.ms" -> "5000", //10秒提交一次 心跳周期
@@ -57,21 +59,24 @@ class MyKafkaSource(@transient private val ssc: StreamingContext, private val co
     )
 
     val schema: StructType = StructType(Array(
-      StructField("_topic", StringType, nullable = true),
+      StructField("_topic", StringType, nullable = false),
       StructField("_key", StringType, true),
       StructField("_message", StringType, true),
-      StructField("_partition", IntegerType, true),
-      StructField("_offset", LongType, true)
+      StructField("_partition", IntegerType, false),
+      StructField("_offset", LongType, false),
+      StructField("_timestamp", LongType, true),
+      StructField("_timestampType", IntegerType, true)
     ))
 
     val topicSets = topics.split(",")
-    val inputStream = KafkaUtils.createDirectStream[String, String](
-      ssc, PreferConsistent, Subscribe[String, String](topicSets, kafkaParams))
+    val inputStream = KafkaUtils.createDirectStream[Array[Byte], Array[Byte]](
+      ssc, PreferConsistent, Subscribe[Array[Byte], Array[Byte]](topicSets, kafkaParams))
 
     inputStream.map(record =>
-      new GenericRowWithSchema(Array(record.topic(), record.key(), record.value(), record.partition(), record.offset()), schema)
-    ).asInstanceOf[DStream[Row]] //.window(Duration(10 * 1000))
+      new GenericRowWithSchema(Array(record.topic(), new String(record.key(), UTF_8), new String(record.value(), UTF_8),
+        record.partition(), record.offset(), record.timestamp(), record.timestampType().id), schema).asInstanceOf[Row]
+    ) //.window(Duration(10 * 1000))
   }
 
-  override def getSource: DStream[Row] = kafkaStream
+  //  override def getSource: DStream[Row] = kafkaStream
 }

@@ -9,10 +9,10 @@ tasks.compileJava.dependsOn compileScala
 tasks.compileScala.dependsOn.remove("compileJava")
 
 dependencies {
-  runtime(project(':sylph-spi')) {
+  compile(project(':sylph-spi')) {
     exclude(group: 'com.fasterxml.jackson.dataformat')
     exclude(group: 'com.fasterxml.jackson.core')
-    exclude(module: 'guava')
+    //exclude(module: 'guava')
     exclude(module: 'validation-api')
     exclude(module: 'commons-io')
   }
@@ -36,10 +36,19 @@ dependencies {
     exclude (module: 'scala-library')
   }
 
+  compile(project(':sylph-parser')) {
+    exclude(module: 'guava')
+    exclude(group: 'com.fasterxml.jackson.core')
+  }
+  
   //--other--
   compile group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
-  compile(project(':sylph-yarn'))
+  compile(project(':sylph-yarn')){
+    exclude(module: project(':sylph-spi'))
+  }
 
   //--- add scala class
   compileOnly files("$sourceSets.main.scala.outputDir")
+  
+  testCompile group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: deps.jackson
 }

@@ -17,7 +17,7 @@ package ideal.sylph.parser.calcite;
 
 import java.util.Optional;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.github.harbby.gadtry.base.MoreObjects.toStringHelper;
 
 public class TableName
 {

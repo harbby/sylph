@@ -15,7 +15,7 @@
  */
 package ideal.sylph.parser.antlr;
 
-import com.google.common.collect.ImmutableList;
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 import ideal.sylph.parser.antlr.tree.BooleanLiteral;
 import ideal.sylph.parser.antlr.tree.ColumnDefinition;
 import ideal.sylph.parser.antlr.tree.CreateFunction;
@@ -78,6 +78,8 @@ public class AstBuilder
     {
         return new DoubleLiteral(getLocation(context), context.getText());
     }
+
+
 
     @Override
     public Node visitIntegerLiteral(SqlBaseParser.IntegerLiteralContext context)
@@ -186,7 +188,7 @@ public class AstBuilder
         if (context.COMMENT() != null) {
             comment = Optional.of(((StringLiteral) visit(context.string())).getValue());
         }
-        List<Property> properties = ImmutableList.of();
+        List<Property> properties = MutableList.of();
         if (context.properties() != null) {
             properties = visit(context.properties().property(), Property.class);
         }
@@ -219,9 +221,11 @@ public class AstBuilder
     @Override
     public Node visitInsertInto(SqlBaseParser.InsertIntoContext context)
     {
+        QualifiedName qualifiedName = getQualifiedName(context.qualifiedName());
+        String query = getNodeText(context.queryStream());
         String insert = getNodeText(context);
 
-        return new InsertInto(getLocation(context), insert);
+        return new InsertInto(getLocation(context), insert, qualifiedName, query);
     }
 
     @Override

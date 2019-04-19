@@ -1,0 +1,28 @@
+
+dependencies {
+    compileOnly project(':sylph-runners:sylph-runner-spark')
+    
+    //--------------------------------------------------spark----------------------------------------------------
+    compileOnly(group: 'org.apache.spark', name: 'spark-sql_2.11', version: deps.spark) {
+        exclude(module: 'spark-core_2.11')
+    }
+    compileOnly(group: 'org.apache.spark', name: 'spark-streaming_2.11', version: deps.spark) {
+        exclude(module: 'spark-core_2.11')
+    }
+    compileOnly(group: 'org.apache.spark', name: 'spark-core_2.11', version: deps.spark) {
+        exclude(module: 'hadoop-client')
+    }
+    compileOnly group: 'org.apache.hadoop', name: 'hadoop-client', version: '2.7.3'
+    
+    /**
+     * spark streaming kafka 依赖
+     * */
+    compile(group: 'org.apache.spark', name: 'spark-streaming-kafka-0-8_2.11', version: deps.spark) {
+        exclude(group: 'org.spark-project.spark')
+        exclude(group: 'org.scala-lang')
+        exclude(module: 'spark-tags_2.11')
+        exclude(module: 'slf4j-log4j12')
+        exclude(module: 'slf4j-api')
+        exclude(module: 'snappy-java')
+    }
+}

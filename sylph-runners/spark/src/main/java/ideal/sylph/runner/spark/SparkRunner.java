@@ -55,13 +55,18 @@ public class SparkRunner
                         binder.bind(StreamEtlActuator.class).withSingle();
                         binder.bind(Stream2EtlActuator.class).withSingle();
                         binder.bind(SparkSubmitActuator.class).withSingle();
+                        binder.bind(SparkStreamingSqlActuator.class).withSingle();
                         //------------------------
                         binder.bind(PipelinePluginManager.class)
                                 .byCreator(() -> createPipelinePluginManager(context))
                                 .withSingle();
                     });
 
-            return Stream.of(StreamEtlActuator.class, Stream2EtlActuator.class, SparkSubmitActuator.class)
+            return Stream.of(
+                    StreamEtlActuator.class,
+                    Stream2EtlActuator.class,
+                    SparkSubmitActuator.class,
+                    SparkStreamingSqlActuator.class)
                     .map(injector::getInstance).collect(Collectors.toSet());
         }
         catch (Exception e) {

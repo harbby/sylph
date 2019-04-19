@@ -2,9 +2,8 @@ apply plugin: 'antlr'
 
 dependencies {
   antlr "org.antlr:antlr4:4.7.1"
-
-  compile group: 'com.google.guava', name: 'guava', version: deps.guava
-
+  compile group: 'com.github.harbby', name: 'gadtry', version: deps.gadtry
+  
   //
   compile(group: 'org.apache.calcite', name: 'calcite-core', version: '1.16.0') {
     exclude(module: 'guava')

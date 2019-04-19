@@ -17,6 +17,7 @@ package ideal.sylph.main.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.github.harbby.gadtry.aop.AopFactory;
 import com.github.harbby.gadtry.classloader.DirClassLoader;
 import com.github.harbby.gadtry.classloader.PluginLoader;
 import com.github.harbby.gadtry.classloader.ThreadContextClassLoader;
@@ -143,15 +144,31 @@ public class RunnerManager
         String jobType = requireNonNull(job.getActuatorName(), "job Actuator Name is null " + job.getId());
         JobActuator jobActuator = jobActuatorMap.get(jobType);
         checkArgument(jobActuator != null, jobType + " not exists");
-        try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(job.getJobClassLoader())) {
-            switch (config.getRunMode().toLowerCase()) {
-                case "yarn":
-                    return jobActuator.getFactory().createYarnContainer(job, jobInfo);
-                case "local":
-                    return jobActuator.getFactory().createLocalContainer(job, jobInfo);
-                default:
-                    throw new IllegalArgumentException("this job.runtime.mode " + config.getRunMode() + " have't support!");
+
+        switch (config.getRunMode().toLowerCase()) {
+            case "yarn": {
+                try (ThreadContextClassLoader ignored0 = new ThreadContextClassLoader(job.getJobClassLoader())) {
+                    JobContainer container = jobActuator.getFactory().createYarnContainer(job, jobInfo);
+                    //----create JobContainer Proxy
+                    return AopFactory.proxy(JobContainer.class)
+                            .byInstance(container)
+                            .around(proxyContext -> {
+                                /*
+                                 * 通过这个 修改当前YarnClient的ClassLoader的为当前runner的加载器
+                                 * 默认hadoop Configuration使用jvm的AppLoader,会出现 akka.version not setting的错误 原因是找不到akka相关jar包
+                                 * 原因是hadoop Configuration 初始化: this.classLoader = Thread.currentThread().getContextClassLoader();
+                                 * */
+                                try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(job.getJobClassLoader())) {
+                                    return proxyContext.proceed();
+                                }
+                            });
+                }
             }
+
+            case "local":
+                return jobActuator.getFactory().createLocalContainer(job, jobInfo);
+            default:
+                throw new IllegalArgumentException("this job.runtime.mode " + config.getRunMode() + " have't support!");
         }
     }
 

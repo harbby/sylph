@@ -15,7 +15,6 @@
  */
 package ideal.sylph.runner.flink.actuator;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.github.harbby.gadtry.jvm.JVMLauncher;
 import com.github.harbby.gadtry.jvm.JVMLaunchers;
@@ -30,9 +29,9 @@ import ideal.sylph.runner.flink.FlinkJobHandle;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobHandle;
+import ideal.sylph.spi.job.SqlFlow;
 import ideal.sylph.spi.model.PipelinePluginInfo;
 import ideal.sylph.spi.model.PipelinePluginManager;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.graph.StreamGraph;
@@ -50,7 +49,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static org.fusesource.jansi.Ansi.Color.GREEN;
 import static org.fusesource.jansi.Ansi.Color.YELLOW;
@@ -137,44 +135,6 @@ public class FlinkStreamSqlActuator
         JobGraph jobGraph = launcher.startAndGet();
         //setJobConfig(jobGraph, jobConfig, jobClassLoader, jobId);
         return jobGraph;
-    }
-
-    public static class SqlFlow
-            extends Flow
-    {
-        /*
-         *   use regex split sqlText
-         *
-         *  '  ---->        ;(?=([^']*'[^']*')*[^']*$)
-         *  ' and "" ---->  ;(?=([^']*'[^']*')*[^']*$)(?=([^"]*"[^"]*")*[^"]*$)
-         * */
-        public static final String SQL_REGEX = ";(?=([^\"]*\"[^\"]*\")*[^\"]*$)(?=([^']*'[^']*')*[^']*$)";
-        private final String[] sqlSplit;
-        private final String sqlText;
-
-        public SqlFlow(byte[] flowBytes)
-        {
-            this.sqlText = new String(flowBytes, UTF_8);
-            this.sqlSplit = Stream.of(sqlText.split(SQL_REGEX))
-                    .filter(StringUtils::isNotBlank).toArray(String[]::new);
-        }
-
-        public static SqlFlow of(byte[] flowBytes)
-        {
-            return new SqlFlow(flowBytes);
-        }
-
-        @JsonIgnore
-        public String[] getSqlSplit()
-        {
-            return sqlSplit;
-        }
-
-        @Override
-        public String toString()
-        {
-            return sqlText;
-        }
     }
 
     private static PipelinePlugin.PipelineType getPipeType(CreateTable.Type type)

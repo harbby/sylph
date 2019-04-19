@@ -33,6 +33,6 @@ public class AppExceptionMapper
     public Response toResponse(Exception ex)
     {
         logger.warn("", ex);
-        return Response.status(404).entity(Throwables.getStackTraceAsString(ex)).type("text/plain").build();
+        return Response.status(404).entity(Throwables.getStackTraceAsString(Throwables.getRootCause(ex))).type("text/plain").build();
     }
 }
