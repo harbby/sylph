@@ -12,7 +12,7 @@ dependencies {
   compile(project(':sylph-spi')) {
     exclude(group: 'com.fasterxml.jackson.dataformat')
     exclude(group: 'com.fasterxml.jackson.core')
-    //exclude(module: 'guava')
+    exclude(module: 'guava')
     exclude(module: 'validation-api')
     exclude(module: 'commons-io')
   }
