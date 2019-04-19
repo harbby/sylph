@@ -66,8 +66,8 @@ public class TextFileFactory
         this.table = requireNonNull(table, "table is null");
         this.batchSize = (int) config.getBatchBufferSize() * 1024 * 1024;
         this.fileSplitSize = config.getFileSplitSize() * 1024L * 1024L * 8L;
-        this.maxCloseMinute = (int) config.getMaxCloseMinute();
-        checkState(maxCloseMinute > 0, "maxCloseMinute must > 0");
+        checkState(config.getMaxCloseMinute() > 0, "maxCloseMinute must > 0");
+        this.maxCloseMinute = ((int) config.getMaxCloseMinute()) * 60_000;
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             writerManager.entrySet().stream().parallel().forEach(x -> {
@@ -95,6 +95,7 @@ public class TextFileFactory
         }
         //todo: Increase time-division functionality
         else if (writer.getWriteSize() > this.fileSplitSize || (System.currentTimeMillis() - writer.getCreateTime()) > maxCloseMinute) {
+            writerManager.remove(rowKey);
             writer.close();
             logger.info("close textFile: {}, size:{}, createTime {}", rowKey, writer.getWriteSize(), writer.getCreateTime());
             long split = writer.getSplit() + 1L;
