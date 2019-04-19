@@ -21,6 +21,7 @@ import ideal.sylph.annotation.Name;
 import ideal.sylph.annotation.Version;
 import ideal.sylph.etl.SourceContext;
 import ideal.sylph.etl.api.Source;
+import kafka.common.TopicAndPartition;
 import kafka.message.MessageAndMetadata;
 import kafka.serializer.DefaultDecoder;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -32,8 +33,12 @@ import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.dstream.DStream;
 import org.apache.spark.streaming.kafka.HasOffsetRanges;
+import org.apache.spark.streaming.kafka.KafkaCluster;
 import org.apache.spark.streaming.kafka.KafkaUtils;
+import org.apache.spark.streaming.kafka.KafkaUtils$;
 import org.apache.spark.streaming.kafka.OffsetRange;
+import scala.collection.JavaConverters;
+import scala.collection.immutable.Map$;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -83,10 +88,13 @@ public class MyKafkaSource08
 
         org.apache.spark.api.java.function.Function<MessageAndMetadata<byte[], byte[]>, ConsumerRecord> messageHandler =
                 mmd -> new ConsumerRecord<>(mmd.topic(), mmd.partition(), mmd.key(), mmd.message(), mmd.offset());
+        scala.collection.immutable.Map<String, String> map = (scala.collection.immutable.Map<String, String>) Map$.MODULE$.apply(JavaConverters.mapAsScalaMapConverter(props).asScala().toSeq());
+        scala.collection.immutable.Map<TopicAndPartition, Object> fromOffsets = KafkaUtils$.MODULE$.getFromOffsets(new KafkaCluster(map), map, JavaConverters.asScalaSetConverter(topicSets).asScala().toSet());
+        Map<TopicAndPartition, Long> fromOffsetsAsJava = JavaConverters.mapAsJavaMapConverter(fromOffsets).asJava().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, v -> (long) v.getValue()));
 
         JavaDStream<ConsumerRecord> inputStream = KafkaUtils.createDirectStream(ssc,
                 byte[].class, byte[].class, DefaultDecoder.class, DefaultDecoder.class, ConsumerRecord.class,
-                props, new HashMap<>(),
+                props, fromOffsetsAsJava,
                 messageHandler
         );
 
