@@ -34,7 +34,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -105,12 +104,7 @@ public class JobManagerResource
 
                 jobContainer.ifPresent(container -> {
                     line.put("yarnId", container.getRunId());
-                    try {
-                        line.put("status", container.getStatus());
-                    }
-                    catch (IOException e) {
-                        logger.error("get job {} state failed", jobId, e);
-                    }
+                    line.put("status", container.getStatus());
                     line.put("app_url", "/proxy/" + jobId + "/#");
                 });
                 outData.add(line);

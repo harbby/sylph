@@ -34,9 +34,23 @@ public class SparkJobConfig
     private String executorMemory = "1600m";
     private int executorCores = 1;
 
+    private int sparkStreamingBatchDuration = 5_000;   // 5 Seconds is default
+
     private String queue = "default";
 
     private Map<String, String> sparkConf = new HashMap<>();
+
+    @JsonProperty("sparkStreamingBatchDuration")
+    public void setSparkStreamingBatchDuration(int sparkStreamingBatchDuration)
+    {
+        this.sparkStreamingBatchDuration = sparkStreamingBatchDuration;
+    }
+
+    @JsonProperty("sparkStreamingBatchDuration")
+    public int getSparkStreamingBatchDuration()
+    {
+        return sparkStreamingBatchDuration;
+    }
 
     @JsonProperty("driver-cores")
     public void setDriverCores(int driverCores)

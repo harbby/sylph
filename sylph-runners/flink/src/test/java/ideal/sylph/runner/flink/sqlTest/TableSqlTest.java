@@ -16,7 +16,6 @@
 package ideal.sylph.runner.flink.sqlTest;
 
 import com.github.harbby.gadtry.base.JavaTypes;
-import com.google.common.collect.ImmutableMap;
 import ideal.sylph.etl.Schema;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -79,28 +78,27 @@ public class TableSqlTest
         tableEnv.execEnv().execute();
     }
 
-    @Test
-    public void mapSizeTest()
-            throws Exception
-    {
-        StreamTableEnvironment tableEnv = getTableEnv();
-
-        Schema schema = Schema.newBuilder()
-                .add("props", JavaTypes.make(Map.class, new Class[] {String.class, Integer.class}, null))
-                .build();
-        RowTypeInfo rowTypeInfo = schemaToRowTypeInfo(schema);
-        Map<String,Integer> mapValue = new HashMap<>();
-        mapValue.put("key", 123);
-
-        DataStream<Row> stream = tableEnv.execEnv().fromElements(Row.of(mapValue)).returns(rowTypeInfo);
-        Table table = tableEnv.fromDataStream(stream, "props");
-
-        table.printSchema();
-        tableEnv.toAppendStream(tableEnv.sqlQuery("select size(props) from " + table), Row.class).print();
-
-
-        tableEnv.execEnv().execute();
-    }
+//    @Test
+//    public void mapSizeTest()
+//            throws Exception
+//    {
+//        StreamTableEnvironment tableEnv = getTableEnv();
+//
+//        Schema schema = Schema.newBuilder()
+//                .add("props", JavaTypes.make(Map.class, new Class[] {String.class, Integer.class}, null))
+//                .build();
+//        RowTypeInfo rowTypeInfo = schemaToRowTypeInfo(schema);
+//        Map<String, Integer> mapValue = new HashMap<>();
+//        mapValue.put("key", 123);
+//
+//        DataStream<Row> stream = tableEnv.execEnv().fromElements(Row.of(mapValue)).returns(rowTypeInfo);
+//        Table table = tableEnv.fromDataStream(stream, "props");
+//
+//        table.printSchema();
+//        tableEnv.toAppendStream(tableEnv.sqlQuery("select size(props) from " + table), Row.class).print();
+//
+//        Assert.assertNotNull(tableEnv.execEnv().getExecutionPlan());
+//    }
 
     @Test
     public void selectCastErrorTest()
@@ -122,7 +120,13 @@ public class TableSqlTest
                         System.out.println(value);
                     }
                 });
-        tableEnv.execEnv().execute();
+        try {
+            tableEnv.execEnv().execute();
+            Assert.fail();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
@@ -144,6 +148,12 @@ public class TableSqlTest
                         System.out.println(value);
                     }
                 });
-        tableEnv.execEnv().execute();
+        try {
+            tableEnv.execEnv().execute();
+            Assert.fail();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

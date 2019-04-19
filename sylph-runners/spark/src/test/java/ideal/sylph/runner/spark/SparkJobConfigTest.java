@@ -16,7 +16,7 @@
 package ideal.sylph.runner.spark;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -25,13 +25,24 @@ public class SparkJobConfigTest
 {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    @Test
     public void testConfigParser()
             throws IOException
     {
-        String confString = "{\"type\":\"SparkJobConfigTest\"}";
-        SparkJobConfig.SparkConfReader a1 =  MAPPER.readValue(confString, SparkJobConfig.SparkConfReader.class);
+        String confString = "{\n" +
+                "    \"type\": \"SparkJobConfigTest\",\n" +
+                "    \"config\": {\n" +
+                "        \"driver-memory\": \"1024m\",\n" +
+                "        \"driver-cores\": 1,\n" +
+                "        \"num-executors\": 2,\n" +
+                "        \"executor-memory\": \"1024m\",\n" +
+                "        \"executor-cores\": 1,\n" +
+                "        \"queue\": \"default\",\n" +
+                "        \"sparkConf\": {}\n" +
+                "    }\n" +
+                "}";
+        SparkJobConfig.SparkConfReader a1 = MAPPER.readValue(confString, SparkJobConfig.SparkConfReader.class);
         String a2 = MAPPER.writeValueAsString(a1);
         System.out.println(a2);
+        Assert.assertNotNull(a2);
     }
 }

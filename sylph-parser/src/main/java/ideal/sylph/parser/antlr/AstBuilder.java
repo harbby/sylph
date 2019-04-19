@@ -79,8 +79,6 @@ public class AstBuilder
         return new DoubleLiteral(getLocation(context), context.getText());
     }
 
-
-
     @Override
     public Node visitIntegerLiteral(SqlBaseParser.IntegerLiteralContext context)
     {

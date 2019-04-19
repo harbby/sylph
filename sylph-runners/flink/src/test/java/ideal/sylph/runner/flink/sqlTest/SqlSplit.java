@@ -18,7 +18,7 @@ package ideal.sylph.runner.flink.sqlTest;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static ideal.sylph.runner.flink.actuator.FlinkStreamSqlActuator.SqlFlow.SQL_REGEX;
+import static ideal.sylph.spi.job.SqlFlow.SQL_REGEX;
 
 public class SqlSplit
 {

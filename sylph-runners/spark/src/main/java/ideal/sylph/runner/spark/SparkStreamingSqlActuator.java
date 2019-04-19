@@ -33,7 +33,7 @@ import ideal.sylph.spi.model.PipelinePluginInfo;
 import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.streaming.Seconds;
+import org.apache.spark.streaming.Duration;
 import org.apache.spark.streaming.StreamingContext;
 import org.fusesource.jansi.Ansi;
 import org.slf4j.Logger;
@@ -107,21 +107,22 @@ public class SparkStreamingSqlActuator
     {
         SqlFlow flow = (SqlFlow) inFlow;
         //----- compile --
-        return compile(jobId, flow, pluginManager, jobConfig, jobClassLoader);
+        SparkJobConfig sparkJobConfig = ((SparkJobConfig.SparkConfReader) jobConfig).getConfig();
+        return compile(jobId, flow, pluginManager, sparkJobConfig, jobClassLoader);
     }
 
-    private static JobHandle compile(String jobId, SqlFlow sqlFlow, PipelinePluginManager pluginManager, JobConfig jobConfig, URLClassLoader jobClassLoader)
+    private static JobHandle compile(String jobId, SqlFlow sqlFlow, PipelinePluginManager pluginManager, SparkJobConfig sparkJobConfig, URLClassLoader jobClassLoader)
             throws JVMException
     {
+        int batchDuration = sparkJobConfig.getSparkStreamingBatchDuration();
         final AtomicBoolean isCompile = new AtomicBoolean(true);
         final Supplier<StreamingContext> appGetter = (Supplier<StreamingContext> & JobHandle & Serializable) () -> {
             logger.info("========create spark StreamingContext mode isCompile = " + isCompile.get() + "============");
             SparkConf sparkConf = isCompile.get() ?
                     new SparkConf().setMaster("local[*]").setAppName("sparkCompile")
                     : new SparkConf();
-            //todo: 5s is default
             SparkSession sparkSession = SparkSession.builder().config(sparkConf).getOrCreate();
-            StreamingContext ssc = new StreamingContext(sparkSession.sparkContext(), Seconds.apply(5));
+            StreamingContext ssc = new StreamingContext(sparkSession.sparkContext(), Duration.apply(batchDuration));
 
             //build sql
             try {

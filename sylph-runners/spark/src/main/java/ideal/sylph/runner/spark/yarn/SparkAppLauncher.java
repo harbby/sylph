@@ -72,11 +72,11 @@ public class SparkAppLauncher
         sparkConf.set("driver-java-options", "-XX:PermSize=64M -XX:MaxPermSize=128M");
         sparkConf.set("spark.yarn.stagingDir", appHome);
         //-------------
-        sparkConf.set("spark.executor.instances", jobConfig.getNumExecutors()+"");   //EXECUTOR_COUNT
+        sparkConf.set("spark.executor.instances", jobConfig.getNumExecutors() + "");   //EXECUTOR_COUNT
         sparkConf.set("spark.executor.memory", jobConfig.getExecutorMemory());  //EXECUTOR_MEMORY
-        sparkConf.set("spark.executor.cores", jobConfig.getExecutorCores()+"");
+        sparkConf.set("spark.executor.cores", jobConfig.getExecutorCores() + "");
 
-        sparkConf.set("spark.driver.cores", jobConfig.getDriverCores()+"");
+        sparkConf.set("spark.driver.cores", jobConfig.getDriverCores() + "");
         sparkConf.set("spark.driver.memory", jobConfig.getDriverMemory());
         //--------------
 

@@ -67,6 +67,7 @@ import static java.util.Objects.requireNonNull;
 
 public class SQLHepler
 {
+    private SQLHepler() {}
 
     public static void buildSql(StreamingContext ssc, final PipelinePluginManager pluginManager, String jobId, SqlFlow flow)
             throws Exception

@@ -49,6 +49,4 @@ dependencies {
 
   //--- add scala class
   compileOnly files("$sourceSets.main.scala.outputDir")
-  
-  testCompile group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: deps.jackson
 }
