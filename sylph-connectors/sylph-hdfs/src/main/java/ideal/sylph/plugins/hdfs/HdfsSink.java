@@ -152,6 +152,10 @@ public class HdfsSink
         @Description("default:5MB")
         private long batchBufferSize = 5L;
 
+        @Name("maxCloseMinute")
+        @Description("default:30 Minute")
+        private long maxCloseMinute = 30;
+
         public long getBatchBufferSize()
         {
             return this.batchBufferSize;
@@ -175,6 +179,11 @@ public class HdfsSink
         public String getWriteDir()
         {
             return this.writeDir;
+        }
+
+        public long getMaxCloseMinute()
+        {
+            return maxCloseMinute;
         }
     }
 }
