@@ -28,6 +28,9 @@ public final class RowGet
 {
     public String eval(Row row, int i)
     {
+        if (row == null) {
+            return null;
+        }
         Object value = row.getField(i);
         return value == null ? null : value.toString();
     }

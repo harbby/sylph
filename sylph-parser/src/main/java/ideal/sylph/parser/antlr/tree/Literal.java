@@ -15,7 +15,7 @@
  */
 package ideal.sylph.parser.antlr.tree;
 
-import com.google.common.collect.ImmutableList;
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 
 import java.util.List;
 import java.util.Optional;
@@ -31,6 +31,6 @@ public abstract class Literal
     @Override
     public List<Node> getChildren()
     {
-        return ImmutableList.of();
+        return MutableList.of();
     }
 }

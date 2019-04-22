@@ -9,7 +9,7 @@ tasks.compileJava.dependsOn compileScala
 tasks.compileScala.dependsOn.remove("compileJava")
 
 dependencies {
-  runtime(project(':sylph-spi')) {
+  compile(project(':sylph-spi')) {
     exclude(group: 'com.fasterxml.jackson.dataformat')
     exclude(group: 'com.fasterxml.jackson.core')
     exclude(module: 'guava')
@@ -31,14 +31,17 @@ dependencies {
     exclude(module: '*')
   }
   compileOnly group: 'org.apache.hadoop', name: 'hadoop-client', version: '2.7.3'
-
-  compileOnly(group: 'org.apache.spark', name: 'spark-streaming-kafka-0-10_2.11', version: deps.spark) {
-    exclude (module: 'scala-library')
+  
+  compile(project(':sylph-parser')) {
+    exclude(module: 'guava')
+    exclude(group: 'com.fasterxml.jackson.core')
   }
-
+  
   //--other--
   compile group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
-  compile(project(':sylph-yarn'))
+  compile(project(':sylph-yarn')){
+    exclude(module: project(':sylph-spi'))
+  }
 
   //--- add scala class
   compileOnly files("$sourceSets.main.scala.outputDir")

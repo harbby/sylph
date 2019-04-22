@@ -15,7 +15,7 @@
  */
 package ideal.sylph.parser.antlr.tree;
 
-import com.google.common.collect.ImmutableList;
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 
 import java.util.List;
 import java.util.Objects;
@@ -25,28 +25,42 @@ public class InsertInto
         extends Statement
 {
     private final String insertQuery;
+    private final QualifiedName tableName;
+    private final String query;
 
-    public InsertInto(NodeLocation location, String insertQuery)
+    public InsertInto(NodeLocation location, String insertQuery, QualifiedName qualifiedName, String query)
     {
-        this(Optional.of(location), insertQuery);
+        this(Optional.of(location), insertQuery, qualifiedName, query);
     }
 
-    private InsertInto(Optional<NodeLocation> location, String insertQuery)
+    private InsertInto(Optional<NodeLocation> location, String insertQuery, QualifiedName qualifiedName, String query)
     {
         super(location);
         this.insertQuery = insertQuery;
+        this.tableName = qualifiedName;
+        this.query = query;
+    }
+
+    public String getTableName()
+    {
+        return tableName.getParts().get(tableName.getParts().size() - 1);
+    }
+
+    public String getQuery()
+    {
+        return query;
     }
 
     @Override
     public List<? extends Node> getChildren()
     {
-        return ImmutableList.of();
+        return MutableList.of();
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(insertQuery);
+        return Objects.hash(insertQuery, tableName, query);
     }
 
     @Override
@@ -59,7 +73,9 @@ public class InsertInto
             return false;
         }
         InsertInto o = (InsertInto) obj;
-        return Objects.equals(insertQuery, o.insertQuery);
+        return Objects.equals(insertQuery, o.insertQuery) &&
+                Objects.equals(tableName, o.tableName) &&
+                Objects.equals(query, o.query);
     }
 
     @Override

@@ -25,6 +25,7 @@ import ideal.sylph.spi.model.PipelinePluginInfo;
 import ideal.sylph.spi.model.PipelinePluginManager;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -55,14 +56,19 @@ public class SparkRunner
                         binder.bind(StreamEtlActuator.class).withSingle();
                         binder.bind(Stream2EtlActuator.class).withSingle();
                         binder.bind(SparkSubmitActuator.class).withSingle();
+                        binder.bind(SparkStreamingSqlActuator.class).withSingle();
+                        binder.bind(StructuredStreamingSqlActuator.class).withSingle();
                         //------------------------
-                        binder.bind(PipelinePluginManager.class)
-                                .byCreator(() -> createPipelinePluginManager(context))
-                                .withSingle();
+                        binder.bind(RunnerContext.class).byInstance(context);
                     });
 
-            return Stream.of(StreamEtlActuator.class, Stream2EtlActuator.class, SparkSubmitActuator.class)
-                    .map(injector::getInstance).collect(Collectors.toSet());
+            return Stream.of(
+                    StreamEtlActuator.class,
+                    Stream2EtlActuator.class,
+                    SparkSubmitActuator.class,
+                    SparkStreamingSqlActuator.class,
+                    StructuredStreamingSqlActuator.class
+            ).map(injector::getInstance).collect(Collectors.toSet());
         }
         catch (Exception e) {
             throw throwsException(e);
@@ -75,14 +81,9 @@ public class SparkRunner
         return SparkContainerFactory.class;
     }
 
-    private static PipelinePluginManager createPipelinePluginManager(RunnerContext context)
+    public static PipelinePluginManager createPipelinePluginManager(RunnerContext context, Collection<Class<?>> filterClass)
     {
-        final Set<String> keyword = Stream.of(
-                org.apache.spark.streaming.StreamingContext.class,
-                org.apache.spark.sql.SparkSession.class,
-                org.apache.spark.streaming.dstream.DStream.class,
-                org.apache.spark.sql.Dataset.class
-        ).map(Class::getName).collect(Collectors.toSet());
+        final Set<String> keyword = filterClass.stream().map(Class::getName).collect(Collectors.toSet());
 
         final Set<PipelinePluginInfo> runnerPlugins =
                 filterRunnerPlugins(context.getFindPlugins(), keyword, SparkRunner.class);

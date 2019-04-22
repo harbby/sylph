@@ -16,6 +16,7 @@
 package ideal.sylph.runner.spark;
 
 import com.github.harbby.gadtry.ioc.Bean;
+import com.github.harbby.gadtry.ioc.IocFactory;
 import com.github.harbby.gadtry.jvm.JVMLauncher;
 import com.github.harbby.gadtry.jvm.JVMLaunchers;
 import ideal.sylph.runner.spark.etl.sparkstreaming.StreamNodeLoader;
@@ -67,8 +68,8 @@ final class JobHelper
                     .getOrCreate()
                     : SparkSession.builder().getOrCreate();
 
-            Bean bean = binder -> binder.bind(SparkSession.class, spark);
-            StructuredNodeLoader loader = new StructuredNodeLoader(pluginManager, bean)
+            IocFactory iocFactory = IocFactory.create(binder -> binder.bind(SparkSession.class, spark));
+            StructuredNodeLoader loader = new StructuredNodeLoader(pluginManager, iocFactory)
             {
                 @Override
                 public UnaryOperator<Dataset<Row>> loadSink(String driverStr, Map<String, Object> config)
@@ -112,7 +113,7 @@ final class JobHelper
             StreamingContext spark = new StreamingContext(sparkSession.sparkContext(), Seconds.apply(5));
 
             Bean bean = binder -> binder.bind(StreamingContext.class, spark);
-            StreamNodeLoader loader = new StreamNodeLoader(pluginManager, bean);
+            StreamNodeLoader loader = new StreamNodeLoader(pluginManager, IocFactory.create(bean));
             buildGraph(loader, jobId, flow);
             return spark;
         };

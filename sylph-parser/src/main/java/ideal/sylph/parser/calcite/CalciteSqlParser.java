@@ -15,7 +15,7 @@
  */
 package ideal.sylph.parser.calcite;
 
-import com.google.common.collect.ImmutableList;
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 import org.apache.calcite.config.Lex;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -39,7 +39,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.google.common.base.Preconditions.checkState;
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.util.Objects.requireNonNull;
 import static org.apache.calcite.sql.JoinType.INNER;
 import static org.apache.calcite.sql.JoinType.LEFT;
@@ -163,8 +163,8 @@ public class CalciteSqlParser
 
         SqlNode joinOn = joinInfo.getSqlJoin().getCondition();
         List<SqlNode> sqlNodeList = joinOn.getKind() == SqlKind.AND
-                ? ImmutableList.copyOf(((SqlBasicCall) joinOn).getOperands())
-                : ImmutableList.of(joinOn);
+                ? MutableList.of(((SqlBasicCall) joinOn).getOperands())
+                : MutableList.of(joinOn);
 
         /*
          * joinOnMapping is Map<streamField,batchField>

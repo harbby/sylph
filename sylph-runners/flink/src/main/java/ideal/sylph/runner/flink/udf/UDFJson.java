@@ -42,6 +42,9 @@ public class UDFJson
     public String eval(String jsonString, String pathString)
             throws IOException
     {
+        if (jsonString == null) {
+            return null;
+        }
         if (!pathString.startsWith("$")) {
             pathString = "$." + pathString;
         }

@@ -15,6 +15,7 @@
  */
 package ideal.sylph.runtime.local;
 
+import com.github.harbby.gadtry.jvm.JVMException;
 import com.github.harbby.gadtry.jvm.VmFuture;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobContainer;
@@ -80,7 +81,18 @@ public abstract class LocalContainer
     public Job.Status getStatus()
     {
         if (status == Job.Status.RUNNING) {
-            return vmFuture.isRunning() ? Job.Status.RUNNING : Job.Status.STOP;
+            if (vmFuture.isRunning()) {
+                return Job.Status.RUNNING;
+            }
+            else {
+                try {
+                    vmFuture.get();
+                }
+                catch (JVMException e) {
+                    logger.error("", e);
+                }
+                return Job.Status.STOP;
+            }
         }
         return status;
     }

@@ -15,14 +15,14 @@
  */
 package ideal.sylph.parser.antlr.tree;
 
-import com.google.common.collect.ImmutableList;
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 
 public class Identifier
         extends Expression
@@ -53,7 +53,7 @@ public class Identifier
         this.value = value;
         this.delimited = delimited;
 
-        checkArgument(delimited || NAME_PATTERN.matcher(value).matches(), "value contains illegal characters: %s", value);
+        checkState(delimited || NAME_PATTERN.matcher(value).matches(), "value contains illegal characters: " + value);
     }
 
     public String getValue()
@@ -69,7 +69,7 @@ public class Identifier
     @Override
     public List<Node> getChildren()
     {
-        return ImmutableList.of();
+        return MutableList.of();
     }
 
     @Override

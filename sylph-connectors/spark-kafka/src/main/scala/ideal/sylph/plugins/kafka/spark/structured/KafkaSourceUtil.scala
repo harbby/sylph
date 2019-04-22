@@ -13,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.runner.spark.etl.structured
+package ideal.sylph.plugins.kafka.spark.structured
 
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
-import org.slf4j.{Logger, LoggerFactory}
-
-import scala.collection.mutable
+import org.slf4j.LoggerFactory
 
 object KafkaSourceUtil {
-  private val logger: Logger = LoggerFactory.getLogger(KafkaSourceUtil.getClass)
+  private val logger = LoggerFactory.getLogger(KafkaSourceUtil.getClass)
 
   /**
     * 下面这些参数 是结构化流官网 写明不支持的参数
     **/
-  val filterList = List[String](
+  private val filterKeys = List[String](
     "kafka_group_id", "group.id",
     "key.deserializer",
     "value.deserializer",
@@ -40,15 +38,13 @@ object KafkaSourceUtil {
   /**
     * 对配置进行解析变换
     **/
-  private def configParser(optionMap: java.util.Map[String, AnyRef]): mutable.Map[String, String] = {
+  private def configParser(optionMap: java.util.Map[String, AnyRef]) = {
     import collection.JavaConverters._
     optionMap.asScala.filter(x => {
-      if (filterList.contains(x._1)) {
+      if (filterKeys.contains(x._1)) {
         logger.warn("spark结构化流引擎 忽略参数:key[{}] value[{}]", Array(x._1, x._2): _*)
         false
-      } else {
-        true
-      }
+      } else true
     }).map(x => {
       val key = x._1 match {
         case "kafka_topic" => "subscribe"
@@ -65,12 +61,13 @@ object KafkaSourceUtil {
       .format("kafka")
       .options(configParser(optionMap))
       .load()
+    df
 
-    val columns = df.columns.map {
-      case "key" => "CAST(key AS STRING) as key"
-      case "value" => "CAST(value AS STRING) as value"
-      case that => that
-    }
-    df.selectExpr(columns: _*) //对输入的数据进行 cast转换
+    //    val columns = df.columns.map {
+    //      case "key" => "CAST(key AS STRING) as key"
+    //      case "value" => "CAST(value AS STRING) as value"
+    //      case that => that
+    //    }
+    //    df.selectExpr(columns: _*) //对输入的数据进行 cast转换
   }
 }

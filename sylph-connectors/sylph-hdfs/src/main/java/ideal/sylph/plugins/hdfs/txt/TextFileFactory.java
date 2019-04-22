@@ -34,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static com.github.harbby.gadtry.base.Throwables.throwsException;
 import static ideal.sylph.plugins.hdfs.factory.HDFSFactorys.getRowKey;
@@ -64,6 +65,23 @@ public class TextFileFactory
         this.table = requireNonNull(table, "table is null");
         this.batchSize = (int) config.getBatchBufferSize() * 1024 * 1024;
         this.fileSplitSize = config.getFileSplitSize() * 1024L * 1024L * 8L;
+
+        new Thread(() -> {
+            while (true) {
+                try {
+                    //writerManager.values().stream().map(x->x.get)
+                    //todo: //
+
+                    TimeUnit.SECONDS.sleep(1);
+                }
+                catch (InterruptedException e) {
+                    break;
+                }
+                catch (Exception e) {
+                    logger.error("check Thread error:", e);
+                }
+            }
+        }).start();
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             writerManager.entrySet().stream().parallel().forEach(x -> {
@@ -202,10 +220,10 @@ public class TextFileFactory
         {
             outputStream.write(bytes);
             bufferSize += bytes.length;
+            this.writeSize += bytes.length;
 
             if (bufferSize > batchSize) {
                 this.outputStream.flush();
-                this.writeSize += this.bufferSize;
                 this.bufferSize = 0L;
             }
         }

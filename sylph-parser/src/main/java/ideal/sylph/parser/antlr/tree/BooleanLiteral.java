@@ -15,11 +15,10 @@
  */
 package ideal.sylph.parser.antlr.tree;
 
-import com.google.common.base.Preconditions;
-
 import java.util.Objects;
 import java.util.Optional;
 
+import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
 import static java.util.Locale.ENGLISH;
 import static java.util.Objects.requireNonNull;
 
@@ -37,7 +36,7 @@ public class BooleanLiteral
     {
         super(location);
         requireNonNull(value, "value is null");
-        Preconditions.checkArgument(value.toLowerCase(ENGLISH).equals("true") || value.toLowerCase(ENGLISH).equals("false"));
+        checkArgument(value.toLowerCase(ENGLISH).equals("true") || value.toLowerCase(ENGLISH).equals("false"));
 
         this.value = value.toLowerCase(ENGLISH).equals("true");
     }

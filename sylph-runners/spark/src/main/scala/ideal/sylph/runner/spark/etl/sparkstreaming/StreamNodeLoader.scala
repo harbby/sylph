@@ -17,7 +17,7 @@ package ideal.sylph.runner.spark.etl.sparkstreaming
 
 import java.util.function.UnaryOperator
 
-import com.github.harbby.gadtry.ioc.{Bean, IocFactory}
+import com.github.harbby.gadtry.ioc.IocFactory
 import ideal.sylph.etl.PipelinePlugin
 import ideal.sylph.etl.api._
 import ideal.sylph.runner.spark.etl.{SparkRow, SparkUtil}
@@ -25,15 +25,14 @@ import ideal.sylph.spi.NodeLoader
 import ideal.sylph.spi.model.PipelinePluginManager
 import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{Dataset, Row}
 import org.apache.spark.streaming.dstream.DStream
 
 /**
   * Created by ideal on 17-5-8.
   * spark 1.x spark Streaming
   */
-class StreamNodeLoader(private val pluginManager: PipelinePluginManager, private val bean: Bean) extends NodeLoader[DStream[Row]] {
-  private lazy val iocFactory = IocFactory.create(bean)
+class StreamNodeLoader(private val pluginManager: PipelinePluginManager, private val iocFactory: IocFactory) extends NodeLoader[DStream[Row]] {
 
   override def loadSource(driverStr: String, config: java.util.Map[String, Object]): UnaryOperator[DStream[Row]] = {
     val driverClass = pluginManager.loadPluginDriver(driverStr, PipelinePlugin.PipelineType.source)
@@ -42,6 +41,25 @@ class StreamNodeLoader(private val pluginManager: PipelinePluginManager, private
 
     new UnaryOperator[DStream[Row]] {
       override def apply(stream: DStream[Row]): DStream[Row] = source.getSource
+    }
+  }
+
+  def loadRDDSink(driverStr: String, config: java.util.Map[String, Object]): UnaryOperator[Dataset[Row]] = {
+    val driverClass = pluginManager.loadPluginDriver(driverStr, PipelinePlugin.PipelineType.sink)
+    val driver = getPluginInstance(driverClass, config)
+
+    val sink: Sink[RDD[Row]] = driver match {
+      case realTimeSink: RealTimeSink =>
+        loadRealTimeSink(realTimeSink)
+      case sink: Sink[_] => sink.asInstanceOf[Sink[RDD[Row]]]
+      case _ => throw new RuntimeException("unknown sink type:" + driver)
+    }
+
+    new UnaryOperator[Dataset[Row]] {
+      override def apply(streamRDD: Dataset[Row]): Dataset[Row] = {
+        sink.run(streamRDD.rdd)
+        null
+      }
     }
   }
 
@@ -58,7 +76,8 @@ class StreamNodeLoader(private val pluginManager: PipelinePluginManager, private
 
     new UnaryOperator[DStream[Row]] {
       override def apply(stream: DStream[Row]): DStream[Row] = {
-        DStreamUtil.dstreamParser(stream, sink) //这里处理偏移量提交问题
+        //DStreamUtil.dstreamParser(stream, sink) //这里处理偏移量提交问题
+        stream.foreachRDD(rdd => sink.run(rdd))
         null
       }
     }
