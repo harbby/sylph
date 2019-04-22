@@ -70,7 +70,7 @@ public class TextFileFactory
         this.table = requireNonNull(table, "table is null");
         this.batchSize = (int) config.getBatchBufferSize() * 1024 * 1024;
         this.fileSplitSize = config.getFileSplitSize() * 1024L * 1024L * 8L;
-        checkState(config.getMaxCloseMinute() > 0, "maxCloseMinute must > 0");
+        checkState(config.getMaxCloseMinute() >= 5, "maxCloseMinute must > 5Minute");
         this.maxCloseMinute = ((int) config.getMaxCloseMinute()) * 60_000;
 
         //todo: Increase time-division functionality
