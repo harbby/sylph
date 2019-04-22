@@ -32,8 +32,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
@@ -49,6 +51,7 @@ public class TextFileFactory
 {
     private static final Logger logger = LoggerFactory.getLogger(TextFileFactory.class);
     private final Map<String, FileChannel> writerManager = new HashCache();
+    private final Set<String> needClose = new HashSet<>();
 
     private final String writeTableDir;
     private final String table;
@@ -67,14 +70,23 @@ public class TextFileFactory
         this.table = requireNonNull(table, "table is null");
         this.batchSize = (int) config.getBatchBufferSize() * 1024 * 1024;
         this.fileSplitSize = config.getFileSplitSize() * 1024L * 1024L * 8L;
-        checkState(config.getMaxCloseMinute() > 0, "maxCloseMinute must > 0");
+        checkState(config.getMaxCloseMinute() >= 5, "maxCloseMinute must > 5Minute");
         this.maxCloseMinute = ((int) config.getMaxCloseMinute()) * 60_000;
 
+        //todo: Increase time-division functionality
         new Thread(() -> {
+            Thread.currentThread().setName("TextFileFactory_TimeChecker");
             while (true) {
                 try {
-                    //writerManager.values().stream().map(x->x.get)
-                    //todo: //
+                    synchronized (needClose) {
+                        final long thisSystemTime = System.currentTimeMillis();
+                        writerManager.forEach((key, writer) -> {
+                            boolean isClose = (thisSystemTime - writer.getCreateTime()) > maxCloseMinute;
+                            if (isClose) {
+                                needClose.add(key);
+                            }
+                        });
+                    }
 
                     TimeUnit.SECONDS.sleep(1);
                 }
@@ -103,23 +115,40 @@ public class TextFileFactory
     private FileChannel getTxtFileWriter(long eventTime)
             throws IOException
     {
+        if (!needClose.isEmpty()) {
+            synchronized (needClose) {
+                for (String rowKey : needClose) {
+                    FileChannel writer = writerManager.remove(rowKey);
+                    if (writer != null) {
+                        writer.close();
+                        logger.info("close >MaxFileMinute[{}] textFile: {}, size:{}, createTime {}", maxCloseMinute, writer.getFilePath(), writer.getWriteSize(), writer.getCreateTime());
+                    }
+                }
+                needClose.clear();
+            }
+        }
+
+        //---------------------------------
         TextTimeParser timeParser = new TextTimeParser(eventTime);
         String rowKey = getRowKey(this.table, timeParser) + "\u0001" + this.partition;
         FileChannel writer = this.writerManager.get(rowKey);
         if (writer == null) {
-            FileChannel fileChannel = this.createOutputStream(rowKey, timeParser, 0L);
-            this.writerManager.put(rowKey, fileChannel);
-            return fileChannel;
+            synchronized (needClose) {  //Cannot traverse check when putting
+                FileChannel fileChannel = this.createOutputStream(rowKey, timeParser, 0L);
+                this.writerManager.put(rowKey, fileChannel);
+                return fileChannel;
+            }
         }
-        //todo: Increase time-division functionality
-        else if (writer.getWriteSize() > this.fileSplitSize || (System.currentTimeMillis() - writer.getCreateTime()) > maxCloseMinute) {
-            writerManager.remove(rowKey);
-            writer.close();
-            logger.info("close textFile: {}, size:{}, createTime {}", rowKey, writer.getWriteSize(), writer.getCreateTime());
-            long split = writer.getSplit() + 1L;
-            FileChannel fileChannel = this.createOutputStream(rowKey, timeParser, split);
-            this.writerManager.put(rowKey, fileChannel);
-            return fileChannel;
+        else if (writer.getWriteSize() > this.fileSplitSize) {
+            synchronized (needClose) {  //Cannot traverse check when deleting
+                writerManager.remove(rowKey);
+                writer.close();
+                logger.info("close >MaxSplitSize[{}] textFile: {}, size:{}, createTime {}", fileSplitSize, writer.getFilePath(), writer.getWriteSize(), writer.getCreateTime());
+                long split = writer.getSplit() + 1L;
+                FileChannel fileChannel = this.createOutputStream(rowKey, timeParser, split);
+                this.writerManager.put(rowKey, fileChannel);
+                return fileChannel;
+            }
         }
         else {
             return writer;
