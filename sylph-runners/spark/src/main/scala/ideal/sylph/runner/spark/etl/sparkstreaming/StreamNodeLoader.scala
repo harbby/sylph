@@ -76,7 +76,8 @@ class StreamNodeLoader(private val pluginManager: PipelinePluginManager, private
 
     new UnaryOperator[DStream[Row]] {
       override def apply(stream: DStream[Row]): DStream[Row] = {
-        DStreamUtil.dstreamParser(stream, sink) //这里处理偏移量提交问题
+        //DStreamUtil.dstreamParser(stream, sink) //这里处理偏移量提交问题
+        stream.foreachRDD(rdd => sink.run(rdd))
         null
       }
     }

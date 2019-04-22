@@ -68,8 +68,8 @@ final class JobHelper
                     .getOrCreate()
                     : SparkSession.builder().getOrCreate();
 
-            Bean bean = binder -> binder.bind(SparkSession.class, spark);
-            StructuredNodeLoader loader = new StructuredNodeLoader(pluginManager, bean)
+            IocFactory iocFactory = IocFactory.create(binder -> binder.bind(SparkSession.class, spark));
+            StructuredNodeLoader loader = new StructuredNodeLoader(pluginManager, iocFactory)
             {
                 @Override
                 public UnaryOperator<Dataset<Row>> loadSink(String driverStr, Map<String, Object> config)

@@ -31,11 +31,7 @@ dependencies {
     exclude(module: '*')
   }
   compileOnly group: 'org.apache.hadoop', name: 'hadoop-client', version: '2.7.3'
-
-  compileOnly(group: 'org.apache.spark', name: 'spark-streaming-kafka-0-10_2.11', version: deps.spark) {
-    exclude (module: 'scala-library')
-  }
-
+  
   compile(project(':sylph-parser')) {
     exclude(module: 'guava')
     exclude(group: 'com.fasterxml.jackson.core')

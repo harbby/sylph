@@ -69,7 +69,7 @@ public class SparkAppLauncher
 
         System.setProperty("SPARK_YARN_MODE", "true");
         SparkConf sparkConf = new SparkConf();
-        sparkConf.set("driver-java-options", "-XX:PermSize=64M -XX:MaxPermSize=128M");
+        sparkConf.set("spark.driver.extraJavaOptions", "-XX:PermSize=64M -XX:MaxPermSize=128M");
         sparkConf.set("spark.yarn.stagingDir", appHome);
         //-------------
         sparkConf.set("spark.executor.instances", jobConfig.getNumExecutors() + "");   //EXECUTOR_COUNT
@@ -92,7 +92,7 @@ public class SparkAppLauncher
         String[] args = getArgs();
         ClientArguments clientArguments = new ClientArguments(args);   // spark-2.0.0
         //yarnClient.getConfig().iterator().forEachRemaining(x -> sparkConf.set("spark.hadoop." + x.getKey(), x.getValue()));
-        Client appClient = new SylphSparkYarnClient(clientArguments, sparkConf, yarnClient);
+        Client appClient = new SylphSparkYarnClient(clientArguments, sparkConf, yarnClient, jobConfig.getQueue());
         try {
             return Optional.of(appClient.submitApplication());
         }

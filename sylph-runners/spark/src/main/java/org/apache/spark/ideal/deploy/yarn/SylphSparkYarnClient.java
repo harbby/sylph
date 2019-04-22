@@ -30,11 +30,14 @@ import java.lang.reflect.Field;
 public class SylphSparkYarnClient
         extends Client
 {
+    private final String yarnQueue;
+
     // ApplicationMaster
-    public SylphSparkYarnClient(ClientArguments clientArgs, SparkConf sparkConf, YarnClient yarnClient)
+    public SylphSparkYarnClient(ClientArguments clientArgs, SparkConf sparkConf, YarnClient yarnClient, String yarnQueue)
             throws NoSuchFieldException, IllegalAccessException
     {
         super(clientArgs, sparkConf);
+        this.yarnQueue = yarnQueue;
 
         //String key = DRIVER_MEMORY; //test
         Field field = this.getClass().getSuperclass().getDeclaredField("org$apache$spark$deploy$yarn$Client$$hadoopConf");
@@ -49,6 +52,7 @@ public class SylphSparkYarnClient
         final ApplicationSubmissionContext appContext = super.createApplicationSubmissionContext(newApp, containerContext);
         appContext.setApplicationType("Sylph_SPARK");
         appContext.setApplicationTags(ImmutableSet.of("a1", "a2"));
+        appContext.setQueue(yarnQueue);
         return appContext;
     }
 }

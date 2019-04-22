@@ -1,5 +1,7 @@
+apply plugin: 'scala'
 
 dependencies {
+    testCompile 'org.scala-lang:scala-reflect:2.11.8'
     compileOnly project(':sylph-runners:sylph-runner-spark')
     
     //--------------------------------------------------spark----------------------------------------------------

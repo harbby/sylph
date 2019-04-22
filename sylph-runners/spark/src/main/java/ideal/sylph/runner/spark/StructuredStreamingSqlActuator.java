@@ -20,102 +20,51 @@ import com.github.harbby.gadtry.ioc.Autowired;
 import com.github.harbby.gadtry.jvm.JVMException;
 import com.github.harbby.gadtry.jvm.JVMLauncher;
 import com.github.harbby.gadtry.jvm.JVMLaunchers;
-import com.google.common.collect.ImmutableSet;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
-import ideal.sylph.etl.PipelinePlugin;
-import ideal.sylph.parser.antlr.AntlrSqlParser;
-import ideal.sylph.parser.antlr.tree.CreateTable;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.job.SqlFlow;
-import ideal.sylph.spi.model.PipelinePluginInfo;
 import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.streaming.Duration;
-import org.apache.spark.streaming.StreamingContext;
 import org.fusesource.jansi.Ansi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.validation.constraints.NotNull;
-
 import java.io.Serializable;
 import java.net.URLClassLoader;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import static com.github.harbby.gadtry.base.Throwables.throwsException;
 import static ideal.sylph.runner.spark.SQLHepler.buildSql;
-import static java.util.Objects.requireNonNull;
 import static org.fusesource.jansi.Ansi.Color.GREEN;
 import static org.fusesource.jansi.Ansi.Color.YELLOW;
 
-/**
- * DStreamGraph graph = inputStream.graph();   //spark graph ?
- */
-@Name("SparkStreamingSql")
-@Description("this is spark streaming sql Actuator")
-public class SparkStreamingSqlActuator
-        extends StreamEtlActuator
+@Name("StructuredStreamingSql")
+@Description("this is spark structured streaming sql Actuator")
+public class StructuredStreamingSqlActuator
+        extends SparkStreamingSqlActuator
 {
     private static final Logger logger = LoggerFactory.getLogger(SparkStreamingSqlActuator.class);
     private final PipelinePluginManager pluginManager;
 
     @Autowired
-    public SparkStreamingSqlActuator(RunnerContext runnerContext)
+    public StructuredStreamingSqlActuator(RunnerContext runnerContext)
     {
         super(runnerContext);
         List<Class<?>> filterClass = MutableList.of(
-                org.apache.spark.streaming.StreamingContext.class,
-                org.apache.spark.streaming.dstream.DStream.class,
+                org.apache.spark.sql.SparkSession.class,
+                org.apache.spark.sql.Dataset.class,
                 org.apache.spark.sql.Row.class
         );
         this.pluginManager = SparkRunner.createPipelinePluginManager(runnerContext, filterClass);
     }
 
-    @NotNull
-    @Override
-    public Flow formFlow(byte[] flowBytes)
-    {
-        return new SqlFlow(flowBytes);
-    }
-
-    @NotNull
-    @Override
-    public Collection<PipelinePluginInfo> parserFlowDepends(Flow inFlow)
-    {
-        SqlFlow flow = (SqlFlow) inFlow;
-        ImmutableSet.Builder<PipelinePluginInfo> builder = ImmutableSet.builder();
-        AntlrSqlParser parser = new AntlrSqlParser();
-
-        Stream.of(flow.getSqlSplit())
-                .map(parser::createStatement)
-                .filter(statement -> statement instanceof CreateTable)
-                .forEach(statement -> {
-                    CreateTable createTable = (CreateTable) statement;
-                    Map<String, Object> withConfig = createTable.getWithConfig();
-                    String driverOrName = (String) requireNonNull(withConfig.get("type"), "driver is null");
-                    pluginManager.findPluginInfo(driverOrName, getPipeType(createTable.getType()))
-                            .ifPresent(builder::add);
-                });
-        return builder.build();
-    }
-
-    @Override
-    public Class<? extends JobConfig> getConfigParser()
-    {
-        return SparkJobConfig.SparkConfReader.class;
-    }
-
-    @NotNull
     @Override
     public JobHandle formJob(String jobId, Flow inFlow, JobConfig jobConfig, URLClassLoader jobClassLoader)
             throws Exception
@@ -129,25 +78,23 @@ public class SparkStreamingSqlActuator
     private static JobHandle compile(String jobId, SqlFlow sqlFlow, PipelinePluginManager pluginManager, SparkJobConfig sparkJobConfig, URLClassLoader jobClassLoader)
             throws JVMException
     {
-        int batchDuration = sparkJobConfig.getSparkStreamingBatchDuration();
         final AtomicBoolean isCompile = new AtomicBoolean(true);
-        final Supplier<StreamingContext> appGetter = (Supplier<StreamingContext> & JobHandle & Serializable) () -> {
+        final Supplier<SparkSession> appGetter = (Supplier<SparkSession> & JobHandle & Serializable) () -> {
             logger.info("========create spark StreamingContext mode isCompile = " + isCompile.get() + "============");
             SparkConf sparkConf = isCompile.get() ?
                     new SparkConf().setMaster("local[*]").setAppName("sparkCompile")
                     : new SparkConf();
             SparkSession sparkSession = SparkSession.builder().config(sparkConf).getOrCreate();
-            StreamingContext ssc = new StreamingContext(sparkSession.sparkContext(), Duration.apply(batchDuration));
 
             //build sql
-            SqlAnalyse analyse = new SparkStreamingSqlAnalyse(ssc, pluginManager);
+            SqlAnalyse sqlAnalyse = new StructuredStreamingSqlAnalyse(sparkSession, pluginManager, isCompile.get());
             try {
-                buildSql(analyse, jobId, sqlFlow);
+                buildSql(sqlAnalyse, jobId, sqlFlow);
             }
             catch (Exception e) {
                 throwsException(e);
             }
-            return ssc;
+            return sparkSession;
         };
 
         JVMLauncher<Boolean> launcher = JVMLaunchers.<Boolean>newJvm()
@@ -165,19 +112,5 @@ public class SparkStreamingSqlActuator
         launcher.startAndGet();
         isCompile.set(false);
         return (JobHandle) appGetter;
-    }
-
-    private static PipelinePlugin.PipelineType getPipeType(CreateTable.Type type)
-    {
-        switch (type) {
-            case BATCH:
-                return PipelinePlugin.PipelineType.transform;
-            case SINK:
-                return PipelinePlugin.PipelineType.sink;
-            case SOURCE:
-                return PipelinePlugin.PipelineType.source;
-            default:
-                throw new IllegalArgumentException("this type " + type + " have't support!");
-        }
     }
 }

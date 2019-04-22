@@ -71,6 +71,9 @@ public class JsonSchema
             }
 
             Object value = map.get(key);
+            if (value == null) {
+                continue;
+            }
             DataType type = rowTypeInfo.apply(i).dataType();
 
             if (type instanceof MapType && ((MapType) type).valueType() == DataTypes.StringType) {

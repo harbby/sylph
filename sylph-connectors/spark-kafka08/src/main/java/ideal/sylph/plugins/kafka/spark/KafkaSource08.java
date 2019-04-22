@@ -54,12 +54,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @Name("kafka08")
 @Version("1.0.0")
 @Description("this spark kafka 0.8 source inputStream")
-public class MyKafkaSource08
+public class KafkaSource08
         implements Source<DStream<Row>>
 {
     private final transient Supplier<DStream<Row>> loadStream;
 
-    public MyKafkaSource08(JavaStreamingContext ssc, KafkaSourceConfig08 config, SourceContext context)
+    public KafkaSource08(JavaStreamingContext ssc, KafkaSourceConfig08 config, SourceContext context)
     {
         this.loadStream = Lazys.goLazy(() -> createSource(ssc, config, context));
     }

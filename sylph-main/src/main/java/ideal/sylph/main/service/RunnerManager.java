@@ -130,7 +130,7 @@ public class RunnerManager
         jobActuators.forEach(jobActuatorHandle -> {
             JobActuator jobActuator = new JobActuatorImpl(jobActuatorHandle, factory);
             String name = jobActuator.getInfo().getName();
-            checkState(!jobActuatorMap.containsKey(name), String.format("Multiple entries with same key: %s=%s and %s=%s", name, jobActuatorMap.get(name), name, jobActuator));
+            checkState(!jobActuatorMap.containsKey(name), "Multiple entries with same key: %s=%s and %s=%s", name, jobActuatorMap.get(name), name, jobActuator.getHandle());
 
             jobActuatorMap.put(name, jobActuator);
         });

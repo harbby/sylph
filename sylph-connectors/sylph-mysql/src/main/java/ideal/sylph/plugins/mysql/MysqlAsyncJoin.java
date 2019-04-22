@@ -102,7 +102,8 @@ public class MysqlAsyncJoin
 
         this.cache = CacheBuilder.newBuilder()
                 .maximumSize(mysqlConfig.getCacheMaxNumber())   //max cache 1000 value
-                .expireAfterAccess(mysqlConfig.getCacheTime(), TimeUnit.SECONDS)  //
+                .expireAfterWrite(mysqlConfig.getCacheTime(), TimeUnit.SECONDS)
+                //.expireAfterAccess(mysqlConfig.getCacheTime(), TimeUnit.SECONDS)  //
                 .build();
 
         this.checkHandler = () -> {

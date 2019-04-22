@@ -22,9 +22,10 @@ import ideal.sylph.runner.spark.etl.sparkstreaming.DStreamUtil.{getFristDStream,
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.streaming.dstream.DStream
-import org.apache.spark.streaming.kafka010.{CanCommitOffsets, HasOffsetRanges}
+import org.slf4j.LoggerFactory
 
 object SqlUtil {
+  private val logger = LoggerFactory.getLogger(classOf[SparkStreamingSqlActuator])
 
   def registerStreamTable(inputStream: DStream[Row],
                           tableName: String,
@@ -44,11 +45,12 @@ object SqlUtil {
       val firstDStream = getFristDStream(inputStream)
       if ("DirectKafkaInputDStream".equals(firstDStream.getClass.getSimpleName)) {
         val kafkaRdd = getFristRdd(rdd) //rdd.dependencies(0).rdd
-        val offsetRanges = kafkaRdd.asInstanceOf[HasOffsetRanges].offsetRanges
         if (kafkaRdd.count() > 0) {
           its.foreach(_.accept(spark)) //执行业务操作
         }
-        firstDStream.asInstanceOf[CanCommitOffsets].commitAsync(offsetRanges)
+
+        //val offsetRanges = kafkaRdd.asInstanceOf[HasOffsetRanges].offsetRanges
+        //firstDStream.asInstanceOf[CanCommitOffsets].commitAsync(offsetRanges)
       } else {
         its.foreach(_.accept(spark))
       }

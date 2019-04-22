@@ -70,6 +70,9 @@ public class JsonSchema
             }
 
             Object value = map.get(key);
+            if (value == null) {
+                continue;
+            }
             TypeInformation<?> type = rowTypeInfo.getTypeAt(i);
             Class<?> aClass = type.getTypeClass();
             if (type instanceof MapTypeInfo && ((MapTypeInfo) type).getValueTypeInfo().getTypeClass() == String.class) {

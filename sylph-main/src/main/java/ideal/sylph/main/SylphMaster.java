@@ -57,7 +57,7 @@ public final class SylphMaster
         String configFile = System.getProperty("config");
         Bean sylphBean = new SylphBean(PropertiesUtil.loadProperties(new File(configFile)));
 
-        /*2 Initialize Guice Injector */
+        /*2 Initialize GadTry Injector */
         try {
             logger.info("========={} Bootstrap initialize...========", SylphMaster.class.getCanonicalName());
             IocFactory app = GadTry.create(sylphBean, binder ->

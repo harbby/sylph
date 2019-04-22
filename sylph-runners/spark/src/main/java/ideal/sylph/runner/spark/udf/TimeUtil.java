@@ -63,13 +63,19 @@ public class TimeUtil
             return signature.length == 2 ? DataTypes.StringType : DataTypes.TimestampType;
         }
 
-        public Timestamp eval(long time)
+        public Timestamp eval(Long time)
         {
+            if (time == null) {
+                return null;
+            }
             return new Timestamp(time);
         }
 
-        public String eval(long time, String format)
+        public String eval(Long time, String format)
         {
+            if (time == null) {
+                return null;
+            }
             return (new DateTime(time)).toString(format);
         }
 

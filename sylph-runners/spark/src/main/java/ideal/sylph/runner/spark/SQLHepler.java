@@ -16,12 +16,7 @@
 package ideal.sylph.runner.spark;
 
 import com.github.harbby.gadtry.base.JavaTypes;
-import com.github.harbby.gadtry.ioc.Bean;
-import com.github.harbby.gadtry.ioc.IocFactory;
-import com.google.common.collect.ImmutableMap;
 import ideal.sylph.etl.Schema;
-import ideal.sylph.etl.SinkContext;
-import ideal.sylph.etl.SourceContext;
 import ideal.sylph.parser.antlr.AntlrSqlParser;
 import ideal.sylph.parser.antlr.tree.ColumnDefinition;
 import ideal.sylph.parser.antlr.tree.CreateFunction;
@@ -30,218 +25,61 @@ import ideal.sylph.parser.antlr.tree.CreateTable;
 import ideal.sylph.parser.antlr.tree.InsertInto;
 import ideal.sylph.parser.antlr.tree.SelectQuery;
 import ideal.sylph.parser.antlr.tree.Statement;
-import ideal.sylph.runner.spark.etl.sparkstreaming.StreamNodeLoader;
 import ideal.sylph.spi.job.SqlFlow;
 import ideal.sylph.spi.model.PipelinePluginManager;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.streaming.StreamingContext;
-import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.apache.spark.streaming.dstream.DStream;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.sql.Date;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static com.github.harbby.gadtry.base.MoreObjects.checkState;
-import static ideal.sylph.parser.antlr.tree.CreateTable.Type.SINK;
-import static ideal.sylph.parser.antlr.tree.CreateTable.Type.SOURCE;
-import static java.util.Objects.requireNonNull;
 
 public class SQLHepler
 {
     private SQLHepler() {}
 
-    public static void buildSql(StreamingContext ssc, final PipelinePluginManager pluginManager, String jobId, SqlFlow flow)
+    public static void buildSql(SqlAnalyse analyse, String jobId, SqlFlow flow)
             throws Exception
     {
         AntlrSqlParser parser = new AntlrSqlParser();
-        JobBuilder builder = new JobBuilder();
 
         for (String sql : flow.getSqlSplit()) {
             Statement statement = parser.createStatement(sql);
 
             if (statement instanceof CreateStreamAsSelect) {
-                throw new UnsupportedOperationException("this method have't support!");
+                analyse.createStreamAsSelect((CreateStreamAsSelect) statement);
             }
             else if (statement instanceof CreateTable) {
-                if (((CreateTable) statement).getType() == CreateTable.Type.BATCH) {
-                    throw new UnsupportedOperationException("this method have't support!");
-                }
-                else {
-                    createStreamTable(builder, ssc, pluginManager, (CreateTable) statement);
-                }
+                analyse.createTable((CreateTable) statement);
             }
             else if (statement instanceof CreateFunction) {
-                //todo: 需要字节码大法加持
-                CreateFunction createFunction = (CreateFunction) statement;
-                Class<?> functionClass = Class.forName(createFunction.getClassString());
-                String functionName = createFunction.getFunctionName();
-                List<ParameterizedType> funcs = Arrays.stream(functionClass.getGenericInterfaces())
-                        .filter(x -> x instanceof ParameterizedType)
-                        .map(ParameterizedType.class::cast)
-                        .collect(Collectors.toList());
-                //this check copy @see: org.apache.spark.sql.UDFRegistration#registerJava
-                checkState(!funcs.isEmpty(), "UDF class " + functionClass + " doesn't implement any UDF interface");
-                checkState(funcs.size() < 2, "It is invalid to implement multiple UDF interfaces, UDF class " + functionClass);
-                Type[] types = funcs.get(0).getActualTypeArguments();
-                DataType returnType = getSparkType(types[types.length - 1]);
-
-//                UDF1<Object, Object> udf1 = (a) -> null;
-//                UDF2<Object, Object, Object> udf2 = (a, b) -> null;
-//
-//                UDF2 ae = AopFactory.proxyInstance(udf2)
-//                        .byClass(UDF2.class)
-//                        .whereMethod((java.util.function.Function<MethodInfo, Boolean> & Serializable) methodInfo -> methodInfo.getName().equals("call"))
-//                        .around((Function<ProxyContext, Object> & Serializable) proxyContext -> {
-//                            TimeUtil.FromUnixTime fromUnixTime = (TimeUtil.FromUnixTime) functionClass.newInstance();
-//                            Method method = functionClass.getMethod("eval", proxyContext.getInfo().getParameterTypes());
-//                            return method.invoke(fromUnixTime, proxyContext.getArgs());
-//                        });
-
-                builder.addHandler(sparkSession -> {
-                    sparkSession.udf().registerJava(functionName, functionClass.getName(), returnType);
-                });
-                //throw new UnsupportedOperationException("this method have't support!");
+                analyse.createFunction((CreateFunction) statement);
             }
             else if (statement instanceof InsertInto) {
-                InsertInto insert = (InsertInto) statement;
-                String tableName = insert.getTableName();
-                String query = insert.getQuery();
-                builder.addHandler(sparkSession -> {
-                    Dataset<Row> df = sparkSession.sql(query);
-                    builder.getSink(tableName).apply(df);
-                });
+                analyse.insertInto((InsertInto) statement);
             }
             else if (statement instanceof SelectQuery) {
-                builder.addHandler(sparkSession -> {
-                    Dataset<Row> df = sparkSession.sql(statement.toString());
-                    df.show();
-                });
+                analyse.selectQuery((SelectQuery) statement);
             }
             else {
                 throw new IllegalArgumentException("this driver class " + statement.getClass() + " have't support!");
             }
         }
-
-        builder.build();
+        analyse.finish();
     }
 
-    private static class JobBuilder
-    {
-        private final List<Consumer<SparkSession>> handlers = new ArrayList<>();
-        private UnaryOperator<DStream<Row>> source;
-        private StructType schema;
-
-        private final Map<String, UnaryOperator<Dataset<Row>>> sinks = new HashMap<>();
-
-        public void addSource(UnaryOperator<DStream<Row>> source, StructType schema)
-        {
-            this.source = source;
-            this.schema = schema;
-        }
-
-        public void addSink(String name, UnaryOperator<Dataset<Row>> sink)
-        {
-            checkState(sinks.put(name, sink) == null, "sink table " + name + " already exists");
-        }
-
-        public UnaryOperator<Dataset<Row>> getSink(String name)
-        {
-            return requireNonNull(sinks.get(name), "sink name not find");
-        }
-
-        public void addHandler(Consumer<SparkSession> handler)
-        {
-            handlers.add(handler);
-        }
-
-        public void build()
-        {
-            DStream<Row> inputStream = source.apply(null);
-            SqlUtil.registerStreamTable(inputStream, "map_source", schema, handlers);
-        }
-    }
-
-    private static void createStreamTable(JobBuilder builder, StreamingContext ssc, PipelinePluginManager pluginManager, CreateTable createStream)
-    {
-        final String tableName = createStream.getName();
-        Schema schema = getTableSchema(createStream);
-
-        final Map<String, Object> withConfig = createStream.getWithConfig();
-        final Map<String, Object> config = ImmutableMap.copyOf(withConfig);
-        final String driverClass = (String) withConfig.get("type");
-
-        Bean bean = binder -> {};
-        if (SINK == createStream.getType()) {
-            bean = binder -> binder.bind(SinkContext.class, new SinkContext()
-            {
-                @Override
-                public Schema getSchema()
-                {
-                    return schema;
-                }
-
-                @Override
-                public String getSinkTable()
-                {
-                    return tableName;
-                }
-            });
-        }
-        else if (SOURCE == createStream.getType()) {
-            bean = binder -> binder.bind(SourceContext.class, new SourceContext()
-            {
-                @Override
-                public Schema getSchema()
-                {
-                    return schema;
-                }
-            });
-        }
-        Bean sparkBean = binder -> {
-            binder.bind(StreamingContext.class, ssc);
-            binder.bind(JavaStreamingContext.class, new JavaStreamingContext(ssc));
-        };
-        IocFactory iocFactory = IocFactory.create(bean, sparkBean);
-        StreamNodeLoader loader = new StreamNodeLoader(pluginManager, iocFactory);
-
-        final StructType tableSparkType = schemaToSparkType(schema);
-        if (SOURCE == createStream.getType()) {  //Source.class.isAssignableFrom(driver)
-            checkState(!createStream.getWatermark().isPresent(), "spark streaming not support waterMark");
-            UnaryOperator<DStream<Row>> source = loader.loadSource(driverClass, config);
-            builder.addSource(source, tableSparkType);
-        }
-        else if (SINK == createStream.getType()) {
-            UnaryOperator<Dataset<Row>> outputStream = dataSet -> {
-                checkQueryAndTableSinkSchema(dataSet.schema(), tableSparkType, tableName);
-                return loader.loadRDDSink(driverClass, config).apply(dataSet);
-            };
-            builder.addSink(tableName, outputStream);
-        }
-        else {
-            throw new IllegalArgumentException("this driver class " + withConfig.get("type") + " have't support!");
-        }
-    }
-
-    private static void checkQueryAndTableSinkSchema(StructType querySchema, StructType tableSinkSchema, String tableName)
+    static void checkQueryAndTableSinkSchema(StructType querySchema, StructType tableSinkSchema, String tableName)
     {
         if (!Arrays.stream(querySchema.fields()).map(StructField::dataType).collect(Collectors.toList()).equals(
                 Arrays.stream(tableSinkSchema.fields()).map(StructField::dataType).collect(Collectors.toList())
@@ -270,7 +108,7 @@ public class SQLHepler
         return structType;
     }
 
-    private static DataType getSparkType(Type type)
+    static DataType getSparkType(Type type)
     {
         if (type instanceof ParameterizedType && ((ParameterizedType) type).getRawType() == Map.class) {
             Type[] arguments = ((ParameterizedType) type).getActualTypeArguments();

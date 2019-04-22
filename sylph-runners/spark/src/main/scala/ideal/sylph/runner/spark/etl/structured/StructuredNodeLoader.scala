@@ -18,9 +18,9 @@ package ideal.sylph.runner.spark.etl.structured
 import java.util
 import java.util.function.UnaryOperator
 
-import com.github.harbby.gadtry.ioc.{Bean, IocFactory}
+import com.github.harbby.gadtry.ioc.IocFactory
 import ideal.sylph.etl.PipelinePlugin
-import ideal.sylph.etl.api.{RealTimeSink, RealTimeTransForm, Sink, TransForm}
+import ideal.sylph.etl.api._
 import ideal.sylph.runner.spark.etl.{SparkRow, SparkUtil}
 import ideal.sylph.spi.NodeLoader
 import ideal.sylph.spi.model.PipelinePluginManager
@@ -32,27 +32,18 @@ import org.slf4j.LoggerFactory
 /**
   * Created by ideal on 17-5-8.
   */
-class StructuredNodeLoader(private val pluginManager: PipelinePluginManager, private val bean: Bean) extends NodeLoader[DataFrame] {
+class StructuredNodeLoader(private val pluginManager: PipelinePluginManager, private val iocFactory: IocFactory) extends NodeLoader[DataFrame] {
   private val logger = LoggerFactory.getLogger(this.getClass)
-  private lazy val iocFactory = IocFactory.create(bean)
 
   override def loadSource(driverStr: String, config: util.Map[String, Object]): UnaryOperator[DataFrame] = {
-    val spark: SparkSession = iocFactory.getInstance(classOf[SparkSession])
 
-    import collection.JavaConverters._
-    val source: DataFrame = driverStr match {
-      case "kafka" => KafkaSourceUtil.getSource(spark, config)
-      case _ => spark.readStream
-        .format(driverStr)
-        .options(config.asScala.map(x => (x._1, x._2.toString)))
-        .load()
-    }
+    val driverClass = pluginManager.loadPluginDriver(driverStr, PipelinePlugin.PipelineType.source)
+    val source = getPluginInstance(driverClass, config).asInstanceOf[Source[DataFrame]]
 
     new UnaryOperator[DataFrame] {
       override def apply(stream: DataFrame): DataFrame = {
-        logger.info("source {} schema:", driverStr)
-        source.printSchema()
-        source
+        source.getSource.printSchema()
+        source.getSource
       }
     }
   }
