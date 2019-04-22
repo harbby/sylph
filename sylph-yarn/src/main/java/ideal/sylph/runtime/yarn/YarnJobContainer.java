@@ -70,17 +70,20 @@ public class YarnJobContainer
     @Override
     public synchronized void shutdown()
     {
-        if (future != null && !future.isDone() && !future.isCancelled()) {
-            future.cancel(true);
-        }
-
         try {
-            if (yarnAppId != null) {
-                yarnClient.killApplication(yarnAppId);
+            if (future != null && !future.isDone() && !future.isCancelled()) {
+                future.cancel(true);
             }
         }
-        catch (Exception e) {
-            logger.error("kill yarn id {} failed", yarnAppId, e);
+        finally {
+            try {
+                if (yarnAppId != null) {
+                    yarnClient.killApplication(yarnAppId);
+                }
+            }
+            catch (Exception e) {
+                logger.error("kill yarn id {} failed", yarnAppId, e);
+            }
         }
     }
 
