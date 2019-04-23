@@ -59,22 +59,17 @@ public final class FlinkNodeLoader
     @Override
     public UnaryOperator<DataStream<Row>> loadSource(String driverStr, final Map<String, Object> config)
     {
-        try {
-            final Class<?> driverClass = pluginManager.loadPluginDriver(driverStr, PipelinePlugin.PipelineType.source);
-            checkState(Source.class.isAssignableFrom(driverClass),
-                    "The Source driver must is Source.class, But your " + driverClass);
-            checkDataStreamRow(Source.class, driverClass);
+        final Class<?> driverClass = pluginManager.loadPluginDriver(driverStr, PipelinePlugin.PipelineType.source);
+        checkState(Source.class.isAssignableFrom(driverClass),
+                "The Source driver must is Source.class, But your " + driverClass);
+        checkDataStreamRow(Source.class, driverClass);
 
-            @SuppressWarnings("unchecked") final Source<DataStream<Row>> source = (Source<DataStream<Row>>) getPluginInstance(driverClass, config);
+        @SuppressWarnings("unchecked") final Source<DataStream<Row>> source = (Source<DataStream<Row>>) getPluginInstance(driverClass, config);
 
-            return (stream) -> {
-                logger.info("source {} schema:{}", driverClass, source.getSource().getType());
-                return source.getSource();
-            };
-        }
-        catch (ClassNotFoundException e) {
-            throw new SylphException(JOB_BUILD_ERROR, e);
-        }
+        return (stream) -> {
+            logger.info("source {} schema:{}", driverClass, source.getSource().getType());
+            return source.getSource();
+        };
     }
 
     private static void checkDataStreamRow(Class<?> pluginInterface, Class<?> driverClass)
@@ -94,20 +89,13 @@ public final class FlinkNodeLoader
     @Override
     public UnaryOperator<DataStream<Row>> loadSink(String driverStr, final Map<String, Object> config)
     {
-        final Object driver;
-        try {
-            Class<?> driverClass = pluginManager.loadPluginDriver(driverStr, PipelinePlugin.PipelineType.sink);
-            checkState(RealTimeSink.class.isAssignableFrom(driverClass) || Sink.class.isAssignableFrom(driverClass),
-                    "The Sink driver must is RealTimeSink.class or Sink.class, But your " + driverClass);
-            if (Sink.class.isAssignableFrom(driverClass)) {
-                checkDataStreamRow(Sink.class, driverClass);
-            }
-
-            driver = getPluginInstance(driverClass, config);
+        Class<?> driverClass = pluginManager.loadPluginDriver(driverStr, PipelinePlugin.PipelineType.sink);
+        checkState(RealTimeSink.class.isAssignableFrom(driverClass) || Sink.class.isAssignableFrom(driverClass),
+                "The Sink driver must is RealTimeSink.class or Sink.class, But your " + driverClass);
+        if (Sink.class.isAssignableFrom(driverClass)) {
+            checkDataStreamRow(Sink.class, driverClass);
         }
-        catch (ClassNotFoundException e) {
-            throw new SylphException(JOB_BUILD_ERROR, e);
-        }
+        final Object driver = getPluginInstance(driverClass, config);
 
         final Sink<DataStream<Row>> sink;
         if (driver instanceof RealTimeSink) {
@@ -140,19 +128,13 @@ public final class FlinkNodeLoader
     @Override
     public final UnaryOperator<DataStream<Row>> loadTransform(String driverStr, final Map<String, Object> config)
     {
-        final Object driver;
-        try {
-            Class<?> driverClass = pluginManager.loadPluginDriver(driverStr, PipelinePlugin.PipelineType.transform);
-            checkState(RealTimeTransForm.class.isAssignableFrom(driverClass) || TransForm.class.isAssignableFrom(driverClass),
-                    "driverStr must is RealTimeSink.class or Sink.class");
-            if (TransForm.class.isAssignableFrom(driverClass)) {
-                checkDataStreamRow(TransForm.class, driverClass);
-            }
-            driver = getPluginInstance(driverClass, config);
+        Class<?> driverClass = pluginManager.loadPluginDriver(driverStr, PipelinePlugin.PipelineType.transform);
+        checkState(RealTimeTransForm.class.isAssignableFrom(driverClass) || TransForm.class.isAssignableFrom(driverClass),
+                "driverStr must is RealTimeSink.class or Sink.class");
+        if (TransForm.class.isAssignableFrom(driverClass)) {
+            checkDataStreamRow(TransForm.class, driverClass);
         }
-        catch (ClassNotFoundException e) {
-            throw new SylphException(JOB_BUILD_ERROR, e);
-        }
+        final Object driver = getPluginInstance(driverClass, config);
 
         final TransForm<DataStream<Row>> transform;
         if (driver instanceof RealTimeTransForm) {

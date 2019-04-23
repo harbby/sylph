@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2018 The Sylph Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ideal.sylph.runner.spark;
 
 import com.github.harbby.gadtry.ioc.Bean;
@@ -11,12 +26,13 @@ import ideal.sylph.parser.antlr.tree.CreateTable;
 import ideal.sylph.parser.antlr.tree.InsertInto;
 import ideal.sylph.parser.antlr.tree.SelectQuery;
 import ideal.sylph.parser.antlr.tree.WaterMark;
-import ideal.sylph.runner.spark.etl.structured.StructuredNodeLoader;
+import ideal.sylph.runner.spark.structured.StructuredNodeLoader;
 import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.streaming.DataStreamWriter;
+import org.apache.spark.sql.streaming.OutputMode;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.StructType;
 
@@ -58,14 +74,13 @@ public class StructuredStreamingSqlAnalyse
     @Override
     public void finish()
     {
-
     }
 
     @Override
     public void createStreamAsSelect(CreateStreamAsSelect statement)
             throws Exception
     {
-
+        throw new UnsupportedOperationException("this method have't support!");
     }
 
     @Override
@@ -198,6 +213,11 @@ public class StructuredStreamingSqlAnalyse
             throws Exception
     {
         Dataset<Row> df = sparkSession.sql(statement.toString());
-        df.show();
+        DataStreamWriter<Row> writer = df.writeStream()
+                .format("console")
+                .outputMode(OutputMode.Append());
+        if (!isCompile) {
+            writer.start();
+        }
     }
 }

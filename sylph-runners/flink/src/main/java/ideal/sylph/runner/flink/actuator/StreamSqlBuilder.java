@@ -18,7 +18,6 @@ package ideal.sylph.runner.flink.actuator;
 import com.github.harbby.gadtry.ioc.Bean;
 import com.github.harbby.gadtry.ioc.IocFactory;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import ideal.sylph.etl.Schema;
 import ideal.sylph.etl.SinkContext;
 import ideal.sylph.etl.SourceContext;
@@ -174,7 +173,8 @@ public class StreamSqlBuilder
             });
         }
         else if (SOURCE == createStream.getType()) {
-            bean = binder -> binder.bind(SourceContext.class, new SourceContext(){
+            bean = binder -> binder.bind(SourceContext.class, new SourceContext()
+            {
                 @Override
                 public Schema getSchema()
                 {

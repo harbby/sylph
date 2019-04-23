@@ -57,11 +57,9 @@ public class StructuredStreamingSqlActuator
     public StructuredStreamingSqlActuator(RunnerContext runnerContext)
     {
         super(runnerContext);
-        List<Class<?>> filterClass = MutableList.of(
-                org.apache.spark.sql.SparkSession.class,
+        List<Class<?>> filterClass = MutableList.of(org.apache.spark.sql.SparkSession.class,
                 org.apache.spark.sql.Dataset.class,
-                org.apache.spark.sql.Row.class
-        );
+                org.apache.spark.sql.Row.class);
         this.pluginManager = SparkRunner.createPipelinePluginManager(runnerContext, filterClass);
     }
 

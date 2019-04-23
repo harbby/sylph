@@ -1,5 +1,3 @@
-apply plugin: 'scala'
-
 dependencies {
     compileOnly project(':sylph-runners:sylph-runner-spark')
     

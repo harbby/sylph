@@ -28,7 +28,6 @@ import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.spark.SparkConf;
 import org.apache.spark.deploy.yarn.Client;
 import org.apache.spark.deploy.yarn.ClientArguments;
-import org.apache.spark.ideal.deploy.yarn.SylphSparkYarnClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,6 +91,7 @@ public class SparkAppLauncher
         String[] args = getArgs();
         ClientArguments clientArguments = new ClientArguments(args);   // spark-2.0.0
         //yarnClient.getConfig().iterator().forEachRemaining(x -> sparkConf.set("spark.hadoop." + x.getKey(), x.getValue()));
+
         Client appClient = new SylphSparkYarnClient(clientArguments, sparkConf, yarnClient, jobConfig.getQueue());
         try {
             return Optional.of(appClient.submitApplication());

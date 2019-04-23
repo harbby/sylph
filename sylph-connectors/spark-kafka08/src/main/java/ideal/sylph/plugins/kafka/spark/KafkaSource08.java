@@ -31,7 +31,6 @@ import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.apache.spark.streaming.dstream.DStream;
 import org.apache.spark.streaming.kafka.HasOffsetRanges;
 import org.apache.spark.streaming.kafka.KafkaCluster;
 import org.apache.spark.streaming.kafka.KafkaUtils;
@@ -55,16 +54,16 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @Version("1.0.0")
 @Description("this spark kafka 0.8 source inputStream")
 public class KafkaSource08
-        implements Source<DStream<Row>>
+        implements Source<JavaDStream<Row>>
 {
-    private final transient Supplier<DStream<Row>> loadStream;
+    private final transient Supplier<JavaDStream<Row>> loadStream;
 
     public KafkaSource08(JavaStreamingContext ssc, KafkaSourceConfig08 config, SourceContext context)
     {
         this.loadStream = Lazys.goLazy(() -> createSource(ssc, config, context));
     }
 
-    public DStream<Row> createSource(JavaStreamingContext ssc, KafkaSourceConfig08 config, SourceContext context)
+    public JavaDStream<Row> createSource(JavaStreamingContext ssc, KafkaSourceConfig08 config, SourceContext context)
     {
         String topics = config.getTopics();
         String brokers = config.getBrokers(); //需要把集群的host 配置到程序所在机器
@@ -111,8 +110,7 @@ public class KafkaSource08
                     .map(x -> {
                         ConsumerRecord<byte[], byte[]> record = x;
                         return jsonParser.deserialize(record.key(), record.value(), record.topic(), record.partition(), record.offset());
-                    })
-                    .dstream();
+                    });
         }
         else {
             StructType structType = schemaToSparkType(context.getSchema());
@@ -142,13 +140,12 @@ public class KafkaSource08
                             }
                         }
                         return (Row) new GenericRowWithSchema(values, structType);
-                    })
-                    .dstream();  //.window(Duration(10 * 1000))
+                    });  //.window(Duration(10 * 1000))
         }
     }
 
     @Override
-    public DStream<Row> getSource()
+    public JavaDStream<Row> getSource()
     {
         return loadStream.get();
     }

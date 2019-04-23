@@ -32,5 +32,8 @@ public interface SourceContext
         throw new IllegalArgumentException("this method have't support!");
     }
 
-    public default Map<String, Object> withConfig() {return Collections.emptyMap();}
+    public default Map<String, Object> withConfig()
+    {
+        return Collections.emptyMap();
+    }
 }

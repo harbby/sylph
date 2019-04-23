@@ -26,13 +26,11 @@ import ideal.sylph.parser.antlr.tree.InsertInto;
 import ideal.sylph.parser.antlr.tree.SelectQuery;
 import ideal.sylph.parser.antlr.tree.Statement;
 import ideal.sylph.spi.job.SqlFlow;
-import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import org.apache.spark.streaming.StreamingContext;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.spark.ideal.deploy.yarn;
+package ideal.sylph.runner.spark.yarn;
 
 import com.google.common.collect.ImmutableSet;
 import org.apache.hadoop.yarn.api.records.ApplicationSubmissionContext;

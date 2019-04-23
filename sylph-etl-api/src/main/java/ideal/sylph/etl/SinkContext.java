@@ -16,7 +16,6 @@
 package ideal.sylph.etl;
 
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.Map;
 
 public interface SinkContext

@@ -82,6 +82,12 @@ public class KuduSinkTest
             {
                 return tableName;
             }
+
+            @Override
+            public Map<String, Object> withConfig()
+            {
+                return withConfig;
+            }
         }));
         NodeLoader<DataStream<Row>> loader = new FlinkNodeLoader(PipelinePluginManager.getDefault(), iocFactory);
 

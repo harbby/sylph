@@ -1,12 +1,8 @@
 ext.moduleName = 'ideal.sylph.runner.spark'
-apply plugin: 'scala'
 
 configurations.all {
   resolutionStrategy { preferProjectModules() }
 }
-
-tasks.compileJava.dependsOn compileScala
-tasks.compileScala.dependsOn.remove("compileJava")
 
 dependencies {
   compile(project(':sylph-spi')) {
@@ -42,7 +38,4 @@ dependencies {
   compile(project(':sylph-yarn')){
     exclude(module: project(':sylph-spi'))
   }
-
-  //--- add scala class
-  compileOnly files("$sourceSets.main.scala.outputDir")
 }
