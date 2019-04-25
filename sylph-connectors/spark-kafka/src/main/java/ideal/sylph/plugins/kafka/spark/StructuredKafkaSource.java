@@ -68,7 +68,6 @@ public class StructuredKafkaSource
         //      "session.timeout.ms" -> "30000", //session默认是30秒
         //      "heartbeat.interval.ms" -> "5000", //10秒提交一次 心跳周期
 
-
         Dataset<Row> inputStream = KafkaSourceUtil.getSource(spark, kafkaParams);
         if ("json".equalsIgnoreCase(config.getValueType())) {
             JsonSchema jsonParser = new JsonSchema(context.getSchema());
