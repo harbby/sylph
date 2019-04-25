@@ -96,11 +96,11 @@ public class SQLHepler
         for (int i = 0; i < querySchema.size(); i++) {
             StructField queryField = querySchema.apply(i);
             StructField tableSinkField = tableSinkSchema.apply(i);
-            if (queryField.dataType() == DataTypes.NullType) {
+            if (DataTypes.NullType.equals(queryField.dataType())) {
                 continue;
             }
 
-            if (queryField.dataType() != tableSinkField.dataType()) {
+            if (!queryField.dataType().equals(tableSinkField.dataType())) {
                 try {
                     throw new SparkException("Field types of query result  and registered TableSink " + tableName + " do not match." +
                             "\nqueryField " + queryField + " type not is tableSinkField " + tableSinkField + " type" +
