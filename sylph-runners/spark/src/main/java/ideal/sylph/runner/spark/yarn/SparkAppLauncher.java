@@ -111,7 +111,7 @@ public class SparkAppLauncher
     private static void setDistJars(Job job, SparkConf sparkConf)
             throws IOException
     {
-        File byt = new File(job.getWorkDir(), "job_handle.byt");
+        File byt = new File(job.getWorkDir(), "job.graph");
         byte[] bytes = Serializables.serialize((Serializable) job.getJobHandle());
         try (FileOutputStream outputStream = new FileOutputStream(byt)) {
             outputStream.write(bytes);

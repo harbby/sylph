@@ -74,8 +74,10 @@ public class SparkStreamingSqlActuator
     {
         super(runnerContext);
         List<Class<?>> filterClass = MutableList.of(
-                org.apache.spark.streaming.StreamingContext.class,
                 org.apache.spark.streaming.dstream.DStream.class,
+                org.apache.spark.streaming.api.java.JavaDStream.class,
+                org.apache.spark.rdd.RDD.class,
+                org.apache.spark.api.java.JavaRDD.class,
                 org.apache.spark.sql.Row.class
         );
         this.pluginManager = SparkRunner.createPipelinePluginManager(runnerContext, filterClass);
@@ -140,7 +142,7 @@ public class SparkStreamingSqlActuator
             StreamingContext ssc = new StreamingContext(sparkSession.sparkContext(), Duration.apply(batchDuration));
 
             //build sql
-            SqlAnalyse analyse = new SparkStreamingSqlAnalyse(ssc, pluginManager);
+            SqlAnalyse analyse = new SparkStreamingSqlAnalyse(ssc, pluginManager, isCompile.get());
             try {
                 buildSql(analyse, jobId, sqlFlow);
             }

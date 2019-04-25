@@ -25,23 +25,31 @@ public class DStreamUtil
 {
     private DStreamUtil() {}
 
-    public static DStream<?> getFristDStream(DStream<?> stream)
+    public static DStream<?> getFirstDStream(DStream<?> stream)
     {
+        return getFirstDStream(stream, null);
+    }
+
+    public static DStream<?> getFirstDStream(DStream<?> stream, Class<? extends DStream> first)
+    {
+        if (first != null && first.isInstance(stream)) {
+            return stream;
+        }
         if (stream.dependencies().isEmpty()) {
             return stream;
         }
         else {
-            return getFristDStream(stream.dependencies().head());
+            return getFirstDStream(stream.dependencies().head(), first);
         }
     }
 
-    public static RDD<?> getFristRdd(RDD<?> rdd)
+    public static RDD<?> getFirstRdd(RDD<?> rdd)
     {
         if (rdd.dependencies().isEmpty()) {
             return rdd;
         }
         else {
-            return getFristRdd(rdd.dependencies().head().rdd());
+            return getFirstRdd(rdd.dependencies().head().rdd());
         }
     }
 }

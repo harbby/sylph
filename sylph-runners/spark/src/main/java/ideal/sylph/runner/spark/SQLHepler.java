@@ -26,6 +26,7 @@ import ideal.sylph.parser.antlr.tree.InsertInto;
 import ideal.sylph.parser.antlr.tree.SelectQuery;
 import ideal.sylph.parser.antlr.tree.Statement;
 import ideal.sylph.spi.job.SqlFlow;
+import org.apache.spark.SparkException;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.Metadata;
@@ -42,6 +43,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static com.github.harbby.gadtry.base.Throwables.throwsException;
 
 public class SQLHepler
 {
@@ -79,12 +82,35 @@ public class SQLHepler
 
     static void checkQueryAndTableSinkSchema(StructType querySchema, StructType tableSinkSchema, String tableName)
     {
-        if (!Arrays.stream(querySchema.fields()).map(StructField::dataType).collect(Collectors.toList()).equals(
-                Arrays.stream(tableSinkSchema.fields()).map(StructField::dataType).collect(Collectors.toList())
-        )) {
-            throw new AssertionError("Field types of query result and registered TableSink " + tableName + " do not match.\n" +
-                    "Query result schema: " + structTypeToString(querySchema) +
-                    "\nTableSink schema:    " + structTypeToString(tableSinkSchema));
+        if (querySchema.size() != tableSinkSchema.size()) {
+            try {
+                throw new SparkException("Field types of query result size:" + querySchema.size() + " and registered TableSink " + tableName + " size: " + tableSinkSchema.size() + " do not match." +
+                        "\nQuery result schema: " + structTypeToString(querySchema) +
+                        "\nTableSink schema:    " + structTypeToString(tableSinkSchema));
+            }
+            catch (SparkException e) {
+                throwsException(e);
+            }
+        }
+
+        for (int i = 0; i < querySchema.size(); i++) {
+            StructField queryField = querySchema.apply(i);
+            StructField tableSinkField = tableSinkSchema.apply(i);
+            if (queryField.dataType() == DataTypes.NullType) {
+                continue;
+            }
+
+            if (queryField.dataType() != tableSinkField.dataType()) {
+                try {
+                    throw new SparkException("Field types of query result  and registered TableSink " + tableName + " do not match." +
+                            "\nqueryField " + queryField + " type not is tableSinkField " + tableSinkField + " type" +
+                            "\nQuery result schema: " + structTypeToString(querySchema) +
+                            "\nTableSink schema:    " + structTypeToString(tableSinkSchema));
+                }
+                catch (SparkException e) {
+                    throwsException(e);
+                }
+            }
         }
     }
 

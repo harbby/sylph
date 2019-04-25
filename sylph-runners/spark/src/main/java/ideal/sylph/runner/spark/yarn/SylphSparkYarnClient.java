@@ -53,6 +53,7 @@ public class SylphSparkYarnClient
         appContext.setApplicationType("Sylph_SPARK");
         appContext.setApplicationTags(ImmutableSet.of("a1", "a2"));
         appContext.setQueue(yarnQueue);
+        appContext.setMaxAppAttempts(2);
         return appContext;
     }
 }

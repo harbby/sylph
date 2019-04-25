@@ -21,17 +21,25 @@ import ideal.sylph.annotation.Name;
 import ideal.sylph.annotation.Version;
 import ideal.sylph.etl.SourceContext;
 import ideal.sylph.etl.api.Source;
+import ideal.sylph.runner.spark.kafka.SylphKafkaOffset;
+import ideal.sylph.runner.spark.sparkstreaming.DStreamUtil;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
+import org.apache.spark.streaming.dstream.DStream;
+import org.apache.spark.streaming.kafka010.CanCommitOffsets;
 import org.apache.spark.streaming.kafka010.ConsumerStrategies;
+import org.apache.spark.streaming.kafka010.HasOffsetRanges;
 import org.apache.spark.streaming.kafka010.KafkaUtils;
 import org.apache.spark.streaming.kafka010.LocationStrategies;
+import org.apache.spark.streaming.kafka010.OffsetRange;
+import scala.reflect.ClassTag$;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -77,6 +85,19 @@ public class KafkaSource
         Set<String> topicSets = Arrays.stream(topics.split(",")).collect(Collectors.toSet());
         JavaInputDStream<ConsumerRecord<byte[], byte[]>> inputStream = KafkaUtils.createDirectStream(
                 ssc, LocationStrategies.PreferConsistent(), ConsumerStrategies.Subscribe(topicSets, kafkaParams));
+
+        DStream<ConsumerRecord<byte[], byte[]>> sylphKafkaOffset = new SylphKafkaOffset<ConsumerRecord<byte[], byte[]>>(inputStream.inputDStream())
+        {
+            @Override
+            public void commitOffsets(RDD<?> kafkaRdd)
+            {
+                OffsetRange[] offsetRanges = ((HasOffsetRanges) kafkaRdd).offsetRanges();
+                log().info("commitKafkaOffsets {}", offsetRanges);
+                DStream<?> firstDStream = DStreamUtil.getFirstDStream(inputStream.dstream());
+                ((CanCommitOffsets) firstDStream).commitAsync(offsetRanges);
+            }
+        };
+        JavaDStream<ConsumerRecord<byte[], byte[]>> dStream = new JavaDStream<>(sylphKafkaOffset, ClassTag$.MODULE$.apply(ConsumerRecord.class));
 
         if ("json".equalsIgnoreCase(config.getValueType())) {
             JsonSchema jsonParser = new JsonSchema(context.getSchema());

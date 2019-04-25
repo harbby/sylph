@@ -28,7 +28,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 /**
- * spark main input
+ * spark on yarn main Class
  */
 public final class SparkAppMain
 {
@@ -40,7 +40,7 @@ public final class SparkAppMain
         System.out.println("spark on yarn app starting...");
 
         @SuppressWarnings("unchecked")
-        Supplier<?> sparkJobHandle = (Supplier<?>) byteToObject(new FileInputStream("job_handle.byt"));
+        Supplier<?> sparkJobHandle = (Supplier<?>) byteToObject(new FileInputStream("job.graph"));
 
         Object appContext = requireNonNull(sparkJobHandle, "sparkJobHandle is null").get();
         if (appContext instanceof SparkSession) {

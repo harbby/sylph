@@ -21,16 +21,21 @@ import ideal.sylph.annotation.Name;
 import ideal.sylph.annotation.Version;
 import ideal.sylph.etl.SourceContext;
 import ideal.sylph.etl.api.Source;
+import ideal.sylph.runner.spark.kafka.SylphKafkaOffset;
 import kafka.common.TopicAndPartition;
 import kafka.message.MessageAndMetadata;
 import kafka.serializer.DefaultDecoder;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema;
 import org.apache.spark.sql.types.StructType;
+import org.apache.spark.streaming.Time;
 import org.apache.spark.streaming.api.java.JavaDStream;
+import org.apache.spark.streaming.api.java.JavaInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
+import org.apache.spark.streaming.dstream.DStream;
 import org.apache.spark.streaming.kafka.HasOffsetRanges;
 import org.apache.spark.streaming.kafka.KafkaCluster;
 import org.apache.spark.streaming.kafka.KafkaUtils;
@@ -38,12 +43,14 @@ import org.apache.spark.streaming.kafka.KafkaUtils$;
 import org.apache.spark.streaming.kafka.OffsetRange;
 import scala.collection.JavaConverters;
 import scala.collection.immutable.Map$;
+import scala.reflect.ClassTag$;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -70,53 +77,51 @@ public class KafkaSource08
         String groupId = config.getGroupid(); //消费者的名字
         String offsetMode = config.getOffsetMode();
 
-        Map<String, Object> kafkaParams = new HashMap<>(config.getOtherConfig());
-        kafkaParams.put("bootstrap.servers", brokers);
-        kafkaParams.put("key.deserializer", ByteArrayDeserializer.class.getName()); //StringDeserializer
-        kafkaParams.put("value.deserializer", ByteArrayDeserializer.class.getName()); //StringDeserializer
-        kafkaParams.put("enable.auto.commit", false); //不自动提交偏移量
+        Map<String, String> otherConfig = config.getOtherConfig().entrySet()
+                .stream()
+                .filter(x -> x.getValue() != null)
+                .collect(Collectors.toMap(Map.Entry::getKey, v -> v.getValue().toString()));
+
+        Map<String, String> kafkaParams = new HashMap<>(otherConfig);
+        kafkaParams.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
+        //kafkaParams.put("auto.commit.enable", true); //不自动提交偏移量
         //      "fetch.message.max.bytes" ->
         //      "session.timeout.ms" -> "30000", //session默认是30秒
         //      "heartbeat.interval.ms" -> "5000", //10秒提交一次 心跳周期
-        kafkaParams.put("group.id", groupId); //注意不同的流 group.id必须要不同 否则会出现offect commit提交失败的错误
-        kafkaParams.put("auto.offset.reset", offsetMode); //latest   earliest
+        kafkaParams.put(ConsumerConfig.GROUP_ID_CONFIG, groupId); //注意不同的流 group.id必须要不同 否则会出现offect commit提交失败的错误
+        kafkaParams.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, offsetMode); //largest   smallest
 
-        Map<String, String> props = kafkaParams.entrySet().stream().filter(x -> x.getValue() != null).collect(Collectors.toMap(Map.Entry::getKey, v -> v.getValue().toString()));
-
+        //----get fromOffsets
         Set<String> topicSets = Arrays.stream(topics.split(",")).collect(Collectors.toSet());
-
-        org.apache.spark.api.java.function.Function<MessageAndMetadata<byte[], byte[]>, ConsumerRecord> messageHandler =
-                mmd -> new ConsumerRecord<>(mmd.topic(), mmd.partition(), mmd.key(), mmd.message(), mmd.offset());
-        scala.collection.immutable.Map<String, String> map = (scala.collection.immutable.Map<String, String>) Map$.MODULE$.apply(JavaConverters.mapAsScalaMapConverter(props).asScala().toSeq());
-        scala.collection.immutable.Map<TopicAndPartition, Object> fromOffsets = KafkaUtils$.MODULE$.getFromOffsets(new KafkaCluster(map), map, JavaConverters.asScalaSetConverter(topicSets).asScala().toSet());
+        @SuppressWarnings("unchecked")
+        scala.collection.immutable.Map<String, String> map = (scala.collection.immutable.Map<String, String>) Map$.MODULE$.apply(JavaConverters.mapAsScalaMapConverter(kafkaParams).asScala().toSeq());
+        final KafkaCluster kafkaCluster = new KafkaCluster(map);
+        scala.collection.immutable.Map<TopicAndPartition, Object> fromOffsets = KafkaUtils$.MODULE$.getFromOffsets(kafkaCluster, map, JavaConverters.asScalaSetConverter(topicSets).asScala().toSet());
         Map<TopicAndPartition, Long> fromOffsetsAsJava = JavaConverters.mapAsJavaMapConverter(fromOffsets).asJava().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, v -> (long) v.getValue()));
 
-        JavaDStream<ConsumerRecord> inputStream = KafkaUtils.createDirectStream(ssc,
-                byte[].class, byte[].class, DefaultDecoder.class, DefaultDecoder.class, ConsumerRecord.class,
-                props, fromOffsetsAsJava,
+        //--- createDirectStream  DirectKafkaInputDStream.class
+        org.apache.spark.api.java.function.Function<MessageAndMetadata<byte[], byte[]>, ConsumerRecord<byte[], byte[]>> messageHandler =
+                mmd -> new ConsumerRecord<>(mmd.topic(), mmd.partition(), mmd.key(), mmd.message(), mmd.offset());
+        @SuppressWarnings("unchecked")
+        Class<ConsumerRecord<byte[], byte[]>> recordClass = (Class<ConsumerRecord<byte[], byte[]>>) ClassTag$.MODULE$.<ConsumerRecord<byte[], byte[]>>apply(ConsumerRecord.class).runtimeClass();
+        JavaInputDStream<ConsumerRecord<byte[], byte[]>> inputStream = KafkaUtils.createDirectStream(ssc,
+                byte[].class, byte[].class, DefaultDecoder.class, DefaultDecoder.class, recordClass,
+                kafkaParams, fromOffsetsAsJava,
                 messageHandler
         );
-
-        AtomicReference<OffsetRange[]> offsetRanges = new AtomicReference<>();
-        inputStream = inputStream.transform(rdd -> {
-            OffsetRange[] offsets = ((HasOffsetRanges) rdd.rdd()).offsetRanges();
-            offsetRanges.set(offsets);
-            return rdd;
-        });
+        JavaDStream<ConsumerRecord<byte[], byte[]>> dStream = settingCommit(inputStream, kafkaParams, kafkaCluster, groupId);
 
         if ("json".equalsIgnoreCase(config.getValueType())) {
             JsonSchema jsonParser = new JsonSchema(context.getSchema());
-            return inputStream
-                    .map(x -> {
-                        ConsumerRecord<byte[], byte[]> record = x;
+            return dStream
+                    .map(record -> {
                         return jsonParser.deserialize(record.key(), record.value(), record.topic(), record.partition(), record.offset());
                     });
         }
         else {
             StructType structType = schemaToSparkType(context.getSchema());
-            return inputStream
-                    .map(x -> {
-                        ConsumerRecord<byte[], byte[]> record = x;
+            return dStream
+                    .map(record -> {
                         String[] names = structType.names();
                         Object[] values = new Object[names.length];
                         for (int i = 0; i < names.length; i++) {
@@ -142,6 +147,54 @@ public class KafkaSource08
                         return (Row) new GenericRowWithSchema(values, structType);
                     });  //.window(Duration(10 * 1000))
         }
+    }
+
+    private static JavaDStream<ConsumerRecord<byte[], byte[]>> settingCommit(
+            JavaInputDStream<ConsumerRecord<byte[], byte[]>> inputStream,
+            Map<String, String> kafkaParams,
+            KafkaCluster kafkaCluster,
+            String groupId)
+    {
+        if (kafkaParams.getOrDefault("auto.commit.enable", "true").equals("false")) {
+            return inputStream;
+        }
+
+        int commitInterval = Integer.parseInt(kafkaParams.getOrDefault(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "90000"));
+        final Queue<OffsetRange> commitQueue = new ConcurrentLinkedQueue<>();
+        DStream<ConsumerRecord<byte[], byte[]>> sylphKafkaOffset = new SylphKafkaOffset<ConsumerRecord<byte[], byte[]>>(inputStream.inputDStream())
+        {
+            private final Thread thread = new KafkaOffsetCommitter(
+                    kafkaCluster,
+                    groupId,
+                    commitInterval,
+                    commitQueue);
+
+            @Override
+            public void initialize(Time time)
+            {
+                super.initialize(time);
+                thread.start();
+            }
+
+            @Override
+            public void commitOffsets(RDD<?> kafkaRdd)
+            {
+                OffsetRange[] offsets = ((HasOffsetRanges) kafkaRdd).offsetRanges();
+                Map<TopicAndPartition, Long> internalOffsets = Arrays.stream(offsets)
+                        .collect(Collectors.toMap(k -> k.topicAndPartition(), v -> v.fromOffset()));
+                //log().info("commit Kafka Offsets {}", internalOffsets);
+                commitQueue.addAll(Arrays.asList(offsets));
+            }
+        };
+        JavaDStream<ConsumerRecord<byte[], byte[]>> dStream = new JavaDStream<>(sylphKafkaOffset, ClassTag$.MODULE$.apply(ConsumerRecord.class));
+        return dStream;
+//        inputStream = inputStream.transform(rdd -> {
+//            OffsetRange[] offsets = ((HasOffsetRanges) rdd.rdd()).offsetRanges();
+//            Map<TopicAndPartition, Long> internalOffsets = Arrays.stream(offsets)
+//                    .collect(Collectors.toMap(k -> k.topicAndPartition(), v -> v.fromOffset()));
+//            commitKafkaOffsets(kafkaCluster, groupId, internalOffsets);
+//            return rdd;
+//        });
     }
 
     @Override

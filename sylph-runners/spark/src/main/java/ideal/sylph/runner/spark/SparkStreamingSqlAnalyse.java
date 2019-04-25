@@ -26,9 +26,11 @@ import ideal.sylph.parser.antlr.tree.CreateTable;
 import ideal.sylph.parser.antlr.tree.InsertInto;
 import ideal.sylph.parser.antlr.tree.SelectQuery;
 import ideal.sylph.parser.antlr.tree.WaterMark;
+import ideal.sylph.runner.spark.kafka.SylphKafkaOffset;
 import ideal.sylph.runner.spark.sparkstreaming.DStreamUtil;
 import ideal.sylph.runner.spark.sparkstreaming.StreamNodeLoader;
 import ideal.sylph.spi.model.PipelinePluginManager;
+import org.apache.spark.api.java.function.ForeachFunction;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -39,6 +41,9 @@ import org.apache.spark.streaming.StreamingContext;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.apache.spark.streaming.dstream.DStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import scala.reflect.ClassTag$;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -62,12 +67,17 @@ import static java.util.Objects.requireNonNull;
 public class SparkStreamingSqlAnalyse
         implements SqlAnalyse
 {
+    private static final Logger logger = LoggerFactory.getLogger(SparkStreamingSqlAnalyse.class);
+
     private final JobBuilder builder = new JobBuilder();
     private final StreamingContext ssc;
     private final PipelinePluginManager pluginManager;
     private final Bean sparkBean;
+    private final boolean isCompile;
 
-    public SparkStreamingSqlAnalyse(StreamingContext ssc, PipelinePluginManager pluginManager)
+    public SparkStreamingSqlAnalyse(StreamingContext ssc,
+            PipelinePluginManager pluginManager,
+            boolean isCompile)
     {
         this.ssc = ssc;
         this.pluginManager = pluginManager;
@@ -75,6 +85,7 @@ public class SparkStreamingSqlAnalyse
             binder.bind(StreamingContext.class, ssc);
             binder.bind(JavaStreamingContext.class, new JavaStreamingContext(ssc));
         };
+        this.isCompile = isCompile;
     }
 
     @Override
@@ -229,11 +240,12 @@ public class SparkStreamingSqlAnalyse
     {
         builder.addHandler(sparkSession -> {
             Dataset<Row> df = sparkSession.sql(statement.toString());
-            df.show();
+            df.foreach((ForeachFunction<Row>) row -> System.out.println(row.mkString(",")));
+            //df.show();
         });
     }
 
-    private static class JobBuilder
+    private class JobBuilder
     {
         private final List<Consumer<SparkSession>> handlers = new ArrayList<>();
         private UnaryOperator<JavaDStream<Row>> source;
@@ -270,24 +282,49 @@ public class SparkStreamingSqlAnalyse
             JavaDStream<Row> inputStream = source.apply(null);
             SparkSession spark = SparkSession.builder().config(inputStream.context().sparkContext().getConf()).getOrCreate();
 
+            if (isCompile) {
+                logger.info("isCompile mode will checkDStream()");
+                checkDStream(spark, sourceTableName, schema, handlers);
+            }
+
+            DStream<?> firstDStream = DStreamUtil.getFirstDStream(inputStream.dstream(), SylphKafkaOffset.class);
+            logger.info("source table {}, firstDStream is {}", sourceTableName, firstDStream);
             inputStream.foreachRDD(rdd -> {
                 Dataset<Row> df = spark.createDataFrame(rdd, schema);
                 df.createOrReplaceTempView(sourceTableName);
                 //df.show()
-
-                DStream<?> firstDStream = DStreamUtil.getFristDStream(inputStream.dstream());
-                if ("DirectKafkaInputDStream".equals(firstDStream.getClass().getSimpleName())) {
-                    RDD<?> kafkaRdd = DStreamUtil.getFristRdd(rdd.rdd()); //rdd.dependencies(0).rdd
+                //if kafka0.10+ if("DirectKafkaInputDStream".equals(firstDStream.getClass().getSimpleName())) {}
+                if (firstDStream instanceof SylphKafkaOffset) { //
+                    RDD<?> kafkaRdd = DStreamUtil.getFirstRdd(rdd.rdd()); //rdd.dependencies(0).rdd
                     if (kafkaRdd.count() > 0) {
                         handlers.forEach(x -> x.accept(spark)); //执行业务操作
                     }
                     //val offsetRanges = kafkaRdd.asInstanceOf[HasOffsetRanges].offsetRanges
                     //firstDStream.asInstanceOf[CanCommitOffsets].commitAsync(offsetRanges)
+                    ((SylphKafkaOffset<?>) firstDStream).commitOffsets(kafkaRdd);
                 }
                 else {
                     handlers.forEach(x -> x.accept(spark));
                 }
             });
         }
+    }
+
+    /**
+     * 预编译sql 而不是等到运行时，才发现错误
+     * Precompiled sql instead of waiting for the runtime to find the error
+     */
+    private static void checkDStream(
+            SparkSession spark,
+            String sourceTableName,
+            StructType sourceSchema,
+            List<Consumer<SparkSession>> handlers
+    )
+    {
+        RDD<Row> rdd = spark.sparkContext().<Row>emptyRDD(ClassTag$.MODULE$.<Row>apply(Row.class));
+        Dataset<Row> df = spark.createDataFrame(rdd, sourceSchema);
+        df.createOrReplaceTempView(sourceTableName);
+        handlers.forEach(x -> x.accept(spark));
+        spark.sql("drop view " + sourceTableName);
     }
 }
