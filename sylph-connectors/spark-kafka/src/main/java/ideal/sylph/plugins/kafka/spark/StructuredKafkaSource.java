@@ -59,15 +59,15 @@ public class StructuredKafkaSource
 
         Map<String, Object> kafkaParams = new HashMap<>(config.getOtherConfig());
         kafkaParams.put("subscribe", topics);
-        kafkaParams.put("bootstrap.servers", brokers);
+        kafkaParams.put("kafka.bootstrap.servers", brokers);
+        kafkaParams.put("startingOffsets", offsetMode); //latest   earliest
+
         kafkaParams.put("key.deserializer", ByteArrayDeserializer.class.getName()); //StringDeserializer
         kafkaParams.put("value.deserializer", ByteArrayDeserializer.class.getName()); //StringDeserializer
-        kafkaParams.put("enable.auto.commit", false); //不自动提交偏移量
         //      "fetch.message.max.bytes" ->
         //      "session.timeout.ms" -> "30000", //session默认是30秒
         //      "heartbeat.interval.ms" -> "5000", //10秒提交一次 心跳周期
-        kafkaParams.put("group.id", groupId); //注意不同的流 group.id必须要不同 否则会出现offect commit提交失败的错误
-        kafkaParams.put("auto.offset.reset", offsetMode); //latest   earliest
+
 
         Dataset<Row> inputStream = KafkaSourceUtil.getSource(spark, kafkaParams);
         if ("json".equalsIgnoreCase(config.getValueType())) {
