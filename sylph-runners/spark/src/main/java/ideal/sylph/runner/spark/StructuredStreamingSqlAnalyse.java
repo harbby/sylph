@@ -29,6 +29,7 @@ import ideal.sylph.parser.antlr.tree.WaterMark;
 import ideal.sylph.runner.spark.structured.StructuredNodeLoader;
 import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.ForeachWriter;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.streaming.DataStreamWriter;
@@ -214,10 +215,31 @@ public class StructuredStreamingSqlAnalyse
     {
         Dataset<Row> df = sparkSession.sql(statement.toString());
         DataStreamWriter<Row> writer = df.writeStream()
-                .format("console")
+                .foreach(new ConsoleWriter())
                 .outputMode(OutputMode.Append());
         if (!isCompile) {
             writer.start();
+        }
+    }
+
+    private static class ConsoleWriter
+            extends ForeachWriter<Row>
+    {
+        @Override
+        public boolean open(long partitionId, long epochId)
+        {
+            return true;
+        }
+
+        @Override
+        public void process(Row value)
+        {
+            System.out.println(value.mkString(","));
+        }
+
+        @Override
+        public void close(Throwable errorOrNull)
+        {
         }
     }
 }
