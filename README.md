@@ -61,7 +61,7 @@ create sink table event_log(
 );
 
 insert into event_log
-select _key,get_json_object(message, 'user_id') as user_id,_offset 
+select _key,get_json_object(_message, 'user_id') as user_id,_offset 
 from topic1
 ```
 
