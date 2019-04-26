@@ -103,7 +103,7 @@ $(function () {
     $(document).on("click", ".btn_edit", function () {
         var id = $(this).attr("data-id");
         var type = $(this).attr("data-type");
-        if (type == 'StreamSql' || type == 'FlinkMainClass') {
+        if (type == 'StreamSql' || type == 'FlinkMainClass' || type == 'SparkStreamingSql') {
             window.location.href = "stream_sql.html?type=edit&jobId=" + id;
         }
         else {

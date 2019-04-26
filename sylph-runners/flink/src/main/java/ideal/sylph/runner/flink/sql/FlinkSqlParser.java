@@ -226,13 +226,7 @@ public class FlinkSqlParser
     {
         Map<String, Object> withConfig = batchTable.getWithConfig();
         String driverOrName = (String) withConfig.get("type");
-        Class<?> driver = null;
-        try {
-            driver = pluginManager.loadPluginDriver(driverOrName, PipelinePlugin.PipelineType.transform);
-        }
-        catch (ClassNotFoundException e) {
-            throwsException(e);
-        }
+        Class<?> driver = pluginManager.loadPluginDriver(driverOrName, PipelinePlugin.PipelineType.transform);
         checkState(RealTimeTransForm.class.isAssignableFrom(driver), "batch table type driver must is RealTimeTransForm");
 
         // instance

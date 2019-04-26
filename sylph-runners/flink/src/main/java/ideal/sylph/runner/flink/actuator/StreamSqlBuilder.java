@@ -18,7 +18,6 @@ package ideal.sylph.runner.flink.actuator;
 import com.github.harbby.gadtry.ioc.Bean;
 import com.github.harbby.gadtry.ioc.IocFactory;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import ideal.sylph.etl.Schema;
 import ideal.sylph.etl.SinkContext;
 import ideal.sylph.etl.SourceContext;
@@ -148,7 +147,6 @@ public class StreamSqlBuilder
         RowTypeInfo tableTypeInfo = schemaToRowTypeInfo(schema);
 
         final Map<String, Object> withConfig = createStream.getWithConfig();
-        final Map<String, Object> config = ImmutableMap.copyOf(withConfig);
         final String driverClass = (String) withConfig.get("type");
 
         Bean bean = binder -> {};
@@ -166,10 +164,17 @@ public class StreamSqlBuilder
                 {
                     return tableName;
                 }
+
+                @Override
+                public Map<String, Object> withConfig()
+                {
+                    return withConfig;
+                }
             });
         }
         else if (SOURCE == createStream.getType()) {
-            bean = binder -> binder.bind(SourceContext.class, new SourceContext(){
+            bean = binder -> binder.bind(SourceContext.class, new SourceContext()
+            {
                 @Override
                 public Schema getSchema()
                 {
@@ -182,12 +187,12 @@ public class StreamSqlBuilder
         NodeLoader<DataStream<Row>> loader = new FlinkNodeLoader(pluginManager, iocFactory);
 
         if (SOURCE == createStream.getType()) {  //Source.class.isAssignableFrom(driver)
-            DataStream<Row> inputStream = checkStream(loader.loadSource(driverClass, config).apply(null), tableTypeInfo);
+            DataStream<Row> inputStream = checkStream(loader.loadSource(driverClass, withConfig).apply(null), tableTypeInfo);
             //---------------------------------------------------
             registerStreamTable(inputStream, tableName, createStream.getWatermark(), createStream.getProctimes());
         }
         else if (SINK == createStream.getType()) {
-            UnaryOperator<DataStream<Row>> outputStream = loader.loadSink(driverClass, config);
+            UnaryOperator<DataStream<Row>> outputStream = loader.loadSink(driverClass, withConfig);
             SylphTableSink tableSink = new SylphTableSink(tableTypeInfo, outputStream);
             tableEnv.registerTableSink(tableName, tableSink.getFieldNames(), tableSink.getFieldTypes(), tableSink);
         }

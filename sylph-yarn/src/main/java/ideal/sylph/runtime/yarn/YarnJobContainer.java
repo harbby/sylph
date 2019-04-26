@@ -15,8 +15,6 @@
  */
 package ideal.sylph.runtime.yarn;
 
-import com.github.harbby.gadtry.aop.AopFactory;
-import com.github.harbby.gadtry.classloader.ThreadContextClassLoader;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobContainer;
@@ -49,33 +47,43 @@ public class YarnJobContainer
     private YarnClient yarnClient;
     private volatile Job.Status status = STOP;
     private volatile Future future;
+    private volatile String webUi;
 
     private final Callable<Optional<ApplicationId>> runnable;
 
-    private YarnJobContainer(YarnClient yarnClient, String jobInfo, Callable<Optional<ApplicationId>> runnable)
+    public YarnJobContainer(YarnClient yarnClient, String jobInfo, Callable<Optional<ApplicationId>> runnable)
     {
         this.runnable = runnable;
         this.yarnClient = yarnClient;
         if (jobInfo != null) {
             this.yarnAppId = Apps.toAppID(jobInfo);
             this.setStatus(RUNNING);
+            try {
+                this.webUi = yarnClient.getApplicationReport(yarnAppId).getOriginalTrackingUrl();
+            }
+            catch (YarnException | IOException e) {
+                throwsException(e);
+            }
         }
     }
 
     @Override
     public synchronized void shutdown()
     {
-        if (future != null && !future.isDone() && !future.isCancelled()) {
-            future.cancel(true);
-        }
-
         try {
-            if (yarnAppId != null) {
-                yarnClient.killApplication(yarnAppId);
+            if (future != null && !future.isDone() && !future.isCancelled()) {
+                future.cancel(true);
             }
         }
-        catch (Exception e) {
-            logger.error("kill yarn id {} failed", yarnAppId, e);
+        finally {
+            try {
+                if (yarnAppId != null) {
+                    yarnClient.killApplication(yarnAppId);
+                }
+            }
+            catch (Exception e) {
+                logger.error("kill yarn id {} failed", yarnAppId, e);
+            }
         }
     }
 
@@ -86,6 +94,7 @@ public class YarnJobContainer
         this.setYarnAppId(null);
         Optional<ApplicationId> applicationId = runnable.call();
         applicationId.ifPresent(this::setYarnAppId);
+        this.webUi = yarnClient.getApplicationReport(yarnAppId).getOriginalTrackingUrl();
         return applicationId.map(ApplicationId::toString);
     }
 
@@ -109,8 +118,7 @@ public class YarnJobContainer
     public String getJobUrl()
     {
         try {
-            String originalUrl = yarnClient.getApplicationReport(yarnAppId).getOriginalTrackingUrl();
-            return originalUrl;
+            return "N/A".equals(webUi) ? yarnClient.getApplicationReport(yarnAppId).getOriginalTrackingUrl() : webUi;
         }
         catch (YarnException | IOException e) {
             throw throwsException(e);
@@ -154,24 +162,5 @@ public class YarnJobContainer
         catch (YarnException | IOException e) {
             throw new SylphException(CONNECTION_ERROR, e);
         }
-    }
-
-    public static JobContainer of(YarnClient yarnClient, String jobInfo, Callable<Optional<ApplicationId>> runnable)
-    {
-        JobContainer container = new YarnJobContainer(yarnClient, jobInfo, runnable);
-
-        //----create JobContainer Proxy
-        return AopFactory.proxy(JobContainer.class)
-                .byInstance(container)
-                .around(proxyContext -> {
-                    /*
-                     * 通过这个 修改当前YarnClient的ClassLoader的为当前runner的加载器
-                     * 默认hadoop Configuration使用jvm的AppLoader,会出现 akka.version not setting的错误 原因是找不到akka相关jar包
-                     * 原因是hadoop Configuration 初始化: this.classLoader = Thread.currentThread().getContextClassLoader();
-                     * */
-                    try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(YarnJobContainer.class.getClassLoader())) {
-                        return proxyContext.proceed();
-                    }
-                });
     }
 }

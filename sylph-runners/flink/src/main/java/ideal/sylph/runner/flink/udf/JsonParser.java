@@ -33,7 +33,6 @@ import java.util.stream.Stream;
  * bug: Will cause problems with the join dimension table
  * Recommended UDFJson.class
  */
-@Deprecated
 final class JsonParser
         extends TableFunction<Map<String, String>>
 {

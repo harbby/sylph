@@ -15,17 +15,15 @@
  */
 package ideal.sylph.parser.antlr.tree;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
+import com.github.harbby.gadtry.base.Iterators;
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 
 import java.util.List;
 import java.util.Optional;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.Iterables.isEmpty;
-import static com.google.common.collect.Iterables.transform;
+import static com.github.harbby.gadtry.base.Iterators.isEmpty;
+import static com.github.harbby.gadtry.base.Iterators.map;
+import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
 import static java.util.Locale.ENGLISH;
 import static java.util.Objects.requireNonNull;
 
@@ -37,22 +35,23 @@ public class QualifiedName
     public static QualifiedName of(String first, String... rest)
     {
         requireNonNull(first, "first is null");
-        return of(ImmutableList.copyOf(Lists.asList(first, rest)));
+
+        return of(MutableList.<String>builder().add(first).addAll(rest).build());
     }
 
     public static QualifiedName of(String name)
     {
         requireNonNull(name, "name is null");
-        return of(ImmutableList.of(name));
+        return of(MutableList.of(name));
     }
 
     public static QualifiedName of(Iterable<String> originalParts)
     {
         requireNonNull(originalParts, "originalParts is null");
         checkArgument(!isEmpty(originalParts), "originalParts is empty");
-        List<String> parts = ImmutableList.copyOf(transform(originalParts, part -> part.toLowerCase(ENGLISH)));
+        List<String> parts = MutableList.copy(map(originalParts, part -> part.toLowerCase(ENGLISH)));
 
-        return new QualifiedName(ImmutableList.copyOf(originalParts), parts);
+        return new QualifiedName(MutableList.copy(originalParts), parts);
     }
 
     private QualifiedName(List<String> originalParts, List<String> parts)
@@ -74,7 +73,7 @@ public class QualifiedName
     @Override
     public String toString()
     {
-        return Joiner.on('.').join(parts);
+        return String.join(".", parts);
     }
 
     /**
@@ -104,7 +103,7 @@ public class QualifiedName
 
     public String getSuffix()
     {
-        return Iterables.getLast(parts);
+        return Iterators.getLast(parts);
     }
 
     @Override

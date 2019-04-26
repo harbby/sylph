@@ -15,9 +15,11 @@
  */
 package ideal.sylph.runner.spark;
 
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 import com.github.harbby.gadtry.ioc.Autowired;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
+import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.EtlFlow;
 import ideal.sylph.spi.job.EtlJobActuatorHandle;
 import ideal.sylph.spi.job.Flow;
@@ -29,6 +31,7 @@ import ideal.sylph.spi.model.PipelinePluginManager;
 import javax.validation.constraints.NotNull;
 
 import java.net.URLClassLoader;
+import java.util.List;
 
 @Name("Spark_StreamETL")
 @Description("spark1.x spark streaming StreamETL")
@@ -36,7 +39,18 @@ import java.net.URLClassLoader;
 public class StreamEtlActuator
         extends EtlJobActuatorHandle
 {
-    @Autowired private PipelinePluginManager pluginManager;
+    private final PipelinePluginManager pluginManager;
+
+    @Autowired
+    public StreamEtlActuator(RunnerContext runnerContext)
+    {
+        List<Class<?>> filterClass = MutableList.of(
+                org.apache.spark.streaming.StreamingContext.class,
+                org.apache.spark.streaming.dstream.DStream.class,
+                org.apache.spark.sql.Row.class
+        );
+        this.pluginManager = SparkRunner.createPipelinePluginManager(runnerContext, filterClass);
+    }
 
     @NotNull
     @Override

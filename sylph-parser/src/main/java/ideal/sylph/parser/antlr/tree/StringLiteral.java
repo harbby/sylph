@@ -15,13 +15,11 @@
  */
 package ideal.sylph.parser.antlr.tree;
 
-import com.google.common.base.CharMatcher;
-
 import java.util.Objects;
 import java.util.Optional;
 import java.util.PrimitiveIterator;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 public class StringLiteral
@@ -72,10 +70,24 @@ public class StringLiteral
         return formatStringLiteral(this.getValue());
     }
 
+    private static boolean charMatches(char startInclusive, char endInclusive, String sequence)
+    {
+        for (int i = sequence.length() - 1; i >= 0; i--) {
+            char c = sequence.charAt(i);
+            if (!(startInclusive <= c && c <= endInclusive)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     static String formatStringLiteral(String s)
     {
         s = s.replace("'", "''");
-        if (CharMatcher.inRange((char) 0x20, (char) 0x7E).matchesAllOf(s)) {
+//        if (CharMatcher.inRange((char) 0x20, (char) 0x7E).matchesAllOf(s)) {
+//            return "'" + s + "'";
+//        }
+        if (charMatches((char) 0x20, (char) 0x7E, s)) {
             return "'" + s + "'";
         }
 

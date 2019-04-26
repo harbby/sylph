@@ -33,6 +33,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.github.harbby.gadtry.base.Throwables.throwsException;
 import static com.google.common.base.Preconditions.checkState;
 import static ideal.sylph.spi.model.PipelinePluginInfo.parserPluginDefualtConfig;
 import static java.util.Objects.requireNonNull;
@@ -51,9 +52,13 @@ public interface PipelinePluginManager
         {
             @Override
             public Class<?> loadPluginDriver(String driverOrName, PipelinePlugin.PipelineType pipelineType)
-                    throws ClassNotFoundException
             {
-                return Class.forName(driverOrName);
+                try {
+                    return Class.forName(driverOrName);
+                }
+                catch (ClassNotFoundException e) {
+                    throw throwsException(e);
+                }
             }
         };
     }
@@ -64,11 +69,15 @@ public interface PipelinePluginManager
     }
 
     default Class<?> loadPluginDriver(String driverOrName, PipelinePlugin.PipelineType pipelineType)
-            throws ClassNotFoundException
     {
-        PipelinePluginInfo info = findPluginInfo(requireNonNull(driverOrName, "driverOrName is null"), pipelineType)
-                .orElseThrow(() -> new ClassNotFoundException("pipelineType:" + pipelineType + " no such driver class: " + driverOrName));
-        return Class.forName(info.getDriverClass());
+        try {
+            PipelinePluginInfo info = findPluginInfo(requireNonNull(driverOrName, "driverOrName is null"), pipelineType)
+                    .orElseThrow(() -> new ClassNotFoundException("pipelineType:" + pipelineType + " no such driver class: " + driverOrName));
+            return Class.forName(info.getDriverClass());
+        }
+        catch (ClassNotFoundException e) {
+            throw throwsException(e);
+        }
     }
 
     default Optional<PipelinePluginInfo> findPluginInfo(String driverOrName, PipelinePlugin.PipelineType pipelineType)

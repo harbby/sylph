@@ -33,27 +33,35 @@ limitations under the License.
 create function get_json_object as 'ideal.sylph.runner.flink.udf.UDFJson';
 
 create source table topic1(
-    key varchar,
-    message varchar,
-    event_time bigint
+    _topic varchar,
+    _key varchar,
+    _partition integer,
+    _offset bigint,
+    _message varchar
 ) with (
-    type = 'ideal.sylph.plugins.flink.source.TestSource'
+    type = 'kafka08',
+    kafka_topic = 'event_topic',
+    auto.offset.reset = latest,
+    kafka_broker = 'localhost:9092',
+    kafka_group_id = 'test1',
+    zookeeper.connect = 'localhost:2181'
 );
 
 -- 定义数据流输出位置
 create sink table event_log(
     key varchar,
     user_id varchar,
-    event_time bigint
+    offset bigint
 ) with (
-    type = 'hdfs',   -- write hdfs
-    hdfs_write_dir = 'hdfs:///tmp/test/data/xx_log',
-    eventTime_field = 'event_time',
-    format = 'parquet'
+    type = 'kudu',
+    kudu.hosts = 'localhost:7051',
+    kudu.tableName = 'impala::test_kudu.log_events',
+    kudu.mode = 'INSERT',
+    batchSize = 5000
 );
 
 insert into event_log
-select key,get_json_object(message, 'user_id') as user_id,event_time 
+select _key,get_json_object(message, 'user_id') as user_id,_offset 
 from topic1
 ```
 

@@ -193,6 +193,7 @@ public class WebAppProxyServlet
     }
 
     public String getJobUrl(String id)
+            throws IOException
     {
         JobContainer container = sylphContext.getJobContainer(id)
                 .orElseThrow(() -> new SylphException(JOB_CONFIG_ERROR, "job " + id + " not Online"));

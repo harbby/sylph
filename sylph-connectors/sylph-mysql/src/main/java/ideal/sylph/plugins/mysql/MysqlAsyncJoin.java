@@ -102,7 +102,8 @@ public class MysqlAsyncJoin
 
         this.cache = CacheBuilder.newBuilder()
                 .maximumSize(mysqlConfig.getCacheMaxNumber())   //max cache 1000 value
-                .expireAfterAccess(mysqlConfig.getCacheTime(), TimeUnit.SECONDS)  //
+                .expireAfterWrite(mysqlConfig.getCacheTime(), TimeUnit.SECONDS)
+                //.expireAfterAccess(mysqlConfig.getCacheTime(), TimeUnit.SECONDS)  //
                 .build();
 
         this.checkHandler = () -> {
@@ -211,11 +212,11 @@ public class MysqlAsyncJoin
     {
         @Name("cache.max.number")
         @Description("this is max cache number")
-        private int maxNumber = 1000;
+        private long maxNumber = 1000;
 
         @Name("cache.expire.number")
         @Description("this is cache expire SECONDS")
-        private int cacheTime = 300;   // 5 minutes
+        private long cacheTime = 300;   // 5 minutes
 
         @Name("url")
         @Description("this is mysql jdbc url")
@@ -235,12 +236,12 @@ public class MysqlAsyncJoin
 
         public int getCacheTime()
         {
-            return cacheTime;
+            return (int) cacheTime;
         }
 
         public int getCacheMaxNumber()
         {
-            return maxNumber;
+            return (int) maxNumber;
         }
 
         public String getJdbcUrl()

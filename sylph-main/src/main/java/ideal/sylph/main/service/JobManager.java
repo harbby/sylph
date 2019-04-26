@@ -68,24 +68,28 @@ public final class JobManager
             while (true) {
                 Thread.currentThread().setName("job_monitor");
                 containers.forEach((jobId, container) -> {
-                    Job.Status status = container.getStatus();
-                    if (status == STOP) {
-                        logger.warn("Job {}[{}] Status is {}, Start Submit", jobId,
-                                container.getRunId(), status);
-                        container.setStatus(STARTING);
-                        Future future = jobStartPool.submit(() -> {
-                            try {
-                                Thread.currentThread().setName("job_submit_" + jobId);
-                                Optional<String> runId = container.run();
-                                container.setStatus(RUNNING);
-                                runId.ifPresent(result -> metadataManager.addMetadata(jobId, result));
-                            }
-                            catch (Exception e) {
-                                container.setStatus(STARTED_ERROR);
-                                logger.warn("job {} start error", jobId, e);
-                            }
-                        });
-                        container.setFuture(future);
+                    try {
+                        Job.Status status = container.getStatus();
+                        if (status == STOP) {
+                            logger.warn("Job {}[{}] state is {}, Will resubmit", jobId, container.getRunId(), status);
+                            container.setStatus(STARTING);
+                            Future future = jobStartPool.submit(() -> {
+                                try {
+                                    Thread.currentThread().setName("job_submit_" + jobId);
+                                    Optional<String> runId = container.run();
+                                    container.setStatus(RUNNING);
+                                    runId.ifPresent(result -> metadataManager.addMetadata(jobId, result));
+                                }
+                                catch (Exception e) {
+                                    container.setStatus(STARTED_ERROR);
+                                    logger.warn("job {} start error", jobId, e);
+                                }
+                            });
+                            container.setFuture(future);
+                        }
+                    }
+                    catch (Exception e) {
+                        logger.error("jobId {}, Check state failed", jobId, e);
                     }
                 });
 
@@ -135,7 +139,7 @@ public final class JobManager
             throws IOException
     {
         if (containers.containsKey(jobId)) {
-            throw new SylphException(ILLEGAL_OPERATION, "Can only delete tasks that have been offline");
+            throw new SylphException(ILLEGAL_OPERATION, "Unable to delete running job");
         }
         jobStore.removeJob(jobId);
     }

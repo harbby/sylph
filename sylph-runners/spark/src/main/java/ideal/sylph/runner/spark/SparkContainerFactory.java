@@ -49,7 +49,7 @@ public class SparkContainerFactory
     {
         SparkAppLauncher appLauncher = injector.getInstance(SparkAppLauncher.class);
         //----create JobContainer Proxy
-        return YarnJobContainer.of(appLauncher.getYarnClient(), lastRunid, () -> appLauncher.run(job));
+        return new YarnJobContainer(appLauncher.getYarnClient(), lastRunid, () -> appLauncher.run(job));
     }
 
     @Override

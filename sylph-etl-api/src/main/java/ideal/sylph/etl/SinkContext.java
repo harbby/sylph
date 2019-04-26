@@ -16,6 +16,7 @@
 package ideal.sylph.etl;
 
 import java.io.Serializable;
+import java.util.Map;
 
 public interface SinkContext
         extends Serializable
@@ -23,4 +24,6 @@ public interface SinkContext
     public Schema getSchema();
 
     public String getSinkTable();
+
+    public Map<String, Object> withConfig();
 }

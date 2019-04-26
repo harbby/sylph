@@ -15,14 +15,14 @@
  */
 package ideal.sylph.parser.antlr.tree;
 
-import com.google.common.collect.ImmutableList;
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
-import static com.google.common.base.Preconditions.checkArgument;
+import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
+import static com.github.harbby.gadtry.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
 public class WaterMark
@@ -38,7 +38,7 @@ public class WaterMark
         super(Optional.of(location));
         this.offset = requireNonNull(offset, "offset is null");
         this.identifiers = requireNonNull(field, "field is null");
-        checkArgument(field.size() == 2, "field size must is 2,but is " + field);
+        checkArgument(field.size() == 2, "field size must is 2,but is %s", field);
         this.fieldName = field.get(0);
         this.fieldForName = field.get(1);
     }
@@ -61,7 +61,7 @@ public class WaterMark
     @Override
     public List<? extends Node> getChildren()
     {
-        return ImmutableList.<Node>builder()
+        return MutableList.<Node>builder()
                 .addAll(identifiers)
                 .build();
     }

@@ -15,13 +15,13 @@
  */
 package ideal.sylph.parser.antlr.tree;
 
-import com.google.common.collect.ImmutableList;
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.github.harbby.gadtry.base.MoreObjects.toStringHelper;
 
 public class Proctime
         extends TableElement
@@ -47,7 +47,7 @@ public class Proctime
     @Override
     public List<? extends Node> getChildren()
     {
-        return ImmutableList.of(name);
+        return MutableList.of(name);
     }
 
     @Override

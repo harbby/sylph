@@ -16,6 +16,8 @@
 package ideal.sylph.etl;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.Map;
 
 public interface SourceContext
         extends Serializable
@@ -28,5 +30,10 @@ public interface SourceContext
     public default String getSourceTable()
     {
         throw new IllegalArgumentException("this method have't support!");
+    }
+
+    public default Map<String, Object> withConfig()
+    {
+        return Collections.emptyMap();
     }
 }

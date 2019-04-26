@@ -36,7 +36,7 @@ public class TextTimeParser
     public String getFileName()
     {
         String ip = CommonUtil.getDefaultIpOrPid();
-        return "/text_" + this.getPartionMinute() + "_" + ip + "_" + CommonUtil.getProcessID();
+        return "/_tmp_" + this.getPartionMinute() + "_" + ip + "_" + CommonUtil.getProcessID();
     }
 
     @Override

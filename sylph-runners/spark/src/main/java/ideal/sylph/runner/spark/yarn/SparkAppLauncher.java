@@ -19,8 +19,8 @@ import com.github.harbby.gadtry.base.Serializables;
 import com.github.harbby.gadtry.base.Throwables;
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.google.common.collect.ImmutableList;
+import ideal.sylph.runner.spark.SparkJobConfig;
 import ideal.sylph.spi.job.Job;
-import ideal.sylph.spi.job.JobConfig;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
@@ -28,7 +28,6 @@ import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.spark.SparkConf;
 import org.apache.spark.deploy.yarn.Client;
 import org.apache.spark.deploy.yarn.ClientArguments;
-import org.apache.spark.ideal.deploy.yarn.SylphSparkYarnClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,18 +64,19 @@ public class SparkAppLauncher
     public Optional<ApplicationId> run(Job job)
             throws Exception
     {
-        JobConfig jobConfig = job.getConfig();
+        SparkJobConfig jobConfig = ((SparkJobConfig.SparkConfReader) job.getConfig()).getConfig();
 
         System.setProperty("SPARK_YARN_MODE", "true");
         SparkConf sparkConf = new SparkConf();
+        sparkConf.set("spark.driver.extraJavaOptions", "-XX:PermSize=64M -XX:MaxPermSize=128M");
         sparkConf.set("spark.yarn.stagingDir", appHome);
         //-------------
-        sparkConf.set("spark.executor.instances", "1");   //EXECUTOR_COUNT
-        sparkConf.set("spark.executor.memory", "1600m");  //EXECUTOR_MEMORY
-        sparkConf.set("spark.executor.cores", "2");
+        sparkConf.set("spark.executor.instances", jobConfig.getNumExecutors() + "");   //EXECUTOR_COUNT
+        sparkConf.set("spark.executor.memory", jobConfig.getExecutorMemory());  //EXECUTOR_MEMORY
+        sparkConf.set("spark.executor.cores", jobConfig.getExecutorCores() + "");
 
-        sparkConf.set("spark.driver.cores", "1");
-        sparkConf.set("spark.driver.memory", "1600m");
+        sparkConf.set("spark.driver.cores", jobConfig.getDriverCores() + "");
+        sparkConf.set("spark.driver.memory", jobConfig.getDriverMemory());
         //--------------
 
         sparkConf.setSparkHome(sparkHome);
@@ -91,7 +91,8 @@ public class SparkAppLauncher
         String[] args = getArgs();
         ClientArguments clientArguments = new ClientArguments(args);   // spark-2.0.0
         //yarnClient.getConfig().iterator().forEachRemaining(x -> sparkConf.set("spark.hadoop." + x.getKey(), x.getValue()));
-        Client appClient = new SylphSparkYarnClient(clientArguments, sparkConf, yarnClient);
+
+        Client appClient = new SylphSparkYarnClient(clientArguments, sparkConf, yarnClient, jobConfig.getQueue());
         try {
             return Optional.of(appClient.submitApplication());
         }
@@ -110,7 +111,7 @@ public class SparkAppLauncher
     private static void setDistJars(Job job, SparkConf sparkConf)
             throws IOException
     {
-        File byt = new File(job.getWorkDir(), "job_handle.byt");
+        File byt = new File(job.getWorkDir(), "job.graph");
         byte[] bytes = Serializables.serialize((Serializable) job.getJobHandle());
         try (FileOutputStream outputStream = new FileOutputStream(byt)) {
             outputStream.write(bytes);

@@ -5,7 +5,7 @@ plugins {
 
 allprojects {
   group 'ideal'
-  version '0.5.0-SNAPSHOT'  //SNAPSHOT
+  version '0.6.0-SNAPSHOT'  //SNAPSHOT
 
   apply plugin: 'java'
   apply plugin: 'maven'
@@ -26,12 +26,12 @@ allprojects {
           jetty    : "9.4.6.v20170531",   //8.1.17.v20150415   "9.4.6.v20170531"
           hadoop   : "2.7.4",
           hbase    : '1.1.2',
-          spark    : "2.4.0",
+          spark    : "2.4.1",
           scala    : '2.11.8',
           joda_time: '2.9.3',
           log4j12  : '1.7.21',
           guice    : '4.2.1',
-          gadtry   : '1.4.1-rc1',
+          gadtry   : '1.4.2-rc1',
           guava    : '25.1-jre',
           jackson  : '2.9.5',
           jersey   : '2.27'

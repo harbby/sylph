@@ -15,7 +15,7 @@
  */
 package ideal.sylph.parser.antlr.tree;
 
-import com.google.common.collect.ImmutableList;
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 
 import java.util.List;
 import java.util.Map;
@@ -23,7 +23,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
+import static com.github.harbby.gadtry.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
 public class CreateTable
@@ -68,7 +68,7 @@ public class CreateTable
     {
         super(location);
         this.name = requireNonNull(name, "table is null");
-        this.elements = ImmutableList.copyOf(requireNonNull(elements, "elements is null"));
+        this.elements = MutableList.copy(requireNonNull(elements, "elements is null"));
         this.proctimeList = requireNonNull(proctimeList, "proctimeList is null");
         this.notExists = notExists;
         this.properties = requireNonNull(properties, "properties is null");
@@ -128,7 +128,7 @@ public class CreateTable
     @Override
     public List<Node> getChildren()
     {
-        return ImmutableList.<Node>builder()
+        return MutableList.<Node>builder()
                 .addAll(elements)
                 .addAll(properties)
                 .build();
