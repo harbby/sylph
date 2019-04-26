@@ -34,6 +34,7 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.streaming.DataStreamWriter;
 import org.apache.spark.sql.streaming.OutputMode;
+import org.apache.spark.sql.streaming.Trigger;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.StructType;
 
@@ -216,6 +217,7 @@ public class StructuredStreamingSqlAnalyse
         Dataset<Row> df = sparkSession.sql(statement.toString());
         DataStreamWriter<Row> writer = df.writeStream()
                 .foreach(new ConsoleWriter())
+                .trigger(Trigger.Continuous("90 seconds"))
                 .outputMode(OutputMode.Append());
         if (!isCompile) {
             writer.start();
