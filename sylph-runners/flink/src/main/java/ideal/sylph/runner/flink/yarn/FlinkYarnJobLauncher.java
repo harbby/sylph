@@ -27,6 +27,7 @@ import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.client.api.YarnClient;
+import org.apache.hadoop.yarn.client.api.YarnClientApplication;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,17 +79,18 @@ public class FlinkYarnJobLauncher
     private Optional<ApplicationId> start(YarnJobDescriptor descriptor, JobGraph job)
             throws Exception
     {
-        ApplicationId applicationId = null;
+        YarnClientApplication application = null;
         try {
             logger.info("start flink job {}", job.getJobID());
-            ClusterClient<ApplicationId> client = descriptor.deploy(job, true);  //create yarn appMaster
-            applicationId = client.getClusterId();
+            application = yarnClient.createApplication();
+            ClusterClient<ApplicationId> client = descriptor.deploy(application, job, true);  //create yarn appMaster
+            ApplicationId applicationId = client.getClusterId();
             client.shutdown();
             return Optional.of(applicationId);
         }
         catch (Exception e) {
-            if (applicationId != null) {
-                yarnClient.killApplication(applicationId);
+            if (application != null) {
+                yarnClient.killApplication(application.getApplicationSubmissionContext().getApplicationId());
             }
             Thread thread = Thread.currentThread();
             if (e instanceof InterruptedIOException ||

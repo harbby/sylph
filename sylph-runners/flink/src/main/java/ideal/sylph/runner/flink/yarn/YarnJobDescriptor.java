@@ -133,13 +133,12 @@ public class YarnJobDescriptor
         return this.yarnClient;
     }
 
-    public ClusterClient<ApplicationId> deploy(JobGraph jobGraph, boolean detached)
+    public ClusterClient<ApplicationId> deploy(YarnClientApplication application, JobGraph jobGraph, boolean detached)
             throws Exception
     {
         // this is required because the slots are allocated lazily
         jobGraph.setAllowQueuedScheduling(true);
         //
-        YarnClientApplication application = yarnClient.createApplication();
         ApplicationReport report = startAppMaster(application, jobGraph);
 
         Configuration flinkConfiguration = getFlinkConfiguration();
