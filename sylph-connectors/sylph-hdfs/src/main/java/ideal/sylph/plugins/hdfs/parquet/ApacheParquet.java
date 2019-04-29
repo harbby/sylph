@@ -146,7 +146,7 @@ public class ApacheParquet
         List<ColumnDescriptor> columns = schema.getColumns();
         for (int i = 0; i < row.size(); i++) {
             Object value = row.getAs(i);
-            addValueToGroup(columns.get(i).getType().javaType, group, i++, value);
+            addValueToGroup(columns.get(i).getType().javaType, group, i, value);
         }
         try {
             writeGroup(group);
