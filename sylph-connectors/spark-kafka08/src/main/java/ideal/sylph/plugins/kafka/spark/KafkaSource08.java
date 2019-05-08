@@ -16,6 +16,7 @@
 package ideal.sylph.plugins.kafka.spark;
 
 import com.github.harbby.gadtry.base.Lazys;
+import com.github.harbby.spark.sql.kafka.KafkaOffsetCommitter;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.annotation.Version;
