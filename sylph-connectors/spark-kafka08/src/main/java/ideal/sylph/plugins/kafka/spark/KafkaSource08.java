@@ -43,19 +43,20 @@ import org.apache.spark.streaming.kafka.KafkaUtils$;
 import org.apache.spark.streaming.kafka.OffsetRange;
 import scala.collection.JavaConverters;
 import scala.collection.immutable.Map$;
+import scala.collection.mutable.ArrayBuffer;
 import scala.reflect.ClassTag$;
+import scala.util.Either;
 
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static ideal.sylph.runner.spark.SQLHepler.schemaToSparkType;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 
 @Name("kafka08")
 @Version("1.0.0")
@@ -72,10 +73,10 @@ public class KafkaSource08
 
     public JavaDStream<Row> createSource(JavaStreamingContext ssc, KafkaSourceConfig08 config, SourceContext context)
     {
-        String topics = config.getTopics();
-        String brokers = config.getBrokers(); //需要把集群的host 配置到程序所在机器
-        String groupId = config.getGroupid(); //消费者的名字
-        String offsetMode = config.getOffsetMode();
+        String topics = requireNonNull(config.getTopics(), "topics not setting");
+        String brokers = requireNonNull(config.getBrokers(), "brokers not setting"); //需要把集群的host 配置到程序所在机器
+        String groupId = requireNonNull(config.getGroupid(), "group.id not setting"); //消费者的名字
+        String offsetMode = requireNonNull(config.getOffsetMode(), "offsetMode not setting");
 
         Map<String, String> otherConfig = config.getOtherConfig().entrySet()
                 .stream()
@@ -92,12 +93,10 @@ public class KafkaSource08
         kafkaParams.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, offsetMode); //largest   smallest
 
         //----get fromOffsets
-        Set<String> topicSets = Arrays.stream(topics.split(",")).collect(Collectors.toSet());
         @SuppressWarnings("unchecked")
         scala.collection.immutable.Map<String, String> map = (scala.collection.immutable.Map<String, String>) Map$.MODULE$.apply(JavaConverters.mapAsScalaMapConverter(kafkaParams).asScala().toSeq());
         final KafkaCluster kafkaCluster = new KafkaCluster(map);
-        scala.collection.immutable.Map<TopicAndPartition, Object> fromOffsets = KafkaUtils$.MODULE$.getFromOffsets(kafkaCluster, map, JavaConverters.asScalaSetConverter(topicSets).asScala().toSet());
-        Map<TopicAndPartition, Long> fromOffsetsAsJava = JavaConverters.mapAsJavaMapConverter(fromOffsets).asJava().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, v -> (long) v.getValue()));
+        Map<TopicAndPartition, Long> fromOffsets = getFromOffset(kafkaCluster, topics, groupId);
 
         //--- createDirectStream  DirectKafkaInputDStream.class
         org.apache.spark.api.java.function.Function<MessageAndMetadata<byte[], byte[]>, ConsumerRecord<byte[], byte[]>> messageHandler =
@@ -106,7 +105,7 @@ public class KafkaSource08
         Class<ConsumerRecord<byte[], byte[]>> recordClass = (Class<ConsumerRecord<byte[], byte[]>>) ClassTag$.MODULE$.<ConsumerRecord<byte[], byte[]>>apply(ConsumerRecord.class).runtimeClass();
         JavaInputDStream<ConsumerRecord<byte[], byte[]>> inputStream = KafkaUtils.createDirectStream(ssc,
                 byte[].class, byte[].class, DefaultDecoder.class, DefaultDecoder.class, recordClass,
-                kafkaParams, fromOffsetsAsJava,
+                kafkaParams, fromOffsets,
                 messageHandler
         );
         JavaDStream<ConsumerRecord<byte[], byte[]>> dStream = settingCommit(inputStream, kafkaParams, kafkaCluster, groupId);
@@ -149,6 +148,29 @@ public class KafkaSource08
         }
     }
 
+    public static Map<TopicAndPartition, Long> getFromOffset(KafkaCluster kafkaCluster, String topics, String groupId)
+    {
+        Set<String> topicSets = Arrays.stream(topics.split(",")).collect(Collectors.toSet());
+        return getFromOffset(kafkaCluster, topicSets, groupId);
+    }
+
+    public static Map<TopicAndPartition, Long> getFromOffset(KafkaCluster kafkaCluster, Set<String> topics, String groupId)
+    {
+        scala.collection.immutable.Set<String> scalaTopicSets = JavaConverters.asScalaSetConverter(topics).asScala().toSet();
+
+        Either<ArrayBuffer<Throwable>, scala.collection.immutable.Map<TopicAndPartition, Object>> groupOffsets = kafkaCluster.getConsumerOffsets(groupId,
+                kafkaCluster.getPartitions(scalaTopicSets).right().get());
+
+        scala.collection.immutable.Map<TopicAndPartition, Object> fromOffsets;
+        if (groupOffsets.isRight()) {
+            fromOffsets = groupOffsets.right().get();
+        }
+        else {
+            fromOffsets = KafkaUtils$.MODULE$.getFromOffsets(kafkaCluster, kafkaCluster.kafkaParams(), scalaTopicSets);
+        }
+        return JavaConverters.mapAsJavaMapConverter(fromOffsets).asJava().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, v -> (long) v.getValue()));
+    }
+
     private static JavaDStream<ConsumerRecord<byte[], byte[]>> settingCommit(
             JavaInputDStream<ConsumerRecord<byte[], byte[]>> inputStream,
             Map<String, String> kafkaParams,
@@ -160,19 +182,19 @@ public class KafkaSource08
         }
 
         int commitInterval = Integer.parseInt(kafkaParams.getOrDefault(ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG, "90000"));
-        final Queue<OffsetRange> commitQueue = new ConcurrentLinkedQueue<>();
+
         DStream<ConsumerRecord<byte[], byte[]>> sylphKafkaOffset = new SylphKafkaOffset<ConsumerRecord<byte[], byte[]>>(inputStream.inputDStream())
         {
-            private final Thread thread = new KafkaOffsetCommitter(
+            private final KafkaOffsetCommitter thread = new KafkaOffsetCommitter(
                     kafkaCluster,
                     groupId,
-                    commitInterval,
-                    commitQueue);
+                    commitInterval);
 
             @Override
             public void initialize(Time time)
             {
                 super.initialize(time);
+                thread.setName("Kafka_Offset_Committer");
                 thread.start();
             }
 
@@ -183,7 +205,7 @@ public class KafkaSource08
                 Map<TopicAndPartition, Long> internalOffsets = Arrays.stream(offsets)
                         .collect(Collectors.toMap(k -> k.topicAndPartition(), v -> v.fromOffset()));
                 //log().info("commit Kafka Offsets {}", internalOffsets);
-                commitQueue.addAll(Arrays.asList(offsets));
+                thread.addAll(offsets);
             }
         };
         JavaDStream<ConsumerRecord<byte[], byte[]>> dStream = new JavaDStream<>(sylphKafkaOffset, ClassTag$.MODULE$.apply(ConsumerRecord.class));

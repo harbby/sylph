@@ -63,6 +63,9 @@ public class StructuredStreamingSqlAnalyse
     private final Bean sparkBean;
     private final boolean isCompile;
 
+    //todo: use config
+    private final String checkpointLocation = "hdfs:///tmp/sylph/spark/savepoints/";
+
     public StructuredStreamingSqlAnalyse(SparkSession sparkSession, PipelinePluginManager pluginManager, boolean isCompile)
     {
         this.sparkSession = sparkSession;
@@ -172,6 +175,8 @@ public class StructuredStreamingSqlAnalyse
             checkQueryAndTableSinkSchema(dataSet.schema(), tableSparkType, sinkContext.getSinkTable());
             DataStreamWriter<Row> writer = loader.loadSinkWithComplic(driverClass, sinkContext.withConfig()).apply(dataSet);
             if (!isCompile) {
+                //UnsupportedOperationChecker.checkForContinuous();
+                writer = writer.option("checkpointLocation", checkpointLocation);
                 writer.start();
             }
             return null;
@@ -218,6 +223,7 @@ public class StructuredStreamingSqlAnalyse
         DataStreamWriter<Row> writer = df.writeStream()
                 .foreach(new ConsoleWriter())
                 .trigger(Trigger.Continuous("90 seconds"))
+                //.option("checkpointLocation", checkpointLocation)
                 .outputMode(OutputMode.Append());
         if (!isCompile) {
             writer.start();

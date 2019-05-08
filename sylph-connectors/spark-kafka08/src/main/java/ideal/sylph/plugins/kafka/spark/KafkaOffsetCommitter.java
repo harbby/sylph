@@ -15,17 +15,20 @@
  */
 package ideal.sylph.plugins.kafka.spark;
 
+import ideal.sylph.plugins.kafka.spark.structured.model.KafkaPartitionOffset;
 import kafka.common.TopicAndPartition;
 import org.apache.spark.streaming.kafka.KafkaCluster;
 import org.apache.spark.streaming.kafka.OffsetRange;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.spark_project.jetty.util.ConcurrentArrayQueue;
 import scala.Tuple2;
 import scala.collection.JavaConverters;
 import scala.collection.Seq;
 import scala.collection.immutable.Map$;
 
 import java.io.Closeable;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
@@ -44,22 +47,45 @@ public class KafkaOffsetCommitter
     /**
      * Flag to mark the periodic committer as running.
      */
-    private volatile boolean running = true;
+    private volatile boolean running = false;
 
     private final int commitInterval;
-    private final Queue<OffsetRange> commitQueue;
+    private final Queue<KafkaPartitionOffset> commitQueue = new ConcurrentArrayQueue<>(1024);
 
     public KafkaOffsetCommitter(
             KafkaCluster kafkaCluster,
             String groupId,
-            int commitInterval,
-            Queue<OffsetRange> commitQueue)
+            int commitInterval)
     {
         checkArgument(commitInterval >= 5000, "commitInterval must >= 5000");
         this.commitInterval = commitInterval;
         this.kafkaCluster = kafkaCluster;
         this.groupId = groupId;
-        this.commitQueue = commitQueue;
+    }
+
+    @Override
+    public synchronized void start()
+    {
+        this.setDaemon(true);
+        super.start();
+        running = true;
+    }
+
+    public void addAll(OffsetRange[] offsetRanges)
+    {
+        if (running) {
+            for (OffsetRange offsetRange : offsetRanges) {
+                KafkaPartitionOffset kafkaPartitionOffset = new KafkaPartitionOffset(offsetRange.topicAndPartition(), offsetRange.untilOffset());
+                commitQueue.offer(kafkaPartitionOffset);
+            }
+        }
+    }
+
+    public void addAll(KafkaPartitionOffset[] partitionOffsets)
+    {
+        if (running) {
+            commitQueue.addAll(Arrays.asList(partitionOffsets));
+        }
     }
 
     @Override
@@ -80,17 +106,18 @@ public class KafkaOffsetCommitter
                 logger.error("The offset committer encountered an error: {}", t.getMessage(), t);
             }
         }
+        running = false;
     }
 
     private void commitAll()
             throws Exception
     {
-        Map<TopicAndPartition, Long> m = new HashMap<TopicAndPartition, Long>();
-        OffsetRange osr = commitQueue.poll();
+        Map<TopicAndPartition, Long> m = new HashMap<>();
+        KafkaPartitionOffset osr = commitQueue.poll();
         while (null != osr) {
-            TopicAndPartition tp = osr.topicAndPartition();
+            TopicAndPartition tp = osr.getTopicPartition();
             Long x = m.get(tp);
-            long offset = (null == x) ? osr.untilOffset() : Math.max(x, osr.untilOffset());
+            long offset = (null == x) ? osr.getOffset() : Math.max(x, osr.getOffset());
             m.put(tp, offset);
             osr = commitQueue.poll();
         }
