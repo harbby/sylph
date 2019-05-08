@@ -44,6 +44,9 @@ import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static ideal.sylph.spi.job.Job.Status.STOP;
 import static java.util.Objects.requireNonNull;
 
+/**
+ * rest curl -XPOST http://localhost:8080/_sys/job_manger -d '{"type":"active","jobId":"shuabao_sensors_events"}'  -H "Content-Type:application/json"
+ * */
 @javax.inject.Singleton
 @Path("/job_manger")
 public class JobManagerResource
