@@ -79,23 +79,31 @@ public class YarnJobDescriptor
     private final JobParameter appConf;
     private final String jobName;
     private final Iterable<Path> userProvidedJars;
+    private final YarnClientApplication application;
+    private final Path uploadingDir;
 
     private Path flinkJar;
 
     YarnJobDescriptor(
+            YarnClientApplication application,
             FlinkConfiguration flinkConf,
             YarnClient yarnClient,
             YarnConfiguration yarnConfiguration,
             JobParameter appConf,
-            String jobName,
+            String jobId,
             Iterable<Path> userProvidedJars)
+            throws IOException
     {
         super(flinkConf.flinkConfiguration(), yarnConfiguration, flinkConf.getConfigurationDirectory(), yarnClient, false);
-        this.jobName = jobName;
+        this.application = application;
+        this.jobName = jobId;
         this.flinkConf = flinkConf;
         this.yarnClient = yarnClient;
         this.appConf = appConf;
         this.userProvidedJars = userProvidedJars;
+
+        FileSystem fileSystem = FileSystem.get(yarnClient.getConfig());
+        this.uploadingDir = new Path(new Path(fileSystem.getHomeDirectory(), ".sylph"), application.getApplicationSubmissionContext().toString());
     }
 
     @Override
@@ -133,14 +141,18 @@ public class YarnJobDescriptor
         return this.yarnClient;
     }
 
+    public Path getUploadingDir()
+    {
+        return uploadingDir;
+    }
+
     public ClusterClient<ApplicationId> deploy(JobGraph jobGraph, boolean detached)
             throws Exception
     {
         // this is required because the slots are allocated lazily
         jobGraph.setAllowQueuedScheduling(true);
         //
-        YarnClientApplication application = yarnClient.createApplication();
-        ApplicationReport report = startAppMaster(application, jobGraph);
+        ApplicationReport report = startAppMaster(jobGraph);
 
         Configuration flinkConfiguration = getFlinkConfiguration();
 
@@ -155,15 +167,12 @@ public class YarnJobDescriptor
         return new RestClusterClient<>(flinkConfiguration, report.getApplicationId());
     }
 
-    private ApplicationReport startAppMaster(YarnClientApplication application, JobGraph jobGraph)
+    private ApplicationReport startAppMaster(JobGraph jobGraph)
             throws Exception
     {
         ApplicationSubmissionContext appContext = application.getApplicationSubmissionContext();
         ApplicationId appId = appContext.getApplicationId();
         appContext.setMaxAppAttempts(MAX_ATTEMPT);
-
-        FileSystem fileSystem = FileSystem.get(yarnClient.getConfig());
-        Path uploadingDir = new Path(new Path(fileSystem.getHomeDirectory(), ".sylph"), appId.toString());
 
         Map<String, LocalResource> localResources = new HashMap<>();
         Set<Path> shippedPaths = new HashSet<>();

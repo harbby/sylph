@@ -59,7 +59,10 @@ public class YarnJobContainer
             this.yarnAppId = Apps.toAppID(jobInfo);
             this.setStatus(RUNNING);
             try {
-                this.webUi = yarnClient.getApplicationReport(yarnAppId).getOriginalTrackingUrl();
+                this.webUi = yarnClient.getApplicationReport(yarnAppId).getTrackingUrl();
+            }
+            catch (ApplicationNotFoundException e) {
+                logger.warn(e.getMessage());
             }
             catch (YarnException | IOException e) {
                 throwsException(e);
@@ -118,7 +121,7 @@ public class YarnJobContainer
     public String getJobUrl()
     {
         try {
-            return "N/A".equals(webUi) ? yarnClient.getApplicationReport(yarnAppId).getOriginalTrackingUrl() : webUi;
+            return "N/A".equals(webUi) ? yarnClient.getApplicationReport(yarnAppId).getTrackingUrl() : webUi;
         }
         catch (YarnException | IOException e) {
             throw throwsException(e);

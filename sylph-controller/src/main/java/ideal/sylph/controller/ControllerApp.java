@@ -16,6 +16,7 @@
 package ideal.sylph.controller;
 
 import com.github.harbby.gadtry.ioc.Autowired;
+import ideal.sylph.controller.selvet.ProxyAllHttpServer;
 import ideal.sylph.spi.SylphContext;
 
 import java.util.Properties;
@@ -35,9 +36,12 @@ public class ControllerApp
             Properties properties,
             SylphContext sylphContext
     )
+            throws Exception
     {
         this.config = new ServerConfig(requireNonNull(properties, "config is null"));
         this.sylphContext = requireNonNull(sylphContext, "jobManager is null");
+
+        new ProxyAllHttpServer(properties).start();
     }
 
     public void start()

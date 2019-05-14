@@ -25,4 +25,6 @@ dependencies {
         exclude(module: 'slf4j-api')
         exclude(module: 'snappy-java')
     }
+
+    compile 'com.github.harbby:spark-sql-kafka-0-8:1.0.0'
 }
