@@ -57,7 +57,8 @@ function bindDeleteNode(instance, node) {
             $("#delete_modal").modal('show');
             $("#delete_confirm").click(function () {
                 //删除连接线
-                instance.detachAllConnections(node);
+                //instance.detachAllConnections(node);
+                instance.deleteConnectionsForElement(node)
                 //删除锚点
                 instance.removeAllEndpoints(node);
                 //删除节点
@@ -80,7 +81,8 @@ function getFlow(instance) {
     /*获取连接线*/
     var edges = [];
     $.each(instance.getAllConnections(), function (idx, connection) {
-        var label = connection.getOverlays(connection.id)[1].getLabel();
+        //var label = connection.getOverlays(connection.id)[1].getLabel();
+        var label = ''
         var sourceUuid = $(connection.endpoints[0].canvas).data("uuid");
         var targetUuid = $(connection.endpoints[1].canvas).data("uuid");
         edges.push({
@@ -229,7 +231,7 @@ jsPlumb.ready(function () {
     var instance = jsPlumb.getInstance({
         //Connector: ["Bezier", {curviness: 50}],   //基本连接线类型 使用Bezier曲线
         Connector: ['Flowchart', {gap: 8, cornerRadius: 5, alwaysRespectStubs: true}],  // 连接线的样式种类有[Bezier],[Flowchart],[StateMachine ],[Straight ]
-        PaintStyle: {strokeStyle: color, lineWidth: 2},  //线条样式
+        //PaintStyle: {strokeStyle: "#E8C870", lineWidth: 2},  //线条样式
         HoverPaintStyle: {strokeStyle: "#7073EB"},
 
         DragOptions: {cursor: "pointer", zIndex: 2000},
@@ -290,9 +292,14 @@ jsPlumb.ready(function () {
         },
         // the definition of target endpoints (will appear when the user drags a connection)
         sourceEndpoint = {
-            endpoint: "Dot",
+            //endpoint: "Dot",
             //paintStyle: {radius: 5, fillStyle: '#D4FFD6'},
-            paintStyle: {fillStyle: "#7AB02C", radius: 7},
+            paintStyle: {
+                stroke: "#7AB02C",
+                fillStyle: "#FF8891",
+                radius: 7,
+                strokeWidth: 1
+            },
             maxConnections: -1,
             isTarget: true
         };
