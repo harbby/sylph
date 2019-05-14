@@ -16,7 +16,6 @@
 package ideal.sylph.plugins.kafka.spark;
 
 import com.github.harbby.gadtry.base.Lazys;
-import com.github.harbby.spark.sql.kafka.KafkaOffsetCommitter;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.annotation.Version;
@@ -186,7 +185,7 @@ public class KafkaSource08
 
         DStream<ConsumerRecord<byte[], byte[]>> sylphKafkaOffset = new SylphKafkaOffset<ConsumerRecord<byte[], byte[]>>(inputStream.inputDStream())
         {
-            private final KafkaOffsetCommitter thread = new KafkaOffsetCommitter(
+            private final KafkaOffsetCommitter kafkaOffsetCommitter = new KafkaOffsetCommitter(
                     kafkaCluster,
                     groupId,
                     commitInterval);
@@ -195,18 +194,18 @@ public class KafkaSource08
             public void initialize(Time time)
             {
                 super.initialize(time);
-                thread.setName("Kafka_Offset_Committer");
-                thread.start();
+                kafkaOffsetCommitter.setName("Kafka_Offset_Committer");
+                kafkaOffsetCommitter.start();
             }
 
             @Override
             public void commitOffsets(RDD<?> kafkaRdd)
             {
                 OffsetRange[] offsets = ((HasOffsetRanges) kafkaRdd).offsetRanges();
-                Map<TopicAndPartition, Long> internalOffsets = Arrays.stream(offsets)
-                        .collect(Collectors.toMap(k -> k.topicAndPartition(), v -> v.fromOffset()));
+//                Map<TopicAndPartition, Long> internalOffsets = Arrays.stream(offsets)
+//                        .collect(Collectors.toMap(k -> k.topicAndPartition(), v -> v.fromOffset()));
                 //log().info("commit Kafka Offsets {}", internalOffsets);
-                thread.addAll(offsets);
+                kafkaOffsetCommitter.addAll(offsets);
             }
         };
         JavaDStream<ConsumerRecord<byte[], byte[]>> dStream = new JavaDStream<>(sylphKafkaOffset, ClassTag$.MODULE$.apply(ConsumerRecord.class));
