@@ -24,9 +24,9 @@ biltong@jsplumb/biltong#0.4.0:
   version "0.4.0"
   resolved "https://codeload.github.com/jsplumb/biltong/tar.gz/cbf53284def90097a740d4edee226c7767978141"
 
-bootstrap@3.3.7:
-  version "3.3.7"
-  resolved "https://registry.yarnpkg.com/bootstrap/-/bootstrap-3.3.7.tgz#5a389394549f23330875a3b150656574f8a9eb71"
+bootstrap@3.4.1:
+  version "3.4.1"
+  resolved "https://registry.yarnpkg.com/bootstrap/-/bootstrap-3.4.1.tgz#c3a347d419e289ad11f4033e3c4132b87c081d72"
 
 codemirror@5.0.0:
   version "5.0.0"
@@ -44,9 +44,9 @@ jquery-ui@components/jqueryui#1.9.2:
   version "1.9.2"
   resolved "https://codeload.github.com/components/jqueryui/tar.gz/c683d0746b5fb73dc758ec9b72e69d917c9d5009"
 
-jquery@1.11.1:
-  version "1.11.1"
-  resolved "https://registry.yarnpkg.com/jquery/-/jquery-1.11.1.tgz#b6ec928590112ebed69e1e49cbfd0025ccd60ddb"
+"jquery@ 3.4.0":
+  version "3.4.0"
+  resolved "https://registry.yarnpkg.com/jquery/-/jquery-3.4.0.tgz#8de513fa0fa4b2c7d2e48a530e26f0596936efdf"
 
 jsBezier@jsplumb/jsBezier#0.9.1:
   version "0.9.1"
@@ -56,9 +56,9 @@ json2@douglascrockford/JSON-js#:
   version "0.0.0"
   resolved "https://codeload.github.com/douglascrockford/JSON-js/tar.gz/03157639c7a7cddd2e9f032537f346f1a87c0f6d"
 
-jsplumb@jsplumb/jsplumb#1.7.2:
-  version "1.7.2"
-  resolved "https://codeload.github.com/jsplumb/jsplumb/tar.gz/3940881a63e86f54207f3a037260871930fb6928"
+jsplumb@jsplumb/jsplumb#2.9.3:
+  version "2.9.3"
+  resolved "https://codeload.github.com/jsplumb/jsplumb/tar.gz/50f68839a70e97304d3e99cfb031543958db2d5d"
 
 katavorio@jsplumb/katavorio#0.4:
   version "0.0.0"
