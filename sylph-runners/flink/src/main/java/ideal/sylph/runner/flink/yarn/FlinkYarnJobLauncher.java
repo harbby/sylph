@@ -24,6 +24,7 @@ import ideal.sylph.runner.flink.actuator.JobParameter;
 import ideal.sylph.spi.job.Job;
 import org.apache.flink.client.program.ClusterClient;
 import org.apache.flink.runtime.jobgraph.JobGraph;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.client.api.YarnClient;
@@ -33,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.URI;
 import java.net.URL;
@@ -66,7 +68,9 @@ public class FlinkYarnJobLauncher
         JobParameter jobConfig = ((FlinkJobConfig) job.getConfig()).getConfig();
 
         Iterable<Path> userProvidedJars = getUserAdditionalJars(job.getDepends());
+        YarnClientApplication application = yarnClient.createApplication();
         final YarnJobDescriptor descriptor = new YarnJobDescriptor(
+                application,
                 flinkConf,
                 yarnClient,
                 yarnConfiguration,
@@ -76,32 +80,42 @@ public class FlinkYarnJobLauncher
         return start(descriptor, jobGraph);
     }
 
-    private Optional<ApplicationId> start(YarnJobDescriptor descriptor, JobGraph job)
+    private Optional<ApplicationId> start(YarnJobDescriptor descriptor, JobGraph jobGraph)
             throws Exception
     {
-        YarnClientApplication application = null;
         try {
-            logger.info("start flink job {}", job.getJobID());
-            application = yarnClient.createApplication();
-            ClusterClient<ApplicationId> client = descriptor.deploy(application, job, true);  //create yarn appMaster
+            logger.info("start flink job {}", jobGraph.getJobID());
+            ClusterClient<ApplicationId> client = descriptor.deploy(jobGraph, true);  //create yarn appMaster
             ApplicationId applicationId = client.getClusterId();
             client.shutdown();
             return Optional.of(applicationId);
         }
-        catch (Exception e) {
-            if (application != null) {
-                yarnClient.killApplication(application.getApplicationSubmissionContext().getApplicationId());
-            }
+        catch (Throwable e) {
+            logger.error("submitting job {} failed", jobGraph.getJobID(), e);
+            cleanupStagingDir(descriptor.getUploadingDir());
             Thread thread = Thread.currentThread();
             if (e instanceof InterruptedIOException ||
                     thread.isInterrupted() ||
                     Throwables.getRootCause(e) instanceof InterruptedException) {
-                logger.warn("job {} Canceled submission", job.getJobID());
+                logger.warn("job {} Canceled submission", jobGraph.getJobID());
                 return Optional.empty();
             }
             else {
                 throw e;
             }
+        }
+    }
+
+    private void cleanupStagingDir(Path uploadingDir)
+    {
+        try {
+            FileSystem hdfs = FileSystem.get(yarnClient.getConfig());
+            if (hdfs.delete(uploadingDir, true)) {
+                logger.info("Deleted staging directory {}", uploadingDir);
+            }
+        }
+        catch (IOException e) {
+            logger.warn("Failed to cleanup staging dir {}", uploadingDir, e);
         }
     }
 
