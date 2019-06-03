@@ -1,0 +1,5 @@
+dependencies {
+    compile group: 'org.slf4j', name: 'slf4j-api', version: deps.log4j12
+
+    compile group: 'org.mongodb', name: 'mongo-java-driver', version: deps.mongo
+}

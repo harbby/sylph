@@ -32,6 +32,7 @@ include 'sylph-connectors:sylph-elasticsearch6'
 include 'sylph-connectors:sylph-elasticsearch5'
 include 'sylph-connectors:sylph-clickhouse'
 include 'sylph-connectors:sylph-kudu'
+include 'sylph-connectors:sylph-mongo'
 
 include 'sylph-connectors:spark-kafka'
 include 'sylph-connectors:spark-kafka08'
