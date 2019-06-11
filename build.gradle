@@ -34,7 +34,8 @@ allprojects {
           gadtry   : '1.4.2-rc1',
           guava    : '25.1-jre',
           jackson  : '2.9.5',
-          jersey   : '2.27'
+          jersey   : '2.27',
+          mongo    : '3.10.2'
   ]
 }
 
