@@ -44,9 +44,9 @@ jquery-ui@components/jqueryui#1.9.2:
   version "1.9.2"
   resolved "https://codeload.github.com/components/jqueryui/tar.gz/c683d0746b5fb73dc758ec9b72e69d917c9d5009"
 
-"jquery@ 3.4.0":
+jquery@3.4.0:
   version "3.4.0"
-  resolved "https://registry.yarnpkg.com/jquery/-/jquery-3.4.0.tgz#8de513fa0fa4b2c7d2e48a530e26f0596936efdf"
+  resolved "https://registry.npm.taobao.org/jquery/download/jquery-3.4.0.tgz#8de513fa0fa4b2c7d2e48a530e26f0596936efdf"
 
 jsBezier@jsplumb/jsBezier#0.9.1:
   version "0.9.1"
