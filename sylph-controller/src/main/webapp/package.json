@@ -5,7 +5,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "bower_build": "bower install --allow-root && exit 0",
-    "build": "exit 0"
+    "build": ""
   },
   "keywords": [],
   "author": "yezhixinghai@gmail.com",
