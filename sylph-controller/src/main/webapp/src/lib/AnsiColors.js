@@ -4,7 +4,7 @@ import React from 'react';
 export class AnsiColors extends React.Component {
     render() {
         let { log } = this.props;
-        let regexp = /\[\d*m/g;
+        let regexp = /\[\d*m/g;
         let symbolList = log.match(regexp);
         let splitList = log.split(regexp);
         //debugger
