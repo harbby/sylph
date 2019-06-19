@@ -26,6 +26,7 @@ import ideal.sylph.parser.antlr.AntlrSqlParser;
 import ideal.sylph.parser.antlr.tree.CreateTable;
 import ideal.sylph.runner.flink.FlinkJobConfig;
 import ideal.sylph.runner.flink.FlinkJobHandle;
+import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobHandle;
@@ -59,7 +60,14 @@ public class FlinkStreamSqlActuator
         extends FlinkStreamEtlActuator
 {
     private static final Logger logger = LoggerFactory.getLogger(FlinkStreamSqlActuator.class);
-    @Autowired private PipelinePluginManager pluginManager;
+    private final RunnerContext runnerContextr;
+
+    @Autowired
+    public FlinkStreamSqlActuator(RunnerContext runnerContextr)
+    {
+        super(runnerContextr);
+        this.runnerContextr = runnerContextr;
+    }
 
     @NotNull
     @Override
@@ -75,7 +83,6 @@ public class FlinkStreamSqlActuator
         SqlFlow flow = (SqlFlow) inFlow;
         ImmutableSet.Builder<PipelinePluginInfo> builder = ImmutableSet.builder();
         AntlrSqlParser parser = new AntlrSqlParser();
-
         Stream.of(flow.getSqlSplit())
                 .map(query -> {
                     try {
@@ -90,7 +97,7 @@ public class FlinkStreamSqlActuator
                     CreateTable createTable = (CreateTable) statement;
                     Map<String, Object> withConfig = createTable.getWithConfig();
                     String driverOrName = (String) requireNonNull(withConfig.get("type"), "driver is null");
-                    pluginManager.findPluginInfo(driverOrName, getPipeType(createTable.getType()))
+                    getPluginManager().findPluginInfo(driverOrName, getPipeType(createTable.getType()))
                             .ifPresent(builder::add);
                 });
         return builder.build();
@@ -104,7 +111,7 @@ public class FlinkStreamSqlActuator
         SqlFlow flow = (SqlFlow) inFlow;
         //----- compile --
         final JobParameter jobParameter = ((FlinkJobConfig) jobConfig).getConfig();
-        JobGraph jobGraph = compile(jobId, pluginManager, jobParameter, flow.getSqlSplit(), jobClassLoader);
+        JobGraph jobGraph = compile(jobId, getPluginManager(), jobParameter, flow.getSqlSplit(), jobClassLoader);
         return new FlinkJobHandle(jobGraph);
     }
 
@@ -117,7 +124,7 @@ public class FlinkStreamSqlActuator
             throws Exception
     {
         JVMLauncher<JobGraph> launcher = JVMLaunchers.<JobGraph>newJvm()
-                .setConsole((line) -> System.out.println(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
+                .setConsole((line) -> logger.info(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset().toString()))
                 .setCallable(() -> {
                     System.out.println("************ job start ***************");
                     StreamExecutionEnvironment execEnv = FlinkEnvFactory.getStreamEnv(jobConfig, jobId);

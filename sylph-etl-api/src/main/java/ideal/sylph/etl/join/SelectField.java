@@ -100,6 +100,6 @@ public class SelectField
         builder.put("tableName", tableName);
         builder.put("isBatchTableField", isBatchTableField);
         builder.put("fieldIndex", fieldIndex);
-        return this + builder.toString();
+        return this.getClass().getSimpleName() + builder.toString();
     }
 }

@@ -38,7 +38,6 @@ import javax.ws.rs.core.UriInfo;
 import java.util.Map;
 import java.util.Optional;
 
-import static ideal.sylph.controller.action.StreamSqlResource.parserJobConfig;
 import static ideal.sylph.spi.exception.StandardErrorCode.ILLEGAL_OPERATION;
 import static java.util.Objects.requireNonNull;
 
@@ -72,7 +71,7 @@ public class EtlResource
             String flow = request.getParameter("graph");
             String configString = request.getParameter("config");
 
-            sylphContext.saveJob(jobId, flow, ImmutableMap.of("type", actuator, "config", parserJobConfig(configString)));
+            sylphContext.saveJob(jobId, flow, actuator, configString);
             Map out = ImmutableMap.of(
                     "jobId", jobId,
                     "type", "save",

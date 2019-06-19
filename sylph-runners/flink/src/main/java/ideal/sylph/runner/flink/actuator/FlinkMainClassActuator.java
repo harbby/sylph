@@ -15,6 +15,7 @@
  */
 package ideal.sylph.runner.flink.actuator;
 
+import com.github.harbby.gadtry.ioc.Autowired;
 import com.github.harbby.gadtry.jvm.JVMException;
 import com.github.harbby.gadtry.jvm.JVMLauncher;
 import com.github.harbby.gadtry.jvm.JVMLaunchers;
@@ -22,6 +23,7 @@ import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.runner.flink.FlinkJobConfig;
 import ideal.sylph.runner.flink.FlinkJobHandle;
+import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobHandle;
@@ -66,6 +68,12 @@ import static org.fusesource.jansi.Ansi.Color.YELLOW;
 public class FlinkMainClassActuator
         extends FlinkStreamEtlActuator
 {
+    @Autowired
+    public FlinkMainClassActuator(RunnerContext runnerContextr)
+    {
+        super(runnerContextr);
+    }
+
     @Override
     public Flow formFlow(byte[] flowBytes)
             throws IOException

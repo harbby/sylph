@@ -15,12 +15,24 @@
  */
 package ideal.sylph.spi.model;
 
+import com.github.harbby.gadtry.base.JavaTypes;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
+import ideal.sylph.annotation.Version;
 import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.etl.PluginConfig;
+import ideal.sylph.etl.api.RealTimePipeline;
+import ideal.sylph.etl.api.RealTimeSink;
+import ideal.sylph.etl.api.RealTimeTransForm;
+import ideal.sylph.etl.api.Sink;
+import ideal.sylph.etl.api.Source;
+import ideal.sylph.etl.api.TransForm;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import sun.reflect.generics.tree.ClassTypeSignature;
+import sun.reflect.generics.tree.SimpleClassTypeSignature;
 import sun.reflect.generics.tree.TypeArgument;
 
 import java.io.File;
@@ -32,16 +44,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
-import static com.google.common.base.Preconditions.checkState;
-import static ideal.sylph.spi.NodeLoader.getPipeConfigInstance;
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
+import static com.github.harbby.gadtry.base.MoreObjects.toStringHelper;
+import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static ideal.sylph.spi.PluginConfigFactory.getPluginConfigDefaultValues;
 import static java.util.Objects.requireNonNull;
 
 public class PipelinePluginInfo
         implements Serializable
 {
+    private static final Logger logger = LoggerFactory.getLogger(PipelinePluginInfo.class);
+    private static Class<? extends PipelinePlugin> javaClass;
+
     private final boolean realTime;
     private final String[] names;
     private final String description;
@@ -52,9 +67,9 @@ public class PipelinePluginInfo
     private final File pluginFile;
     private final PipelinePlugin.PipelineType pipelineType;  //source transform or sink
 
-    private List<Map> pluginConfig = Collections.emptyList(); //Injected by the specific runner
+    private List<Map<String, Object>> pluginConfig = Collections.emptyList(); //Injected by the specific runner
 
-    public PipelinePluginInfo(
+    private PipelinePluginInfo(
             String[] names,
             String description,
             String version,
@@ -79,7 +94,7 @@ public class PipelinePluginInfo
         return driverClass;
     }
 
-    public boolean getRealTime()
+    public boolean isRealTime()
     {
         return realTime;
     }
@@ -114,12 +129,12 @@ public class PipelinePluginInfo
         return pipelineType;
     }
 
-    public List<Map> getPluginConfig()
+    public List<Map<String, Object>> getPluginConfig()
     {
         return pluginConfig;
     }
 
-    public void setPluginConfig(List<Map> config)
+    public void setPluginConfig(List<Map<String, Object>> config)
     {
         this.pluginConfig = config;
     }
@@ -172,10 +187,10 @@ public class PipelinePluginInfo
     /**
      * "This method can only be called by the runner, otherwise it will report an error No classFound"
      */
-    static List<Map> parserPluginDefualtConfig(Class<? extends PipelinePlugin> javaClass, ClassLoader classLoader)
+    public static List<Map<String, Object>> parserPluginDefaultConfig(Class<? extends PipelinePlugin> javaClass)
     {
         Constructor<?>[] constructors = javaClass.getConstructors();
-        checkState(constructors.length == 1, "PipelinePlugin " + javaClass + " must ont constructor");
+        checkState(constructors.length == 1, "PipelinePlugin " + javaClass + " must one constructor");
         Constructor<?> constructor = constructors[0];
 
         for (Class<?> argmentType : constructor.getParameterTypes()) {
@@ -184,32 +199,78 @@ public class PipelinePluginInfo
             }
 
             try {
-                PluginConfig pluginConfig = getPipeConfigInstance(argmentType.asSubclass(PluginConfig.class), classLoader);
-
-                return Stream.of(argmentType.getDeclaredFields())
-                        .filter(field -> field.getAnnotation(Name.class) != null)
-                        .map(field -> {
-                            Name name = field.getAnnotation(Name.class);
-                            Description description = field.getAnnotation(Description.class);
-                            field.setAccessible(true);
-                            try {
-                                Object defaultValue = field.get(pluginConfig);
-                                return ImmutableMap.of(
-                                        "key", name.value(),
-                                        "description", description == null ? "" : description.value(),
-                                        "default", defaultValue == null ? "" : defaultValue
-                                );
-                            }
-                            catch (IllegalAccessException e) {
-                                throw new IllegalArgumentException(e);
-                            }
-                        }).collect(Collectors.toList());
+                return getPluginConfigDefaultValues(argmentType.asSubclass(PluginConfig.class));
             }
             catch (Exception e) {
-                throw new IllegalArgumentException(argmentType + " Unable to be instantiated", e);
+                throw throwsException(e);
             }
         }
 
         return ImmutableList.of();
+    }
+
+    public static PipelinePluginInfo getPluginInfo(
+            File pluginFile,
+            Class<? extends PipelinePlugin> javaClass)
+    {
+        PipelinePlugin.PipelineType pipelineType = parserDriverType(javaClass);
+        boolean realTime = RealTimePipeline.class.isAssignableFrom(javaClass); //is realTime ?
+        TypeArgument[] javaGenerics = realTime ? new TypeArgument[0] : getClassGenericInfo(javaClass, pipelineType);
+
+        Name name = javaClass.getAnnotation(Name.class);
+        String[] nameArr = ImmutableSet.<String>builder()
+                .add(name == null ? javaClass.getName() : name.value())
+                .build().toArray(new String[0]);
+
+        String isRealTime = realTime ? "RealTime " + pipelineType.name() : pipelineType.name();
+        logger.info("loading {} Pipeline Plugin:{} ,the name is {}", isRealTime, javaClass, nameArr);
+
+        Description description = javaClass.getAnnotation(Description.class);
+        Version version = javaClass.getAnnotation(Version.class);
+
+        return new PipelinePluginInfo(
+                nameArr,
+                description == null ? "" : description.value(),
+                version == null ? "" : version.value(),
+                realTime,
+                javaClass.getName(),
+                javaGenerics,
+                pluginFile,
+                pipelineType
+        );
+    }
+
+    private static PipelinePlugin.PipelineType parserDriverType(Class<? extends PipelinePlugin> javaClass)
+    {
+        PipelinePluginInfo.javaClass = javaClass;
+        if (Source.class.isAssignableFrom(javaClass)) {
+            return PipelinePlugin.PipelineType.source;
+        }
+        else if (TransForm.class.isAssignableFrom(javaClass) || RealTimeTransForm.class.isAssignableFrom(javaClass)) {
+            return PipelinePlugin.PipelineType.transform;
+        }
+        else if (Sink.class.isAssignableFrom(javaClass) || RealTimeSink.class.isAssignableFrom(javaClass)) {
+            return PipelinePlugin.PipelineType.sink;
+        }
+        else {
+            throw new IllegalArgumentException("Unknown type " + javaClass.getName());
+        }
+    }
+
+    private static TypeArgument[] getClassGenericInfo(Class<? extends PipelinePlugin> javaClass, PipelinePlugin.PipelineType pipelineType)
+    {
+        Map<String, TypeArgument[]> typesMap = JavaTypes.getClassGenericInfo(javaClass);
+        String genericString = JavaTypes.getClassGenericString(javaClass);
+
+        logger.info("--The {} is not RealTimePipeline--the Java generics is {} --", javaClass, genericString);
+        TypeArgument[] types = typesMap.getOrDefault(pipelineType.getValue().getName(), new TypeArgument[0]);
+        return types;
+    }
+
+    public static List<String> getTypeNames(TypeArgument[] types)
+    {
+        return Arrays.stream(types)
+                .flatMap(x -> ((ClassTypeSignature) x).getPath().stream())
+                .map(SimpleClassTypeSignature::getName).collect(Collectors.toList());
     }
 }

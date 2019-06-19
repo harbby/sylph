@@ -17,12 +17,12 @@ package ideal.sylph.main.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.github.harbby.gadtry.aop.AopFactory;
+import com.github.harbby.gadtry.base.Closeables;
 import com.github.harbby.gadtry.classloader.DirClassLoader;
 import com.github.harbby.gadtry.classloader.PluginLoader;
-import com.github.harbby.gadtry.classloader.ThreadContextClassLoader;
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.main.server.ServerMainConfig;
@@ -85,7 +85,7 @@ public class RunnerManager
             //.add("com.google.inject.")
             .add("com.google.common.")
             .add("org.slf4j.")
-            .add("org.apache.log4j.")
+            //.add("org.apache.log4j.")
             .build();
 
     @Autowired
@@ -101,7 +101,7 @@ public class RunnerManager
         PluginLoader.<Runner>newScanner()
                 .setPlugin(Runner.class)
                 .setScanDir(new File("modules"))
-                .setSpiPackages(SPI_PACKAGES)
+                .onlyAccessSpiPackages(SPI_PACKAGES)
                 .setLoadHandler(module -> {
                     logger.info("Found module dir directory {} Try to loading the runner", module.getModulePath());
                     List<Runner> plugins = module.getPlugins();
@@ -114,7 +114,7 @@ public class RunnerManager
                             createRunner(runner);
                         }
                     }
-                }).build();
+                }).load();
     }
 
     private void createRunner(final Runner runner)
@@ -147,21 +147,8 @@ public class RunnerManager
 
         switch (config.getRunMode().toLowerCase()) {
             case "yarn": {
-                try (ThreadContextClassLoader ignored0 = new ThreadContextClassLoader(job.getJobClassLoader())) {
-                    JobContainer container = jobActuator.getFactory().createYarnContainer(job, jobInfo);
-                    //----create JobContainer Proxy
-                    return AopFactory.proxy(JobContainer.class)
-                            .byInstance(container)
-                            .around(proxyContext -> {
-                                /*
-                                 * 通过这个 修改当前YarnClient的ClassLoader的为当前runner的加载器
-                                 * 默认hadoop Configuration使用jvm的AppLoader,会出现 akka.version not setting的错误 原因是找不到akka相关jar包
-                                 * 原因是hadoop Configuration 初始化: this.classLoader = Thread.currentThread().getContextClassLoader();
-                                 * */
-                                try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(job.getJobClassLoader())) {
-                                    return proxyContext.proceed();
-                                }
-                            });
+                try (Closeables ignored = Closeables.openThreadContextClassLoader(job.getJobClassLoader())) {
+                    return jobActuator.getFactory().createYarnContainer(job, jobInfo);
                 }
             }
 
@@ -172,14 +159,13 @@ public class RunnerManager
         }
     }
 
-    public Job formJobWithFlow(String jobId, byte[] flowBytes, Map configBytes)
+    public Job formJobWithFlow(String jobId, byte[] flowBytes, String actuatorName, String configBytes)
             throws Exception
     {
-        String actuatorName = JobConfig.load(configBytes).getType();
         JobActuator jobActuator = jobActuatorMap.get(actuatorName);
         checkArgument(jobActuator != null, "job [" + jobId + "] loading error! JobActuator:[" + actuatorName + "] not find,only " + jobActuatorMap.keySet());
-
-        JobConfig jobConfig = MAPPER.convertValue(configBytes, jobActuator.getHandle().getConfigParser());
+        Map mapConfig = MAPPER.readValue(configBytes, Map.class);
+        JobConfig jobConfig = MAPPER.convertValue(ImmutableMap.of("type", actuatorName, "config", mapConfig), jobActuator.getHandle().getConfigParser());
         return formJobWithFlow(jobId, flowBytes, jobActuator, jobConfig);
     }
 
@@ -202,16 +188,7 @@ public class RunnerManager
                 .collect(Collectors.toList());
     }
 
-    public List<PipelinePluginInfo> getPlugins()
-    {
-        return jobActuatorMap.values()
-                .stream()
-                .flatMap(x -> x.getHandle().getPluginManager().getAllPlugins().stream())
-                .distinct()
-                .collect(Collectors.toList());
-    }
-
-    public List<PipelinePluginInfo> getPlugins(String actuator)
+    public List<PipelinePluginInfo> getEnginePlugins(String actuator)
     {
         JobActuator jobActuator = requireNonNull(jobActuatorMap.get(actuator), "job actuator [" + actuator + "] not exists");
         return Lists.newArrayList(jobActuator.getHandle().getPluginManager().getAllPlugins());

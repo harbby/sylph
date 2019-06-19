@@ -15,7 +15,6 @@
  */
 package ideal.sylph.runner.spark;
 
-import com.github.harbby.gadtry.collection.mutable.MutableList;
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.github.harbby.gadtry.jvm.JVMException;
 import com.github.harbby.gadtry.jvm.JVMLauncher;
@@ -46,7 +45,6 @@ import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.net.URLClassLoader;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -73,14 +71,7 @@ public class SparkStreamingSqlActuator
     public SparkStreamingSqlActuator(RunnerContext runnerContext)
     {
         super(runnerContext);
-        List<Class<?>> filterClass = MutableList.of(
-                org.apache.spark.streaming.dstream.DStream.class,
-                org.apache.spark.streaming.api.java.JavaDStream.class,
-                org.apache.spark.rdd.RDD.class,
-                org.apache.spark.api.java.JavaRDD.class,
-                org.apache.spark.sql.Row.class
-        );
-        this.pluginManager = SparkRunner.createPipelinePluginManager(runnerContext, filterClass);
+        this.pluginManager = super.getPluginManager();
     }
 
     @NotNull

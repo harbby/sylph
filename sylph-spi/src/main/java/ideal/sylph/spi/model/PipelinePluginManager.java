@@ -34,8 +34,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.Throwables.throwsException;
-import static com.google.common.base.Preconditions.checkState;
-import static ideal.sylph.spi.model.PipelinePluginInfo.parserPluginDefualtConfig;
+import static ideal.sylph.spi.model.PipelinePluginInfo.parserPluginDefaultConfig;
 import static java.util.Objects.requireNonNull;
 
 public interface PipelinePluginManager
@@ -68,12 +67,12 @@ public interface PipelinePluginManager
         return ImmutableSet.of();
     }
 
-    default Class<?> loadPluginDriver(String driverOrName, PipelinePlugin.PipelineType pipelineType)
+    default <T> Class<T> loadPluginDriver(String driverOrName, PipelinePlugin.PipelineType pipelineType)
     {
         try {
             PipelinePluginInfo info = findPluginInfo(requireNonNull(driverOrName, "driverOrName is null"), pipelineType)
                     .orElseThrow(() -> new ClassNotFoundException("pipelineType:" + pipelineType + " no such driver class: " + driverOrName));
-            return Class.forName(info.getDriverClass());
+            return (Class<T>) Class.forName(info.getDriverClass());
         }
         catch (ClassNotFoundException e) {
             throw throwsException(e);
@@ -82,6 +81,7 @@ public interface PipelinePluginManager
 
     default Optional<PipelinePluginInfo> findPluginInfo(String driverOrName, PipelinePlugin.PipelineType pipelineType)
     {
+        requireNonNull(pipelineType, "pipelineType is null");
         ImmutableTable.Builder<String, String, PipelinePluginInfo> builder = ImmutableTable.builder();
 
         this.getAllPlugins().forEach(info ->
@@ -92,15 +92,7 @@ public interface PipelinePluginManager
                         .forEach(name -> builder.put(name + info.getPipelineType(), name, info))
         );
         ImmutableTable<String, String, PipelinePluginInfo> plugins = builder.build();
-
-        if (pipelineType == null) {
-            Map<String, PipelinePluginInfo> infoMap = plugins.column(driverOrName);
-            checkState(infoMap.size() <= 1, "Multiple choices appear, please enter `type` to query" + infoMap);
-            return infoMap.values().stream().findFirst();
-        }
-        else {
-            return Optional.ofNullable(plugins.get(driverOrName + pipelineType, driverOrName));
-        }
+        return Optional.ofNullable(plugins.get(driverOrName + pipelineType, driverOrName));
     }
 
     public static Set<PipelinePluginInfo> filterRunnerPlugins(
@@ -110,12 +102,13 @@ public interface PipelinePluginManager
     {
         Set<PipelinePluginInfo> plugins = findPlugins.stream()
                 .filter(it -> {
-                    if (it.getRealTime()) {
+                    if (it.isRealTime()) {
                         return true;
                     }
                     if (it.getJavaGenerics().length == 0) {
                         return false;
                     }
+
                     ClassTypeSignature typeSignature = (ClassTypeSignature) it.getJavaGenerics()[0];
                     String typeName = typeSignature.getPath().get(0).getName();
                     return keyword.contains(typeName);
@@ -128,7 +121,7 @@ public interface PipelinePluginManager
                         for (PipelinePluginInfo info : it.getValue()) {
                             try {
                                 Class<? extends PipelinePlugin> plugin = classLoader.loadClass(info.getDriverClass()).asSubclass(PipelinePlugin.class);
-                                List<Map> config = parserPluginDefualtConfig(plugin, classLoader);
+                                List<Map<String, Object>> config = parserPluginDefaultConfig(plugin);
                                 info.setPluginConfig(config);
                             }
                             catch (Exception e) {

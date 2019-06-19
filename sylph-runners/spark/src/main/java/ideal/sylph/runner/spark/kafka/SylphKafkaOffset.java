@@ -45,7 +45,6 @@ public abstract class SylphKafkaOffset<T>
         return List$.MODULE$.<DStream<?>>newBuilder()
                 .$plus$eq(parent)
                 .result();
-        //return List$.MODULE$.empty();
     }
 
     @Override

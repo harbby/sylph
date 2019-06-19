@@ -46,7 +46,7 @@ public class JsonSchema
             throws IOException
     {
         @SuppressWarnings("unchecked")
-        Map<String, Object> map = MAPPER.readValue(message, Map.class);
+        Map<String, Object> map = MAPPER.readValue(message, HashMap.class);
         String[] names = rowTypeInfo.getFieldNames();
         Row row = new Row(names.length);
         for (int i = 0; i < names.length; i++) {
@@ -84,9 +84,6 @@ public class JsonSchema
             }
             else if (aClass.isArray()) {
                 row.setField(i, MAPPER.convertValue(value, aClass));
-            }
-            else if (aClass == Long.class || aClass == Long.TYPE) {
-                row.setField(i, ((Number) value).longValue());
             }
             else {
                 row.setField(i, value);

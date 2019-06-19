@@ -78,13 +78,17 @@ public class FlinkContainerFactory
         Path appCheckPath = new Path(jobConfig.getCheckpointDir(), job.getId());
 
         FlinkYarnJobLauncher jobLauncher = injector.getInstance(FlinkYarnJobLauncher.class);
-        YarnJobContainer yarnJobContainer = new YarnJobContainer(jobLauncher.getYarnClient(), lastRunid, () -> {
-            if (jobConfig.isEnableSavepoint()) {
-                setSavepoint(jobGraph, appCheckPath, jobLauncher.getYarnClient().getConfig());
-            }
-            return jobLauncher.start(job);
-        });
-        return yarnJobContainer;
+        return YarnJobContainer.builder()
+                .setYarnClient(jobLauncher.getYarnClient())
+                .setSubmitter(() -> {
+                    if (jobConfig.isEnableSavepoint()) {
+                        setSavepoint(jobGraph, appCheckPath, jobLauncher.getYarnClient().getConfig());
+                    }
+                    return jobLauncher.start(job);
+                })
+                .setJobClassLoader(job.getJobClassLoader())
+                .setLastRunId(lastRunid)
+                .build();
     }
 
     @Override

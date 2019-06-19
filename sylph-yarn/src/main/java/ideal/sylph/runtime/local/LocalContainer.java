@@ -15,7 +15,6 @@
  */
 package ideal.sylph.runtime.local;
 
-import com.github.harbby.gadtry.jvm.JVMException;
 import com.github.harbby.gadtry.jvm.VmFuture;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobContainer;
@@ -88,7 +87,7 @@ public abstract class LocalContainer
                 try {
                     vmFuture.get();
                 }
-                catch (JVMException e) {
+                catch (Exception e) {
                     logger.error("", e);
                 }
                 return Job.Status.STOP;

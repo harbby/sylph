@@ -84,16 +84,13 @@ public class SparkRunner
     public static PipelinePluginManager createPipelinePluginManager(RunnerContext context, Collection<Class<?>> filterClass)
     {
         final Set<String> keyword = filterClass.stream().map(Class::getName).collect(Collectors.toSet());
-
-        final Set<PipelinePluginInfo> runnerPlugins =
-                filterRunnerPlugins(context.getFindPlugins(), keyword, SparkRunner.class);
-
+        Set<PipelinePluginInfo> pluginInfos = filterRunnerPlugins(context.getFindPlugins(), keyword, SparkRunner.class);
         return new PipelinePluginManager()
         {
             @Override
             public Set<PipelinePluginInfo> getAllPlugins()
             {
-                return runnerPlugins;
+                return pluginInfos;
             }
         };
     }

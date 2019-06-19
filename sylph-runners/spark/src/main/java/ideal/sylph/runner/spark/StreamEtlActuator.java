@@ -39,17 +39,12 @@ import java.util.List;
 public class StreamEtlActuator
         extends EtlJobActuatorHandle
 {
-    private final PipelinePluginManager pluginManager;
+    private final RunnerContext runnerContext;
 
     @Autowired
     public StreamEtlActuator(RunnerContext runnerContext)
     {
-        List<Class<?>> filterClass = MutableList.of(
-                org.apache.spark.streaming.StreamingContext.class,
-                org.apache.spark.streaming.dstream.DStream.class,
-                org.apache.spark.sql.Row.class
-        );
-        this.pluginManager = SparkRunner.createPipelinePluginManager(runnerContext, filterClass);
+        this.runnerContext = runnerContext;
     }
 
     @NotNull
@@ -57,12 +52,19 @@ public class StreamEtlActuator
     public JobHandle formJob(String jobId, Flow flow, JobConfig jobConfig, URLClassLoader jobClassLoader)
             throws Exception
     {
-        return JobHelper.build1xJob(jobId, (EtlFlow) flow, jobClassLoader, pluginManager);
+        return JobHelper.build1xJob(jobId, (EtlFlow) flow, jobClassLoader, getPluginManager());
     }
 
     @Override
     public PipelinePluginManager getPluginManager()
     {
-        return pluginManager;
+        List<Class<?>> filterClass = MutableList.of(
+                org.apache.spark.streaming.dstream.DStream.class,
+                org.apache.spark.streaming.api.java.JavaDStream.class,
+                org.apache.spark.rdd.RDD.class,
+                org.apache.spark.api.java.JavaRDD.class,
+                org.apache.spark.sql.Row.class
+        );
+        return SparkRunner.createPipelinePluginManager(runnerContext, filterClass);
     }
 }

@@ -145,19 +145,19 @@ public final class StreamSqlUtil
                 return String.class;
             case "integer":
             case "int":
-                return int.class;
+                return Integer.class;
             case "long":
             case "bigint":
-                return long.class;
+                return Long.class;
             case "boolean":
             case "bool":
-                return boolean.class;
+                return Boolean.class;
             case "double":
-                return double.class;
+                return Double.class;
             case "float":
-                return float.class;
+                return Float.class;
             case "byte":
-                return byte.class;
+                return Byte.class;
             case "timestamp":
                 return Timestamp.class;
             case "date":

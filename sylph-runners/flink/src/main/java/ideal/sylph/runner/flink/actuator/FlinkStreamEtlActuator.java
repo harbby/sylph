@@ -26,6 +26,7 @@ import ideal.sylph.runner.flink.FlinkBean;
 import ideal.sylph.runner.flink.FlinkJobConfig;
 import ideal.sylph.runner.flink.FlinkJobHandle;
 import ideal.sylph.runner.flink.etl.FlinkNodeLoader;
+import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.EtlFlow;
 import ideal.sylph.spi.job.EtlJobActuatorHandle;
 import ideal.sylph.spi.job.Flow;
@@ -47,6 +48,7 @@ import javax.validation.constraints.NotNull;
 import java.net.URLClassLoader;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
+import static ideal.sylph.runner.flink.FlinkRunner.createPipelinePluginManager;
 import static ideal.sylph.spi.GraphAppUtil.buildGraph;
 import static org.fusesource.jansi.Ansi.Color.GREEN;
 import static org.fusesource.jansi.Ansi.Color.YELLOW;
@@ -58,7 +60,14 @@ public class FlinkStreamEtlActuator
         extends EtlJobActuatorHandle
 {
     private static final Logger logger = LoggerFactory.getLogger(FlinkStreamEtlActuator.class);
-    @Autowired private PipelinePluginManager pluginManager;
+
+    private final RunnerContext runnerContext;
+
+    @Autowired
+    public FlinkStreamEtlActuator(RunnerContext runnerContext)
+    {
+        this.runnerContext = runnerContext;
+    }
 
     @NotNull
     @Override
@@ -75,14 +84,14 @@ public class FlinkStreamEtlActuator
         EtlFlow flow = (EtlFlow) inFlow;
 
         final JobParameter jobParameter = ((FlinkJobConfig) jobConfig).getConfig();
-        JobGraph jobGraph = compile(jobId, flow, jobParameter, jobClassLoader, pluginManager);
+        JobGraph jobGraph = compile(jobId, flow, jobParameter, jobClassLoader, getPluginManager());
         return new FlinkJobHandle(jobGraph);
     }
 
     @Override
     public PipelinePluginManager getPluginManager()
     {
-        return pluginManager;
+        return createPipelinePluginManager(runnerContext);
     }
 
     @Override
@@ -95,7 +104,6 @@ public class FlinkStreamEtlActuator
     }
 
     private static JobGraph compile(String jobId, EtlFlow flow, JobParameter jobConfig, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
-            throws Exception
     {
         //---- build flow----
         JVMLauncher<JobGraph> launcher = JVMLaunchers.<JobGraph>newJvm()
@@ -109,12 +117,12 @@ public class FlinkStreamEtlActuator
                         binder.bind(SourceContext.class, sourceContext);
                     });
                     FlinkNodeLoader loader = new FlinkNodeLoader(pluginManager, iocFactory);
-                    buildGraph(loader, jobId, flow);
+                    buildGraph(loader, flow);
                     StreamGraph streamGraph = execEnv.getStreamGraph();
                     streamGraph.setJobName(jobId);
                     return streamGraph.getJobGraph();
                 })
-                .setConsole((line) -> System.out.println(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
+                .setConsole((line) -> logger.info(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset().toString()))
                 .addUserURLClassLoader(jobClassLoader)
                 .setClassLoader(jobClassLoader)
                 .build();

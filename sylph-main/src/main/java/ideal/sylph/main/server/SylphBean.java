@@ -63,11 +63,12 @@ public final class SylphBean
     {
         @Autowired private JobManager jobManager;
         @Autowired private RunnerManager runnerManger;
+        @Autowired private PipelinePluginLoader pluginLoader;
 
         @Override
         public SylphContext get()
         {
-            return new SylphContextImpl(jobManager, runnerManger);
+            return new SylphContextImpl(jobManager, runnerManger, pluginLoader);
         }
     }
 }

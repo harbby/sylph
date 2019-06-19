@@ -67,8 +67,7 @@ public class FlinkRunner
                 binder.bind(FlinkMainClassActuator.class).withSingle();
                 binder.bind(FlinkStreamEtlActuator.class).withSingle();
                 binder.bind(FlinkStreamSqlActuator.class).withSingle();
-                //----------------------------------
-                binder.bind(PipelinePluginManager.class).byCreator(() -> createPipelinePluginManager(context)).withSingle();
+                binder.bind(RunnerContext.class, context);
             });
 
             return Stream.of(FlinkMainClassActuator.class, FlinkStreamEtlActuator.class, FlinkStreamSqlActuator.class)
@@ -79,23 +78,21 @@ public class FlinkRunner
         }
     }
 
-    private static PipelinePluginManager createPipelinePluginManager(RunnerContext context)
+    public static PipelinePluginManager createPipelinePluginManager(RunnerContext context)
     {
-        Set<String> keyword = Stream.of(
+        final Set<String> keyword = Stream.of(
                 org.apache.flink.table.api.StreamTableEnvironment.class,
                 org.apache.flink.table.api.java.StreamTableEnvironment.class,
                 org.apache.flink.streaming.api.datastream.DataStream.class
         ).map(Class::getName).collect(Collectors.toSet());
-
-        final Set<PipelinePluginInfo> runnerPlugins =
-                filterRunnerPlugins(context.getFindPlugins(), keyword, FlinkRunner.class);
+        Set<PipelinePluginInfo> pluginInfos = filterRunnerPlugins(context.getFindPlugins(), keyword, FlinkRunner.class);
 
         return new PipelinePluginManager()
         {
             @Override
             public Set<PipelinePluginInfo> getAllPlugins()
             {
-                return runnerPlugins;
+                return pluginInfos;
             }
         };
     }

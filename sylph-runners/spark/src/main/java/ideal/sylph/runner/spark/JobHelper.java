@@ -80,7 +80,7 @@ final class JobHelper
                     } : super.loadSink(driverStr, config);
                 }
             };
-            buildGraph(loader, jobId, flow);
+            buildGraph(loader, flow);
             return spark;
         };
 
@@ -114,7 +114,7 @@ final class JobHelper
 
             Bean bean = binder -> binder.bind(StreamingContext.class, spark);
             StreamNodeLoader loader = new StreamNodeLoader(pluginManager, IocFactory.create(bean));
-            buildGraph(loader, jobId, flow);
+            buildGraph(loader, flow);
             return spark;
         };
 

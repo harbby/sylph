@@ -103,7 +103,7 @@ public class YarnJobDescriptor
         this.userProvidedJars = userProvidedJars;
 
         FileSystem fileSystem = FileSystem.get(yarnClient.getConfig());
-        this.uploadingDir = new Path(new Path(fileSystem.getHomeDirectory(), ".sylph"), application.getApplicationSubmissionContext().toString());
+        this.uploadingDir = new Path(new Path(fileSystem.getHomeDirectory(), ".sylph"), application.getApplicationSubmissionContext().getApplicationId().toString());
     }
 
     @Override

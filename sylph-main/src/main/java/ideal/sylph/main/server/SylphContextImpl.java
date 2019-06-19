@@ -15,7 +15,10 @@
  */
 package ideal.sylph.main.server;
 
+import com.github.harbby.gadtry.classloader.Module;
+import ideal.sylph.etl.Plugin;
 import ideal.sylph.main.service.JobManager;
+import ideal.sylph.main.service.PipelinePluginLoader;
 import ideal.sylph.main.service.RunnerManager;
 import ideal.sylph.spi.SylphContext;
 import ideal.sylph.spi.exception.SylphException;
@@ -29,8 +32,8 @@ import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.SYSTEM_ERROR;
 import static ideal.sylph.spi.exception.StandardErrorCode.UNKNOWN_ERROR;
@@ -42,21 +45,23 @@ public class SylphContextImpl
 {
     private JobManager jobManager;
     private RunnerManager runnerManger;
+    private PipelinePluginLoader pluginLoader;
 
-    SylphContextImpl(JobManager jobManager, RunnerManager runnerManger)
+    SylphContextImpl(JobManager jobManager, RunnerManager runnerManger, PipelinePluginLoader pluginLoader)
     {
         this.jobManager = requireNonNull(jobManager, "jobManager is null");
         this.runnerManger = requireNonNull(runnerManger, "runnerManger is null");
+        this.pluginLoader = requireNonNull(pluginLoader, "runnerManger is null");
     }
 
     @Override
-    public void saveJob(@NotNull String jobId, @NotNull String flowString, @NotNull Map jobConfig)
+    public void saveJob(@NotNull String jobId, @NotNull String flowString, String jobType, @NotNull String jobConfig)
             throws Exception
     {
         requireNonNull(jobId, "jobId is null");
         requireNonNull(flowString, "flowString is null");
         requireNonNull(jobConfig, "jobConfig is null");
-        Job job = runnerManger.formJobWithFlow(jobId, flowString.getBytes(UTF_8), jobConfig);
+        Job job = runnerManger.formJobWithFlow(jobId, flowString.getBytes(UTF_8), jobType, jobConfig);
         jobManager.saveJob(job);
     }
 
@@ -121,14 +126,33 @@ public class SylphContextImpl
     }
 
     @Override
-    public List<PipelinePluginInfo> getPlugins()
+    public List<PipelinePluginInfo> getAllConnectors()
     {
-        return runnerManger.getPlugins();
+        return pluginLoader.getPluginsInfo().stream().collect(Collectors.toList());
     }
 
     @Override
-    public List<PipelinePluginInfo> getPlugins(String actuator)
+    public List<Module<Plugin>> getAllConnectorModules()
     {
-        return runnerManger.getPlugins(actuator);
+        return pluginLoader.getModules();
+    }
+
+    @Override
+    public void reload()
+    {
+        pluginLoader.reload();
+    }
+
+    @Override
+    public void deleteModule(String moduleName)
+            throws IOException
+    {
+        pluginLoader.deleteModule(moduleName);
+    }
+
+    @Override
+    public List<PipelinePluginInfo> getEnginePlugins(String actuator)
+    {
+        return runnerManger.getEnginePlugins(actuator);
     }
 }

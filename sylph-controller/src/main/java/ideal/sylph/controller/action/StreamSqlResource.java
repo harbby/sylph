@@ -63,7 +63,7 @@ import static java.util.Objects.requireNonNull;
 @Path("/stream_sql")
 public class StreamSqlResource
 {
-    private static final Logger logger = LoggerFactory.getLogger(EtlResource.class);
+    private static final Logger logger = LoggerFactory.getLogger(StreamSqlResource.class);
 
     private final UriInfo uriInfo;
     private final SylphContext sylphContext;
@@ -97,7 +97,7 @@ public class StreamSqlResource
             File workDir = new File("jobs/" + jobId); //工作目录
             saveFiles(workDir, request);
 
-            sylphContext.saveJob(jobId, flow, ImmutableMap.of("type", jobType, "config", parserJobConfig(configString)));
+            sylphContext.saveJob(jobId, flow, jobType, configString);
             Map out = ImmutableMap.of(
                     "jobId", jobId,
                     "type", "save",
@@ -175,6 +175,10 @@ public class StreamSqlResource
     static Map parserJobConfig(String configString)
             throws IOException
     {
+        if (configString == null) {
+            return Collections.emptyMap();
+        }
+
         Properties properties = new Properties();
         properties.load(new ByteArrayInputStream(configString.getBytes(UTF_8)));
         String appTags = properties.getProperty("appTags", null);

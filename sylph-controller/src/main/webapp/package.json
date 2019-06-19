@@ -1,35 +1,43 @@
 {
-  "name": "sylph_ui",
-  "version": "1.0.0",
-  "description": "sylph web ui",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "bower_build": "bower install --allow-root && exit 0",
-    "build": "exit 0"
-  },
-  "keywords": [],
-  "author": "yezhixinghai@gmail.com",
-  "license": "Apache-2.0",
-  "devDependencies": {
-  },
+  "name": "web",
+  "version": "0.1.0",
+  "private": true,
   "dependencies": {
-    "angular": "1.2.28",
-    "angular-animate": "1.2.28",
-    "angular-sanitize": "1.2.28",
-    "layer": "sentsin/layer#3.1.1",
-    "jsplumb": "jsplumb/jsplumb#2.9.3",
-    "codemirror": "5.0.0",
-    "fontawesome": "FortAwesome/Font-Awesome#4.7.0",
-    "jquery": "3.4.0",
-    "jquery-ui": "components/jqueryui#1.9.2",
-    "bootstrap": "3.4.1",
-    "d3": "mbostock-bower/d3-bower#5.0.0",
-    "underscore": "1.7.0",
-    "backbone": "1.1.2",
-    "json2": "douglascrockford/JSON-js#",
-    "jsBezier": "jsplumb/jsBezier#0.9.1",
-    "biltong": "jsplumb/biltong#0.4.0",
-    "katavorio": "jsplumb/katavorio#0.4",
-    "mottle": "jsplumb/mottle#0.4"
-  }
+    "express": "^4.17.1",
+    "kleur": "^3.0.3",
+    "react": "^16.8.6",
+    "react-dom": "^16.8.6",
+    "react-scripts": "3.0.1",
+    "react-simple-code-editor": "^0.9.11"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build ",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "antd": "^3.19.3",
+    "query-string": "^6.7.0",
+    "ra-data-simple-rest": "^2.9.2",
+    "react-admin": "^2.9.2",
+    "react-highlight": "^0.12.0",
+    "react-syntax-highlighter": "^10.3.0"
+  },
+  "proxy": "http://localhost:8080"
 }

@@ -58,7 +58,7 @@ public class LocalJobStore
     private final Map<String, String> buildJobLogs = new OffHeapMap<>(
             (String str) -> str.getBytes(UTF_8),
             (byte[] bytes) -> new String(bytes, UTF_8),
-            ConcurrentHashMap.class
+            ConcurrentHashMap::new
     );
 
     @Autowired
@@ -107,7 +107,10 @@ public class LocalJobStore
     public synchronized void removeJob(String jobId)
             throws IOException
     {
-        Job job = requireNonNull(jobs.remove(jobId), jobId + " is not exists");
+        Job job = jobs.remove(jobId);
+        if (job == null) {
+            return;
+        }
         FileUtils.deleteDirectory(job.getWorkDir());  //delete job dir
     }
 

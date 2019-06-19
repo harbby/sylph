@@ -38,7 +38,7 @@ public class KafkaSourceConfig08
 
     @Name("auto.offset.reset")
     @Description("this is auto.offset.reset mode")
-    private String offsetMode = "latest";
+    private String offsetMode = "largest";
 
     @Name("value_type")
     @Description("this is kafka String value Type, use json")

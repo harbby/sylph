@@ -15,6 +15,8 @@
  */
 package ideal.sylph.runtime.yarn;
 
+import com.github.harbby.gadtry.aop.AopFactory;
+import com.github.harbby.gadtry.base.Closeables;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobContainer;
@@ -51,23 +53,10 @@ public class YarnJobContainer
 
     private final Callable<Optional<ApplicationId>> runnable;
 
-    public YarnJobContainer(YarnClient yarnClient, String jobInfo, Callable<Optional<ApplicationId>> runnable)
+    private YarnJobContainer(YarnClient yarnClient, Callable<Optional<ApplicationId>> runnable)
     {
         this.runnable = runnable;
         this.yarnClient = yarnClient;
-        if (jobInfo != null) {
-            this.yarnAppId = Apps.toAppID(jobInfo);
-            this.setStatus(RUNNING);
-            try {
-                this.webUi = yarnClient.getApplicationReport(yarnAppId).getTrackingUrl();
-            }
-            catch (ApplicationNotFoundException e) {
-                logger.warn(e.getMessage());
-            }
-            catch (YarnException | IOException e) {
-                throwsException(e);
-            }
-        }
     }
 
     @Override
@@ -164,6 +153,72 @@ public class YarnJobContainer
         }
         catch (YarnException | IOException e) {
             throw new SylphException(CONNECTION_ERROR, e);
+        }
+    }
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
+    public static class Builder
+    {
+        private YarnClient yarnClient;
+        private Callable<Optional<ApplicationId>> submitter;
+        private String lastRunId;
+        private ClassLoader jobClassLoader;
+
+        public Builder setYarnClient(YarnClient yarnClient)
+        {
+            this.yarnClient = yarnClient;
+            return this;
+        }
+
+        public Builder setLastRunId(String lastRunId)
+        {
+            this.lastRunId = lastRunId;
+            return this;
+        }
+
+        public Builder setSubmitter(Callable<Optional<ApplicationId>> submitter)
+        {
+            this.submitter = submitter;
+            return this;
+        }
+
+        public Builder setJobClassLoader(ClassLoader jobClassLoader)
+        {
+            this.jobClassLoader = jobClassLoader;
+            return this;
+        }
+
+        public JobContainer build()
+        {
+            final YarnJobContainer yarnJobContainer = new YarnJobContainer(yarnClient, submitter);
+            if (lastRunId != null) {
+                yarnJobContainer.yarnAppId = Apps.toAppID(lastRunId);
+                yarnJobContainer.setStatus(RUNNING);
+                try {
+                    yarnJobContainer.webUi = yarnClient.getApplicationReport(yarnJobContainer.yarnAppId).getTrackingUrl();
+                }
+                catch (Exception e) {
+                    logger.warn(e.getMessage());
+                }
+            }
+
+            //----create JobContainer Proxy
+            return AopFactory.proxy(JobContainer.class)
+                    .byInstance(yarnJobContainer)
+                    .around(proxyContext -> {
+                        /*
+                         * 通过这个 修改当前YarnClient的ClassLoader的为当前runner的加载器
+                         * 默认hadoop Configuration使用jvm的AppLoader,会出现 akka.version not setting的错误 原因是找不到akka相关jar包
+                         * 原因是hadoop Configuration 初始化: this.classLoader = Thread.currentThread().getContextClassLoader();
+                         * */
+                        try (Closeables ignored = Closeables.openThreadContextClassLoader(jobClassLoader)) {
+                            return proxyContext.proceed();
+                        }
+                    });
         }
     }
 }

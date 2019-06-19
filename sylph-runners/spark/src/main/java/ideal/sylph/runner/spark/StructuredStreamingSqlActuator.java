@@ -51,16 +51,13 @@ public class StructuredStreamingSqlActuator
         extends SparkStreamingSqlActuator
 {
     private static final Logger logger = LoggerFactory.getLogger(SparkStreamingSqlActuator.class);
-    private final PipelinePluginManager pluginManager;
+    private final RunnerContext runnerContext;
 
     @Autowired
     public StructuredStreamingSqlActuator(RunnerContext runnerContext)
     {
         super(runnerContext);
-        List<Class<?>> filterClass = MutableList.of(org.apache.spark.sql.SparkSession.class,
-                org.apache.spark.sql.Dataset.class,
-                org.apache.spark.sql.Row.class);
-        this.pluginManager = SparkRunner.createPipelinePluginManager(runnerContext, filterClass);
+        this.runnerContext = runnerContext;
     }
 
     @Override
@@ -70,7 +67,17 @@ public class StructuredStreamingSqlActuator
         SqlFlow flow = (SqlFlow) inFlow;
         //----- compile --
         SparkJobConfig sparkJobConfig = ((SparkJobConfig.SparkConfReader) jobConfig).getConfig();
-        return compile(jobId, flow, pluginManager, sparkJobConfig, jobClassLoader);
+        return compile(jobId, flow, getPluginManager(), sparkJobConfig, jobClassLoader);
+    }
+
+    @Override
+    public PipelinePluginManager getPluginManager()
+    {
+        List<Class<?>> filterClass = MutableList.of(
+                org.apache.spark.sql.SparkSession.class,
+                org.apache.spark.sql.Dataset.class,
+                org.apache.spark.sql.Row.class);
+        return SparkRunner.createPipelinePluginManager(runnerContext, filterClass);
     }
 
     private static JobHandle compile(String jobId, SqlFlow sqlFlow, PipelinePluginManager pluginManager, SparkJobConfig sparkJobConfig, URLClassLoader jobClassLoader)

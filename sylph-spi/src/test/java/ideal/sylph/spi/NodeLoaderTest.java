@@ -15,6 +15,7 @@
  */
 package ideal.sylph.spi;
 
+import com.github.harbby.gadtry.ioc.IocFactory;
 import com.google.common.collect.ImmutableMap;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
@@ -22,9 +23,12 @@ import ideal.sylph.etl.PluginConfig;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.UnaryOperator;
 
-import static ideal.sylph.spi.NodeLoader.injectConfig;
+import static ideal.sylph.spi.PluginConfigFactory.injectConfig;
 
 public class NodeLoaderTest
 {
@@ -36,6 +40,49 @@ public class NodeLoaderTest
         TestConfig pluginConfig = new TestConfig();
         injectConfig(pluginConfig, configMap);
         Assert.assertEquals("codeTest", pluginConfig.name);
+    }
+
+    @Test
+    public void getPluginInstancePluginConfig()
+    {
+        final NodeLoader nodeLoader = new NodeLoader()
+        {
+            @Override
+            public UnaryOperator loadSource(String driverStr, Map pluginConfig)
+            {
+                return null;
+            }
+
+            @Override
+            public UnaryOperator loadTransform(String driverStr, Map pluginConfig)
+            {
+                return null;
+            }
+
+            @Override
+            public UnaryOperator loadSink(String driverStr, Map pluginConfig)
+            {
+                return null;
+            }
+
+            @Override
+            public IocFactory getIocFactory()
+            {
+                return IocFactory.create();
+            }
+        };
+
+        Map<String, Object> configMap = ImmutableMap.of("name", "codeTest");
+        TestConfig pluginConfig = (TestConfig) nodeLoader.getPluginInstance(TestConfig.class, configMap);
+        Assert.assertEquals("codeTest", pluginConfig.name);
+    }
+
+    @Test
+    public void getPluginInstanceGiveHashSet()
+    {
+        Map<String, Object> configMap = ImmutableMap.of("name", "codeTest");
+        Set pluginConfig = NodeLoader.getPluginInstance(HashSet.class, IocFactory.create(), configMap);
+        Assert.assertNotNull(pluginConfig);
     }
 
     @Test
@@ -51,20 +98,11 @@ public class NodeLoaderTest
 
     @Test
     public void injectConfigThrowIllegalArgumentException()
+            throws NoSuchFieldException, IllegalAccessException
     {
         Map<String, Object> configMap = ImmutableMap.of("age", 123L);
         TestConfig pluginConfig = new TestConfig();
-
-        try {
-            injectConfig(pluginConfig, configMap);
-            Assert.fail();
-        }
-        catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        }
-        catch (Exception e) {
-            Assert.fail();
-        }
+        injectConfig(pluginConfig, configMap);
     }
 
     @Test

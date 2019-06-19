@@ -35,22 +35,21 @@ node {
 //default yarn_install
 task package_install(type: YarnTask) {
   // add the express package only
-  args = ['install', '--modules-folder', project.buildDir.path + '/webapp/app/libs']
+  args = ['install']   //'--modules-folder', project.buildDir.path + '/node_modules'
 }
 task build_package(type: YarnTask, dependsOn: package_install) {
   //只安装快递包
   args = ['run', 'build']
 }
 task build_webapp(type: Copy, dependsOn: build_package) {
-  from('src/main/webapp/app')
-  from(project.buildDir.path + '/webapp/app')
+  from('src/main/webapp/build')
   into project(':sylph-dist').buildDir.path + '/webapp'
 }
 assemble.dependsOn 'build_webapp'
 dependencies {
   compile group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'
   compile(project(':sylph-spi'))
-  
+
   compile group: 'org.eclipse.jetty', name: 'jetty-server', version: deps.jetty
   compile group: 'org.eclipse.jetty', name: 'jetty-webapp', version: deps.jetty
   compile group: 'org.eclipse.jetty', name: 'jetty-servlets', version: deps.jetty

@@ -1,7 +1,8 @@
 ext.moduleName = 'ideal.sylph.spi'
 
 dependencies {
-  compile group: 'org.slf4j', name: 'slf4j-log4j12', version: deps.log4j12
+  compile group: 'org.slf4j', name: 'slf4j-api', version: deps.slf4j
+  compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
 
   compile(project(':sylph-etl-api'))
   compile group: 'com.github.harbby', name: 'gadtry', version: deps.gadtry
