@@ -24,12 +24,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-public class PipelinePluginInfoTest
+public class ConnectorInfoTest
 {
     @Test
     public void getDriverClass()
     {
-        List<Map<String, Object>> configs = PipelinePluginInfo.parserPluginDefaultConfig(TestConfigs.TestRealTimeSinkPlugin.class);
+        List<Map<String, Object>> configs = ConnectorInfo.getConnectorDefaultConfig(TestConfigs.TestRealTimeSinkPlugin.class);
         List<Map> mapList = Arrays.asList(MutableMap.of("key", "name", "description", "", "default", "sylph"),
                 MutableMap.of("key", "age", "description", "this is age", "default", ""));
         Assert.assertEquals(configs, mapList);

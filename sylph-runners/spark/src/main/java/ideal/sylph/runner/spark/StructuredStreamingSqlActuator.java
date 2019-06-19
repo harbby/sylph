@@ -15,7 +15,7 @@
  */
 package ideal.sylph.runner.spark;
 
-import com.github.harbby.gadtry.collection.mutable.MutableList;
+import com.github.harbby.gadtry.collection.mutable.MutableSet;
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.github.harbby.gadtry.jvm.JVMException;
 import com.github.harbby.gadtry.jvm.JVMLauncher;
@@ -27,7 +27,7 @@ import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.job.SqlFlow;
-import ideal.sylph.spi.model.PipelinePluginManager;
+import ideal.sylph.spi.ConnectorStore;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
 import org.fusesource.jansi.Ansi;
@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.net.URLClassLoader;
-import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
@@ -67,20 +67,20 @@ public class StructuredStreamingSqlActuator
         SqlFlow flow = (SqlFlow) inFlow;
         //----- compile --
         SparkJobConfig sparkJobConfig = ((SparkJobConfig.SparkConfReader) jobConfig).getConfig();
-        return compile(jobId, flow, getPluginManager(), sparkJobConfig, jobClassLoader);
+        return compile(jobId, flow, getConnectorStore(), sparkJobConfig, jobClassLoader);
     }
 
     @Override
-    public PipelinePluginManager getPluginManager()
+    public ConnectorStore getConnectorStore()
     {
-        List<Class<?>> filterClass = MutableList.of(
+        Set<Class<?>> filterClass = MutableSet.of(
                 org.apache.spark.sql.SparkSession.class,
                 org.apache.spark.sql.Dataset.class,
                 org.apache.spark.sql.Row.class);
-        return SparkRunner.createPipelinePluginManager(runnerContext, filterClass);
+        return runnerContext.createConnectorStore(filterClass, SparkRunner.class);
     }
 
-    private static JobHandle compile(String jobId, SqlFlow sqlFlow, PipelinePluginManager pluginManager, SparkJobConfig sparkJobConfig, URLClassLoader jobClassLoader)
+    private static JobHandle compile(String jobId, SqlFlow sqlFlow, ConnectorStore connectorStore, SparkJobConfig sparkJobConfig, URLClassLoader jobClassLoader)
             throws JVMException
     {
         final AtomicBoolean isCompile = new AtomicBoolean(true);
@@ -92,7 +92,7 @@ public class StructuredStreamingSqlActuator
             SparkSession sparkSession = SparkSession.builder().config(sparkConf).getOrCreate();
 
             //build sql
-            SqlAnalyse sqlAnalyse = new StructuredStreamingSqlAnalyse(sparkSession, pluginManager, isCompile.get());
+            SqlAnalyse sqlAnalyse = new StructuredStreamingSqlAnalyse(sparkSession, connectorStore, isCompile.get());
             try {
                 buildSql(sqlAnalyse, jobId, sqlFlow);
             }

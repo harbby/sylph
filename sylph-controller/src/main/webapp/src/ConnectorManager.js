@@ -1,5 +1,5 @@
 import React from "react";
-import { Table, message, Row, Col, Modal, Tag, Divider, Button, Popconfirm, Icon, Input } from "antd";
+import { Table, message, Row, Col, Tag, Button, Popconfirm, Icon } from "antd";
 
 export default class ConnectorManager extends React.Component {
     state = {

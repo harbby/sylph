@@ -27,7 +27,7 @@ import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobHandle;
-import ideal.sylph.spi.model.PipelinePluginInfo;
+import ideal.sylph.spi.model.ConnectorInfo;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.ExecutionEnvironmentFactory;
 import org.apache.flink.client.program.OptimizerPlanEnvironment;
@@ -82,7 +82,7 @@ public class FlinkMainClassActuator
     }
 
     @Override
-    public Collection<PipelinePluginInfo> parserFlowDepends(Flow inFlow)
+    public Collection<ConnectorInfo> parserFlowDepends(Flow inFlow)
             throws IOException
     {
         return Collections.emptyList();

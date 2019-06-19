@@ -21,18 +21,14 @@ import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.ContainerFactory;
 import ideal.sylph.spi.job.JobActuatorHandle;
-import ideal.sylph.spi.model.PipelinePluginInfo;
-import ideal.sylph.spi.model.PipelinePluginManager;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.github.harbby.gadtry.base.Throwables.throwsException;
 import static com.google.common.base.Preconditions.checkArgument;
-import static ideal.sylph.spi.model.PipelinePluginManager.filterRunnerPlugins;
 import static java.util.Objects.requireNonNull;
 
 public class SparkRunner
@@ -79,19 +75,5 @@ public class SparkRunner
     public Class<? extends ContainerFactory> getContainerFactory()
     {
         return SparkContainerFactory.class;
-    }
-
-    public static PipelinePluginManager createPipelinePluginManager(RunnerContext context, Collection<Class<?>> filterClass)
-    {
-        final Set<String> keyword = filterClass.stream().map(Class::getName).collect(Collectors.toSet());
-        Set<PipelinePluginInfo> pluginInfos = filterRunnerPlugins(context.getFindPlugins(), keyword, SparkRunner.class);
-        return new PipelinePluginManager()
-        {
-            @Override
-            public Set<PipelinePluginInfo> getAllPlugins()
-            {
-                return pluginInfos;
-            }
-        };
     }
 }

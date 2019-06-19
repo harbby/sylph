@@ -15,7 +15,7 @@
  */
 package ideal.sylph.runner.spark;
 
-import com.github.harbby.gadtry.collection.mutable.MutableList;
+import com.github.harbby.gadtry.collection.mutable.MutableSet;
 import com.github.harbby.gadtry.ioc.Autowired;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
@@ -26,12 +26,12 @@ import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobHandle;
-import ideal.sylph.spi.model.PipelinePluginManager;
+import ideal.sylph.spi.ConnectorStore;
 
 import javax.validation.constraints.NotNull;
 
 import java.net.URLClassLoader;
-import java.util.List;
+import java.util.Set;
 
 @Name("Spark_Structured_StreamETL")
 @Description("spark2.x Structured streaming StreamETL")
@@ -52,17 +52,17 @@ public class Stream2EtlActuator
     public JobHandle formJob(String jobId, Flow inFlow, JobConfig jobConfig, URLClassLoader jobClassLoader)
             throws Exception
     {
-        return JobHelper.build2xJob(jobId, (EtlFlow) inFlow, jobClassLoader, getPluginManager());
+        return JobHelper.build2xJob(jobId, (EtlFlow) inFlow, jobClassLoader, getConnectorStore());
     }
 
     @Override
-    public PipelinePluginManager getPluginManager()
+    public ConnectorStore getConnectorStore()
     {
-        List<Class<?>> filterClass = MutableList.of(
+        Set<Class<?>> filterClass = MutableSet.of(
                 org.apache.spark.sql.SparkSession.class,
                 org.apache.spark.sql.Dataset.class,
                 org.apache.spark.sql.Row.class
         );
-        return SparkRunner.createPipelinePluginManager(runnerContext, filterClass);
+        return runnerContext.createConnectorStore(filterClass, SparkRunner.class);
     }
 }

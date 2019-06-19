@@ -15,13 +15,6 @@
  */
 package ideal.sylph.main.service;
 
-import ideal.sylph.spi.model.PipelinePluginInfo;
-import org.junit.Assert;
-import org.junit.Test;
-
-import java.io.File;
-import java.util.Set;
-
 public class PipelinePluginLoaderTest
 {
 }

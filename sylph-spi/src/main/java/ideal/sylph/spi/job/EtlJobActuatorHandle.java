@@ -18,7 +18,7 @@ package ideal.sylph.spi.job;
 import com.google.common.collect.ImmutableSet;
 import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.spi.model.NodeInfo;
-import ideal.sylph.spi.model.PipelinePluginInfo;
+import ideal.sylph.spi.model.ConnectorInfo;
 
 import javax.validation.constraints.NotNull;
 
@@ -39,16 +39,16 @@ public abstract class EtlJobActuatorHandle
 
     @NotNull
     @Override
-    public Collection<PipelinePluginInfo> parserFlowDepends(Flow inFlow)
+    public Collection<ConnectorInfo> parserFlowDepends(Flow inFlow)
             throws IOException
     {
         EtlFlow flow = (EtlFlow) inFlow;
         //---- flow parser depends ----
-        ImmutableSet.Builder<PipelinePluginInfo> builder = ImmutableSet.builder();
+        ImmutableSet.Builder<ConnectorInfo> builder = ImmutableSet.builder();
         for (NodeInfo nodeInfo : flow.getNodes()) {
             String driverOrName = nodeInfo.getDriverClass();
             PipelinePlugin.PipelineType type = PipelinePlugin.PipelineType.valueOf(nodeInfo.getNodeType());
-            Optional<PipelinePluginInfo> pluginInfo = this.getPluginManager().findPluginInfo(driverOrName, type);
+            Optional<ConnectorInfo> pluginInfo = this.getConnectorStore().findConnectorInfo(driverOrName, type);
             pluginInfo.ifPresent(builder::add);
         }
         return builder.build();

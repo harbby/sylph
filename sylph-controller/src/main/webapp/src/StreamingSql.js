@@ -1,10 +1,8 @@
 import React from "react";
-import { Input, Select, Tag, Alert, Divider, Button, Popconfirm, Icon, Row, Col } from "antd";
+import { Drawer, Input, Select, Tag, Alert, Button, Icon, Row, Col } from "antd";
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import { docco } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import { message } from 'antd';
-
-import { Drawer, Form, DatePicker } from 'antd';
 
 export default class StreamingSql extends React.Component {
     state = {
@@ -118,7 +116,7 @@ export default class StreamingSql extends React.Component {
                         <Tag style={{ fontSize: "16px", padding: "5px 25px" }} color="blue">Job: {this.state.jobId}</Tag>
                     </Col>
                     <Col span={20} style={{ textAlign: 'right' }}>
-                        <Select style={{ margin: "0 10px" }} defaultValue="StreamSql" onSelect={(e) => { this.state.engine = e }}>
+                        <Select style={{ margin: "0 10px" }} defaultValue="StreamSql" onSelect={(e) => { this.setState({ engine: e }) }}>
                             <Option value="StreamSql">FlinkStreamSql</Option>
                             <Option value="SparkStreamingSql">SparkStreamingSql</Option>
                             <Option value="StructuredStreamingSql">StructuredStreamingSql</Option>

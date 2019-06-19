@@ -37,12 +37,12 @@ public class PipelinePluginManagerTest
     private final PipelinePluginManager pluginManager = new PipelinePluginManager()
     {
         @Override
-        public Set<PipelinePluginInfo> getAllPlugins()
+        public Set<ConnectorInfo> getAllPlugins()
         {
-            return MutableSet.<PipelinePluginInfo>builder()
-                    .add(PipelinePluginInfo.getPluginInfo(new File(""), TestConfigs.TestSinkPlugin.class))
-                    .add(PipelinePluginInfo.getPluginInfo(new File(""), TestConfigs.TestRealTimeSinkPlugin.class))
-                    .add(PipelinePluginInfo.getPluginInfo(new File(""), TestConfigs.TestErrorSinkPlugin.class))
+            return MutableSet.<ConnectorInfo>builder()
+                    .add(ConnectorInfo.getPluginInfo(new File(""), TestConfigs.TestSinkPlugin.class))
+                    .add(ConnectorInfo.getPluginInfo(new File(""), TestConfigs.TestRealTimeSinkPlugin.class))
+                    .add(ConnectorInfo.getPluginInfo(new File(""), TestConfigs.TestErrorSinkPlugin.class))
                     .build();
         }
     };
@@ -68,7 +68,7 @@ public class PipelinePluginManagerTest
     @Test
     public void getAllPlugins()
     {
-        Set<PipelinePluginInfo> set = PipelinePluginManager.getDefault().getAllPlugins();
+        Set<ConnectorInfo> set = PipelinePluginManager.getDefault().getAllPlugins();
         Assert.assertNotNull(set);
     }
 
@@ -92,12 +92,12 @@ public class PipelinePluginManagerTest
     @Test
     public void filterRunnerPlugins()
     {
-        Set<PipelinePluginInfo> set = PipelinePluginManager.filterRunnerPlugins(pluginManager.getAllPlugins(),
+        Set<ConnectorInfo> set = PipelinePluginManager.filterRunnerPlugins(pluginManager.getAllPlugins(),
                 MutableSet.of(Stream.class.getName()),
                 TestRunner.class);
         Assert.assertEquals(set.size(), 2);
 
-        Set<PipelinePluginInfo> set2 = PipelinePluginManager.filterRunnerPlugins(pluginManager.getAllPlugins(),
+        Set<ConnectorInfo> set2 = PipelinePluginManager.filterRunnerPlugins(pluginManager.getAllPlugins(),
                 MutableSet.of(), TestRunner.class);
         Assert.assertEquals(set2.size(), 1);
     }

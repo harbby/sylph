@@ -20,7 +20,7 @@ import ideal.sylph.etl.Plugin;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobContainer;
-import ideal.sylph.spi.model.PipelinePluginInfo;
+import ideal.sylph.spi.model.ConnectorInfo;
 
 import javax.validation.constraints.NotNull;
 
@@ -54,9 +54,9 @@ public interface SylphContext
      */
     Collection<JobActuator.ActuatorInfo> getAllActuatorsInfo();
 
-    List<PipelinePluginInfo> getEnginePlugins(String actuator);
+    List<ConnectorInfo> getEnginePlugins(String actuator);
 
-    List<PipelinePluginInfo> getAllConnectors();
+    List<ConnectorInfo> getAllConnectors();
 
     List<Module<Plugin>> getAllConnectorModules();
 

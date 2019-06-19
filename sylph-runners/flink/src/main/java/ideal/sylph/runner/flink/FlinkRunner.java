@@ -24,8 +24,7 @@ import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.ContainerFactory;
 import ideal.sylph.spi.job.JobActuatorHandle;
-import ideal.sylph.spi.model.PipelinePluginInfo;
-import ideal.sylph.spi.model.PipelinePluginManager;
+import ideal.sylph.spi.ConnectorStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +35,6 @@ import java.util.stream.Stream;
 
 import static com.github.harbby.gadtry.base.Throwables.throwsException;
 import static com.google.common.base.Preconditions.checkArgument;
-import static ideal.sylph.spi.model.PipelinePluginManager.filterRunnerPlugins;
 import static java.util.Objects.requireNonNull;
 
 public class FlinkRunner
@@ -78,22 +76,11 @@ public class FlinkRunner
         }
     }
 
-    public static PipelinePluginManager createPipelinePluginManager(RunnerContext context)
+    public static ConnectorStore createConnectorStore(RunnerContext context)
     {
-        final Set<String> keyword = Stream.of(
-                org.apache.flink.table.api.StreamTableEnvironment.class,
-                org.apache.flink.table.api.java.StreamTableEnvironment.class,
-                org.apache.flink.streaming.api.datastream.DataStream.class
-        ).map(Class::getName).collect(Collectors.toSet());
-        Set<PipelinePluginInfo> pluginInfos = filterRunnerPlugins(context.getFindPlugins(), keyword, FlinkRunner.class);
-
-        return new PipelinePluginManager()
-        {
-            @Override
-            public Set<PipelinePluginInfo> getAllPlugins()
-            {
-                return pluginInfos;
-            }
-        };
+        final Set<Class<?>> keyword = Stream.of(
+                org.apache.flink.streaming.api.datastream.DataStream.class,
+                org.apache.flink.types.Row.class).collect(Collectors.toSet());
+        return context.createConnectorStore(keyword, FlinkRunner.class);
     }
 }

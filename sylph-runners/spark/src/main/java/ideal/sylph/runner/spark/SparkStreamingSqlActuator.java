@@ -30,8 +30,8 @@ import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.job.SqlFlow;
-import ideal.sylph.spi.model.PipelinePluginInfo;
-import ideal.sylph.spi.model.PipelinePluginManager;
+import ideal.sylph.spi.ConnectorStore;
+import ideal.sylph.spi.model.ConnectorInfo;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.streaming.Duration;
@@ -65,13 +65,13 @@ public class SparkStreamingSqlActuator
         extends StreamEtlActuator
 {
     private static final Logger logger = LoggerFactory.getLogger(SparkStreamingSqlActuator.class);
-    private final PipelinePluginManager pluginManager;
+    private final ConnectorStore connectorStore;
 
     @Autowired
     public SparkStreamingSqlActuator(RunnerContext runnerContext)
     {
         super(runnerContext);
-        this.pluginManager = super.getPluginManager();
+        this.connectorStore = super.getConnectorStore();
     }
 
     @NotNull
@@ -83,10 +83,10 @@ public class SparkStreamingSqlActuator
 
     @NotNull
     @Override
-    public Collection<PipelinePluginInfo> parserFlowDepends(Flow inFlow)
+    public Collection<ConnectorInfo> parserFlowDepends(Flow inFlow)
     {
         SqlFlow flow = (SqlFlow) inFlow;
-        ImmutableSet.Builder<PipelinePluginInfo> builder = ImmutableSet.builder();
+        ImmutableSet.Builder<ConnectorInfo> builder = ImmutableSet.builder();
         AntlrSqlParser parser = new AntlrSqlParser();
 
         Stream.of(flow.getSqlSplit())
@@ -96,7 +96,7 @@ public class SparkStreamingSqlActuator
                     CreateTable createTable = (CreateTable) statement;
                     Map<String, Object> withConfig = createTable.getWithConfig();
                     String driverOrName = (String) requireNonNull(withConfig.get("type"), "driver is null");
-                    pluginManager.findPluginInfo(driverOrName, getPipeType(createTable.getType()))
+                    connectorStore.findConnectorInfo(driverOrName, getPipeType(createTable.getType()))
                             .ifPresent(builder::add);
                 });
         return builder.build();
@@ -116,10 +116,10 @@ public class SparkStreamingSqlActuator
         SqlFlow flow = (SqlFlow) inFlow;
         //----- compile --
         SparkJobConfig sparkJobConfig = ((SparkJobConfig.SparkConfReader) jobConfig).getConfig();
-        return compile(jobId, flow, pluginManager, sparkJobConfig, jobClassLoader);
+        return compile(jobId, flow, connectorStore, sparkJobConfig, jobClassLoader);
     }
 
-    private static JobHandle compile(String jobId, SqlFlow sqlFlow, PipelinePluginManager pluginManager, SparkJobConfig sparkJobConfig, URLClassLoader jobClassLoader)
+    private static JobHandle compile(String jobId, SqlFlow sqlFlow, ConnectorStore connectorStore, SparkJobConfig sparkJobConfig, URLClassLoader jobClassLoader)
             throws JVMException
     {
         int batchDuration = sparkJobConfig.getSparkStreamingBatchDuration();
@@ -133,7 +133,7 @@ public class SparkStreamingSqlActuator
             StreamingContext ssc = new StreamingContext(sparkSession.sparkContext(), Duration.apply(batchDuration));
 
             //build sql
-            SqlAnalyse analyse = new SparkStreamingSqlAnalyse(ssc, pluginManager, isCompile.get());
+            SqlAnalyse analyse = new SparkStreamingSqlAnalyse(ssc, connectorStore, isCompile.get());
             try {
                 buildSql(analyse, jobId, sqlFlow);
             }

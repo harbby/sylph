@@ -1,5 +1,4 @@
 import React from "react";
-import { Table, Tag, Divider, Button, Popconfirm, Icon } from "antd";
 import { AnsiColors } from "./lib/AnsiColors";
 
 export default class ServerLog extends React.Component {
@@ -12,7 +11,6 @@ export default class ServerLog extends React.Component {
     showlog(json) {
         var stickToBottom = true;
         if (json !== "" && json !== null) {
-            this.state.id = json.id;
             if (json.logs === null || json.logs.length === 0) {
                 return
             }
@@ -55,11 +53,10 @@ export default class ServerLog extends React.Component {
     }
 
     componentWillMount() {
-        this.state.id = null
         var intervalId = setInterval(() => {
             this.fetchData("/_sys/server/logs", {
                 last_num: this.state.last_num,
-                id: this.state.id
+                id: null
             })
         }, 1000)
         this.setState({ intervalId: intervalId })
@@ -71,8 +68,6 @@ export default class ServerLog extends React.Component {
     }
 
     render = () => {
-        const kleur = require('kleur');
-
         return (
             <div style={{ height: "95vh", overflow: "scroll" }} ref="scroll_con">
                 {

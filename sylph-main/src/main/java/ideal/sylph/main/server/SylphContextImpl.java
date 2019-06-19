@@ -25,15 +25,15 @@ import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobContainer;
-import ideal.sylph.spi.model.PipelinePluginInfo;
+import ideal.sylph.spi.model.ConnectorInfo;
 
 import javax.validation.constraints.NotNull;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.SYSTEM_ERROR;
 import static ideal.sylph.spi.exception.StandardErrorCode.UNKNOWN_ERROR;
@@ -126,9 +126,9 @@ public class SylphContextImpl
     }
 
     @Override
-    public List<PipelinePluginInfo> getAllConnectors()
+    public List<ConnectorInfo> getAllConnectors()
     {
-        return pluginLoader.getPluginsInfo().stream().collect(Collectors.toList());
+        return new ArrayList<>(pluginLoader.getPluginsInfo());
     }
 
     @Override
@@ -151,7 +151,7 @@ public class SylphContextImpl
     }
 
     @Override
-    public List<PipelinePluginInfo> getEnginePlugins(String actuator)
+    public List<ConnectorInfo> getEnginePlugins(String actuator)
     {
         return runnerManger.getEnginePlugins(actuator);
     }

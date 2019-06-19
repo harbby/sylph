@@ -51,10 +51,10 @@ import static com.github.harbby.gadtry.base.Throwables.throwsException;
 import static ideal.sylph.spi.PluginConfigFactory.getPluginConfigDefaultValues;
 import static java.util.Objects.requireNonNull;
 
-public class PipelinePluginInfo
+public class ConnectorInfo
         implements Serializable
 {
-    private static final Logger logger = LoggerFactory.getLogger(PipelinePluginInfo.class);
+    private static final Logger logger = LoggerFactory.getLogger(ConnectorInfo.class);
     private static Class<? extends PipelinePlugin> javaClass;
 
     private final boolean realTime;
@@ -69,7 +69,7 @@ public class PipelinePluginInfo
 
     private List<Map<String, Object>> pluginConfig = Collections.emptyList(); //Injected by the specific runner
 
-    private PipelinePluginInfo(
+    private ConnectorInfo(
             String[] names,
             String description,
             String version,
@@ -156,7 +156,7 @@ public class PipelinePluginInfo
             return false;
         }
 
-        PipelinePluginInfo other = (PipelinePluginInfo) obj;
+        ConnectorInfo other = (ConnectorInfo) obj;
         return Objects.equals(this.realTime, other.realTime)
                 && Arrays.equals(this.names, other.names)
                 && Objects.equals(this.description, other.description)
@@ -187,7 +187,7 @@ public class PipelinePluginInfo
     /**
      * "This method can only be called by the runner, otherwise it will report an error No classFound"
      */
-    public static List<Map<String, Object>> parserPluginDefaultConfig(Class<? extends PipelinePlugin> javaClass)
+    public static List<Map<String, Object>> getConnectorDefaultConfig(Class<? extends PipelinePlugin> javaClass)
     {
         Constructor<?>[] constructors = javaClass.getConstructors();
         checkState(constructors.length == 1, "PipelinePlugin " + javaClass + " must one constructor");
@@ -209,7 +209,7 @@ public class PipelinePluginInfo
         return ImmutableList.of();
     }
 
-    public static PipelinePluginInfo getPluginInfo(
+    public static ConnectorInfo getPluginInfo(
             File pluginFile,
             Class<? extends PipelinePlugin> javaClass)
     {
@@ -228,7 +228,7 @@ public class PipelinePluginInfo
         Description description = javaClass.getAnnotation(Description.class);
         Version version = javaClass.getAnnotation(Version.class);
 
-        return new PipelinePluginInfo(
+        return new ConnectorInfo(
                 nameArr,
                 description == null ? "" : description.value(),
                 version == null ? "" : version.value(),
@@ -242,7 +242,7 @@ public class PipelinePluginInfo
 
     private static PipelinePlugin.PipelineType parserDriverType(Class<? extends PipelinePlugin> javaClass)
     {
-        PipelinePluginInfo.javaClass = javaClass;
+        ConnectorInfo.javaClass = javaClass;
         if (Source.class.isAssignableFrom(javaClass)) {
             return PipelinePlugin.PipelineType.source;
         }

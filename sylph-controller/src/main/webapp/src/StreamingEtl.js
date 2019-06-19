@@ -1,5 +1,4 @@
 import React from "react";
-import { Input, Select, Table, Tag, Divider, Button, Popconfirm, Icon } from "antd";
 
 export default class StreamingSql extends React.Component {
     state = {
@@ -34,7 +33,6 @@ export default class StreamingSql extends React.Component {
     }
 
     render = () => {
-        const { TextArea } = Input;
         return (
             <div>
                 etl job: {this.state.jobId}

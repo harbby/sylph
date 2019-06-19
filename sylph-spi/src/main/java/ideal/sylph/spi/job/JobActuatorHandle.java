@@ -16,8 +16,8 @@
 package ideal.sylph.spi.job;
 
 import com.github.harbby.gadtry.jvm.JVMException;
-import ideal.sylph.spi.model.PipelinePluginInfo;
-import ideal.sylph.spi.model.PipelinePluginManager;
+import ideal.sylph.spi.ConnectorStore;
+import ideal.sylph.spi.model.ConnectorInfo;
 
 import javax.validation.constraints.NotNull;
 
@@ -50,7 +50,7 @@ public interface JobActuatorHandle
             throws IOException;
 
     @NotNull
-    default Collection<PipelinePluginInfo> parserFlowDepends(Flow flow)
+    default Collection<ConnectorInfo> parserFlowDepends(Flow flow)
             throws IOException
     {
         return Collections.emptyList();
@@ -62,8 +62,8 @@ public interface JobActuatorHandle
         return JobConfig.class;
     }
 
-    default PipelinePluginManager getPluginManager()
+    default ConnectorStore getConnectorStore()
     {
-        return new PipelinePluginManager() {};
+        return ConnectorStore.getDefault();
     }
 }

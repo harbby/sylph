@@ -35,7 +35,7 @@ import ideal.sylph.runner.flink.etl.FlinkNodeLoader;
 import ideal.sylph.runner.flink.sql.FlinkSqlParser;
 import ideal.sylph.runner.flink.table.SylphTableSink;
 import ideal.sylph.spi.NodeLoader;
-import ideal.sylph.spi.model.PipelinePluginManager;
+import ideal.sylph.spi.ConnectorStore;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -66,7 +66,7 @@ public class StreamSqlBuilder
 {
     private static final Logger logger = LoggerFactory.getLogger(FlinkStreamEtlActuator.class);
 
-    private final PipelinePluginManager pluginManager;
+    private final ConnectorStore connectorStore;
     private final StreamTableEnvironment tableEnv;
     private final AntlrSqlParser sqlParser;
 
@@ -74,11 +74,11 @@ public class StreamSqlBuilder
 
     public StreamSqlBuilder(
             StreamTableEnvironment tableEnv,
-            PipelinePluginManager pluginManager,
+            ConnectorStore connectorStore,
             AntlrSqlParser sqlParser
     )
     {
-        this.pluginManager = pluginManager;
+        this.connectorStore = connectorStore;
         this.tableEnv = tableEnv;
         this.sqlParser = sqlParser;
     }
@@ -87,7 +87,7 @@ public class StreamSqlBuilder
     {
         FlinkSqlParser flinkSqlParser = FlinkSqlParser.builder()
                 .setTableEnv(tableEnv)
-                .setBatchPluginManager(pluginManager)
+                .setConnectorStore(connectorStore)
                 .build();
         Statement statement = sqlParser.createStatement(sql);
 
@@ -184,7 +184,7 @@ public class StreamSqlBuilder
         }
 
         final IocFactory iocFactory = IocFactory.create(new FlinkBean(tableEnv), bean);
-        NodeLoader<DataStream<Row>> loader = new FlinkNodeLoader(pluginManager, iocFactory);
+        NodeLoader<DataStream<Row>> loader = new FlinkNodeLoader(connectorStore, iocFactory);
 
         if (SOURCE == createStream.getType()) {  //Source.class.isAssignableFrom(driver)
             DataStream<Row> inputStream = checkStream(loader.loadSource(driverClass, withConfig).apply(null), tableTypeInfo);

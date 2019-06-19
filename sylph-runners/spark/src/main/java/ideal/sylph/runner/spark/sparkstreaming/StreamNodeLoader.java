@@ -26,7 +26,7 @@ import ideal.sylph.etl.api.Source;
 import ideal.sylph.etl.api.TransForm;
 import ideal.sylph.runner.spark.SparkRow;
 import ideal.sylph.spi.NodeLoader;
-import ideal.sylph.spi.model.PipelinePluginManager;
+import ideal.sylph.spi.ConnectorStore;
 import org.apache.spark.TaskContext;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext$;
@@ -58,19 +58,19 @@ public class StreamNodeLoader
     private static final Type typeJavaRDD = JavaTypes.make(JavaRDD.class, new Type[] {Row.class}, null);
     private static final Type typeRDD = JavaTypes.make(RDD.class, new Type[] {Row.class}, null);
 
-    private final PipelinePluginManager pluginManager;
+    private final ConnectorStore connectorStore;
     private final IocFactory iocFactory;
 
-    public StreamNodeLoader(PipelinePluginManager pluginManager, IocFactory iocFactory)
+    public StreamNodeLoader(ConnectorStore connectorStore, IocFactory iocFactory)
     {
-        this.pluginManager = pluginManager;
+        this.connectorStore = connectorStore;
         this.iocFactory = iocFactory;
     }
 
     @Override
     public UnaryOperator<JavaDStream<Row>> loadSource(String driverStr, Map<String, Object> config)
     {
-        Class<?> driverClass = pluginManager.loadPluginDriver(driverStr, PipelinePlugin.PipelineType.source);
+        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, PipelinePlugin.PipelineType.source);
         checkState(Source.class.isAssignableFrom(driverClass));
 
         checkState(driverClass.getGenericInterfaces()[0] instanceof ParameterizedType);
@@ -94,7 +94,7 @@ public class StreamNodeLoader
 
     public Consumer<JavaRDD<Row>> loadRDDSink(String driverStr, Map<String, Object> config)
     {
-        Class<?> driverClass = pluginManager.loadPluginDriver(driverStr, PipelinePlugin.PipelineType.sink);
+        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, PipelinePlugin.PipelineType.sink);
         Object driver = getPluginInstance(driverClass, config);
 
         final Sink<JavaRDD<Row>> sink;
@@ -137,7 +137,7 @@ public class StreamNodeLoader
     @Override
     public UnaryOperator<JavaDStream<Row>> loadTransform(String driverStr, Map<String, Object> config)
     {
-        Class<?> driverClass = pluginManager.loadPluginDriver(driverStr, PipelinePlugin.PipelineType.transform);
+        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, PipelinePlugin.PipelineType.transform);
         Object driver = getPluginInstance(driverClass, config);
 
         final TransForm<JavaDStream<Row>> transform;

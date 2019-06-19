@@ -23,11 +23,11 @@ import com.github.harbby.gadtry.classloader.PluginLoader;
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Lists;
 import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.main.server.ServerMainConfig;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
+import ideal.sylph.spi.RunnerContextImpl;
 import ideal.sylph.spi.job.ContainerFactory;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.Job;
@@ -36,7 +36,7 @@ import ideal.sylph.spi.job.JobActuatorHandle;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobHandle;
-import ideal.sylph.spi.model.PipelinePluginInfo;
+import ideal.sylph.spi.model.ConnectorInfo;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,8 +119,7 @@ public class RunnerManager
 
     private void createRunner(final Runner runner)
     {
-        RunnerContext runnerContext = pluginLoader::getPluginsInfo;
-
+        RunnerContext runnerContext = new RunnerContextImpl(pluginLoader::getPluginsInfo);
         logger.info("Runner: {} starts loading {}", runner.getClass().getName(), PipelinePlugin.class.getName());
 
         checkArgument(runner.getContainerFactory() != null, runner.getClass() + " getContainerFactory() return null");
@@ -188,10 +187,10 @@ public class RunnerManager
                 .collect(Collectors.toList());
     }
 
-    public List<PipelinePluginInfo> getEnginePlugins(String actuator)
+    public List<ConnectorInfo> getEnginePlugins(String actuator)
     {
         JobActuator jobActuator = requireNonNull(jobActuatorMap.get(actuator), "job actuator [" + actuator + "] not exists");
-        return Lists.newArrayList(jobActuator.getHandle().getPluginManager().getAllPlugins());
+        throw new UnsupportedOperationException("this method have't support!");
     }
 
     private Job formJobWithFlow(String jobId, byte[] flowBytes, JobActuator jobActuator, JobConfig jobConfig)

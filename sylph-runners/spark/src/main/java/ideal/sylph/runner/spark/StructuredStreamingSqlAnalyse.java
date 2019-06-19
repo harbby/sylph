@@ -27,7 +27,7 @@ import ideal.sylph.parser.antlr.tree.InsertInto;
 import ideal.sylph.parser.antlr.tree.SelectQuery;
 import ideal.sylph.parser.antlr.tree.WaterMark;
 import ideal.sylph.runner.spark.structured.StructuredNodeLoader;
-import ideal.sylph.spi.model.PipelinePluginManager;
+import ideal.sylph.spi.ConnectorStore;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.ForeachWriter;
 import org.apache.spark.sql.Row;
@@ -58,7 +58,7 @@ public class StructuredStreamingSqlAnalyse
         implements SqlAnalyse
 {
     private final SparkSession sparkSession;
-    private final PipelinePluginManager pluginManager;
+    private final ConnectorStore connectorStore;
     private final Map<String, UnaryOperator<Dataset<Row>>> sinks = new HashMap<>();
     private final Bean sparkBean;
     private final boolean isCompile;
@@ -66,10 +66,10 @@ public class StructuredStreamingSqlAnalyse
     //todo: use config
     private final String checkpointLocation = "hdfs:///tmp/sylph/spark/savepoints/";
 
-    public StructuredStreamingSqlAnalyse(SparkSession sparkSession, PipelinePluginManager pluginManager, boolean isCompile)
+    public StructuredStreamingSqlAnalyse(SparkSession sparkSession, ConnectorStore connectorStore, boolean isCompile)
     {
         this.sparkSession = sparkSession;
-        this.pluginManager = pluginManager;
+        this.connectorStore = connectorStore;
         this.isCompile = isCompile;
         this.sparkBean = binder -> {
             binder.bind(SparkSession.class, sparkSession);
@@ -156,7 +156,7 @@ public class StructuredStreamingSqlAnalyse
     {
         final String driverClass = (String) sourceContext.withConfig().get("type");
         IocFactory iocFactory = IocFactory.create(sparkBean, binder -> binder.bind(SourceContext.class).byInstance(sourceContext));
-        StructuredNodeLoader loader = new StructuredNodeLoader(pluginManager, iocFactory);
+        StructuredNodeLoader loader = new StructuredNodeLoader(connectorStore, iocFactory);
 
         checkState(!optionalWaterMark.isPresent(), "spark streaming not support waterMark");
         UnaryOperator<Dataset<Row>> source = loader.loadSource(driverClass, sourceContext.withConfig());
@@ -169,7 +169,7 @@ public class StructuredStreamingSqlAnalyse
     {
         final String driverClass = (String) sinkContext.withConfig().get("type");
         IocFactory iocFactory = IocFactory.create(sparkBean, binder -> binder.bind(SinkContext.class, sinkContext));
-        StructuredNodeLoader loader = new StructuredNodeLoader(pluginManager, iocFactory);
+        StructuredNodeLoader loader = new StructuredNodeLoader(connectorStore, iocFactory);
 
         UnaryOperator<Dataset<Row>> outputStream = dataSet -> {
             checkQueryAndTableSinkSchema(dataSet.schema(), tableSparkType, sinkContext.getSinkTable());

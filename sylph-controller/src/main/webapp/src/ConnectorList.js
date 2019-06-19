@@ -1,5 +1,5 @@
 import React from "react";
-import { Table, Modal, Tag, Divider, Button, Popconfirm, Icon, Input } from "antd";
+import { Table, Tag } from "antd";
 
 export default class ConnectorList extends React.Component {
     state = {
@@ -44,7 +44,7 @@ export default class ConnectorList extends React.Component {
         });
 
         result = await result.json();
-        if (Object.values(result).length == 0) {
+        if (Object.values(result).length === 0) {
             return;
         }
         this.setState({

@@ -23,7 +23,7 @@ import ideal.sylph.runner.spark.sparkstreaming.StreamNodeLoader;
 import ideal.sylph.runner.spark.structured.StructuredNodeLoader;
 import ideal.sylph.spi.job.EtlFlow;
 import ideal.sylph.spi.job.JobHandle;
-import ideal.sylph.spi.model.PipelinePluginManager;
+import ideal.sylph.spi.ConnectorStore;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -56,7 +56,7 @@ final class JobHelper
 
     private static final Logger logger = LoggerFactory.getLogger(JobHelper.class);
 
-    static JobHandle build2xJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
+    static JobHandle build2xJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, ConnectorStore connectorStore)
             throws Exception
     {
         final AtomicBoolean isCompile = new AtomicBoolean(true);
@@ -69,7 +69,7 @@ final class JobHelper
                     : SparkSession.builder().getOrCreate();
 
             IocFactory iocFactory = IocFactory.create(binder -> binder.bind(SparkSession.class, spark));
-            StructuredNodeLoader loader = new StructuredNodeLoader(pluginManager, iocFactory)
+            StructuredNodeLoader loader = new StructuredNodeLoader(connectorStore, iocFactory)
             {
                 @Override
                 public UnaryOperator<Dataset<Row>> loadSink(String driverStr, Map<String, Object> config)
@@ -99,7 +99,7 @@ final class JobHelper
         return (JobHandle) appGetter;
     }
 
-    static JobHandle build1xJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
+    static JobHandle build1xJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, ConnectorStore connectorStore)
             throws Exception
     {
         final AtomicBoolean isCompile = new AtomicBoolean(true);
@@ -113,7 +113,7 @@ final class JobHelper
             StreamingContext spark = new StreamingContext(sparkSession.sparkContext(), Seconds.apply(5));
 
             Bean bean = binder -> binder.bind(StreamingContext.class, spark);
-            StreamNodeLoader loader = new StreamNodeLoader(pluginManager, IocFactory.create(bean));
+            StreamNodeLoader loader = new StreamNodeLoader(connectorStore, IocFactory.create(bean));
             buildGraph(loader, flow);
             return spark;
         };
