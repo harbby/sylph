@@ -1,7 +1,11 @@
 ext.moduleName = 'ideal.sylph.spi'
 
 dependencies {
-  compile group: 'org.slf4j', name: 'slf4j-log4j12', version: deps.log4j12
+  annotationProcessor 'org.projectlombok:lombok:1.18.8'
+  compileOnly 'org.projectlombok:lombok:1.18.8'
+  
+  compile group: 'org.slf4j', name: 'slf4j-api', version: deps.slf4j
+  compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
 
   compile(project(':sylph-etl-api'))
   compile group: 'com.github.harbby', name: 'gadtry', version: deps.gadtry
@@ -9,7 +13,7 @@ dependencies {
   compile group: 'commons-io', name: 'commons-io', version: '2.6'
 
   compile group: 'com.google.guava', name: 'guava', version: deps.guava
-  compile group: 'javax.validation', name: 'validation-api', version: '1.1.0.Final'
+  compile group: 'javax.validation', name: 'validation-api', version: '2.0.1.Final'
 
   compile group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: deps.jackson
   compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: deps.jackson

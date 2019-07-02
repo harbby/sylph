@@ -16,13 +16,13 @@
 package ideal.sylph.spi;
 
 import ideal.sylph.spi.job.ContainerFactory;
-import ideal.sylph.spi.job.JobActuatorHandle;
+import ideal.sylph.spi.job.JobEngineHandle;
 
 import java.util.Set;
 
 public interface Runner
 {
-    Set<JobActuatorHandle> create(RunnerContext context);
+    Set<JobEngineHandle> create(RunnerContext context);
 
     Class<? extends ContainerFactory> getContainerFactory();
 }

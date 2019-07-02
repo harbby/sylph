@@ -15,22 +15,53 @@
  */
 package ideal.sylph.spi.job;
 
+import lombok.Data;
+
 import javax.validation.constraints.NotNull;
 
-import java.io.IOException;
 import java.util.Collection;
-import java.util.Optional;
+import java.util.List;
 
 public interface JobStore
 {
-    public void saveJob(@NotNull Job job);
+    public void saveJob(@NotNull DbJob job);
 
-    public Optional<Job> getJob(String jobId);
+    public DbJob getJob(int jobId);
 
-    public Collection<Job> getJobs();
+    public Collection<DbJob> getJobs();
 
-    public void removeJob(String jobId)
-            throws IOException;
+    public void removeJob(int jobId)
+            throws Exception;
 
     public void loadJobs();
+
+    public void runJob(int jobId, String runId, String runtimeType)
+            throws Exception;
+
+    public void stopJob(int jobId)
+            throws Exception;
+
+    public List<JobRunState> getRunningJobs()
+            throws Exception;
+
+    @Data
+    public static class DbJob
+    {
+        private Integer id;
+        private String jobName;
+        private String queryText;
+        private String type;
+        private String config = "{}";
+        private byte[] files;
+        private String description;
+    }
+
+    @Data
+    public static class JobRunState
+    {
+        private int jobId;
+        private String runtimeType;
+        private String runId;
+        private long startTime;
+    }
 }

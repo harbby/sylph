@@ -50,13 +50,25 @@ public interface JobContainer
     /**
      * 获取job的状态
      */
-    @NotNull
-    Job.Status getStatus();
+    Status getStatus();
 
-    void setStatus(Job.Status status);
+    String getRuntimeType();
+
+    void setStatus(Status status);
 
     /**
      * get app run web url
      */
     String getJobUrl();
+
+    /**
+     * Container Status
+     */
+    public enum Status
+    {
+        STOP,
+        DEPLOYING,
+        RUNNING,
+        STARTED_ERROR;
+    }
 }

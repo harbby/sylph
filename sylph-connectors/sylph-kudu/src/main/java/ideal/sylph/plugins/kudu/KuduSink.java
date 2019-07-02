@@ -223,11 +223,11 @@ public class KuduSink
         private String mode = "UPSET";
 
         @Name("batchSize")
-        @Description("this is kudu write batchSize")
-        private long batchSize = 1000L;
+        @Description("this is kudu write lines batchSize")
+        private int batchSize = 1000;
 
         @Name("mutationBufferSpace")
         @Description("kuduSession.setMutationBufferSpace(?)")
-        private long mutationBufferSpace = 1024 * 1024 * 8;
+        private int mutationBufferSpace = 1024 * 1024 * 8;
     }
 }

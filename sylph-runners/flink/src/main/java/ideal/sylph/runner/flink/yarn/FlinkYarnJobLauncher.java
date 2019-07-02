@@ -15,12 +15,9 @@
  */
 package ideal.sylph.runner.flink.yarn;
 
-import com.github.harbby.gadtry.base.Throwables;
 import com.github.harbby.gadtry.ioc.Autowired;
 import ideal.sylph.runner.flink.FlinkJobConfig;
-import ideal.sylph.runner.flink.FlinkJobHandle;
 import ideal.sylph.runner.flink.FlinkRunner;
-import ideal.sylph.runner.flink.actuator.JobParameter;
 import ideal.sylph.spi.job.Job;
 import org.apache.flink.client.program.ClusterClient;
 import org.apache.flink.runtime.jobgraph.JobGraph;
@@ -35,12 +32,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -61,11 +56,11 @@ public class FlinkYarnJobLauncher
         return yarnClient;
     }
 
-    public Optional<ApplicationId> start(Job job)
+    public ApplicationId start(Job job)
             throws Exception
     {
-        JobGraph jobGraph = ((FlinkJobHandle) job.getJobHandle()).getJobGraph();
-        JobParameter jobConfig = ((FlinkJobConfig) job.getConfig()).getConfig();
+        JobGraph jobGraph = job.getJobDAG();
+        FlinkJobConfig jobConfig = job.getConfig();
 
         Iterable<Path> userProvidedJars = getUserAdditionalJars(job.getDepends());
         YarnClientApplication application = yarnClient.createApplication();
@@ -75,12 +70,12 @@ public class FlinkYarnJobLauncher
                 yarnClient,
                 yarnConfiguration,
                 jobConfig,
-                job.getId(),
+                job.getName(),
                 userProvidedJars);
         return start(descriptor, jobGraph);
     }
 
-    private Optional<ApplicationId> start(YarnJobDescriptor descriptor, JobGraph jobGraph)
+    private ApplicationId start(YarnJobDescriptor descriptor, JobGraph jobGraph)
             throws Exception
     {
         try {
@@ -88,21 +83,12 @@ public class FlinkYarnJobLauncher
             ClusterClient<ApplicationId> client = descriptor.deploy(jobGraph, true);  //create yarn appMaster
             ApplicationId applicationId = client.getClusterId();
             client.shutdown();
-            return Optional.of(applicationId);
+            return applicationId;
         }
         catch (Throwable e) {
             logger.error("submitting job {} failed", jobGraph.getJobID(), e);
             cleanupStagingDir(descriptor.getUploadingDir());
-            Thread thread = Thread.currentThread();
-            if (e instanceof InterruptedIOException ||
-                    thread.isInterrupted() ||
-                    Throwables.getRootCause(e) instanceof InterruptedException) {
-                logger.warn("job {} Canceled submission", jobGraph.getJobID());
-                return Optional.empty();
-            }
-            else {
-                throw e;
-            }
+            throw e;
         }
     }
 

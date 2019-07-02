@@ -17,7 +17,6 @@ package ideal.sylph.runner.spark;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
-import org.junit.Test;
 
 import java.io.IOException;
 
@@ -40,9 +39,8 @@ public class SparkJobConfigTest
                 "        \"sparkConf\": {}\n" +
                 "    }\n" +
                 "}";
-        SparkJobConfig.SparkConfReader a1 = MAPPER.readValue(confString, SparkJobConfig.SparkConfReader.class);
-        String a2 = MAPPER.writeValueAsString(a1);
-        System.out.println(a2);
-        Assert.assertNotNull(a2);
+        SparkJobConfig config = MAPPER.readValue(confString, SparkJobConfig.class);
+        String writeValueAsString = MAPPER.writeValueAsString(config);
+        Assert.assertNotNull(writeValueAsString);
     }
 }

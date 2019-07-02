@@ -8,4 +8,4 @@ java -version
 
 ./gradlew -v
 
-./gradlew clean checkstyle licenseMain licenseTest assemble test "$@"
+./gradlew clean checkstyle licenseMain licenseTest assemble test jacocoTestReport "$@"

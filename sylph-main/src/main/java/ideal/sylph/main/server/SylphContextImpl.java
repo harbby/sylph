@@ -15,53 +15,56 @@
  */
 package ideal.sylph.main.server;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.harbby.gadtry.classloader.Module;
+import ideal.sylph.etl.Plugin;
+import ideal.sylph.main.service.JobEngineManager;
 import ideal.sylph.main.service.JobManager;
-import ideal.sylph.main.service.RunnerManager;
+import ideal.sylph.main.service.PipelinePluginLoader;
 import ideal.sylph.spi.SylphContext;
 import ideal.sylph.spi.exception.SylphException;
-import ideal.sylph.spi.job.Job;
-import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobContainer;
-import ideal.sylph.spi.model.PipelinePluginInfo;
+import ideal.sylph.spi.job.JobStore;
+import ideal.sylph.spi.model.ConnectorInfo;
+import ideal.sylph.spi.model.JobInfo;
 
 import javax.validation.constraints.NotNull;
 
 import java.io.IOException;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.SYSTEM_ERROR;
 import static ideal.sylph.spi.exception.StandardErrorCode.UNKNOWN_ERROR;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
 public class SylphContextImpl
         implements SylphContext
 {
-    private JobManager jobManager;
-    private RunnerManager runnerManger;
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    SylphContextImpl(JobManager jobManager, RunnerManager runnerManger)
+    private JobManager jobManager;
+    private JobEngineManager runnerManger;
+    private PipelinePluginLoader pluginLoader;
+
+    SylphContextImpl(JobManager jobManager, JobEngineManager runnerManger, PipelinePluginLoader pluginLoader)
     {
         this.jobManager = requireNonNull(jobManager, "jobManager is null");
         this.runnerManger = requireNonNull(runnerManger, "runnerManger is null");
+        this.pluginLoader = requireNonNull(pluginLoader, "runnerManger is null");
     }
 
     @Override
-    public void saveJob(@NotNull String jobId, @NotNull String flowString, @NotNull Map jobConfig)
+    public void saveJob(JobStore.DbJob dbJob)
             throws Exception
     {
-        requireNonNull(jobId, "jobId is null");
-        requireNonNull(flowString, "flowString is null");
-        requireNonNull(jobConfig, "jobConfig is null");
-        Job job = runnerManger.formJobWithFlow(jobId, flowString.getBytes(UTF_8), jobConfig);
-        jobManager.saveJob(job);
+        requireNonNull(dbJob, "dbJob is null");
+        jobManager.saveJob(dbJob);
     }
 
     @Override
-    public void stopJob(@NotNull String jobId)
+    public void stopJob(@NotNull int jobId)
     {
         requireNonNull(jobId, "jobId is null");
         try {
@@ -73,39 +76,39 @@ public class SylphContextImpl
     }
 
     @Override
-    public void startJob(@NotNull String jobId)
+    public void startJob(int jobId)
     {
         jobManager.startJob(requireNonNull(jobId, "jobId is null"));
     }
 
     @Override
-    public void deleteJob(@NotNull String jobId)
+    public void deleteJob(int jobId)
     {
         try {
             jobManager.removeJob(requireNonNull(jobId, "jobId is null"));
         }
-        catch (IOException e) {
+        catch (Exception e) {
             throw new SylphException(SYSTEM_ERROR, "drop job " + jobId + " is fail", e);
         }
     }
 
     @NotNull
     @Override
-    public Collection<Job> getAllJobs()
+    public List<JobInfo> getAllJobs()
     {
-        return jobManager.listJobs();
+        return requireNonNull(jobManager.listJobs());
     }
 
     @Override
-    public Optional<Job> getJob(String jobId)
+    public JobInfo getJob(int jobId)
     {
-        return jobManager.getJob(requireNonNull(jobId, "jobId is null"));
+        return jobManager.getJob(jobId);
     }
 
     @Override
-    public Optional<JobContainer> getJobContainer(@NotNull String jobId)
+    public Optional<JobContainer> getJobContainer(int jobId)
     {
-        return jobManager.getJobContainer(requireNonNull(jobId, "jobId is null"));
+        return jobManager.getJobContainer(jobId);
     }
 
     @Override
@@ -115,20 +118,39 @@ public class SylphContextImpl
     }
 
     @Override
-    public Collection<JobActuator.ActuatorInfo> getAllActuatorsInfo()
+    public List<String> getAllEngineNames()
     {
-        return runnerManger.getAllActuatorsInfo();
+        return runnerManger.getAllEngineNames();
     }
 
     @Override
-    public List<PipelinePluginInfo> getPlugins()
+    public List<ConnectorInfo> getAllConnectors()
     {
-        return runnerManger.getPlugins();
+        return new ArrayList<>(pluginLoader.getPluginsInfo());
     }
 
     @Override
-    public List<PipelinePluginInfo> getPlugins(String actuator)
+    public List<Module<Plugin>> getAllConnectorModules()
     {
-        return runnerManger.getPlugins(actuator);
+        return pluginLoader.getModules();
+    }
+
+    @Override
+    public void reload()
+    {
+        pluginLoader.reload();
+    }
+
+    @Override
+    public void deleteModule(String moduleName)
+            throws IOException
+    {
+        pluginLoader.deleteModule(moduleName);
+    }
+
+    @Override
+    public List<ConnectorInfo> getEnginePlugins(String actuator)
+    {
+        throw new UnsupportedOperationException("this method have't support!");
     }
 }

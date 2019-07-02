@@ -15,11 +15,9 @@
  */
 package ideal.sylph.spi;
 
-import ideal.sylph.spi.model.PipelinePluginInfo;
-
 import java.util.Set;
 
 public interface RunnerContext
 {
-    public Set<PipelinePluginInfo> getFindPlugins();
+    ConnectorStore createConnectorStore(Set<Class<?>> filterKeyword, Class<? extends Runner> runnerClass);
 }

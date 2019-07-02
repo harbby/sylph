@@ -18,7 +18,6 @@ package ideal.sylph.spi.utils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.harbby.gadtry.base.JavaTypes;
 
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
 /**
@@ -28,7 +27,7 @@ import java.lang.reflect.Type;
 public class GenericTypeReference
         extends TypeReference<Object>
 {
-    private ParameterizedType type;
+    private Type type;
 
     public GenericTypeReference(Class<?> rawType, Type... typeArguments)
     {

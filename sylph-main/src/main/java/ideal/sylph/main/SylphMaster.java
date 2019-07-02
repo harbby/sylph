@@ -15,23 +15,25 @@
  */
 package ideal.sylph.main;
 
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.joran.JoranConfigurator;
+import ch.qos.logback.core.joran.spi.JoranException;
+import ch.qos.logback.core.util.StatusPrinter;
 import com.github.harbby.gadtry.GadTry;
 import com.github.harbby.gadtry.ioc.Bean;
 import com.github.harbby.gadtry.ioc.IocFactory;
 import ideal.sylph.controller.AuthAspect;
 import ideal.sylph.controller.ControllerApp;
 import ideal.sylph.main.server.SylphBean;
+import ideal.sylph.main.service.JobEngineManager;
 import ideal.sylph.main.service.JobManager;
 import ideal.sylph.main.service.PipelinePluginLoader;
-import ideal.sylph.main.service.RunnerManager;
 import ideal.sylph.main.util.PropertiesUtil;
 import ideal.sylph.spi.job.JobStore;
-import org.apache.log4j.PropertyConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
 
 import static java.util.Objects.requireNonNull;
 
@@ -51,9 +53,10 @@ public final class SylphMaster
             " *---------------------------------------------------*";
 
     public static void main(String[] args)
-            throws IOException
+            throws Exception
     {
-        PropertyConfigurator.configure(requireNonNull(System.getProperty("log4j.file"), "log4j.file not setting"));
+        //PropertyConfigurator.configure(requireNonNull(System.getProperty("log4j.file"), "log4j.file not setting"));
+        loadConfig(requireNonNull(System.getProperty("logging.config"), "logback not setting"));
         String configFile = System.getProperty("config");
         Bean sylphBean = new SylphBean(PropertiesUtil.loadProperties(new File(configFile)));
 
@@ -67,7 +70,7 @@ public final class SylphMaster
             logger.info("Analysis App dependencys {}", String.join("\n", app.analysis().printShow()));
 
             app.getInstance(PipelinePluginLoader.class).loadPlugins();
-            app.getInstance(RunnerManager.class).loadRunners();
+            app.getInstance(JobEngineManager.class).loadRunners();
             app.getInstance(JobStore.class).loadJobs();
 
             app.getInstance(JobManager.class).start();
@@ -80,5 +83,19 @@ public final class SylphMaster
             logger.error("SERVER START FAILED...", e);
             System.exit(1);
         }
+    }
+
+    /**
+     * 加载外部的logback配置文件
+     */
+    private static void loadConfig(String logbackXml)
+            throws JoranException
+    {
+        LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
+        JoranConfigurator configurator = new JoranConfigurator();
+        configurator.setContext(lc);
+        lc.reset();
+        configurator.doConfigure(logbackXml);
+        StatusPrinter.printInCaseOfErrorsOrWarnings(lc);
     }
 }
