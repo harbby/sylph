@@ -1,5 +1,4 @@
 import React from "react";
-import { Table, Tag, Divider, Button, Popconfirm, Icon } from "antd";
 import { AnsiColors } from "./lib/AnsiColors";
 
 export default class ServerLog extends React.Component {
@@ -12,7 +11,6 @@ export default class ServerLog extends React.Component {
     showlog(json) {
         var stickToBottom = true;
         if (json !== "" && json !== null) {
-            this.state.id = json.id;
             if (json.logs === null || json.logs.length === 0) {
                 return
             }
@@ -24,7 +22,6 @@ export default class ServerLog extends React.Component {
                 }
                 this.state.arrLogs.push({ key: time + "_" + num, val: json.logs[num] })
             }
-            //debugger;
 
             let log1 = this.refs.scroll_con;
             if (log1.scrollTop < log1.scrollHeight - log1.clientHeight - 1) {
@@ -33,8 +30,8 @@ export default class ServerLog extends React.Component {
             }
             this.setState({ id: json.id, last_num: json.next, arrLogs: this.state.arrLogs });
             if (stickToBottom) {
-                log1.scrollTo(0, log1.scrollHeight)
-                //or log1.scrollTop = log1.scrollHeight;  //滚动条在最下面
+                //log1.scrollTo(0, log1.scrollHeight)
+                log1.scrollTop = log1.scrollHeight;  //滚动条在最下面
             }
         }
     }
@@ -55,7 +52,6 @@ export default class ServerLog extends React.Component {
     }
 
     componentWillMount() {
-        this.state.id = null
         var intervalId = setInterval(() => {
             this.fetchData("/_sys/server/logs", {
                 last_num: this.state.last_num,
@@ -71,8 +67,6 @@ export default class ServerLog extends React.Component {
     }
 
     render = () => {
-        const kleur = require('kleur');
-
         return (
             <div style={{ height: "95vh", overflow: "scroll" }} ref="scroll_con">
                 {

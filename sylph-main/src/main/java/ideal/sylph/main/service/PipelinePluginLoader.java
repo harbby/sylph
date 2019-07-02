@@ -21,7 +21,7 @@ import com.google.common.collect.ImmutableSet;
 import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.etl.Plugin;
 import ideal.sylph.spi.exception.SylphException;
-import ideal.sylph.spi.model.PipelinePluginInfo;
+import ideal.sylph.spi.model.ConnectorInfo;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +42,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.LOAD_MODULE_ERROR;
-import static ideal.sylph.spi.model.PipelinePluginInfo.getPluginInfo;
+import static ideal.sylph.spi.model.ConnectorInfo.getPluginInfo;
 
 public class PipelinePluginLoader
 {
@@ -51,14 +51,14 @@ public class PipelinePluginLoader
 
     private final ConcurrentMap<String, ModuleInfo> plugins = new ConcurrentHashMap<>();
 
-    private class ModuleInfo
+    public static class ModuleInfo
     {
         private String name;
         private Module<Plugin> module;
 
-        private List<PipelinePluginInfo> infos;
+        private List<ConnectorInfo> infos;
 
-        public ModuleInfo(String name, Module<Plugin> module, List<PipelinePluginInfo> infos)
+        public ModuleInfo(String name, Module<Plugin> module, List<ConnectorInfo> infos)
         {
             this.name = name;
             this.module = module;
@@ -74,9 +74,13 @@ public class PipelinePluginLoader
                 .setScanDir(new File("etl-plugins"))
                 .setLoadHandler(module -> {
                     logger.info("loading module {}", module.getName());
-                    List<PipelinePluginInfo> infos = module.getPlugins().stream()
+                    List<ConnectorInfo> infos = module.getPlugins().stream()
                             .flatMap(x -> x.getConnectors().stream())
-                            .map(javaClass -> getPluginInfo(module.getModulePath(), javaClass))
+                            .map(javaClass -> {
+                                ConnectorInfo info = getPluginInfo(javaClass);
+                                info.setPluginFile(module.getModulePath());
+                                return info;
+                            })
                             .collect(Collectors.toList());
 
                     plugins.put(module.getName(), new ModuleInfo(module.getName(), module, infos));
@@ -89,7 +93,7 @@ public class PipelinePluginLoader
                 .load();
     }
 
-    public Set<PipelinePluginInfo> getPluginsInfo()
+    public Set<ConnectorInfo> getPluginsInfo()
     {
         return plugins.values().stream()
                 .flatMap(x -> x.infos.stream())

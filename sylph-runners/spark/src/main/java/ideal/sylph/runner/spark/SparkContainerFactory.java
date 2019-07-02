@@ -31,8 +31,8 @@ import org.apache.spark.SparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.streaming.StreamingContext;
 
+import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
@@ -60,27 +60,10 @@ public class SparkContainerFactory
     @Override
     public JobContainer createLocalContainer(Job job, String lastRunid)
     {
-        Supplier<?> jobHandle = (Supplier) job.getJobHandle();
         AtomicReference<String> url = new AtomicReference<>();
         JVMLauncher<Boolean> launcher = JVMLaunchers.<Boolean>newJvm()
-                .setXms("512m")
+//                .setXms("512m")
                 .setXmx("512m")
-                .setCallable(() -> {
-                    SparkConf sparkConf = new SparkConf().setMaster("local[*]").setAppName("spark_local");
-                    SparkContext sparkContext = new SparkContext(sparkConf);
-                    Object appContext = requireNonNull(jobHandle, "sparkJobHandle is null").get();
-                    if (appContext instanceof SparkSession) {
-                        SparkSession sparkSession = (SparkSession) appContext;
-                        checkArgument(sparkSession.streams().active().length > 0, "no stream pipeline");
-                        sparkSession.streams().awaitAnyTermination();
-                    }
-                    else if (appContext instanceof StreamingContext) {
-                        StreamingContext ssc = (StreamingContext) appContext;
-                        ssc.start();
-                        ssc.awaitTermination();
-                    }
-                    return true;
-                })
                 .setConsole(line -> {
                     String logo = "Bound SparkUI to 0.0.0.0, and started at";
                     if (url.get() == null && line.contains(logo)) {
@@ -104,8 +87,26 @@ public class SparkContainerFactory
             public VmFuture startAsyncExecutor()
                     throws Exception
             {
+                Serializable jobDAG = job.getJobDAG();
                 url.set(null);
-                return launcher.startAsync();
+                return launcher.startAsync(() -> {
+                    SparkConf sparkConf = new SparkConf().setMaster("local[*]");
+                    SparkContext sparkContext = new SparkContext(sparkConf);
+                    sparkContext.getConf().setAppName("spark_local");
+
+                    Object appContext = requireNonNull(jobDAG, "sparkJobHandle is null");
+                    if (appContext instanceof SparkSession) {
+                        SparkSession sparkSession = (SparkSession) appContext;
+                        checkArgument(sparkSession.streams().active().length > 0, "no stream pipeline");
+                        sparkSession.streams().awaitAnyTermination();
+                    }
+                    else if (appContext instanceof StreamingContext) {
+                        StreamingContext ssc = (StreamingContext) appContext;
+                        ssc.start();
+                        ssc.awaitTermination();
+                    }
+                    return true;
+                });
             }
         };
     }

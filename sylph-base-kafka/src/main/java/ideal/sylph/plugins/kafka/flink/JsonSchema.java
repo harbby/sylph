@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static ideal.sylph.runner.flink.actuator.StreamSqlUtil.schemaToRowTypeInfo;
+import static ideal.sylph.runner.flink.engines.StreamSqlUtil.schemaToRowTypeInfo;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class JsonSchema

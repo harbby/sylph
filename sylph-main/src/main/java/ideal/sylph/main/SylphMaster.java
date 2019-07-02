@@ -25,9 +25,9 @@ import com.github.harbby.gadtry.ioc.IocFactory;
 import ideal.sylph.controller.AuthAspect;
 import ideal.sylph.controller.ControllerApp;
 import ideal.sylph.main.server.SylphBean;
+import ideal.sylph.main.service.JobEngineManager;
 import ideal.sylph.main.service.JobManager;
 import ideal.sylph.main.service.PipelinePluginLoader;
-import ideal.sylph.main.service.RunnerManager;
 import ideal.sylph.main.util.PropertiesUtil;
 import ideal.sylph.spi.job.JobStore;
 import org.slf4j.Logger;
@@ -56,7 +56,7 @@ public final class SylphMaster
             throws Exception
     {
         //PropertyConfigurator.configure(requireNonNull(System.getProperty("log4j.file"), "log4j.file not setting"));
-        loadConfig(requireNonNull(System.getProperty("logback"), "logback not setting"));
+        loadConfig(requireNonNull(System.getProperty("logging.config"), "logback not setting"));
         String configFile = System.getProperty("config");
         Bean sylphBean = new SylphBean(PropertiesUtil.loadProperties(new File(configFile)));
 
@@ -70,7 +70,7 @@ public final class SylphMaster
             logger.info("Analysis App dependencys {}", String.join("\n", app.analysis().printShow()));
 
             app.getInstance(PipelinePluginLoader.class).loadPlugins();
-            app.getInstance(RunnerManager.class).loadRunners();
+            app.getInstance(JobEngineManager.class).loadRunners();
             app.getInstance(JobStore.class).loadJobs();
 
             app.getInstance(JobManager.class).start();

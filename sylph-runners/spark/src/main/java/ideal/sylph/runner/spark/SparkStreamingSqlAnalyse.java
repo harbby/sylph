@@ -29,7 +29,7 @@ import ideal.sylph.parser.antlr.tree.WaterMark;
 import ideal.sylph.runner.spark.kafka.SylphKafkaOffset;
 import ideal.sylph.runner.spark.sparkstreaming.DStreamUtil;
 import ideal.sylph.runner.spark.sparkstreaming.StreamNodeLoader;
-import ideal.sylph.spi.model.PipelinePluginManager;
+import ideal.sylph.spi.ConnectorStore;
 import org.apache.spark.api.java.function.ForeachFunction;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.Dataset;
@@ -71,16 +71,16 @@ public class SparkStreamingSqlAnalyse
 
     private final JobBuilder builder = new JobBuilder();
     private final StreamingContext ssc;
-    private final PipelinePluginManager pluginManager;
+    private final ConnectorStore connectorStore;
     private final Bean sparkBean;
     private final boolean isCompile;
 
     public SparkStreamingSqlAnalyse(StreamingContext ssc,
-            PipelinePluginManager pluginManager,
+            ConnectorStore connectorStore,
             boolean isCompile)
     {
         this.ssc = ssc;
-        this.pluginManager = pluginManager;
+        this.connectorStore = connectorStore;
         this.sparkBean = binder -> {
             binder.bind(StreamingContext.class, ssc);
             binder.bind(JavaStreamingContext.class, new JavaStreamingContext(ssc));
@@ -168,7 +168,7 @@ public class SparkStreamingSqlAnalyse
     {
         final String driverClass = (String) sourceContext.withConfig().get("type");
         IocFactory iocFactory = IocFactory.create(sparkBean, binder -> binder.bind(SourceContext.class).byInstance(sourceContext));
-        StreamNodeLoader loader = new StreamNodeLoader(pluginManager, iocFactory);
+        StreamNodeLoader loader = new StreamNodeLoader(connectorStore, iocFactory);
 
         checkState(!optionalWaterMark.isPresent(), "spark streaming not support waterMark");
         UnaryOperator<JavaDStream<Row>> source = loader.loadSource(driverClass, sourceContext.withConfig());
@@ -179,7 +179,7 @@ public class SparkStreamingSqlAnalyse
     {
         final String driverClass = (String) sinkContext.withConfig().get("type");
         IocFactory iocFactory = IocFactory.create(sparkBean, binder -> binder.bind(SinkContext.class, sinkContext));
-        StreamNodeLoader loader = new StreamNodeLoader(pluginManager, iocFactory);
+        StreamNodeLoader loader = new StreamNodeLoader(connectorStore, iocFactory);
 
         UnaryOperator<Dataset<Row>> outputStream = dataSet -> {
             checkQueryAndTableSinkSchema(dataSet.schema(), tableSparkType, sinkContext.getSinkTable());

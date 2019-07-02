@@ -16,21 +16,18 @@
 package ideal.sylph.runtime.local;
 
 import com.github.harbby.gadtry.jvm.VmFuture;
-import ideal.sylph.spi.job.Job;
-import ideal.sylph.spi.job.JobContainer;
+import ideal.sylph.spi.job.JobContainerAbs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Optional;
 import java.util.concurrent.Future;
 
 public abstract class LocalContainer
-        implements JobContainer
+        extends JobContainerAbs
 {
     private static final Logger logger = LoggerFactory.getLogger(LocalContainer.class);
 
     private VmFuture vmFuture;
-    private Job.Status status = Job.Status.STOP;
 
     @Override
     public String getRunId()
@@ -52,11 +49,11 @@ public abstract class LocalContainer
     }
 
     @Override
-    public final synchronized Optional<String> run()
+    protected String deploy()
             throws Exception
     {
         this.vmFuture = startAsyncExecutor();
-        return Optional.of(String.valueOf(vmFuture.getPid()));
+        return String.valueOf(vmFuture.getPid());
     }
 
     public abstract VmFuture startAsyncExecutor()
@@ -72,16 +69,22 @@ public abstract class LocalContainer
     }
 
     @Override
+    public String getRuntimeType()
+    {
+        return "local";
+    }
+
+    @Override
     public void setFuture(Future future)
     {
     }
 
     @Override
-    public Job.Status getStatus()
+    public Status getStatus()
     {
-        if (status == Job.Status.RUNNING) {
+        if (super.getStatus() == Status.RUNNING) {
             if (vmFuture.isRunning()) {
-                return Job.Status.RUNNING;
+                return Status.RUNNING;
             }
             else {
                 try {
@@ -90,15 +93,9 @@ public abstract class LocalContainer
                 catch (Exception e) {
                     logger.error("", e);
                 }
-                return Job.Status.STOP;
+                return Status.STOP;
             }
         }
-        return status;
-    }
-
-    @Override
-    public void setStatus(Job.Status status)
-    {
-        this.status = status;
+        return super.getStatus();
     }
 }

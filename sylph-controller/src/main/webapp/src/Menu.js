@@ -1,7 +1,6 @@
 import React from "react";
 import { Layout, Menu, Icon } from "antd";
 import { Link } from "react-router-dom";
-
 const { Sider } = Layout;
 const { SubMenu } = Menu;
 
@@ -80,9 +79,12 @@ export default class SideMenu extends React.Component {
             </span>
           }
         >
-          <Menu.Item key="6">Tom</Menu.Item>
-          <Menu.Item key="7">Bill</Menu.Item>
-          <Menu.Item key="8">Alex</Menu.Item>
+          <Menu.Item key="7">
+            <span onClick={this.props.logout}>
+              <Icon type="tool" />
+              Logout
+            </span>
+          </Menu.Item>
         </SubMenu>
       </Menu>
     </Sider>

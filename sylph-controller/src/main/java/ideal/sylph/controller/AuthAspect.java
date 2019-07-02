@@ -17,6 +17,7 @@ package ideal.sylph.controller;
 
 import com.github.harbby.gadtry.aop.Aspect;
 import com.github.harbby.gadtry.aop.Binder;
+import ideal.sylph.controller.action.LoginController;
 import ideal.sylph.spi.SylphContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,9 +39,9 @@ public class AuthAspect
                 .build()
                 .around(proxy -> {
                     HttpSession session = SESSION_THREAD_LOCAL.get();
-                    String id = session == null ? null : session.getId();
+                    String user = session == null ? null : ((LoginController.User) session.getAttribute("user")).getUserName();
                     String action = proxy.getInfo().getName();
-                    logger.info("[auth] session:{}, action: {}, args: {}", id, action, proxy.getArgs());
+                    logger.info("[auth] user:{}, action: {}, args: {}", user, action, proxy.getArgs());
                     Object value = proxy.proceed();
                     switch (proxy.getInfo().getName()) {
                         case "getAllJobs":

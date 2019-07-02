@@ -28,7 +28,7 @@ allprojects {
           jetty    : "9.4.6.v20170531",   //8.1.17.v20150415   "9.4.6.v20170531"
           hadoop   : "2.7.4",
           hbase    : '1.1.2',
-          spark    : "2.4.1",
+          spark    : "2.4.3",
           scala    : '2.11.8',
           joda_time: '2.9.3',
           slf4j  : '1.7.25',
@@ -36,7 +36,7 @@ allprojects {
           gadtry   : '1.5.0',
           guava    : '25.1-jre',
           jackson  : '2.9.5',
-          jersey   : '2.27'
+          jersey   : '2.28'
   ]
 }
 

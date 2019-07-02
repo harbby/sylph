@@ -24,9 +24,9 @@ import ideal.sylph.etl.api.RealTimeTransForm;
 import ideal.sylph.etl.api.Sink;
 import ideal.sylph.etl.api.Source;
 import ideal.sylph.etl.api.TransForm;
+import ideal.sylph.spi.ConnectorStore;
 import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.exception.SylphException;
-import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
@@ -47,19 +47,19 @@ public final class FlinkNodeLoader
         implements NodeLoader<DataStream<Row>>
 {
     private static final Logger logger = LoggerFactory.getLogger(FlinkNodeLoader.class);
-    private final PipelinePluginManager pluginManager;
+    private final ConnectorStore connectorStore;
     private final IocFactory iocFactory;
 
-    public FlinkNodeLoader(PipelinePluginManager pluginManager, IocFactory iocFactory)
+    public FlinkNodeLoader(ConnectorStore connectorStore, IocFactory iocFactory)
     {
-        this.pluginManager = requireNonNull(pluginManager, "binds is null");
+        this.connectorStore = requireNonNull(connectorStore, "binds is null");
         this.iocFactory = requireNonNull(iocFactory, "iocFactory is null");
     }
 
     @Override
     public UnaryOperator<DataStream<Row>> loadSource(String driverStr, final Map<String, Object> config)
     {
-        final Class<?> driverClass = pluginManager.loadPluginDriver(driverStr, PipelinePlugin.PipelineType.source);
+        final Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, PipelinePlugin.PipelineType.source);
         checkState(Source.class.isAssignableFrom(driverClass),
                 "The Source driver must is Source.class, But your " + driverClass);
         checkDataStreamRow(Source.class, driverClass);
@@ -89,7 +89,7 @@ public final class FlinkNodeLoader
     @Override
     public UnaryOperator<DataStream<Row>> loadSink(String driverStr, final Map<String, Object> config)
     {
-        Class<?> driverClass = pluginManager.loadPluginDriver(driverStr, PipelinePlugin.PipelineType.sink);
+        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, PipelinePlugin.PipelineType.sink);
         checkState(RealTimeSink.class.isAssignableFrom(driverClass) || Sink.class.isAssignableFrom(driverClass),
                 "The Sink driver must is RealTimeSink.class or Sink.class, But your " + driverClass);
         if (Sink.class.isAssignableFrom(driverClass)) {
@@ -128,7 +128,7 @@ public final class FlinkNodeLoader
     @Override
     public final UnaryOperator<DataStream<Row>> loadTransform(String driverStr, final Map<String, Object> config)
     {
-        Class<?> driverClass = pluginManager.loadPluginDriver(driverStr, PipelinePlugin.PipelineType.transform);
+        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, PipelinePlugin.PipelineType.transform);
         checkState(RealTimeTransForm.class.isAssignableFrom(driverClass) || TransForm.class.isAssignableFrom(driverClass),
                 "driverStr must is RealTimeSink.class or Sink.class");
         if (TransForm.class.isAssignableFrom(driverClass)) {

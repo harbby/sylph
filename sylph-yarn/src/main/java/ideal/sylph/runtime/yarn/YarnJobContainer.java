@@ -18,8 +18,8 @@ package ideal.sylph.runtime.yarn;
 import com.github.harbby.gadtry.aop.AopFactory;
 import com.github.harbby.gadtry.base.Closeables;
 import ideal.sylph.spi.exception.SylphException;
-import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobContainer;
+import ideal.sylph.spi.job.JobContainerAbs;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
@@ -31,31 +31,28 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
 import static com.github.harbby.gadtry.base.Throwables.throwsException;
 import static ideal.sylph.spi.exception.StandardErrorCode.CONNECTION_ERROR;
-import static ideal.sylph.spi.job.Job.Status.RUNNING;
-import static ideal.sylph.spi.job.Job.Status.STOP;
-import static java.util.Objects.requireNonNull;
+import static ideal.sylph.spi.job.JobContainer.Status.RUNNING;
+import static ideal.sylph.spi.job.JobContainer.Status.STOP;
 
 public class YarnJobContainer
-        implements JobContainer
+        extends JobContainerAbs
 {
     private static final Logger logger = LoggerFactory.getLogger(YarnJobContainer.class);
     private ApplicationId yarnAppId;
     private YarnClient yarnClient;
-    private volatile Job.Status status = STOP;
     private volatile Future future;
     private volatile String webUi;
 
-    private final Callable<Optional<ApplicationId>> runnable;
+    private final Callable<ApplicationId> submitter;
 
-    private YarnJobContainer(YarnClient yarnClient, Callable<Optional<ApplicationId>> runnable)
+    private YarnJobContainer(YarnClient yarnClient, Callable<ApplicationId> submitter)
     {
-        this.runnable = runnable;
+        this.submitter = submitter;
         this.yarnClient = yarnClient;
     }
 
@@ -80,14 +77,14 @@ public class YarnJobContainer
     }
 
     @Override
-    public Optional<String> run()
+    protected String deploy()
             throws Exception
     {
         this.setYarnAppId(null);
-        Optional<ApplicationId> applicationId = runnable.call();
-        applicationId.ifPresent(this::setYarnAppId);
-        this.webUi = yarnClient.getApplicationReport(yarnAppId).getOriginalTrackingUrl();
-        return applicationId.map(ApplicationId::toString);
+        ApplicationId applicationId = submitter.call();
+        this.setYarnAppId(applicationId);
+        this.webUi = yarnClient.getApplicationReport(applicationId).getOriginalTrackingUrl();
+        return applicationId.toString();
     }
 
     @Override
@@ -118,18 +115,18 @@ public class YarnJobContainer
     }
 
     @Override
-    public synchronized void setStatus(Job.Status status)
+    public synchronized Status getStatus()
     {
-        this.status = requireNonNull(status, "status is null");
+        if (super.getStatus() == RUNNING) {
+            return isRunning() ? RUNNING : STOP;
+        }
+        return super.getStatus();
     }
 
     @Override
-    public synchronized Job.Status getStatus()
+    public String getRuntimeType()
     {
-        if (status == RUNNING) {
-            return isRunning() ? RUNNING : STOP;
-        }
-        return status;
+        return "yarn";
     }
 
     @Override
@@ -164,7 +161,7 @@ public class YarnJobContainer
     public static class Builder
     {
         private YarnClient yarnClient;
-        private Callable<Optional<ApplicationId>> submitter;
+        private Callable<ApplicationId> submitter;
         private String lastRunId;
         private ClassLoader jobClassLoader;
 
@@ -180,7 +177,7 @@ public class YarnJobContainer
             return this;
         }
 
-        public Builder setSubmitter(Callable<Optional<ApplicationId>> submitter)
+        public Builder setSubmitter(Callable<ApplicationId> submitter)
         {
             this.submitter = submitter;
             return this;

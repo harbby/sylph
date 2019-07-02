@@ -45,6 +45,7 @@ public final class JettyServer
     private Server server;
     private final ServerConfig serverConfig;
     private final SylphContext sylphContext;
+    private final LogAppender logAppender = new LogAppender(2000);
 
     JettyServer(
             ServerConfig serverConfig,
@@ -91,6 +92,7 @@ public final class JettyServer
         ServletContextHandler contextHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);  //NO_SESSIONS
         contextHandler.setContextPath("/");
         contextHandler.setAttribute("sylphContext", sylphContext);
+        contextHandler.setAttribute("logAppender", logAppender);
 
         //-------add jersey--------
         contextHandler.addServlet(servlet, "/_sys/*");

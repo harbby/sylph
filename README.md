@@ -96,7 +96,7 @@ After opening the project in IntelliJ, double check that the Java SDK is properl
 Sylph comes with sample configuration that should work out-of-the-box for development. Use the following options to create a run configuration:
 
 * Main Class: ideal.sylph.main.SylphMaster
-* VM Options: -Dconfig=etc/sylph/sylph.properties -Dlog4j.file=etc/sylph/sylph-log4j.properties -Dlogback=etc/sylph/logback.xml
+* VM Options: -Dconfig=etc/sylph/sylph.properties -Dlogging.config=etc/sylph/logback.xml
 * ENV Options: FLINK_HOME=<your flink home>
                HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
 * Working directory: sylph-dist/build
