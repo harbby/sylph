@@ -31,7 +31,6 @@ public class WebApplication
         register(AppExceptionMapper.class);
         //Glassfish multipart file uploader feature
         register(MultiPartFeature.class);
-        register(AuthFilter.class);
 
         packages("ideal.sylph.controller.action");
     }

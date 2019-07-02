@@ -39,7 +39,7 @@ export class AnsiColors extends React.Component {
         return (
             <div>
                 {(() => {
-                    return renderList.map(l => <pre style={{ color: l.color, marginBottom: '0em' }}>{l.val}</pre>)
+                    return renderList.map(l => <span style={{ color: l.color, marginBottom: '0em' }}>{l.val}</span>)
                 })()}
             </div>
         );
