@@ -41,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static ideal.sylph.spi.exception.StandardErrorCode.ILLEGAL_OPERATION;
+import static ideal.sylph.spi.job.JobContainer.Status.DEPLOYING;
 import static ideal.sylph.spi.job.JobContainer.Status.STARTED_ERROR;
 import static ideal.sylph.spi.job.JobContainer.Status.STOP;
 import static java.util.Objects.requireNonNull;
@@ -90,6 +91,7 @@ public final class JobManager
 
     private void startJobContainer(int jobId, JobContainer container)
     {
+        container.setStatus(DEPLOYING);
         Future future = jobStartPool.submit(() -> {
             Optional<String> runId = Optional.empty();
             try {
@@ -220,7 +222,6 @@ public final class JobManager
         runningJobs.forEach(jobRunState -> {
             JobStore.DbJob job = requireNonNull(jobs.get(jobRunState.getJobId()), "job " + jobRunState.getJobId() + " not found");
             JobContainer container = runnerManger.createJobContainer(job, jobRunState.getRunId(), jobRunState.getRuntimeType());
-            startJobContainer(job.getId(), container);
             containers.put(job.getId(), container);
         });
     }
