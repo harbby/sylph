@@ -21,8 +21,9 @@ import com.github.harbby.gadtry.jvm.JVMLauncher;
 import com.github.harbby.gadtry.jvm.JVMLaunchers;
 import ideal.sylph.runner.spark.sparkstreaming.StreamNodeLoader;
 import ideal.sylph.runner.spark.structured.StructuredNodeLoader;
-import ideal.sylph.spi.ConnectorStore;
 import ideal.sylph.spi.job.EtlFlow;
+import ideal.sylph.spi.job.JobHandle;
+import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -55,11 +56,11 @@ final class JobHelper
 
     private static final Logger logger = LoggerFactory.getLogger(JobHelper.class);
 
-    static Serializable build2xJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, ConnectorStore connectorStore)
+    static JobHandle build2xJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
             throws Exception
     {
         final AtomicBoolean isCompile = new AtomicBoolean(true);
-        Supplier<SparkSession> appGetter = (Supplier<SparkSession> & Serializable) () -> {
+        Supplier<SparkSession> appGetter = (Supplier<SparkSession> & JobHandle & Serializable) () -> {
             logger.info("========create spark SparkSession mode isCompile = " + isCompile.get() + "============");
             SparkSession spark = isCompile.get() ? SparkSession.builder()
                     .appName("sparkCompile")
@@ -68,7 +69,7 @@ final class JobHelper
                     : SparkSession.builder().getOrCreate();
 
             IocFactory iocFactory = IocFactory.create(binder -> binder.bind(SparkSession.class, spark));
-            StructuredNodeLoader loader = new StructuredNodeLoader(connectorStore, iocFactory)
+            StructuredNodeLoader loader = new StructuredNodeLoader(pluginManager, iocFactory)
             {
                 @Override
                 public UnaryOperator<Dataset<Row>> loadSink(String driverStr, Map<String, Object> config)
@@ -79,7 +80,7 @@ final class JobHelper
                     } : super.loadSink(driverStr, config);
                 }
             };
-            buildGraph(loader, flow);
+            buildGraph(loader, jobId, flow);
             return spark;
         };
 
@@ -95,14 +96,14 @@ final class JobHelper
                 .build();
         launcher.startAndGet();
         isCompile.set(false);
-        return (Serializable) appGetter;
+        return (JobHandle) appGetter;
     }
 
-    static Serializable build1xJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, ConnectorStore connectorStore)
+    static JobHandle build1xJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, PipelinePluginManager pluginManager)
             throws Exception
     {
         final AtomicBoolean isCompile = new AtomicBoolean(true);
-        final Supplier<StreamingContext> appGetter = (Supplier<StreamingContext> & Serializable) () -> {
+        final Supplier<StreamingContext> appGetter = (Supplier<StreamingContext> & JobHandle & Serializable) () -> {
             logger.info("========create spark StreamingContext mode isCompile = " + isCompile.get() + "============");
             SparkConf sparkConf = isCompile.get() ?
                     new SparkConf().setMaster("local[*]").setAppName("sparkCompile")
@@ -112,8 +113,8 @@ final class JobHelper
             StreamingContext spark = new StreamingContext(sparkSession.sparkContext(), Seconds.apply(5));
 
             Bean bean = binder -> binder.bind(StreamingContext.class, spark);
-            StreamNodeLoader loader = new StreamNodeLoader(connectorStore, IocFactory.create(bean));
-            buildGraph(loader, flow);
+            StreamNodeLoader loader = new StreamNodeLoader(pluginManager, IocFactory.create(bean));
+            buildGraph(loader, jobId, flow);
             return spark;
         };
 
@@ -129,6 +130,6 @@ final class JobHelper
                 .build();
         launcher.startAndGet();
         isCompile.set(false);
-        return (Serializable) appGetter;
+        return (JobHandle) appGetter;
     }
 }

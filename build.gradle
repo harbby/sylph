@@ -1,7 +1,6 @@
 plugins {
   id "com.github.hierynomus.license" version "0.14.0"
   id "com.github.harbby.gradle.serviceloader" version "1.1.5"
-  id "jacoco"
 }
 
 allprojects {
@@ -11,7 +10,6 @@ allprojects {
   apply plugin: 'java'
   apply plugin: 'maven'
   apply plugin: 'checkstyle'
-  apply plugin: 'jacoco'
 
   sourceCompatibility = 1.8
   targetCompatibility = 1.8
@@ -28,15 +26,15 @@ allprojects {
           jetty    : "9.4.6.v20170531",   //8.1.17.v20150415   "9.4.6.v20170531"
           hadoop   : "2.7.4",
           hbase    : '1.1.2',
-          spark    : "2.4.3",
+          spark    : "2.4.1",
           scala    : '2.11.8',
           joda_time: '2.9.3',
-          slf4j  : '1.7.25',
+          log4j12  : '1.7.21',
           guice    : '4.2.1',
-          gadtry   : '1.5.0',
+          gadtry   : '1.4.2-rc1',
           guava    : '25.1-jre',
           jackson  : '2.9.5',
-          jersey   : '2.28'
+          jersey   : '2.27'
   ]
 }
 
@@ -57,22 +55,13 @@ subprojects {
   
   dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
-    testCompile 'org.mockito:mockito-core:2.23.4'
   }
 
   task clearOutDir(type: Delete) {
     delete project.files('out')
   }
   clean.dependsOn clearOutDir
-
-  jacocoTestReport {
-    reports {
-      xml.enabled true
-      html.enabled true
-    }
-  }
-  check.dependsOn jacocoTestReport
-
+  
   checkstyle {
     toolVersion '8.12'
     showViolations true

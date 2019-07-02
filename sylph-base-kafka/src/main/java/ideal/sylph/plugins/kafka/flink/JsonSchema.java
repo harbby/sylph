@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static ideal.sylph.runner.flink.engines.StreamSqlUtil.schemaToRowTypeInfo;
+import static ideal.sylph.runner.flink.actuator.StreamSqlUtil.schemaToRowTypeInfo;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class JsonSchema
@@ -46,7 +46,7 @@ public class JsonSchema
             throws IOException
     {
         @SuppressWarnings("unchecked")
-        Map<String, Object> map = MAPPER.readValue(message, HashMap.class);
+        Map<String, Object> map = MAPPER.readValue(message, Map.class);
         String[] names = rowTypeInfo.getFieldNames();
         Row row = new Row(names.length);
         for (int i = 0; i < names.length; i++) {
@@ -84,6 +84,9 @@ public class JsonSchema
             }
             else if (aClass.isArray()) {
                 row.setField(i, MAPPER.convertValue(value, aClass));
+            }
+            else if (aClass == Long.class || aClass == Long.TYPE) {
+                row.setField(i, ((Number) value).longValue());
             }
             else {
                 row.setField(i, value);

@@ -1,8 +1,8 @@
 language: java
 jdk:
-- openjdk8
+- oraclejdk8
 sudo: required
-dist: xenial
+dist: trusty
 services:
 - docker
 

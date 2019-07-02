@@ -15,10 +15,6 @@
  */
 package ideal.sylph.etl;
 
-import ideal.sylph.etl.api.Sink;
-import ideal.sylph.etl.api.Source;
-import ideal.sylph.etl.api.TransForm;
-
 import java.io.Serializable;
 
 public interface PipelinePlugin
@@ -26,22 +22,17 @@ public interface PipelinePlugin
 {
     public static enum PipelineType
     {
-        source(Source.class),
-        transform(TransForm.class),
-        sink(Sink.class),
+        source(1),
+        transform(2),
+        sink(3),
         @Deprecated
-        batch_join(TransForm.class);
+        batch_join(4);
 
-        private final Class<? extends PipelinePlugin> value;
+        private final int code;
 
-        PipelineType(Class<? extends PipelinePlugin> value)
+        PipelineType(int i)
         {
-            this.value = value;
-        }
-
-        public Class<? extends PipelinePlugin> getValue()
-        {
-            return value;
+            this.code = i;
         }
     }
 }

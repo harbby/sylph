@@ -15,49 +15,44 @@
  */
 package ideal.sylph.spi;
 
-import com.github.harbby.gadtry.classloader.Module;
-import ideal.sylph.etl.Plugin;
+import ideal.sylph.spi.job.Job;
+import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobContainer;
-import ideal.sylph.spi.job.JobStore;
-import ideal.sylph.spi.model.ConnectorInfo;
-import ideal.sylph.spi.model.JobInfo;
+import ideal.sylph.spi.model.PipelinePluginInfo;
 
-import java.io.IOException;
+import javax.validation.constraints.NotNull;
+
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface SylphContext
 {
-    void saveJob(JobStore.DbJob dbJob)
+    void saveJob(@NotNull String jobId, @NotNull String flow, @NotNull Map jobConfig)
             throws Exception;
 
-    void stopJob(int jobId);
+    void stopJob(@NotNull String jobId);
 
-    void startJob(int jobId);
+    void startJob(@NotNull String jobId);
 
-    void deleteJob(int jobId);
+    void deleteJob(@NotNull String jobId);
 
-    List<JobInfo> getAllJobs();
+    @NotNull
+    Collection<Job> getAllJobs();
 
-    JobInfo getJob(int jobId);
+    Optional<Job> getJob(String jobId);
 
-    Optional<JobContainer> getJobContainer(int jobId);
+    Optional<JobContainer> getJobContainer(@NotNull String jobId);
 
-    Optional<JobContainer> getJobContainerWithRunId(String runId);
+    Optional<JobContainer> getJobContainerWithRunId(@NotNull String jobId);
 
     /**
      * get all Actuator Names
      */
-    List<String> getAllEngineNames();
+    Collection<JobActuator.ActuatorInfo> getAllActuatorsInfo();
 
-    List<ConnectorInfo> getEnginePlugins(String actuator);
+    List<PipelinePluginInfo> getPlugins();
 
-    List<ConnectorInfo> getAllConnectors();
-
-    List<Module<Plugin>> getAllConnectorModules();
-
-    void reload();
-
-    void deleteModule(String moduleName)
-            throws IOException;
+    List<PipelinePluginInfo> getPlugins(String actuator);
 }

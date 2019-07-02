@@ -2,7 +2,7 @@ dependencies {
 
   compile group: 'org.apache.flink', name: 'flink-shaded-guava', version: '18.0-5.0'
 
-  compileOnly group: 'org.slf4j', name: 'slf4j-api', version: deps.slf4j
+  compileOnly group: 'org.slf4j', name: 'slf4j-api', version: deps.log4j12
 
   //--------
   runtime group: 'mysql', name: 'mysql-connector-java', version: '5.1.38'

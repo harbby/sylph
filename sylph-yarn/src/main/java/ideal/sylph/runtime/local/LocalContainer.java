@@ -15,19 +15,23 @@
  */
 package ideal.sylph.runtime.local;
 
+import com.github.harbby.gadtry.jvm.JVMException;
 import com.github.harbby.gadtry.jvm.VmFuture;
-import ideal.sylph.spi.job.JobContainerAbs;
+import ideal.sylph.spi.job.Job;
+import ideal.sylph.spi.job.JobContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Optional;
 import java.util.concurrent.Future;
 
 public abstract class LocalContainer
-        extends JobContainerAbs
+        implements JobContainer
 {
     private static final Logger logger = LoggerFactory.getLogger(LocalContainer.class);
 
     private VmFuture vmFuture;
+    private Job.Status status = Job.Status.STOP;
 
     @Override
     public String getRunId()
@@ -49,11 +53,11 @@ public abstract class LocalContainer
     }
 
     @Override
-    protected String deploy()
+    public final synchronized Optional<String> run()
             throws Exception
     {
         this.vmFuture = startAsyncExecutor();
-        return String.valueOf(vmFuture.getPid());
+        return Optional.of(String.valueOf(vmFuture.getPid()));
     }
 
     public abstract VmFuture startAsyncExecutor()
@@ -69,33 +73,33 @@ public abstract class LocalContainer
     }
 
     @Override
-    public String getRuntimeType()
-    {
-        return "local";
-    }
-
-    @Override
     public void setFuture(Future future)
     {
     }
 
     @Override
-    public Status getStatus()
+    public Job.Status getStatus()
     {
-        if (super.getStatus() == Status.RUNNING) {
+        if (status == Job.Status.RUNNING) {
             if (vmFuture.isRunning()) {
-                return Status.RUNNING;
+                return Job.Status.RUNNING;
             }
             else {
                 try {
                     vmFuture.get();
                 }
-                catch (Exception e) {
+                catch (JVMException e) {
                     logger.error("", e);
                 }
-                return Status.STOP;
+                return Job.Status.STOP;
             }
         }
-        return super.getStatus();
+        return status;
+    }
+
+    @Override
+    public void setStatus(Job.Status status)
+    {
+        this.status = status;
     }
 }

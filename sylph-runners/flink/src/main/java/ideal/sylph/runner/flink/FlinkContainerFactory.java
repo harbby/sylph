@@ -21,6 +21,7 @@ import com.github.harbby.gadtry.jvm.JVMLauncher;
 import com.github.harbby.gadtry.jvm.JVMLaunchers;
 import com.github.harbby.gadtry.jvm.VmCallable;
 import com.github.harbby.gadtry.jvm.VmFuture;
+import ideal.sylph.runner.flink.actuator.JobParameter;
 import ideal.sylph.runner.flink.yarn.FlinkConfiguration;
 import ideal.sylph.runner.flink.yarn.FlinkYarnJobLauncher;
 import ideal.sylph.runtime.local.LocalContainer;
@@ -72,29 +73,30 @@ public class FlinkContainerFactory
     @Override
     public JobContainer createYarnContainer(Job job, String lastRunid)
     {
+        JobParameter jobConfig = ((FlinkJobConfig) job.getConfig()).getConfig();
+        JobGraph jobGraph = ((FlinkJobHandle) job.getJobHandle()).getJobGraph();
+        Path appCheckPath = new Path(jobConfig.getCheckpointDir(), job.getId());
+
         FlinkYarnJobLauncher jobLauncher = injector.getInstance(FlinkYarnJobLauncher.class);
-        return YarnJobContainer.builder()
-                .setYarnClient(jobLauncher.getYarnClient())
-                .setSubmitter(() -> {
-                    FlinkJobConfig jobConfig = job.getConfig();
-                    JobGraph jobGraph = job.getJobDAG();
-                    Path appCheckPath = new Path(jobConfig.getCheckpointDir(), job.getName());
-                    if (jobConfig.isEnableSavepoint()) {
-                        setSavepoint(jobGraph, appCheckPath, jobLauncher.getYarnClient().getConfig());
-                    }
-                    return jobLauncher.start(job);
-                })
-                .setJobClassLoader(job.getJobClassLoader())
-                .setLastRunId(lastRunid)
-                .build();
+        YarnJobContainer yarnJobContainer = new YarnJobContainer(jobLauncher.getYarnClient(), lastRunid, () -> {
+            if (jobConfig.isEnableSavepoint()) {
+                setSavepoint(jobGraph, appCheckPath, jobLauncher.getYarnClient().getConfig());
+            }
+            return jobLauncher.start(job);
+        });
+        return yarnJobContainer;
     }
 
     @Override
     public JobContainer createLocalContainer(Job job, String lastRunid)
     {
+        JobGraph jobGraph = ((FlinkJobHandle) job.getJobHandle()).getJobGraph();
+        JobParameter jobConfig = ((FlinkJobConfig) job.getConfig()).getConfig();
+        Path appCheckPath = new Path(jobConfig.getCheckpointDir(), job.getId());
+
         AtomicReference<String> url = new AtomicReference<>();
         JVMLauncher<Boolean> launcher = JVMLaunchers.<Boolean>newJvm()
-                //.setXms("512m")
+                .setXms("512m")
                 .setXmx("512m")
                 .setConsole(line -> {
                     if (url.get() == null && line.contains(FLINK_WEB)) {
@@ -118,9 +120,6 @@ public class FlinkContainerFactory
             public VmFuture startAsyncExecutor()
                     throws Exception
             {
-                FlinkJobConfig jobConfig = job.getConfig();
-                Path appCheckPath = new Path(jobConfig.getCheckpointDir(), job.getName());
-                JobGraph jobGraph = job.getJobDAG();
                 url.set(null);
                 if (jobConfig.isEnableSavepoint()) {
                     setSavepoint(jobGraph, appCheckPath, yarnConfiguration);
@@ -155,7 +154,7 @@ public class FlinkContainerFactory
         }
     }
 
-    public static void setJobConfig(JobGraph jobGraph, FlinkJobConfig jobConfig, ClassLoader jobClassLoader, String jobId)
+    public static void setJobConfig(JobGraph jobGraph, JobParameter jobConfig, ClassLoader jobClassLoader, String jobId)
             throws IOException, ClassNotFoundException
     {
         // set Parallelism

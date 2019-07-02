@@ -54,7 +54,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static ideal.sylph.runner.spark.SQLHepler.schemaToSparkType;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
@@ -158,12 +157,9 @@ public class KafkaSource08
     public static Map<TopicAndPartition, Long> getFromOffset(KafkaCluster kafkaCluster, Set<String> topics, String groupId)
     {
         scala.collection.immutable.Set<String> scalaTopicSets = JavaConverters.asScalaSetConverter(topics).asScala().toSet();
-        Either<ArrayBuffer<Throwable>, scala.collection.immutable.Set<TopicAndPartition>> partitions = kafkaCluster.getPartitions(scalaTopicSets);
-        if (partitions.isLeft()) {
-            throwsThrowable(partitions.left().get().head());
-        }
+
         Either<ArrayBuffer<Throwable>, scala.collection.immutable.Map<TopicAndPartition, Object>> groupOffsets = kafkaCluster.getConsumerOffsets(groupId,
-                partitions.right().get());
+                kafkaCluster.getPartitions(scalaTopicSets).right().get());
 
         scala.collection.immutable.Map<TopicAndPartition, Object> fromOffsets;
         if (groupOffsets.isRight()) {

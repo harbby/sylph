@@ -98,9 +98,6 @@ public class CalciteSqlParser
             }
             case SELECT: {
                 SqlNode sqlFrom = ((SqlSelect) sqlNode).getFrom();
-                if (sqlFrom == null) {
-                    return sqlNode;
-                }
                 if (sqlFrom.getKind() == IDENTIFIER) {
                     String tableName = ((SqlIdentifier) sqlFrom).getSimple();
                     checkState(!batchTables.contains(tableName), "维度表不能直接用来 from");
