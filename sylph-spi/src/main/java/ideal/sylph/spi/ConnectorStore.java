@@ -48,7 +48,19 @@ public class ConnectorStore
      */
     public static ConnectorStore getDefault()
     {
-        return new ConnectorStore(Collections.emptySet());
+        return new ConnectorStore(Collections.emptySet())
+        {
+            @Override
+            public <T> Class<T> getConnectorDriver(String driverOrName, PipelinePlugin.PipelineType pipelineType)
+            {
+                try {
+                    return (Class<T>) Class.forName(driverOrName);
+                }
+                catch (ClassNotFoundException e) {
+                    throw throwsException(e);
+                }
+            }
+        };
     }
 
     public <T> Class<T> getConnectorDriver(String driverOrName, PipelinePlugin.PipelineType pipelineType)
@@ -62,6 +74,11 @@ public class ConnectorStore
         catch (ClassNotFoundException e) {
             throw throwsException(e);
         }
+    }
+
+    public int size()
+    {
+        return (int) connectorMap.values().stream().distinct().count();
     }
 
     public Optional<ConnectorInfo> findConnectorInfo(String driverOrName, PipelinePlugin.PipelineType pipelineType)

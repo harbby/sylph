@@ -1,7 +1,6 @@
 import React from "react";
 import { Layout, Menu, Icon } from "antd";
 import { Link } from "react-router-dom";
-
 const { Sider } = Layout;
 const { SubMenu } = Menu;
 
@@ -81,7 +80,7 @@ export default class SideMenu extends React.Component {
           }
         >
           <Menu.Item key="7">
-            <span onClick={() => { this.props.logout() }}>
+            <span onClick={this.props.logout}>
               <Icon type="tool" />
               Logout
             </span>

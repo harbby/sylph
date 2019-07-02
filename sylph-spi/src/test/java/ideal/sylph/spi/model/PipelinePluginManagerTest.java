@@ -18,15 +18,17 @@ package ideal.sylph.spi.model;
 import com.github.harbby.gadtry.collection.mutable.MutableSet;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.etl.PipelinePlugin;
+import ideal.sylph.spi.ConnectorStore;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
+import ideal.sylph.spi.RunnerContextImpl;
 import ideal.sylph.spi.TestConfigs;
 import ideal.sylph.spi.job.ContainerFactory;
 import ideal.sylph.spi.job.JobEngineHandle;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.File;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -34,29 +36,23 @@ import static com.github.harbby.gadtry.base.Throwables.throwsException;
 
 public class PipelinePluginManagerTest
 {
-    private final PipelinePluginManager pluginManager = new PipelinePluginManager()
-    {
-        @Override
-        public Set<ConnectorInfo> getAllPlugins()
-        {
-            return MutableSet.<ConnectorInfo>builder()
-                    .add(ConnectorInfo.getPluginInfo(new File(""), TestConfigs.TestSinkPlugin.class))
-                    .add(ConnectorInfo.getPluginInfo(new File(""), TestConfigs.TestRealTimeSinkPlugin.class))
-                    .add(ConnectorInfo.getPluginInfo(new File(""), TestConfigs.TestErrorSinkPlugin.class))
-                    .build();
-        }
-    };
+    private final Set<ConnectorInfo> connectors = MutableSet.<ConnectorInfo>builder()
+            .add(ConnectorInfo.getPluginInfo(TestConfigs.TestSinkPlugin.class))
+            .add(ConnectorInfo.getPluginInfo(TestConfigs.TestRealTimeSinkPlugin.class))
+            .add(ConnectorInfo.getPluginInfo(TestConfigs.TestErrorSinkPlugin.class))
+            .build();
+    private final ConnectorStore connectorStore = new ConnectorStore(connectors);
 
-    private final PipelinePluginManager defaultPm = PipelinePluginManager.getDefault();
+    private final ConnectorStore defaultCs = ConnectorStore.getDefault();
 
     @Test
     public void defaultPipelinePluginManagerLoadDriver()
     {
-        Class<String> stringClass = defaultPm.loadPluginDriver(String.class.getName(), null);
+        Class<String> stringClass = defaultCs.getConnectorDriver(String.class.getName(), null);
         Assert.assertEquals(stringClass, stringClass);
 
         try {
-            defaultPm.loadPluginDriver("a.b.c.d", null);
+            defaultCs.getConnectorDriver("a.b.c.d", null);
             Assert.fail();
             throwsException(ClassNotFoundException.class);
         }
@@ -66,40 +62,33 @@ public class PipelinePluginManagerTest
     }
 
     @Test
-    public void getAllPlugins()
-    {
-        Set<ConnectorInfo> set = PipelinePluginManager.getDefault().getAllPlugins();
-        Assert.assertNotNull(set);
-    }
-
-    @Test
     public void loadPluginDriver()
     {
         String name = TestConfigs.TestRealTimeSinkPlugin.class.getAnnotation(Name.class).value();
-        Class<?> aClass = pluginManager.loadPluginDriver(name, PipelinePlugin.PipelineType.sink);
+        Class<?> aClass = connectorStore.getConnectorDriver(name, PipelinePlugin.PipelineType.sink);
         Assert.assertEquals(TestConfigs.TestRealTimeSinkPlugin.class, aClass);
 
         try {
-            pluginManager.loadPluginDriver("a.b.c.d", PipelinePlugin.PipelineType.sink);
+            connectorStore.getConnectorDriver("a.b.c.d", PipelinePlugin.PipelineType.sink);
             Assert.fail();
             throwsException(ClassNotFoundException.class);
         }
         catch (ClassNotFoundException e) {
-            Assert.assertEquals(e.getMessage(), "pipelineType:sink no such driver class: a.b.c.d");
+            Assert.assertEquals(e.getMessage(), "a.b.c.d");
         }
     }
 
     @Test
     public void filterRunnerPlugins()
     {
-        Set<ConnectorInfo> set = PipelinePluginManager.filterRunnerPlugins(pluginManager.getAllPlugins(),
-                MutableSet.of(Stream.class.getName()),
+        RunnerContext runnerContext = new RunnerContextImpl(() -> connectors);
+        ConnectorStore connectorStore = runnerContext.createConnectorStore(MutableSet.of(Stream.class),
                 TestRunner.class);
-        Assert.assertEquals(set.size(), 2);
 
-        Set<ConnectorInfo> set2 = PipelinePluginManager.filterRunnerPlugins(pluginManager.getAllPlugins(),
-                MutableSet.of(), TestRunner.class);
-        Assert.assertEquals(set2.size(), 1);
+        Assert.assertEquals(connectorStore.size(), 2);
+
+        ConnectorStore connectorStore2 = runnerContext.createConnectorStore(new HashSet<>(), TestRunner.class);
+        Assert.assertEquals(connectorStore2.size(), 1);
     }
 
     public static class TestRunner

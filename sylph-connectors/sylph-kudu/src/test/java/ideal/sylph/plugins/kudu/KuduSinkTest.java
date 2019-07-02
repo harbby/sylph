@@ -22,8 +22,8 @@ import ideal.sylph.parser.antlr.AntlrSqlParser;
 import ideal.sylph.parser.antlr.tree.CreateTable;
 import ideal.sylph.runner.flink.engines.StreamSqlBuilder;
 import ideal.sylph.runner.flink.etl.FlinkNodeLoader;
+import ideal.sylph.spi.ConnectorStore;
 import ideal.sylph.spi.NodeLoader;
-import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableEnvironment;
@@ -89,7 +89,7 @@ public class KuduSinkTest
                 return withConfig;
             }
         }));
-        NodeLoader<DataStream<Row>> loader = new FlinkNodeLoader(PipelinePluginManager.getDefault(), iocFactory);
+        NodeLoader<DataStream<Row>> loader = new FlinkNodeLoader(ConnectorStore.getDefault(), iocFactory);
 
         KuduSink kuduSink = (KuduSink) loader.getPluginInstance(Class.forName(driverClass), withConfig);
         Assert.assertTrue(kuduSink != null);
@@ -101,7 +101,7 @@ public class KuduSinkTest
     {
         StreamTableEnvironment tableEnv = getTableEnv();
 
-        StreamSqlBuilder streamSqlBuilder = new StreamSqlBuilder(tableEnv, PipelinePluginManager.getDefault(), sqlParser);
+        StreamSqlBuilder streamSqlBuilder = new StreamSqlBuilder(tableEnv, ConnectorStore.getDefault(), sqlParser);
         streamSqlBuilder.buildStreamBySql(kuduSinkSql);
 
         tableEnv.sqlUpdate("insert into kudu select 'key' as key, '' as `value`");

@@ -31,8 +31,6 @@ import ideal.sylph.etl.api.Source;
 import ideal.sylph.etl.api.TransForm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.reflect.generics.tree.ClassTypeSignature;
-import sun.reflect.generics.tree.SimpleClassTypeSignature;
 import sun.reflect.generics.tree.TypeArgument;
 
 import java.io.File;
@@ -43,7 +41,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static com.github.harbby.gadtry.base.MoreObjects.toStringHelper;
@@ -55,7 +52,6 @@ public class ConnectorInfo
         implements Serializable
 {
     private static final Logger logger = LoggerFactory.getLogger(ConnectorInfo.class);
-    private static Class<? extends PipelinePlugin> javaClass;
 
     private final boolean realTime;
     private final String[] names;
@@ -64,9 +60,8 @@ public class ConnectorInfo
     private final String driverClass;
     private final transient TypeArgument[] javaGenerics;
     //-------------
-    private final File pluginFile;
     private final PipelinePlugin.PipelineType pipelineType;  //source transform or sink
-
+    private File pluginFile = new File(System.getProperty("java.io.tmpdir"));
     private List<Map<String, Object>> pluginConfig = Collections.emptyList(); //Injected by the specific runner
 
     private ConnectorInfo(
@@ -76,7 +71,6 @@ public class ConnectorInfo
             boolean realTime,
             String driverClass,
             TypeArgument[] javaGenerics,
-            File pluginFile,
             PipelinePlugin.PipelineType pipelineType)
     {
         this.names = requireNonNull(names, "names is null");
@@ -85,7 +79,6 @@ public class ConnectorInfo
         this.realTime = realTime;
         this.driverClass = requireNonNull(driverClass, "driverClass is null");
         this.javaGenerics = requireNonNull(javaGenerics, "javaGenerics is null");
-        this.pluginFile = requireNonNull(pluginFile, "pluginFile is null");
         this.pipelineType = requireNonNull(pipelineType, "pipelineType is null");
     }
 
@@ -132,6 +125,11 @@ public class ConnectorInfo
     public List<Map<String, Object>> getPluginConfig()
     {
         return pluginConfig;
+    }
+
+    public void setPluginFile(File pluginFile)
+    {
+        this.pluginFile = pluginFile;
     }
 
     public void setPluginConfig(List<Map<String, Object>> config)
@@ -209,9 +207,7 @@ public class ConnectorInfo
         return ImmutableList.of();
     }
 
-    public static ConnectorInfo getPluginInfo(
-            File pluginFile,
-            Class<? extends PipelinePlugin> javaClass)
+    public static ConnectorInfo getPluginInfo(Class<? extends PipelinePlugin> javaClass)
     {
         PipelinePlugin.PipelineType pipelineType = parserDriverType(javaClass);
         boolean realTime = RealTimePipeline.class.isAssignableFrom(javaClass); //is realTime ?
@@ -235,14 +231,12 @@ public class ConnectorInfo
                 realTime,
                 javaClass.getName(),
                 javaGenerics,
-                pluginFile,
                 pipelineType
         );
     }
 
     private static PipelinePlugin.PipelineType parserDriverType(Class<? extends PipelinePlugin> javaClass)
     {
-        ConnectorInfo.javaClass = javaClass;
         if (Source.class.isAssignableFrom(javaClass)) {
             return PipelinePlugin.PipelineType.source;
         }
@@ -265,12 +259,5 @@ public class ConnectorInfo
         logger.info("--The {} is not RealTimePipeline--the Java generics is {} --", javaClass, genericString);
         TypeArgument[] types = typesMap.getOrDefault(pipelineType.getValue().getName(), new TypeArgument[0]);
         return types;
-    }
-
-    public static List<String> getTypeNames(TypeArgument[] types)
-    {
-        return Arrays.stream(types)
-                .flatMap(x -> ((ClassTypeSignature) x).getPath().stream())
-                .map(SimpleClassTypeSignature::getName).collect(Collectors.toList());
     }
 }

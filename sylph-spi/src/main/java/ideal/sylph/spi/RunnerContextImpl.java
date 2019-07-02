@@ -60,8 +60,7 @@ public class RunnerContextImpl
                     ClassTypeSignature typeSignature = (ClassTypeSignature) it.getJavaGenerics()[0];
                     String typeName = typeSignature.getPath().get(0).getName();
                     return filterKeyword.contains(typeName);
-                })
-                .collect(Collectors.groupingBy(ConnectorInfo::getPluginFile));
+                }).collect(Collectors.groupingBy(ConnectorInfo::getPluginFile));
 
         Set<ConnectorInfo> plugins = moduleInfo.entrySet().stream()
                 .flatMap(it -> {

@@ -1,8 +1,22 @@
+/*
+ * Copyright (C) 2018 The Sylph Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ideal.sylph.controller.action;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import ideal.sylph.spi.exception.StandardErrorCode;
-import ideal.sylph.spi.exception.SylphException;
+import com.google.common.collect.ImmutableMap;
 import lombok.Data;
 
 import javax.servlet.http.HttpServletRequest;
@@ -15,6 +29,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
+import java.util.Map;
+
 import static java.util.Objects.requireNonNull;
 
 @Path("/auth")
@@ -25,7 +41,7 @@ public class LoginController
     @Data
     public static class User
     {
-        private String user;
+        private String userName;
         private String password;
     }
 
@@ -33,21 +49,35 @@ public class LoginController
     @POST
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public User doLogin(User user, @Context HttpServletRequest req)
+    public Map doLogin(User user, @Context HttpServletRequest req)
     {
         HttpSession session = req.getSession();
-        if (session.getAttribute("user") != null) {
-            return (User) session.getAttribute("user");
+        User sessionUser = (User) session.getAttribute("user");
+        if (sessionUser != null) {
+            return ImmutableMap.builder()
+                    .put("message", "login ok")
+                    .put("userName", sessionUser.getUserName())
+                    .put("success", true)
+                    .build();
         }
 
         //1...check user
         requireNonNull(user, "user is null");
-        if (user.getUser().equals("admin") && user.getPassword().equals("admin")) {
+        if ("admin".equals(user.getUserName()) && "admin".equals(user.getPassword())) {
+
             session.setMaxInactiveInterval(30 * 60);
             session.setAttribute("user", user);
-            return user;
+            return ImmutableMap.builder()
+                    .put("message", "login ok")
+                    .put("userName", user.getUserName())
+                    .put("success", true)
+                    .build();
         }
-        throw new SylphException(StandardErrorCode.NOT_SUPPORTED, "login error, Login failed, username or password is incorrect");
+        return ImmutableMap.builder()
+                .put("message", "login failed")
+                .put("userName", user.getUserName())
+                .put("success", false)
+                .build();
     }
 
     @Path("/logout")
@@ -55,10 +85,10 @@ public class LoginController
     @Produces({MediaType.APPLICATION_JSON})
     public boolean doLogout(@Context HttpServletRequest req)
     {
-        HttpSession session = req.getSession();//获取当前session
+        HttpSession session = req.getSession(); //获取当前session
         if (session != null) {
-            User user = (User) session.getAttribute("user");//从当前session中获取用户信息
-            session.invalidate();//关闭session
+            User user = (User) session.getAttribute("user"); //从当前session中获取用户信息
+            session.invalidate(); //关闭session
         }
         return true;
     }

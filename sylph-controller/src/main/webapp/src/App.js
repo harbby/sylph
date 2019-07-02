@@ -1,6 +1,6 @@
 import React from "react";
 import { Route } from "react-router-dom";
-import { Layout } from "antd";
+import { Modal, Layout } from "antd";
 import Menu from "./Menu";
 import { WrappedNormalLoginForm } from "./Login";
 import JobList from "./JobList";
@@ -18,13 +18,14 @@ export default class App extends React.Component {
   state = {
     login: false,
     loading: true,
+    userName: null
   }
 
   async login() {
     let result = await fetch("/_sys/auth/login", {
       method: "POST",
       body: JSON.stringify({
-        user: "",
+        userName: "",
         password: ""
       }),
       headers: {
@@ -32,18 +33,26 @@ export default class App extends React.Component {
       }
     });
     result = await result.json();
-    this.setState({ loading: false });
     if (result.success === false) {
-      this.setState({ login: false })
+      this.setState({ login: false, loading: false })
     } else {
-      this.setState({ login: true })
+      this.setState({ userName: result.userName, login: true, loading: false })
     }
   }
 
-  async logout() {
-    let result = await fetch("/_sys/auth/logout", { method: "GET" });
-    result = await result.json();
-    this.setState({ login: false })
+  logout() {
+    Modal.confirm({
+      title: 'Do you Want to Logout this account?',
+      content: this.state.userName,
+      onOk: async () => {
+        let result = await fetch("/_sys/auth/logout", { method: "GET" });
+        result = await result.json();
+        this.setState({ login: false })
+      },
+      onCancel: () => {
+        console.log('Cancel');
+      },
+    });
   }
 
   componentWillMount() {
@@ -53,7 +62,7 @@ export default class App extends React.Component {
   render = () => {
     if (this.state.loading) return (<span></span>)
     if (this.state.login !== true) {
-      return (<WrappedNormalLoginForm afterLogin={() => this.setState({ login: true })}></WrappedNormalLoginForm>);
+      return (<WrappedNormalLoginForm afterLogin={(userName) => this.setState({ userName: userName, login: true })} />);
     }
     return (
       <Layout style={{ minHeight: "100vh" }}>

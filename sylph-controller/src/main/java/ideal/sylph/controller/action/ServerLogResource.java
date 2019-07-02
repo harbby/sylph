@@ -17,10 +17,12 @@ package ideal.sylph.controller.action;
 
 import ideal.sylph.controller.LogAppender;
 
+import javax.servlet.ServletContext;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import java.util.Map;
@@ -29,7 +31,13 @@ import java.util.Map;
 @Path("/server")
 public class ServerLogResource
 {
-    private final LogAppender logAppender = new LogAppender(2000);
+    public final LogAppender logAppender;
+
+    public ServerLogResource(
+            @Context ServletContext servletContext)
+    {
+        this.logAppender = (LogAppender) servletContext.getAttribute("logAppender");
+    }
 
     @GET
     @Path("/logs")

@@ -76,7 +76,11 @@ public class PipelinePluginLoader
                     logger.info("loading module {}", module.getName());
                     List<ConnectorInfo> infos = module.getPlugins().stream()
                             .flatMap(x -> x.getConnectors().stream())
-                            .map(javaClass -> getPluginInfo(module.getModulePath(), javaClass))
+                            .map(javaClass -> {
+                                ConnectorInfo info = getPluginInfo(javaClass);
+                                info.setPluginFile(module.getModulePath());
+                                return info;
+                            })
                             .collect(Collectors.toList());
 
                     plugins.put(module.getName(), new ModuleInfo(module.getName(), module, infos));
