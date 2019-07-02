@@ -81,10 +81,10 @@ public class WebAppProxyServlet
             String[] parts = pathInfo.split("/", 3);
             checkArgument(parts.length >= 2, remoteUser + " gave an invalid proxy path " + pathInfo);
             //parts[0] is empty because path info always starts with a /
-            int jobId = Integer.parseInt(parts[1]);
+            String jobIdOrRunId = parts[1];
             String rest = parts.length > 2 ? parts[2] : "";
 
-            URI trackingUri = new URI(getJobUrl(jobId));
+            URI trackingUri = new URI(getJobUrl(jobIdOrRunId));
 
             // Append the user-provided path and query parameter to the original
             // tracking url.
@@ -108,17 +108,17 @@ public class WebAppProxyServlet
             .maximumSize(100)
             .build();
 
-    public String getJobUrl(int jobId)
+    public String getJobUrl(String jobIdOrRunId)
     {
-        String url = urlCache.getIfPresent(jobId);
+        String url = urlCache.getIfPresent(jobIdOrRunId);
         if (url != null) {
             return url;
         }
 
-        JobContainer container = sylphContext.getJobContainer(jobId)
-                .orElseThrow(() -> new SylphException(JOB_CONFIG_ERROR, "job " + jobId + " not Online"));
+        JobContainer container = sylphContext.getJobContainer(Integer.parseInt(jobIdOrRunId))
+                .orElseThrow(() -> new SylphException(JOB_CONFIG_ERROR, "job " + jobIdOrRunId + " not Online"));
         JobContainer.Status status = container.getStatus();
-        checkState(status == JobContainer.Status.RUNNING, "job " + jobId + " Status " + status + ",but not RUNNING");
+        checkState(status == JobContainer.Status.RUNNING, "job " + jobIdOrRunId + " Status " + status + ",but not RUNNING");
 
         urlCache.put(container.getRunId(), container.getJobUrl());
         return container.getJobUrl();

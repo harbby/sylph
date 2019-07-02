@@ -20,9 +20,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
-import static ideal.sylph.spi.job.JobContainer.Status.DEPLOYING;
 import static ideal.sylph.spi.job.JobContainer.Status.RUNNING;
 import static ideal.sylph.spi.job.JobContainer.Status.STARTED_ERROR;
+import static ideal.sylph.spi.job.JobContainer.Status.STOP;
 
 public abstract class JobContainerAbs
         implements JobContainer
@@ -30,7 +30,7 @@ public abstract class JobContainerAbs
     private static final Logger logger = LoggerFactory.getLogger(JobContainer.class);
     private int countReStart;
     private long lastStartTime;
-    private volatile Status status = DEPLOYING;
+    private volatile Status status = STOP;
 
     public int getCountReStart()
     {

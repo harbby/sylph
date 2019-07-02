@@ -23,7 +23,7 @@ import java.util.function.Supplier;
 
 public final class Job
 {
-    private final int id;
+    private final Integer id;
     private final String name;
     private final File workDir;
     private final Collection<URL> depends;
@@ -32,7 +32,7 @@ public final class Job
     private final Supplier<Serializable> jobDAG;
     private final JobConfig jobConfig;
 
-    public Job(int id,
+    public Job(Integer id,
             String name,
             File workDir,
             Collection<URL> depends,
