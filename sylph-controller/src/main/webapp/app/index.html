@@ -1,0 +1,52 @@
+<html lang="en">
+<meta charset="UTF-8">
+<title>JobManager</title>
+<link href="libs/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="./libs/jquery/dist/jquery.js"></script>
+<script type="text/javascript" src="./js/list.js"></script>
+<style>
+    body {
+        margin: 10px 50px;
+        font-size: 16px;
+    }
+    .row {
+        line-height: 40px;
+    }
+    button {
+        margin: 0 10px
+    }
+    button a{
+        color:#fff;
+    }
+    h2 {
+        border-bottom: 1px solid #ccc;
+        height: 50px;
+        text-align: center
+    }
+</style>
+</head>
+<body>
+
+
+<h2>JobManager</h2>
+
+<div class="row">
+    <div class="col-md-8"><label>jobs</label></div>
+    <div class="col-md-4">
+        <button class="btn btn-primary refresh_all">Refresh</button>
+        <button class="btn btn-primary" onclick='window.location.href="etl.html"'>Create_ETL</button>
+        <button class="btn btn-primary" onclick='window.location.href="stream_sql.html"'>Create_StreamSQL</button>
+    </div>
+</div>
+
+<div class="row" id="rowHead">
+    <div class="col-md-3">job</div>
+    <div class="col-md-3">runId</div>
+    <div class="col-md-2">type</div>
+    <!--<div class="col-md-2">create_time</div>-->
+    <div class="col-md-1">status</div>
+    <div class="col-md-3">click</div>
+</div>
+
+</body>
+</html>

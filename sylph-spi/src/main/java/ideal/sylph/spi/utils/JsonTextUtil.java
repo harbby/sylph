@@ -35,7 +35,8 @@ public final class JsonTextUtil
     public static String readJsonText(File file)
             throws IOException
     {
-        return parserJson(Files.lines(file.toPath(), UTF_8));
+        String text = parserJson(Files.lines(file.toPath(), UTF_8));
+        return text;
     }
 
     /**

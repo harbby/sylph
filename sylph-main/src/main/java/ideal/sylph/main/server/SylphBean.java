@@ -20,10 +20,11 @@ import com.github.harbby.gadtry.ioc.Autowired;
 import com.github.harbby.gadtry.ioc.Bean;
 import com.github.harbby.gadtry.ioc.Binder;
 import ideal.sylph.controller.ServerConfig;
-import ideal.sylph.main.service.JobEngineManager;
 import ideal.sylph.main.service.JobManager;
+import ideal.sylph.main.service.LocalJobStore;
+import ideal.sylph.main.service.MetadataManager;
 import ideal.sylph.main.service.PipelinePluginLoader;
-import ideal.sylph.main.service.SqliteDbJobStore;
+import ideal.sylph.main.service.RunnerManager;
 import ideal.sylph.spi.SylphContext;
 import ideal.sylph.spi.job.JobStore;
 
@@ -46,11 +47,12 @@ public final class SylphBean
         binder.bind(Properties.class).byInstance(properties);
         binder.bind(ServerConfig.class).withSingle();
 
-        binder.bind(JobStore.class).by(SqliteDbJobStore.class).withSingle();
+        binder.bind(MetadataManager.class).withSingle();
+        binder.bind(JobStore.class).by(LocalJobStore.class).withSingle();
 
         //  --- Binding parameter
         binder.bind(PipelinePluginLoader.class).withSingle();
-        binder.bind(JobEngineManager.class).withSingle();
+        binder.bind(RunnerManager.class).withSingle();
         binder.bind(JobManager.class).withSingle();
 
         binder.bind(SylphContext.class).byCreator(SylphContextProvider.class).withSingle();
@@ -60,13 +62,12 @@ public final class SylphBean
             implements Creator<SylphContext>
     {
         @Autowired private JobManager jobManager;
-        @Autowired private JobEngineManager runnerManger;
-        @Autowired private PipelinePluginLoader pluginLoader;
+        @Autowired private RunnerManager runnerManger;
 
         @Override
         public SylphContext get()
         {
-            return new SylphContextImpl(jobManager, runnerManger, pluginLoader);
+            return new SylphContextImpl(jobManager, runnerManger);
         }
     }
 }

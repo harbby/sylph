@@ -18,6 +18,7 @@ package ideal.sylph.controller;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 
+//@javax.ws.rs.ApplicationPath(ResourcePath.API_ROOT)
 public class WebApplication
         extends ResourceConfig
 {
@@ -31,8 +32,8 @@ public class WebApplication
         register(AppExceptionMapper.class);
         //Glassfish multipart file uploader feature
         register(MultiPartFeature.class);
-        register(AuthFilter.class);
-
         packages("ideal.sylph.controller.action");
     }
+
+    //servlet.setInitParameter("jersey.config.server.provider.packages","ideal.sylph.controller.action");
 }

@@ -20,6 +20,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import ideal.sylph.spi.SylphContext;
 import ideal.sylph.spi.exception.SylphException;
+import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobContainer;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -43,6 +44,7 @@ import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static com.google.common.base.Preconditions.checkArgument;
 import static ideal.sylph.controller.utils.ProxyUtil.proxyLink;
 import static ideal.sylph.spi.exception.StandardErrorCode.JOB_CONFIG_ERROR;
+import static java.util.Objects.requireNonNull;
 
 public class WebAppProxyServlet
         extends HttpServlet
@@ -81,10 +83,10 @@ public class WebAppProxyServlet
             String[] parts = pathInfo.split("/", 3);
             checkArgument(parts.length >= 2, remoteUser + " gave an invalid proxy path " + pathInfo);
             //parts[0] is empty because path info always starts with a /
-            int jobId = Integer.parseInt(parts[1]);
+            String jobIdOrRunId = requireNonNull(parts[1], "jobId or runId not setting");
             String rest = parts.length > 2 ? parts[2] : "";
 
-            URI trackingUri = new URI(getJobUrl(jobId));
+            URI trackingUri = new URI(getJobUrl(jobIdOrRunId));
 
             // Append the user-provided path and query parameter to the original
             // tracking url.
@@ -108,17 +110,18 @@ public class WebAppProxyServlet
             .maximumSize(100)
             .build();
 
-    public String getJobUrl(int jobId)
+    public String getJobUrl(String jobIdOrRunId)
+            throws IOException
     {
-        String url = urlCache.getIfPresent(jobId);
+        String url = urlCache.getIfPresent(jobIdOrRunId);
         if (url != null) {
             return url;
         }
 
-        JobContainer container = sylphContext.getJobContainer(jobId)
-                .orElseThrow(() -> new SylphException(JOB_CONFIG_ERROR, "job " + jobId + " not Online"));
-        JobContainer.Status status = container.getStatus();
-        checkState(status == JobContainer.Status.RUNNING, "job " + jobId + " Status " + status + ",but not RUNNING");
+        JobContainer container = sylphContext.getJobContainer(jobIdOrRunId)
+                .orElseThrow(() -> new SylphException(JOB_CONFIG_ERROR, "job " + jobIdOrRunId + " not Online"));
+        Job.Status status = container.getStatus();
+        checkState(status == Job.Status.RUNNING, "job " + jobIdOrRunId + " Status " + status + ",but not RUNNING");
 
         urlCache.put(container.getRunId(), container.getJobUrl());
         return container.getJobUrl();

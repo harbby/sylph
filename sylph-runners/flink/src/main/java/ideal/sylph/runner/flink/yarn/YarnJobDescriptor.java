@@ -15,7 +15,7 @@
  */
 package ideal.sylph.runner.flink.yarn;
 
-import ideal.sylph.runner.flink.FlinkJobConfig;
+import ideal.sylph.runner.flink.actuator.JobParameter;
 import org.apache.flink.client.deployment.ClusterDeploymentException;
 import org.apache.flink.client.deployment.ClusterSpecification;
 import org.apache.flink.client.program.ClusterClient;
@@ -76,7 +76,7 @@ public class YarnJobDescriptor
 
     private final FlinkConfiguration flinkConf;
     private final YarnClient yarnClient;
-    private final FlinkJobConfig appConf;
+    private final JobParameter appConf;
     private final String jobName;
     private final Iterable<Path> userProvidedJars;
     private final YarnClientApplication application;
@@ -89,7 +89,7 @@ public class YarnJobDescriptor
             FlinkConfiguration flinkConf,
             YarnClient yarnClient,
             YarnConfiguration yarnConfiguration,
-            FlinkJobConfig appConf,
+            JobParameter appConf,
             String jobId,
             Iterable<Path> userProvidedJars)
             throws IOException
@@ -103,7 +103,7 @@ public class YarnJobDescriptor
         this.userProvidedJars = userProvidedJars;
 
         FileSystem fileSystem = FileSystem.get(yarnClient.getConfig());
-        this.uploadingDir = new Path(new Path(fileSystem.getHomeDirectory(), ".sylph"), application.getApplicationSubmissionContext().getApplicationId().toString());
+        this.uploadingDir = new Path(new Path(fileSystem.getHomeDirectory(), ".sylph"), application.getApplicationSubmissionContext().toString());
     }
 
     @Override

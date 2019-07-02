@@ -10,7 +10,7 @@ dependencies {
     compileOnly(group: 'org.apache.flink', name: 'flink-streaming-scala_2.11', version: deps.flink) {
         exclude(module: 'flink-shaded-hadoop2')
     }
-    compile group: 'org.javassist', name: 'javassist', version: '3.25.0-GA'
+    
     compile (group: 'org.apache.flink', name: 'flink-connector-kafka-base_2.11', version: deps.flink){
         exclude(module: 'kafka-clients')
     }

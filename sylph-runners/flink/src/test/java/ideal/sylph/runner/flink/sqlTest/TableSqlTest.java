@@ -15,6 +15,10 @@
  */
 package ideal.sylph.runner.flink.sqlTest;
 
+import com.github.harbby.gadtry.base.JavaTypes;
+import ideal.sylph.etl.Schema;
+import org.apache.flink.api.java.typeutils.RowTypeInfo;
+import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
@@ -25,6 +29,11 @@ import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.types.Row;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static ideal.sylph.runner.flink.actuator.StreamSqlUtil.schemaToRowTypeInfo;
 
 public class TableSqlTest
 {

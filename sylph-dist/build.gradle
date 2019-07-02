@@ -32,10 +32,6 @@ task dist(type: Tar) {
     into(tarpath + "/etc")
   }
 
-  from(project.files('src/data')) {
-    into(tarpath + "/data")
-  }
-
   from(project.files('src/jobs')) {
     into(tarpath + "/jobs")
   }

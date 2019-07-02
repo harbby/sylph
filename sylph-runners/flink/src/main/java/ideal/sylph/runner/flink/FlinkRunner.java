@@ -17,14 +17,15 @@ package ideal.sylph.runner.flink;
 
 import com.github.harbby.gadtry.classloader.DirClassLoader;
 import com.github.harbby.gadtry.ioc.IocFactory;
-import ideal.sylph.runner.flink.engines.FlinkMainClassEngine;
-import ideal.sylph.runner.flink.engines.FlinkStreamEtlEngine;
-import ideal.sylph.runner.flink.engines.FlinkStreamSqlEngine;
-import ideal.sylph.spi.ConnectorStore;
+import ideal.sylph.runner.flink.actuator.FlinkMainClassActuator;
+import ideal.sylph.runner.flink.actuator.FlinkStreamEtlActuator;
+import ideal.sylph.runner.flink.actuator.FlinkStreamSqlActuator;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.ContainerFactory;
-import ideal.sylph.spi.job.JobEngineHandle;
+import ideal.sylph.spi.job.JobActuatorHandle;
+import ideal.sylph.spi.model.PipelinePluginInfo;
+import ideal.sylph.spi.model.PipelinePluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +36,7 @@ import java.util.stream.Stream;
 
 import static com.github.harbby.gadtry.base.Throwables.throwsException;
 import static com.google.common.base.Preconditions.checkArgument;
+import static ideal.sylph.spi.model.PipelinePluginManager.filterRunnerPlugins;
 import static java.util.Objects.requireNonNull;
 
 public class FlinkRunner
@@ -50,7 +52,7 @@ public class FlinkRunner
     }
 
     @Override
-    public Set<JobEngineHandle> create(RunnerContext context)
+    public Set<JobActuatorHandle> create(RunnerContext context)
     {
         requireNonNull(context, "context is null");
         String flinkHome = requireNonNull(System.getenv("FLINK_HOME"), "FLINK_HOME not setting");
@@ -62,13 +64,14 @@ public class FlinkRunner
                 ((DirClassLoader) classLoader).addDir(new File(flinkHome, "lib"));
             }
             IocFactory injector = IocFactory.create(binder -> {
-                binder.bind(FlinkMainClassEngine.class).withSingle();
-                binder.bind(FlinkStreamEtlEngine.class).withSingle();
-                binder.bind(FlinkStreamSqlEngine.class).withSingle();
-                binder.bind(RunnerContext.class, context);
+                binder.bind(FlinkMainClassActuator.class).withSingle();
+                binder.bind(FlinkStreamEtlActuator.class).withSingle();
+                binder.bind(FlinkStreamSqlActuator.class).withSingle();
+                //----------------------------------
+                binder.bind(PipelinePluginManager.class).byCreator(() -> createPipelinePluginManager(context)).withSingle();
             });
 
-            return Stream.of(FlinkMainClassEngine.class, FlinkStreamEtlEngine.class, FlinkStreamSqlEngine.class)
+            return Stream.of(FlinkMainClassActuator.class, FlinkStreamEtlActuator.class, FlinkStreamSqlActuator.class)
                     .map(injector::getInstance).collect(Collectors.toSet());
         }
         catch (Exception e) {
@@ -76,11 +79,24 @@ public class FlinkRunner
         }
     }
 
-    public static ConnectorStore createConnectorStore(RunnerContext context)
+    private static PipelinePluginManager createPipelinePluginManager(RunnerContext context)
     {
-        final Set<Class<?>> keyword = Stream.of(
-                org.apache.flink.streaming.api.datastream.DataStream.class,
-                org.apache.flink.types.Row.class).collect(Collectors.toSet());
-        return context.createConnectorStore(keyword, FlinkRunner.class);
+        Set<String> keyword = Stream.of(
+                org.apache.flink.table.api.StreamTableEnvironment.class,
+                org.apache.flink.table.api.java.StreamTableEnvironment.class,
+                org.apache.flink.streaming.api.datastream.DataStream.class
+        ).map(Class::getName).collect(Collectors.toSet());
+
+        final Set<PipelinePluginInfo> runnerPlugins =
+                filterRunnerPlugins(context.getFindPlugins(), keyword, FlinkRunner.class);
+
+        return new PipelinePluginManager()
+        {
+            @Override
+            public Set<PipelinePluginInfo> getAllPlugins()
+            {
+                return runnerPlugins;
+            }
+        };
     }
 }

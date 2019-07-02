@@ -15,72 +15,52 @@
  */
 package ideal.sylph.spi.job;
 
+import javax.validation.constraints.NotNull;
+
 import java.io.File;
-import java.io.Serializable;
 import java.net.URL;
 import java.util.Collection;
-import java.util.function.Supplier;
 
-public final class Job
+public interface Job
 {
-    private final int id;
-    private final String name;
-    private final File workDir;
-    private final Collection<URL> depends;
-    private final ClassLoader jobClassLoader;
+    @NotNull
+    public String getId();
 
-    private final Supplier<Serializable> jobDAG;
-    private final JobConfig jobConfig;
-
-    public Job(int id,
-            String name,
-            File workDir,
-            Collection<URL> depends,
-            ClassLoader jobClassLoader,
-            Supplier<Serializable> jobDAG,
-            JobConfig jobConfig)
+    default String getDescription()
     {
-        this.id = id;
-        this.name = name;
-        this.workDir = workDir;
-        this.depends = depends;
-        this.jobClassLoader = jobClassLoader;
-        this.jobDAG = jobDAG;
-        this.jobConfig = jobConfig;
+        return "none";
     }
 
-    public int getId()
-    {
-        return id;
-    }
+    File getWorkDir();
 
-    public String getName()
-    {
-        return this.name;
-    }
+    Collection<URL> getDepends();
 
-    public File getWorkDir()
-    {
-        return this.workDir;
-    }
+    ClassLoader getJobClassLoader();
 
-    public Collection<URL> getDepends()
-    {
-        return depends;
-    }
+    @NotNull
+    String getActuatorName();
 
-    public ClassLoader getJobClassLoader()
-    {
-        return jobClassLoader;
-    }
+    @NotNull
+    JobHandle getJobHandle();
 
-    public <T extends Serializable> T getJobDAG()
-    {
-        return (T) jobDAG.get();
-    }
+    @NotNull
+    JobConfig getConfig();
 
-    public <T extends JobConfig> T getConfig()
+    @NotNull
+    Flow getFlow();
+
+    public enum Status
     {
-        return (T) jobConfig;
+        RUNNING(0),   //运行中
+        STARTING(1),    // 启动中
+        STOP(2),           // 停止运行
+        STARTED_ERROR(3);          // 启动失败
+
+        private final int status;
+
+        Status(int code)
+        {
+            this.status = code;
+        }
     }
 }

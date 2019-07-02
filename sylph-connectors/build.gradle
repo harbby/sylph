@@ -2,7 +2,7 @@ evaluationDependsOn(':sylph-dist')
 subprojects {
   apply plugin: 'com.github.harbby.gradle.serviceloader'
   serviceLoader {
-    serviceInterface 'ideal.sylph.etl.Plugin'
+    serviceInterface 'ideal.sylph.etl.PipelinePlugin'
   }
 
   sourceCompatibility = 1.8

@@ -15,12 +15,10 @@
  */
 package ideal.sylph.controller.action;
 
-import com.github.harbby.gadtry.classloader.Module;
-import com.github.harbby.gadtry.collection.mutable.MutableMap;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
-import ideal.sylph.etl.Plugin;
 import ideal.sylph.spi.SylphContext;
+import ideal.sylph.spi.job.JobActuator;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.GET;
@@ -31,7 +29,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -55,21 +52,25 @@ public class PluginManagerResource
         this.sylphContext = (SylphContext) servletContext.getAttribute("sylphContext");
     }
 
-    @Path("list_actuators")
+    @Path("actuators")
     @GET
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
     public List<String> getETLActuators()
     {
-        return sylphContext.getAllEngineNames();
+        return sylphContext.getAllActuatorsInfo()
+                .stream()
+                .filter(x -> x.getMode() == JobActuator.ModeType.STREAM_ETL)
+                .map(JobActuator.ActuatorInfo::getName)
+                .collect(Collectors.toList());
     }
 
     @GET
-    @Path("actuator")
+    @Path("list")
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
     public Map getAllPlugins(@QueryParam("actuator") String actuator)
     {
         checkArgument(!Strings.isNullOrEmpty(actuator), "actuator [" + actuator + "] not setting");
-        return sylphContext.getEnginePlugins(actuator).stream().map(pluginInfo -> {
+        return sylphContext.getPlugins(actuator).stream().map(pluginInfo -> {
             Map config = pluginInfo.getPluginConfig().stream()
                     .collect(Collectors.toMap(
                             //todo: default value is ?
@@ -81,67 +82,10 @@ public class PluginManagerResource
                     .put("description", pluginInfo.getDescription())
                     .put("version", pluginInfo.getVersion())
                     .put("types", pluginInfo.getJavaGenerics())
-                    .put("realTime", pluginInfo.isRealTime())
+                    .put("realTime", pluginInfo.getRealTime())
                     .put("type", pluginInfo.getPipelineType())
                     .put("config", config)
                     .build();
         }).collect(Collectors.groupingBy(x -> x.get("type").toString().toLowerCase()));
-    }
-
-    @GET
-    @Path("reload")
-    public void reload()
-    {
-        sylphContext.reload();
-    }
-
-    @GET
-    @Path("delete_module")
-    public void deleteModule(@QueryParam("name") String moduleName)
-            throws IOException
-    {
-        sylphContext.deleteModule(moduleName);
-    }
-
-    @GET
-    @Path("list_connectors")
-    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
-    public Map getAllConnectors()
-    {
-        return sylphContext.getAllConnectors().stream().map(pluginInfo -> {
-            Map config = pluginInfo.getPluginConfig().stream()
-                    .collect(Collectors.toMap(
-                            //todo: default value is ?
-                            k -> k.get("key"), v -> v.get("default")));
-
-            return ImmutableMap.<String, Object>builder()
-                    .put("name", pluginInfo.getNames())
-                    .put("driver", pluginInfo.getDriverClass())
-                    .put("description", pluginInfo.getDescription())
-                    .put("version", pluginInfo.getVersion())
-                    .put("types", pluginInfo.getJavaGenerics())
-                    .put("realTime", pluginInfo.isRealTime() + "")
-                    .put("type", pluginInfo.getPipelineType())
-                    .put("config", config)
-                    .build();
-        }).collect(Collectors.groupingBy(x -> x.get("type").toString().toLowerCase()));
-    }
-
-    @GET
-    @Path("list_modules")
-    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
-    public List getAllConnectorModules()
-    {
-        List<Module<Plugin>> modules = sylphContext.getAllConnectorModules();
-        return modules.stream().map(module -> {
-            List<Class<?>> drivers = module.getPlugins().stream().flatMap(x -> x.getConnectors().stream()).collect(Collectors.toList());
-            return MutableMap.<String, Object>builder()
-                    .put("name", module.getName())
-                    .put("path", module.getModulePath())
-                    .put("loadTime", module.getLoadTime())
-                    .put("size", drivers.size())
-                    .put("drivers", drivers)
-                    .build();
-        }).collect(Collectors.toList());
     }
 }

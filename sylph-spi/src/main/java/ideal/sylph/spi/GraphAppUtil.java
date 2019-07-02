@@ -28,7 +28,7 @@ public class GraphAppUtil
 {
     private GraphAppUtil() {}
 
-    public static <R> void buildGraph(final NodeLoader<R> loader, EtlFlow flow)
+    public static <R> void buildGraph(final NodeLoader<R> loader, String jobId, EtlFlow flow)
     {
         final Graph.GraphBuilder<NodeOperator<R>, Void> graphBuilder = Graph.builder();
         final List<NodeInfo> nodes = flow.getNodes();
@@ -41,16 +41,16 @@ public class GraphAppUtil
 
             switch (nodeInfo.getNodeType()) {
                 case "source":
-                    graphBuilder.addNode(id, new NodeOperator<>(loader.loadSource(driverString, config)));
+                    graphBuilder.addNode(id, driverString, new NodeOperator<>(loader.loadSource(driverString, config)));
                     break;
                 case "transform":
-                    graphBuilder.addNode(id, new NodeOperator<>(loader.loadTransform(driverString, config)));
+                    graphBuilder.addNode(id, driverString, new NodeOperator<>(loader.loadTransform(driverString, config)));
                     break;
                 case "sink":
-                    graphBuilder.addNode(id, new NodeOperator<>(loader.loadSink(driverString, config)));
+                    graphBuilder.addNode(id, driverString, new NodeOperator<>(loader.loadSink(driverString, config)));
                     break;
                 default:
-                    throw new IllegalArgumentException("Unknown type: " + nodeInfo);
+                    System.out.println("错误的类型算子 + " + nodeInfo);
             }
         });
 
@@ -60,7 +60,6 @@ public class GraphAppUtil
         ));
 
         Graph<NodeOperator<R>, Void> graph = graphBuilder.create();
-        graph.printShow().forEach(System.out::println);
         NodeOperator.runGraph(graph);
     }
 }
