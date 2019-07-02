@@ -17,14 +17,14 @@ package ideal.sylph.runner.flink;
 
 import com.github.harbby.gadtry.classloader.DirClassLoader;
 import com.github.harbby.gadtry.ioc.IocFactory;
-import ideal.sylph.runner.flink.actuator.FlinkMainClassActuator;
-import ideal.sylph.runner.flink.actuator.FlinkStreamEtlActuator;
-import ideal.sylph.runner.flink.actuator.FlinkStreamSqlActuator;
+import ideal.sylph.runner.flink.engines.FlinkMainClassEngine;
+import ideal.sylph.runner.flink.engines.FlinkStreamEtlEngine;
+import ideal.sylph.runner.flink.engines.FlinkStreamSqlEngine;
+import ideal.sylph.spi.ConnectorStore;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.ContainerFactory;
-import ideal.sylph.spi.job.JobActuatorHandle;
-import ideal.sylph.spi.ConnectorStore;
+import ideal.sylph.spi.job.JobEngineHandle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +50,7 @@ public class FlinkRunner
     }
 
     @Override
-    public Set<JobActuatorHandle> create(RunnerContext context)
+    public Set<JobEngineHandle> create(RunnerContext context)
     {
         requireNonNull(context, "context is null");
         String flinkHome = requireNonNull(System.getenv("FLINK_HOME"), "FLINK_HOME not setting");
@@ -62,13 +62,13 @@ public class FlinkRunner
                 ((DirClassLoader) classLoader).addDir(new File(flinkHome, "lib"));
             }
             IocFactory injector = IocFactory.create(binder -> {
-                binder.bind(FlinkMainClassActuator.class).withSingle();
-                binder.bind(FlinkStreamEtlActuator.class).withSingle();
-                binder.bind(FlinkStreamSqlActuator.class).withSingle();
+                binder.bind(FlinkMainClassEngine.class).withSingle();
+                binder.bind(FlinkStreamEtlEngine.class).withSingle();
+                binder.bind(FlinkStreamSqlEngine.class).withSingle();
                 binder.bind(RunnerContext.class, context);
             });
 
-            return Stream.of(FlinkMainClassActuator.class, FlinkStreamEtlActuator.class, FlinkStreamSqlActuator.class)
+            return Stream.of(FlinkMainClassEngine.class, FlinkStreamEtlEngine.class, FlinkStreamSqlEngine.class)
                     .map(injector::getInstance).collect(Collectors.toSet());
         }
         catch (Exception e) {

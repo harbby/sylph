@@ -15,52 +15,72 @@
  */
 package ideal.sylph.spi.job;
 
-import javax.validation.constraints.NotNull;
-
 import java.io.File;
+import java.io.Serializable;
 import java.net.URL;
 import java.util.Collection;
+import java.util.function.Supplier;
 
-public interface Job
+public final class Job
 {
-    @NotNull
-    public String getId();
+    private final int id;
+    private final String name;
+    private final File workDir;
+    private final Collection<URL> depends;
+    private final ClassLoader jobClassLoader;
 
-    default String getDescription()
+    private final Supplier<Serializable> jobDAG;
+    private final JobConfig jobConfig;
+
+    public Job(int id,
+            String name,
+            File workDir,
+            Collection<URL> depends,
+            ClassLoader jobClassLoader,
+            Supplier<Serializable> jobDAG,
+            JobConfig jobConfig)
     {
-        return "none";
+        this.id = id;
+        this.name = name;
+        this.workDir = workDir;
+        this.depends = depends;
+        this.jobClassLoader = jobClassLoader;
+        this.jobDAG = jobDAG;
+        this.jobConfig = jobConfig;
     }
 
-    File getWorkDir();
-
-    Collection<URL> getDepends();
-
-    ClassLoader getJobClassLoader();
-
-    @NotNull
-    String getActuatorName();
-
-    @NotNull
-    JobHandle getJobHandle();
-
-    @NotNull
-    JobConfig getConfig();
-
-    @NotNull
-    Flow getFlow();
-
-    public enum Status
+    public int getId()
     {
-        RUNNING(0),   //运行中
-        STARTING(1),    // 启动中
-        STOP(2),           // 停止运行
-        STARTED_ERROR(3);          // 启动失败
+        return id;
+    }
 
-        private final int status;
+    public String getName()
+    {
+        return this.name;
+    }
 
-        Status(int code)
-        {
-            this.status = code;
-        }
+    public File getWorkDir()
+    {
+        return this.workDir;
+    }
+
+    public Collection<URL> getDepends()
+    {
+        return depends;
+    }
+
+    public ClassLoader getJobClassLoader()
+    {
+        return jobClassLoader;
+    }
+
+    public <T extends Serializable> T getJobDAG()
+    {
+        return (T) jobDAG.get();
+    }
+
+    public <T extends JobConfig> T getConfig()
+    {
+        return (T) jobConfig;
     }
 }

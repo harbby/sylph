@@ -22,12 +22,11 @@ import com.github.harbby.gadtry.jvm.JVMLauncher;
 import com.github.harbby.gadtry.jvm.JVMLaunchers;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
+import ideal.sylph.spi.ConnectorStore;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobConfig;
-import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.job.SqlFlow;
-import ideal.sylph.spi.ConnectorStore;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
 import org.fusesource.jansi.Ansi;
@@ -47,26 +46,26 @@ import static org.fusesource.jansi.Ansi.Color.YELLOW;
 
 @Name("StructuredStreamingSql")
 @Description("this is spark structured streaming sql Actuator")
-public class StructuredStreamingSqlActuator
-        extends SparkStreamingSqlActuator
+public class StructuredStreamingSqlEngine
+        extends SparkStreamingSqlEngine
 {
-    private static final Logger logger = LoggerFactory.getLogger(SparkStreamingSqlActuator.class);
+    private static final Logger logger = LoggerFactory.getLogger(SparkStreamingSqlEngine.class);
     private final RunnerContext runnerContext;
 
     @Autowired
-    public StructuredStreamingSqlActuator(RunnerContext runnerContext)
+    public StructuredStreamingSqlEngine(RunnerContext runnerContext)
     {
         super(runnerContext);
         this.runnerContext = runnerContext;
     }
 
     @Override
-    public JobHandle formJob(String jobId, Flow inFlow, JobConfig jobConfig, URLClassLoader jobClassLoader)
+    public Serializable formJob(String jobId, Flow inFlow, JobConfig jobConfig, URLClassLoader jobClassLoader)
             throws Exception
     {
         SqlFlow flow = (SqlFlow) inFlow;
         //----- compile --
-        SparkJobConfig sparkJobConfig = ((SparkJobConfig.SparkConfReader) jobConfig).getConfig();
+        SparkJobConfig sparkJobConfig = (SparkJobConfig) jobConfig;
         return compile(jobId, flow, getConnectorStore(), sparkJobConfig, jobClassLoader);
     }
 
@@ -80,11 +79,11 @@ public class StructuredStreamingSqlActuator
         return runnerContext.createConnectorStore(filterClass, SparkRunner.class);
     }
 
-    private static JobHandle compile(String jobId, SqlFlow sqlFlow, ConnectorStore connectorStore, SparkJobConfig sparkJobConfig, URLClassLoader jobClassLoader)
+    private static Serializable compile(String jobId, SqlFlow sqlFlow, ConnectorStore connectorStore, SparkJobConfig sparkJobConfig, URLClassLoader jobClassLoader)
             throws JVMException
     {
         final AtomicBoolean isCompile = new AtomicBoolean(true);
-        final Supplier<SparkSession> appGetter = (Supplier<SparkSession> & JobHandle & Serializable) () -> {
+        final Supplier<SparkSession> appGetter = (Supplier<SparkSession> & Serializable) () -> {
             logger.info("========create spark StreamingContext mode isCompile = " + isCompile.get() + "============");
             SparkConf sparkConf = isCompile.get() ?
                     new SparkConf().setMaster("local[*]").setAppName("sparkCompile")
@@ -116,6 +115,6 @@ public class StructuredStreamingSqlActuator
 
         launcher.startAndGet();
         isCompile.set(false);
-        return (JobHandle) appGetter;
+        return (Serializable) appGetter;
     }
 }

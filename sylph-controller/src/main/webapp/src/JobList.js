@@ -1,34 +1,53 @@
 import React from "react";
-import { Table, Modal, Tag, Divider, Button, Popconfirm, Icon, Input } from "antd";
+import { Table, Modal, notification, Tag, Divider, Button, Popconfirm, Icon, Input } from "antd";
 
 export default class JobList extends React.Component {
+  deploys = {}
+
   state = {
     jobList: [],
-    loading: false,
-    currentJobId: null,
+
     columns: [
       {
         title: "Job",
-        dataIndex: "jobId"
+        dataIndex: "jobName",
+        key: 'jobName',
       },
       {
         title: "runId",
-        dataIndex: "yarnId",
+        dataIndex: "runId",
+        key: 'runId',
         width: 200,
-        render: (yarnId, record) => {
-          if (this.state.loading && this.state.currentJobId === record.jobId) {
+        render: (runId, record, index) => {
+          if (record.status === 'DEPLOYING') {
+            let setJobListItem = (item) => Object.assign([], this.state.jobList, item);
+            if (!this.deploys[record.jobId]) {
+              var intervalId = setInterval(async () => {
+                var result = await this.fetchData(`/job/${record.jobId}`)
+
+                if (result.status !== "DEPLOYING") {
+                  clearInterval(this.deploys[record.jobId])
+                  this.setState({ jobList: setJobListItem({ [index]: { ...result } }) });
+                  delete this.deploys[record.jobId]
+                } else {
+                  this.setState({ jobList: setJobListItem({ [index]: { ...result } }) });
+                }
+              }, 1000)
+              this.deploys[record.jobId] = intervalId;
+            }
+
             return (
-              <Tag color={"blue"} key={yarnId}>
+              <Tag color={"blue"} key={runId}>
                 <Icon type="loading" />
                 &nbsp;&nbsp;processing...
               </Tag>
             );
           }
-          //debugger;
-          if (yarnId && yarnId.length > 0) {
+
+          if (runId && runId.length > 0) {
             return (
-              <Tag color={"blue"} key={yarnId} onClick={() => window.open(record.app_url)}>
-                {yarnId}
+              <Tag color={"blue"} key={runId} onClick={() => window.open(record.appUrl)}>
+                {runId}
               </Tag>
             );
           }
@@ -37,37 +56,36 @@ export default class JobList extends React.Component {
       },
       {
         title: "type",
-        dataIndex: "type"
+        dataIndex: "type",
+        key: 'type',
       },
       {
         title: "status",
-        dataIndex: "status"
+        dataIndex: "status",
+        key: 'status',
       },
       {
         title: "Action",
         key: "action",
-        render: (text, record) => {
+        render: (text, record, index) => {
           let DeployBtn = (
             <Popconfirm
               title="Are you sure deploy this job?"
-              onConfirm={() => {
-                this.handleDeployOrStop({
-                  type: "active",
-                  jobId: record.jobId
-                });
-              }}
+              onConfirm={() =>
+                this.handleDeployOrStop('deploy', record.jobId)
+              }
               okText="Yes"
               cancelText="No"
               placement="left"
             >
               <a href="#">Deploy</a>
-            </Popconfirm>
+            </Popconfirm >
           );
           let StopBtn = (
             <Popconfirm
               title="Are you sure stop this job?"
               onConfirm={() => {
-                this.handleDeployOrStop({ type: "stop", jobId: record.jobId });
+                this.handleDeployOrStop('stop', record.jobId);
               }}
               okText="Yes"
               cancelText="No"
@@ -78,16 +96,13 @@ export default class JobList extends React.Component {
           );
           return (
             <span>
-              {record.status === "RUNNING" ? StopBtn : DeployBtn}
-              <Divider type="vertical" />
+              {record.status === "STOP" ? DeployBtn : StopBtn}
+              < Divider type="vertical" />
 
               <Popconfirm
                 title="Are you sure Delete this job?"
                 onConfirm={() => {
-                  this.handleDeployOrStop({
-                    type: "delete",
-                    jobId: record.jobId
-                  });
+                  this.handleDeployOrStop('delete', record.jobId);
                 }}
                 okText="Yes"
                 cancelText="No"
@@ -100,11 +115,11 @@ export default class JobList extends React.Component {
                 var toLink;
                 var type = record.type;
                 if (type === 'StreamSql' || type === 'FlinkMainClass' || type === 'StructuredStreamingSql' || type === 'SparkStreamingSql') {
-                  toLink = "/streamingSql";
+                  toLink = `/streamingSql/${record.jobId}`;
                 } else {
-                  toLink = "/streamingEtl";
+                  toLink = `/streamingEtl/${record.jobId}`;
                 }
-                this.props.history.push(toLink, { data: { jobId: record.jobId } });
+                this.props.history.push({ pathname: toLink, state: {} });
               }}>Edit</a>
             </span>
           );
@@ -112,38 +127,40 @@ export default class JobList extends React.Component {
       }
     ]
   };
-  async fetchData(postData) {
-    let result = await fetch("/_sys/job_manger", {
-      method: "POST",
-      body: JSON.stringify(postData),
-      headers: {
-        "content-type": "application/json"
-      }
+
+  openNotificationWithIcon = (type, message, description) => {
+    notification[type]({
+      message: message,
+      description: description,
+      duration: 6
     });
+  };
+
+  async fetchData(path) {
+    let result = await fetch(`/_sys/job_manger${path}`, { method: "GET" });
     result = await result.json();
-    if (result && result.data)
-      this.setState({
-        jobList: result.data
-      });
-  }
-  async handleDeployOrStop(requestData) {
-    await this.fetchData(requestData);
-    await new Promise(resolve => {
-      this.setState({ loading: true, currentJobId: requestData.jobId });
-      setTimeout(() => {
-        this.setState({ loading: false });
-        resolve();
-      }, 4000);
-    });
-    await this.fetchData({ type: "list", jobId: "" });
+
+    if (result.success === false) {
+      this.openNotificationWithIcon('error', result.error_code, result.message)
+      return;
+    }
+    return result;
   }
 
-  async handleDeleteJob(requestData) {
-
+  async handleDeployOrStop(action, jobId) {
+    await this.fetchData(`/${action}/${jobId}`);
+    await this.loadjobs();
   }
+
+  async loadjobs() {
+    var result = await this.fetchData("/jobs");
+    result && this.setState({ jobList: result });
+  }
+
+
 
   componentWillMount() {
-    this.fetchData({ type: "list", jobId: "" });
+    this.loadjobs();
   }
 
   render = () => {
@@ -153,7 +170,7 @@ export default class JobList extends React.Component {
           <Button
             type="primary"
             icon="reload"
-            onClick={() => this.fetchData({ type: "list", jobId: "" })}
+            onClick={() => this.loadjobs()}
           >
             Refresh
           </Button>
@@ -170,8 +187,11 @@ export default class JobList extends React.Component {
             visible={this.state.visible}
             onOk={() => {
               this.setState({ visible: false });
-              var jobId = this.refs.create_new_job_id.state.value
-              this.props.history.push("/streamingSql", { data: { jobId: jobId, create: true } });
+              var jobName = this.refs.create_new_job_id.state.value
+              this.props.history.push({
+                pathname: `/streamingSql`,
+                state: { jobName: jobName, create: true }
+              });
             }}
             onCancel={() => { this.setState({ visible: false }); }}
           >

@@ -26,6 +26,7 @@ public enum StandardErrorCode
     SYSTEM_ERROR(3, INTERNAL_ERROR),    //系统错误
     LOAD_MODULE_ERROR(4, INTERNAL_ERROR),    // 模块加载失败 错误
 
+    JOB_NOT_FOUND(5001, USER_ERROR),
     JOB_START_ERROR(5, INTERNAL_ERROR),      // job启动失败
     JOB_CONFIG_ERROR(6, USER_ERROR),    // 配置错误
     SAVE_JOB_ERROR(7, EXTERNAL),    // 保存失败

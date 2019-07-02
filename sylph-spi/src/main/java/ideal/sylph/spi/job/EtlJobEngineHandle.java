@@ -17,8 +17,8 @@ package ideal.sylph.spi.job;
 
 import com.google.common.collect.ImmutableSet;
 import ideal.sylph.etl.PipelinePlugin;
-import ideal.sylph.spi.model.NodeInfo;
 import ideal.sylph.spi.model.ConnectorInfo;
+import ideal.sylph.spi.model.NodeInfo;
 
 import javax.validation.constraints.NotNull;
 
@@ -26,8 +26,8 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Optional;
 
-public abstract class EtlJobActuatorHandle
-        implements JobActuatorHandle
+public abstract class EtlJobEngineHandle
+        implements JobEngineHandle
 {
     @NotNull
     @Override

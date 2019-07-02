@@ -22,7 +22,6 @@ export default class ServerLog extends React.Component {
                 }
                 this.state.arrLogs.push({ key: time + "_" + num, val: json.logs[num] })
             }
-            //debugger;
 
             let log1 = this.refs.scroll_con;
             if (log1.scrollTop < log1.scrollHeight - log1.clientHeight - 1) {
@@ -31,8 +30,8 @@ export default class ServerLog extends React.Component {
             }
             this.setState({ id: json.id, last_num: json.next, arrLogs: this.state.arrLogs });
             if (stickToBottom) {
-                log1.scrollTo(0, log1.scrollHeight)
-                //or log1.scrollTop = log1.scrollHeight;  //滚动条在最下面
+                //log1.scrollTo(0, log1.scrollHeight)
+                log1.scrollTop = log1.scrollHeight;  //滚动条在最下面
             }
         }
     }
@@ -56,7 +55,7 @@ export default class ServerLog extends React.Component {
         var intervalId = setInterval(() => {
             this.fetchData("/_sys/server/logs", {
                 last_num: this.state.last_num,
-                id: null
+                id: this.state.id
             })
         }, 1000)
         this.setState({ intervalId: intervalId })

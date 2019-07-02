@@ -22,11 +22,12 @@ import ideal.sylph.spi.model.ConnectorInfo;
 import javax.validation.constraints.NotNull;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.URLClassLoader;
 import java.util.Collection;
 import java.util.Collections;
 
-public interface JobActuatorHandle
+public interface JobEngineHandle
 {
     /**
      * building job
@@ -39,7 +40,11 @@ public interface JobActuatorHandle
      * @throws JVMException Throw it if the child process fails to compile
      */
     @NotNull
-    default JobHandle formJob(String jobId, Flow flow, JobConfig jobConfig, URLClassLoader jobClassLoader)
+    default <T extends Serializable> T formJob(
+            String jobId,
+            Flow flow,
+            JobConfig jobConfig,
+            URLClassLoader jobClassLoader)
             throws Exception
     {
         throw new UnsupportedOperationException("this method have't support!");

@@ -47,6 +47,9 @@ task build_webapp(type: Copy, dependsOn: build_package) {
 }
 assemble.dependsOn 'build_webapp'
 dependencies {
+  annotationProcessor 'org.projectlombok:lombok:1.18.8'
+  compileOnly 'org.projectlombok:lombok:1.18.8'
+
   compile group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'
   compile(project(':sylph-spi'))
 

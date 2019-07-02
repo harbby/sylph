@@ -25,12 +25,11 @@ import ideal.sylph.annotation.Name;
 import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.parser.antlr.AntlrSqlParser;
 import ideal.sylph.parser.antlr.tree.CreateTable;
+import ideal.sylph.spi.ConnectorStore;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobConfig;
-import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.job.SqlFlow;
-import ideal.sylph.spi.ConnectorStore;
 import ideal.sylph.spi.model.ConnectorInfo;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
@@ -61,14 +60,14 @@ import static org.fusesource.jansi.Ansi.Color.YELLOW;
  */
 @Name("SparkStreamingSql")
 @Description("this is spark streaming sql Actuator")
-public class SparkStreamingSqlActuator
-        extends StreamEtlActuator
+public class SparkStreamingSqlEngine
+        extends StreamEtlEngine
 {
-    private static final Logger logger = LoggerFactory.getLogger(SparkStreamingSqlActuator.class);
+    private static final Logger logger = LoggerFactory.getLogger(SparkStreamingSqlEngine.class);
     private final ConnectorStore connectorStore;
 
     @Autowired
-    public SparkStreamingSqlActuator(RunnerContext runnerContext)
+    public SparkStreamingSqlEngine(RunnerContext runnerContext)
     {
         super(runnerContext);
         this.connectorStore = super.getConnectorStore();
@@ -105,26 +104,26 @@ public class SparkStreamingSqlActuator
     @Override
     public Class<? extends JobConfig> getConfigParser()
     {
-        return SparkJobConfig.SparkConfReader.class;
+        return SparkJobConfig.class;
     }
 
     @NotNull
     @Override
-    public JobHandle formJob(String jobId, Flow inFlow, JobConfig jobConfig, URLClassLoader jobClassLoader)
+    public Serializable formJob(String jobId, Flow inFlow, JobConfig jobConfig, URLClassLoader jobClassLoader)
             throws Exception
     {
         SqlFlow flow = (SqlFlow) inFlow;
         //----- compile --
-        SparkJobConfig sparkJobConfig = ((SparkJobConfig.SparkConfReader) jobConfig).getConfig();
+        SparkJobConfig sparkJobConfig = (SparkJobConfig) jobConfig;
         return compile(jobId, flow, connectorStore, sparkJobConfig, jobClassLoader);
     }
 
-    private static JobHandle compile(String jobId, SqlFlow sqlFlow, ConnectorStore connectorStore, SparkJobConfig sparkJobConfig, URLClassLoader jobClassLoader)
+    private static Serializable compile(String jobId, SqlFlow sqlFlow, ConnectorStore connectorStore, SparkJobConfig sparkJobConfig, URLClassLoader jobClassLoader)
             throws JVMException
     {
         int batchDuration = sparkJobConfig.getSparkStreamingBatchDuration();
         final AtomicBoolean isCompile = new AtomicBoolean(true);
-        final Supplier<StreamingContext> appGetter = (Supplier<StreamingContext> & JobHandle & Serializable) () -> {
+        final Supplier<StreamingContext> appGetter = (Supplier<StreamingContext> & Serializable) () -> {
             logger.info("========create spark StreamingContext mode isCompile = " + isCompile.get() + "============");
             SparkConf sparkConf = isCompile.get() ?
                     new SparkConf().setMaster("local[*]").setAppName("sparkCompile")
@@ -157,7 +156,7 @@ public class SparkStreamingSqlActuator
 
         launcher.startAndGet();
         isCompile.set(false);
-        return (JobHandle) appGetter;
+        return (Serializable) appGetter;
     }
 
     private static PipelinePlugin.PipelineType getPipeType(CreateTable.Type type)

@@ -15,18 +15,17 @@
  */
 package ideal.sylph.runner.spark;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import ideal.sylph.spi.job.JobConfig;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Objects.requireNonNull;
-
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SparkJobConfig
+        implements JobConfig, Serializable
 {
     private String driverMemory = "1600m";
     private int driverCores = 1;
@@ -135,27 +134,4 @@ public class SparkJobConfig
 //    {
 //        return sparkConf;
 //    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class SparkConfReader
-            extends JobConfig
-    {
-        private final SparkJobConfig config;
-
-        @JsonCreator
-        public SparkConfReader(
-                @JsonProperty("type") String type,
-                @JsonProperty("config") SparkJobConfig jobConfig
-        )
-        {
-            super(type);
-            this.config = requireNonNull(jobConfig, "jobConfig is null");
-        }
-
-        @Override
-        public SparkJobConfig getConfig()
-        {
-            return config;
-        }
-    }
 }

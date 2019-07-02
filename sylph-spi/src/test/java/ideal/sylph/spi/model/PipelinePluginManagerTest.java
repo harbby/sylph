@@ -22,7 +22,7 @@ import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.TestConfigs;
 import ideal.sylph.spi.job.ContainerFactory;
-import ideal.sylph.spi.job.JobActuatorHandle;
+import ideal.sylph.spi.job.JobEngineHandle;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -106,7 +106,7 @@ public class PipelinePluginManagerTest
             implements Runner
     {
         @Override
-        public Set<JobActuatorHandle> create(RunnerContext context)
+        public Set<JobEngineHandle> create(RunnerContext context)
         {
             return null;
         }

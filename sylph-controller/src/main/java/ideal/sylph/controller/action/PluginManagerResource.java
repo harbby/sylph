@@ -21,7 +21,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import ideal.sylph.etl.Plugin;
 import ideal.sylph.spi.SylphContext;
-import ideal.sylph.spi.job.JobActuator;
 
 import javax.servlet.ServletContext;
 import javax.ws.rs.GET;
@@ -61,11 +60,7 @@ public class PluginManagerResource
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
     public List<String> getETLActuators()
     {
-        return sylphContext.getAllActuatorsInfo()
-                .stream()
-                .filter(x -> x.getMode() == JobActuator.ModeType.STREAM_ETL)
-                .map(JobActuator.ActuatorInfo::getName)
-                .collect(Collectors.toList());
+        return sylphContext.getAllEngineNames();
     }
 
     @GET

@@ -16,7 +16,7 @@
 package ideal.sylph.plugins.kafka.flink;
 
 import ideal.sylph.parser.antlr.AntlrSqlParser;
-import ideal.sylph.runner.flink.actuator.StreamSqlBuilder;
+import ideal.sylph.runner.flink.engines.StreamSqlBuilder;
 import ideal.sylph.spi.model.PipelinePluginManager;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.Table;

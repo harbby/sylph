@@ -21,9 +21,8 @@ import com.github.harbby.gadtry.jvm.JVMLauncher;
 import com.github.harbby.gadtry.jvm.JVMLaunchers;
 import ideal.sylph.runner.spark.sparkstreaming.StreamNodeLoader;
 import ideal.sylph.runner.spark.structured.StructuredNodeLoader;
-import ideal.sylph.spi.job.EtlFlow;
-import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.ConnectorStore;
+import ideal.sylph.spi.job.EtlFlow;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -56,11 +55,11 @@ final class JobHelper
 
     private static final Logger logger = LoggerFactory.getLogger(JobHelper.class);
 
-    static JobHandle build2xJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, ConnectorStore connectorStore)
+    static Serializable build2xJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, ConnectorStore connectorStore)
             throws Exception
     {
         final AtomicBoolean isCompile = new AtomicBoolean(true);
-        Supplier<SparkSession> appGetter = (Supplier<SparkSession> & JobHandle & Serializable) () -> {
+        Supplier<SparkSession> appGetter = (Supplier<SparkSession> & Serializable) () -> {
             logger.info("========create spark SparkSession mode isCompile = " + isCompile.get() + "============");
             SparkSession spark = isCompile.get() ? SparkSession.builder()
                     .appName("sparkCompile")
@@ -96,14 +95,14 @@ final class JobHelper
                 .build();
         launcher.startAndGet();
         isCompile.set(false);
-        return (JobHandle) appGetter;
+        return (Serializable) appGetter;
     }
 
-    static JobHandle build1xJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, ConnectorStore connectorStore)
+    static Serializable build1xJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, ConnectorStore connectorStore)
             throws Exception
     {
         final AtomicBoolean isCompile = new AtomicBoolean(true);
-        final Supplier<StreamingContext> appGetter = (Supplier<StreamingContext> & JobHandle & Serializable) () -> {
+        final Supplier<StreamingContext> appGetter = (Supplier<StreamingContext> & Serializable) () -> {
             logger.info("========create spark StreamingContext mode isCompile = " + isCompile.get() + "============");
             SparkConf sparkConf = isCompile.get() ?
                     new SparkConf().setMaster("local[*]").setAppName("sparkCompile")
@@ -130,6 +129,6 @@ final class JobHelper
                 .build();
         launcher.startAndGet();
         isCompile.set(false);
-        return (JobHandle) appGetter;
+        return (Serializable) appGetter;
     }
 }

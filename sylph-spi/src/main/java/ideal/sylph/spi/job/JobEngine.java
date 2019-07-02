@@ -13,25 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.runner.flink;
+package ideal.sylph.spi.job;
 
-import ideal.sylph.spi.job.JobHandle;
-import org.apache.flink.runtime.jobgraph.JobGraph;
+import java.io.File;
+import java.net.URLClassLoader;
 
-import static java.util.Objects.requireNonNull;
-
-public class FlinkJobHandle
-        implements JobHandle
+public interface JobEngine
 {
-    private JobGraph jobGraph;
+    ContainerFactory getFactory();
 
-    public FlinkJobHandle(JobGraph jobGraph)
-    {
-        this.jobGraph = requireNonNull(jobGraph, "jobGraph is null");
-    }
+    URLClassLoader getHandleClassLoader();
 
-    public JobGraph getJobGraph()
+    String getName();
+
+    String getDescription();
+
+    long getCreateTime();
+
+    Job compileJob(JobStore.DbJob dbJob, File jobWorkDir)
+            throws Exception;
+
+    default String getVersion()
     {
-        return jobGraph;
+        return "1.0";
     }
 }

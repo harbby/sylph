@@ -15,16 +15,14 @@
  */
 package ideal.sylph.controller.action;
 
-import com.github.harbby.gadtry.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import ideal.sylph.spi.SylphContext;
-import ideal.sylph.spi.exception.SylphException;
-import ideal.sylph.spi.job.Job;
+import ideal.sylph.spi.job.JobStore;
+import ideal.sylph.spi.model.JobInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -36,9 +34,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 
 import java.util.Map;
-import java.util.Optional;
 
-import static ideal.sylph.spi.exception.StandardErrorCode.ILLEGAL_OPERATION;
 import static java.util.Objects.requireNonNull;
 
 @javax.inject.Singleton
@@ -46,7 +42,6 @@ import static java.util.Objects.requireNonNull;
 public class EtlResource
 {
     private static final Logger logger = LoggerFactory.getLogger(EtlResource.class);
-
     private final SylphContext sylphContext;
 
     public EtlResource(
@@ -63,32 +58,12 @@ public class EtlResource
     @Path("save")
     @Consumes({MediaType.MULTIPART_FORM_DATA, MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Map saveJob(@Context HttpServletRequest request, @QueryParam("actuator") String actuator)
+    public void saveJob(JobStore.DbJob dbJob)
+            throws Exception
     {
-        requireNonNull(actuator, "actuator is null");
-        String jobId = requireNonNull(request.getParameter("jobId"), "job jobId 不能为空");
-        try {
-            String flow = request.getParameter("graph");
-            String configString = request.getParameter("config");
-
-            sylphContext.saveJob(jobId, flow, actuator, configString);
-            Map out = ImmutableMap.of(
-                    "jobId", jobId,
-                    "type", "save",
-                    "status", "ok",
-                    "msg", "编译过程:..."
-            );
-            logger.info("save job {}", jobId);
-            return ImmutableMap.copyOf(out);
-        }
-        catch (Exception e) {
-            logger.warn("save job {} failed: {}", jobId, e);
-            String message = Throwables.getStackTraceAsString(Throwables.getRootCause(e));
-            return ImmutableMap.of("type", "save",
-                    "status", "error",
-                    "msg", message
-            );
-        }
+        requireNonNull(dbJob.getType(), "job type is null");
+        requireNonNull(dbJob.getJobName(), "job name is null");
+        sylphContext.saveJob(dbJob);
     }
 
     /**
@@ -97,14 +72,12 @@ public class EtlResource
     @GET
     @Path("get")
     @Produces({MediaType.APPLICATION_JSON})
-    public Map getJob(@QueryParam("jobId") String jobId)
+    public Map getJob(@QueryParam("jobId") int jobId)
     {
         requireNonNull(jobId, "jobId is null");
-        Optional<Job> jobOptional = sylphContext.getJob(jobId);
-        Job job = jobOptional.orElseThrow(() -> new SylphException(ILLEGAL_OPERATION, "job " + jobId + " not found"));
-
+        JobInfo job = sylphContext.getJob(jobId);
         return ImmutableMap.builder()
-                .put("graph", job.getFlow())
+                .put("graph", job.getQueryText())
                 .put("config", job.getConfig())
                 .put("msg", "获取任务成功")
                 .put("status", "ok")

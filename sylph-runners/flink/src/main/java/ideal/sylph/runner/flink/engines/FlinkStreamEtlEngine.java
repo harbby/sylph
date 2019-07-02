@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.runner.flink.actuator;
+package ideal.sylph.runner.flink.engines;
 
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.github.harbby.gadtry.ioc.IocFactory;
@@ -24,16 +24,13 @@ import ideal.sylph.annotation.Name;
 import ideal.sylph.etl.SourceContext;
 import ideal.sylph.runner.flink.FlinkBean;
 import ideal.sylph.runner.flink.FlinkJobConfig;
-import ideal.sylph.runner.flink.FlinkJobHandle;
 import ideal.sylph.runner.flink.etl.FlinkNodeLoader;
+import ideal.sylph.spi.ConnectorStore;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.EtlFlow;
-import ideal.sylph.spi.job.EtlJobActuatorHandle;
+import ideal.sylph.spi.job.EtlJobEngineHandle;
 import ideal.sylph.spi.job.Flow;
-import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobConfig;
-import ideal.sylph.spi.job.JobHandle;
-import ideal.sylph.spi.ConnectorStore;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.graph.StreamGraph;
@@ -45,6 +42,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.validation.constraints.NotNull;
 
+import java.io.Serializable;
 import java.net.URLClassLoader;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -55,16 +53,15 @@ import static org.fusesource.jansi.Ansi.Color.YELLOW;
 
 @Name("FlinkStream")
 @Description("this is stream etl Actuator")
-@JobActuator.Mode(JobActuator.ModeType.STREAM_ETL)
-public class FlinkStreamEtlActuator
-        extends EtlJobActuatorHandle
+public class FlinkStreamEtlEngine
+        extends EtlJobEngineHandle
 {
-    private static final Logger logger = LoggerFactory.getLogger(FlinkStreamEtlActuator.class);
+    private static final Logger logger = LoggerFactory.getLogger(FlinkStreamEtlEngine.class);
 
     private final RunnerContext runnerContext;
 
     @Autowired
-    public FlinkStreamEtlActuator(RunnerContext runnerContext)
+    public FlinkStreamEtlEngine(RunnerContext runnerContext)
     {
         this.runnerContext = runnerContext;
     }
@@ -78,14 +75,13 @@ public class FlinkStreamEtlActuator
 
     @NotNull
     @Override
-    public JobHandle formJob(String jobId, Flow inFlow, JobConfig jobConfig, URLClassLoader jobClassLoader)
+    public Serializable formJob(String jobId, Flow inFlow, JobConfig jobConfig, URLClassLoader jobClassLoader)
             throws Exception
     {
         EtlFlow flow = (EtlFlow) inFlow;
 
-        final JobParameter jobParameter = ((FlinkJobConfig) jobConfig).getConfig();
-        JobGraph jobGraph = compile(jobId, flow, jobParameter, jobClassLoader, getConnectorStore());
-        return new FlinkJobHandle(jobGraph);
+        final FlinkJobConfig jobParameter = (FlinkJobConfig) jobConfig;
+        return compile(jobId, flow, jobParameter, jobClassLoader, getConnectorStore());
     }
 
     @Override
@@ -103,7 +99,7 @@ public class FlinkStreamEtlActuator
                 .toString();
     }
 
-    private static JobGraph compile(String jobId, EtlFlow flow, JobParameter jobConfig, URLClassLoader jobClassLoader, ConnectorStore connectorStore)
+    private static JobGraph compile(String jobId, EtlFlow flow, FlinkJobConfig jobConfig, URLClassLoader jobClassLoader, ConnectorStore connectorStore)
     {
         //---- build flow----
         JVMLauncher<JobGraph> launcher = JVMLaunchers.<JobGraph>newJvm()

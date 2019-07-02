@@ -16,7 +16,6 @@
 package ideal.sylph.runner.spark.yarn;
 
 import com.github.harbby.gadtry.base.Serializables;
-import com.github.harbby.gadtry.base.Throwables;
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.google.common.collect.ImmutableList;
 import ideal.sylph.runner.spark.SparkJobConfig;
@@ -34,10 +33,8 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class SparkAppLauncher
@@ -61,10 +58,10 @@ public class SparkAppLauncher
         return yarnClient;
     }
 
-    public Optional<ApplicationId> run(Job job)
+    public ApplicationId run(Job job)
             throws Exception
     {
-        SparkJobConfig jobConfig = ((SparkJobConfig.SparkConfReader) job.getConfig()).getConfig();
+        SparkJobConfig jobConfig = job.getConfig();
 
         System.setProperty("SPARK_YARN_MODE", "true");
         SparkConf sparkConf = new SparkConf();
@@ -82,7 +79,7 @@ public class SparkAppLauncher
         sparkConf.setSparkHome(sparkHome);
 
         sparkConf.setMaster("yarn");
-        sparkConf.setAppName(job.getId());
+        sparkConf.setAppName(job.getName());
 
         sparkConf.set("spark.submit.deployMode", "cluster"); // worked
         //set Depends set spark.yarn.dist.jars and spark.yarn.dist.files
@@ -93,26 +90,14 @@ public class SparkAppLauncher
         //yarnClient.getConfig().iterator().forEachRemaining(x -> sparkConf.set("spark.hadoop." + x.getKey(), x.getValue()));
 
         Client appClient = new SylphSparkYarnClient(clientArguments, sparkConf, yarnClient, jobConfig.getQueue());
-        try {
-            return Optional.of(appClient.submitApplication());
-        }
-        catch (Exception e) {
-            Thread thread = Thread.currentThread();
-            if (thread.isInterrupted() || Throwables.getRootCause(e) instanceof InterruptedException) {
-                logger.warn("job {} Canceled submission", job.getId());
-                return Optional.empty();
-            }
-            else {
-                throw e;
-            }
-        }
+        return appClient.submitApplication();
     }
 
     private static void setDistJars(Job job, SparkConf sparkConf)
             throws IOException
     {
         File byt = new File(job.getWorkDir(), "job.graph");
-        byte[] bytes = Serializables.serialize((Serializable) job.getJobHandle());
+        byte[] bytes = Serializables.serialize(job.getJobDAG());
         try (FileOutputStream outputStream = new FileOutputStream(byt)) {
             outputStream.write(bytes);
         }

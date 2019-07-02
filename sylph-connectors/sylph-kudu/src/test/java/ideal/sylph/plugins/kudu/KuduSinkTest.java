@@ -20,7 +20,7 @@ import ideal.sylph.etl.Schema;
 import ideal.sylph.etl.SinkContext;
 import ideal.sylph.parser.antlr.AntlrSqlParser;
 import ideal.sylph.parser.antlr.tree.CreateTable;
-import ideal.sylph.runner.flink.actuator.StreamSqlBuilder;
+import ideal.sylph.runner.flink.engines.StreamSqlBuilder;
 import ideal.sylph.runner.flink.etl.FlinkNodeLoader;
 import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.model.PipelinePluginManager;
@@ -34,7 +34,7 @@ import org.junit.Test;
 
 import java.util.Map;
 
-import static ideal.sylph.runner.flink.actuator.StreamSqlUtil.getTableSchema;
+import static ideal.sylph.runner.flink.engines.StreamSqlUtil.getTableSchema;
 
 public class KuduSinkTest
 {

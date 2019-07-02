@@ -19,48 +19,48 @@ import com.github.harbby.gadtry.collection.mutable.MutableSet;
 import com.github.harbby.gadtry.ioc.Autowired;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
+import ideal.sylph.spi.ConnectorStore;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.EtlFlow;
-import ideal.sylph.spi.job.EtlJobActuatorHandle;
+import ideal.sylph.spi.job.EtlJobEngineHandle;
 import ideal.sylph.spi.job.Flow;
-import ideal.sylph.spi.job.JobActuator;
 import ideal.sylph.spi.job.JobConfig;
-import ideal.sylph.spi.job.JobHandle;
-import ideal.sylph.spi.ConnectorStore;
 
 import javax.validation.constraints.NotNull;
 
+import java.io.Serializable;
 import java.net.URLClassLoader;
 import java.util.Set;
 
-@Name("Spark_Structured_StreamETL")
-@Description("spark2.x Structured streaming StreamETL")
-@JobActuator.Mode(JobActuator.ModeType.STREAM_ETL)
-public class Stream2EtlActuator
-        extends EtlJobActuatorHandle
+@Name("Spark_StreamETL")
+@Description("spark1.x spark streaming StreamETL")
+public class StreamEtlEngine
+        extends EtlJobEngineHandle
 {
     private final RunnerContext runnerContext;
 
     @Autowired
-    public Stream2EtlActuator(RunnerContext runnerContext)
+    public StreamEtlEngine(RunnerContext runnerContext)
     {
         this.runnerContext = runnerContext;
     }
 
     @NotNull
     @Override
-    public JobHandle formJob(String jobId, Flow inFlow, JobConfig jobConfig, URLClassLoader jobClassLoader)
+    public Serializable formJob(String jobId, Flow flow, JobConfig jobConfig, URLClassLoader jobClassLoader)
             throws Exception
     {
-        return JobHelper.build2xJob(jobId, (EtlFlow) inFlow, jobClassLoader, getConnectorStore());
+        return JobHelper.build1xJob(jobId, (EtlFlow) flow, jobClassLoader, getConnectorStore());
     }
 
     @Override
     public ConnectorStore getConnectorStore()
     {
         Set<Class<?>> filterClass = MutableSet.of(
-                org.apache.spark.sql.SparkSession.class,
-                org.apache.spark.sql.Dataset.class,
+                org.apache.spark.streaming.dstream.DStream.class,
+                org.apache.spark.streaming.api.java.JavaDStream.class,
+                org.apache.spark.rdd.RDD.class,
+                org.apache.spark.api.java.JavaRDD.class,
                 org.apache.spark.sql.Row.class
         );
         return runnerContext.createConnectorStore(filterClass, SparkRunner.class);

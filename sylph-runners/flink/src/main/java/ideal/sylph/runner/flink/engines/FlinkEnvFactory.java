@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.runner.flink.actuator;
+package ideal.sylph.runner.flink.engines;
 
 import com.github.harbby.gadtry.aop.AopFactory;
+import ideal.sylph.runner.flink.FlinkJobConfig;
 import ideal.sylph.runner.flink.SylphFsCheckpointStorage;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.runtime.state.CheckpointStorage;
@@ -38,7 +39,7 @@ public class FlinkEnvFactory
 
     private static final Logger logger = LoggerFactory.getLogger(FlinkEnvFactory.class);
 
-    public static StreamExecutionEnvironment getStreamEnv(JobParameter jobConfig, String jobId)
+    public static StreamExecutionEnvironment getStreamEnv(FlinkJobConfig jobConfig, String jobId)
     {
         StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.getExecutionEnvironment();
 
@@ -49,7 +50,7 @@ public class FlinkEnvFactory
      * @deprecated see: {@link ideal.sylph.runner.flink.FlinkContainerFactory#setJobConfig)}
      */
     @Deprecated
-    private static StreamExecutionEnvironment setJobConfig(StreamExecutionEnvironment execEnv, JobParameter jobConfig, String jobId)
+    private static StreamExecutionEnvironment setJobConfig(StreamExecutionEnvironment execEnv, FlinkJobConfig jobConfig, String jobId)
     {
         if (jobConfig.getCheckpointInterval() > 0) {
             execEnv.enableCheckpointing(jobConfig.getCheckpointInterval());  //default is -1 表示关闭 建议1minutes

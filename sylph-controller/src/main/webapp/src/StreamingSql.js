@@ -1,20 +1,39 @@
 import React from "react";
-import { Drawer, Input, Select, Tag, Alert, Button, Icon, Row, Col } from "antd";
-import SyntaxHighlighter from 'react-syntax-highlighter';
-import { docco } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import { Drawer, Table, notification, Input, Select, Tag, Alert, Button, Icon, Row, Col } from "antd";
 import { message } from 'antd';
+import { EditableCell, EditableFormRow } from './lib/EditableTable';
+import { UnControlled as CodeMirror } from 'react-codemirror2'
+import 'codemirror/lib/codemirror.css';
+import "./codeMirror.css";
+import 'codemirror/mode/sql/sql';
+import 'codemirror/theme/neo.css';
+
 
 export default class StreamingSql extends React.Component {
     state = {
         create: false,
         jobId: null,
+        jobName: null,
         engine: "StreamSql",
-        query: "",
-        config: "{}",
+        query: "create input table xxx()",
+        config: {},
+        editConfig: {},
         showErrorMessage: "",
         visible: false,
         saveing: false
     };
+
+    columns = [
+        {
+            title: 'key',
+            dataIndex: 'key'
+        },
+        {
+            title: 'value',
+            dataIndex: 'value',
+            editable: true
+        },
+    ];
 
     showDrawer = () => {
         this.setState({
@@ -22,28 +41,20 @@ export default class StreamingSql extends React.Component {
         });
     };
 
-    onClose = () => {
-        this.setState({
-            visible: false,
-        });
-    };
-
     constructor(props, context) {
         super()
-        console.log(props)
-        this.state.jobId = props.location.state.data.jobId
-        this.state.create = props.location.state.data.create
+
+        this.state.jobId = props.match.params.jobId;
+        if (props.location.state !== undefined) {
+            this.state.jobName = props.location.state.jobName;
+        }
+        this.state.create = this.state.jobName !== undefined && this.state.jobName !== null;
     }
 
-    async fetchGetData(url, prems) {
-        url = url + "?rd=" + Math.random();
-        for (var i in prems) {
-            url += "&" + i + "=" + prems[i];
-        }
-
+    async fetchGetData(url) {
         let result = await fetch(url, { method: "GET" });
         result = await result.json();
-        this.setState({ query: result.query, jobType: result.jobType, config: JSON.stringify(result.config.config) })
+        this.setState({ jobName: result.jobName, query: result.queryText, jobType: result.type, config: JSON.parse(result.config), editConfig: JSON.parse(result.config) })
     }
 
     componentDidMount() {
@@ -51,37 +62,47 @@ export default class StreamingSql extends React.Component {
 
     componentWillMount() {
         if (this.state.jobId !== undefined && !this.state.create) {
-            this.fetchGetData("/_sys/stream_sql/get", { jobId: this.state.jobId })
+            this.fetchGetData(`/_sys/job_manger/job/${this.state.jobId}`)
         }
     }
 
-    onEditChange(e) {
-        this.setState({ query: e.target.value })
-    }
-
-    async save() {
-        this.setState({ saveing: true })
-        var formData = new FormData();
-        formData.set("jobId", this.state.jobId)
-        formData.set("query", this.state.query)
-        formData.set("jobType", this.state.engine)
-        formData.set("config", this.state.config)
-        let result = await fetch("/_sys/stream_sql/save", {
-            method: "POST",
-            body: formData
+    openNotificationWithIcon = (type, message, description) => {
+        notification[type]({
+            message: message,
+            description: description,
+            duration: 6
         });
-        result = await result.json()
-        this.setState({ saveing: false })
-        if (result.status === 'ok') {
-            message.success(`Save job ${this.state.jobId} success`, 5);
-        } else {
-            this.setState({ showErrorMessage: result.msg })
+    };
+
+    async jobSave() {
+        this.setState({ saveing: true });
+        let result = await fetch("/_sys/job_manger/save", {
+            method: "POST",
+            body: JSON.stringify({
+                id: this.state.jobId,
+                jobName: this.state.jobName,
+                queryText: this.state.query,
+                type: this.state.engine,
+                config: JSON.stringify(this.state.config)
+            }),
+            headers: {
+                "content-type": "application/json"
+            }
+        });
+        try {
+            result = await result.json();
+            if (result.success === false) {
+                this.setState({ showErrorMessage: result.message })
+                return;
+            }
+            message.success(`Save job ${this.state.jobName} success`, 5);
+        } finally {
+            this.setState({ saveing: false });
         }
     }
 
 
     render = () => {
-        const { TextArea } = Input;
         const { Option } = Select;
 
         const onClose = () => {
@@ -92,9 +113,10 @@ export default class StreamingSql extends React.Component {
             if (!this.state.showErrorMessage) return;
             return (
                 <Alert
-                    message={""}
+                    message={"Error"}
                     description={<pre>{this.state.showErrorMessage}</pre>}
                     type={"error"}
+                    showIcon
                     closable
                     onClose={onClose}
                 />
@@ -108,12 +130,36 @@ export default class StreamingSql extends React.Component {
             return (<Icon type="loading" />)
         }
 
+        const components = {
+            body: {
+                row: EditableFormRow,
+                cell: EditableCell,
+            },
+        };
+        const columns = this.columns.map(col => {
+            if (!col.editable) {
+                return col;
+            }
+            return {
+                ...col,
+                onCell: record => ({
+                    record,
+                    editable: col.editable,
+                    dataIndex: col.dataIndex,
+                    title: col.title,
+                    handleSave: (e) => {
+                        this.state.editConfig[e.key] = e.value
+                        this.setState({ editConfig: this.state.editConfig })
+                    },
+                }),
+            };
+        });
         return (
             <div>
                 {getErrorMessage()}
                 <Row style={{ margin: "10px" }}>
                     <Col span={4} >
-                        <Tag style={{ fontSize: "16px", padding: "5px 25px" }} color="blue">Job: {this.state.jobId}</Tag>
+                        <Tag style={{ fontSize: "16px", padding: "5px 25px" }} color="blue">Job: {this.state.jobName}</Tag>
                     </Col>
                     <Col span={20} style={{ textAlign: 'right' }}>
                         <Select style={{ margin: "0 10px" }} defaultValue="StreamSql" onSelect={(e) => { this.setState({ engine: e }) }}>
@@ -123,26 +169,40 @@ export default class StreamingSql extends React.Component {
                         </Select>
                         <Button type="primary" icon="setting" onClick={this.showDrawer}>Setting</Button>
                         <Button style={{ margin: "0 10px" }} type="primary" icon="file" >Files</Button>
-                        <Button type="primary" icon="save" onClick={() => this.save()}>Save{saveingIcon()}</Button>
+                        <Button type="primary" icon="save" onClick={() => this.jobSave()}>Save{saveingIcon()}</Button>
                     </Col>
                 </Row>
-                <TextArea autosize={{ minRows: 10, maxRows: 25 }} value={this.state.query} onChange={this.onEditChange.bind(this)} />
-                <div ref={node => this.node = node}>
-                    <SyntaxHighlighter language="sql" style={docco} PreTag="pre">
-                        {this.state.query}
-                    </SyntaxHighlighter>
-                </div>
-
+                <CodeMirror
+                    value={this.state.query}
+                    style={{
+                        "min-height": "100%",
+                        height: "auto"
+                    }}
+                    options={{
+                        lineNumbers: true,                     //显示行号  
+                        mode: { name: "text/x-sql" },          //定义mode  
+                        extraKeys: { "Ctrl": "autocomplete" },   //自动提示配置  
+                        theme: "neo"        //material or ambiance         //选中的theme  
+                    }}
+                    onChange={(editor, data, value) => {
+                        this.state.query = value;
+                    }}
+                />
                 <div>
                     <Drawer
                         title="Setting job config"
                         width={"50%"}
                         onClose={this.onClose}
                         visible={this.state.visible}
+
                     >
-                        <Input.TextArea rows={20} placeholder="please enter job config" value={this.state.config} onChange={e => {
-                            this.setState({ config: e.target.value })
-                        }} />
+                        {/* <EditableTable dataSource={this.state.config}></EditableTable> */}
+                        <p>basic configuration:</p>
+                        <Table components={components} scroll={{ y: 420 }} pagination={{ pageSize: 50 }} dataSource={(() => {
+                            let map = this.state.editConfig
+                            return Object.keys(map).map(key => { return { key: key, value: map[key], description: "" } });
+                        })()
+                        } columns={columns} />
                         <div
                             style={{
                                 position: 'absolute',
@@ -155,8 +215,18 @@ export default class StreamingSql extends React.Component {
                                 textAlign: 'right',
                             }}
                         >
-                            <Button onClick={this.onClose} style={{ marginRight: 8 }}>Cancel</Button>
-                            <Button onClick={this.onClose} type="primary">Save</Button>
+                            <Button onClick={() => {
+                                this.setState({
+                                    visible: false,
+                                    editConfig: this.state.config
+                                });
+                            }} style={{ marginRight: 8 }}>Cancel</Button>
+                            <Button onClick={() => {
+                                this.setState({
+                                    visible: false,
+                                    config: this.state.editConfig
+                                });
+                            }} type="primary">Save</Button>
                         </div>
                     </Drawer>
                 </div>

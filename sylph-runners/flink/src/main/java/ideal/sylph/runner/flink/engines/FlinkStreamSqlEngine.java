@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.runner.flink.actuator;
+package ideal.sylph.runner.flink.engines;
 
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.github.harbby.gadtry.jvm.JVMLauncher;
@@ -25,13 +25,11 @@ import ideal.sylph.etl.PipelinePlugin;
 import ideal.sylph.parser.antlr.AntlrSqlParser;
 import ideal.sylph.parser.antlr.tree.CreateTable;
 import ideal.sylph.runner.flink.FlinkJobConfig;
-import ideal.sylph.runner.flink.FlinkJobHandle;
+import ideal.sylph.spi.ConnectorStore;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobConfig;
-import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.job.SqlFlow;
-import ideal.sylph.spi.ConnectorStore;
 import ideal.sylph.spi.model.ConnectorInfo;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -44,6 +42,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.validation.constraints.NotNull;
 
+import java.io.Serializable;
 import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.Collection;
@@ -56,14 +55,14 @@ import static org.fusesource.jansi.Ansi.Color.YELLOW;
 
 @Name("StreamSql")
 @Description("this is flink stream sql etl Actuator")
-public class FlinkStreamSqlActuator
-        extends FlinkStreamEtlActuator
+public class FlinkStreamSqlEngine
+        extends FlinkStreamEtlEngine
 {
-    private static final Logger logger = LoggerFactory.getLogger(FlinkStreamSqlActuator.class);
+    private static final Logger logger = LoggerFactory.getLogger(FlinkStreamSqlEngine.class);
     private final RunnerContext runnerContextr;
 
     @Autowired
-    public FlinkStreamSqlActuator(RunnerContext runnerContextr)
+    public FlinkStreamSqlEngine(RunnerContext runnerContextr)
     {
         super(runnerContextr);
         this.runnerContextr = runnerContextr;
@@ -105,20 +104,19 @@ public class FlinkStreamSqlActuator
 
     @NotNull
     @Override
-    public JobHandle formJob(String jobId, Flow inFlow, JobConfig jobConfig, URLClassLoader jobClassLoader)
+    public Serializable formJob(String jobId, Flow inFlow, JobConfig jobConfig, URLClassLoader jobClassLoader)
             throws Exception
     {
         SqlFlow flow = (SqlFlow) inFlow;
         //----- compile --
-        final JobParameter jobParameter = ((FlinkJobConfig) jobConfig).getConfig();
-        JobGraph jobGraph = compile(jobId, getConnectorStore(), jobParameter, flow.getSqlSplit(), jobClassLoader);
-        return new FlinkJobHandle(jobGraph);
+        final FlinkJobConfig jobParameter = (FlinkJobConfig) jobConfig;
+        return compile(jobId, getConnectorStore(), jobParameter, flow.getSqlSplit(), jobClassLoader);
     }
 
     private static JobGraph compile(
             String jobId,
             ConnectorStore connectorStore,
-            JobParameter jobConfig,
+            FlinkJobConfig jobConfig,
             String[] sqlSplit,
             URLClassLoader jobClassLoader)
             throws Exception

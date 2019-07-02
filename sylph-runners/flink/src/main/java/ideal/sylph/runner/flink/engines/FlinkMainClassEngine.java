@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.runner.flink.actuator;
+package ideal.sylph.runner.flink.engines;
 
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.github.harbby.gadtry.jvm.JVMException;
@@ -22,11 +22,9 @@ import com.github.harbby.gadtry.jvm.JVMLaunchers;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.runner.flink.FlinkJobConfig;
-import ideal.sylph.runner.flink.FlinkJobHandle;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobConfig;
-import ideal.sylph.spi.job.JobHandle;
 import ideal.sylph.spi.model.ConnectorInfo;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.ExecutionEnvironmentFactory;
@@ -44,6 +42,7 @@ import org.apache.flink.streaming.api.graph.StreamGraph;
 import org.fusesource.jansi.Ansi;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URLClassLoader;
@@ -64,12 +63,12 @@ import static org.fusesource.jansi.Ansi.Color.YELLOW;
  * 3, return plan JobGraph
  */
 @Name("FlinkMainClass")
-@Description("this is FlinkMainClassActuator Actuator")
-public class FlinkMainClassActuator
-        extends FlinkStreamEtlActuator
+@Description("this is FlinkMainClassEngine Actuator")
+public class FlinkMainClassEngine
+        extends FlinkStreamEtlEngine
 {
     @Autowired
-    public FlinkMainClassActuator(RunnerContext runnerContextr)
+    public FlinkMainClassEngine(RunnerContext runnerContextr)
     {
         super(runnerContextr);
     }
@@ -89,16 +88,13 @@ public class FlinkMainClassActuator
     }
 
     @Override
-    public JobHandle formJob(String jobId, Flow flow, JobConfig jobConfig, URLClassLoader jobClassLoader)
+    public Serializable formJob(String jobId, Flow flow, JobConfig jobConfig, URLClassLoader jobClassLoader)
             throws Exception
     {
-        FlinkJobConfig flinkJobConfig = (FlinkJobConfig) jobConfig;
-        JobGraph jobGraph = compile(jobId, (StringFlow) flow, flinkJobConfig.getConfig(), jobClassLoader);
-
-        return new FlinkJobHandle(jobGraph);
+        return compile(jobId, (StringFlow) flow, (FlinkJobConfig) jobConfig, jobClassLoader);
     }
 
-    private static JobGraph compile(String jobId, StringFlow flow, JobParameter jobConfig, URLClassLoader jobClassLoader)
+    private static JobGraph compile(String jobId, StringFlow flow, FlinkJobConfig jobConfig, URLClassLoader jobClassLoader)
             throws JVMException
     {
         JVMLauncher<JobGraph> launcher = JVMLaunchers.<JobGraph>newJvm()
