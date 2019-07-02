@@ -15,6 +15,9 @@
  */
 package ideal.sylph.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
+import ideal.sylph.controller.action.LoginController;
 import ideal.sylph.controller.selvet.WebAppProxyServlet;
 import ideal.sylph.spi.SylphContext;
 import org.eclipse.jetty.server.Request;
@@ -32,6 +35,10 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.UnavailableException;
+import javax.servlet.http.HttpSession;
+
+import java.io.IOException;
+import java.util.Map;
 
 import static ideal.sylph.controller.AuthAspect.SESSION_THREAD_LOCAL;
 import static java.util.Objects.requireNonNull;
@@ -41,6 +48,7 @@ import static java.util.Objects.requireNonNull;
  */
 public final class JettyServer
 {
+    private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final Logger logger = LoggerFactory.getLogger(JettyServer.class);
     private Server server;
     private final ServerConfig serverConfig;
@@ -83,6 +91,31 @@ public final class JettyServer
             {
                 SESSION_THREAD_LOCAL.set(baseRequest.getSession(true));
                 super.prepare(baseRequest, request, response);
+            }
+
+            @Override
+            public void handle(Request baseRequest, ServletRequest request, ServletResponse response)
+                    throws ServletException, UnavailableException, IOException
+            {
+                HttpSession session = baseRequest.getSession();
+                LoginController.User user = (LoginController.User) session.getAttribute("user");
+
+                if (baseRequest.getRequestURI().startsWith("/_sys/auth") ||
+                        baseRequest.getRequestURI().startsWith("/_sys/server")) {
+                    super.handle(baseRequest, request, response);
+                    return;
+                }
+                if (user == null) {
+                    response.setContentType("application/json");
+                    Map<String, Object> result = ImmutableMap.<String, Object>builder()
+                            .put("success", false)
+                            .put("error_code", "001")
+                            .put("message", "Need to login again")
+                            .build();
+                    response.getWriter().println(MAPPER.writeValueAsString(result));
+                    return;
+                }
+                super.handle(baseRequest, request, response);
             }
         };
         //1M = 1048576
