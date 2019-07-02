@@ -64,7 +64,6 @@ public class LoginController
         //1...check user
         requireNonNull(user, "user is null");
         if ("admin".equals(user.getUserName()) && "admin".equals(user.getPassword())) {
-
             session.setMaxInactiveInterval(30 * 60);
             session.setAttribute("user", user);
             return ImmutableMap.builder()
