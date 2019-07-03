@@ -56,3 +56,5 @@ task dist(type: Tar) {
 artifacts {
   'default' dist
 }
+
+tasks.remove(tasks.findByName("uploadArchives"))
