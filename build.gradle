@@ -145,11 +145,9 @@ subprojects {
   }
 
   apply plugin: 'signing'
-
-  signing {
-    sign configurations.archives
-  }
-
+//  signing {
+//    sign configurations.archives
+//  }
   ext {
     shouldSign = project.hasProperty('mavenUsername')
     mavenUsername = project.hasProperty('mavenUsername') ? project.mavenUsername : ''
@@ -158,6 +156,10 @@ subprojects {
 
   uploadArchives {
     repositories {
+      signing {
+        sign configurations.archives
+      }
+
       mavenDeployer {
         beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
 
