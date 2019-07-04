@@ -83,7 +83,7 @@ public class MysqlSink
             throws SQLException, ClassNotFoundException
     {
         Class.forName("com.mysql.jdbc.Driver");
-        this.connection = DriverManager.getConnection(config.jdbcUrl, config.user, config.password);
+        this.connection = DriverManager.getConnection(config.getJdbcUrl(), config.getUser(), config.getPassword());
         this.statement = connection.prepareStatement(prepareStatementQuery);
         return true;
     }
@@ -100,7 +100,7 @@ public class MysqlSink
             }
             statement.addBatch();
             // submit batch
-            if (num++ >= 50) {
+            if (num++ >= config.getBatchSize()) {
                 statement.executeBatch();
                 num = 0;
             }
@@ -146,6 +146,11 @@ public class MysqlSink
         @Name("query")
         @Description("this is mysql save query")
         private String query = null;
+
+        @Name("batchSize")
+        @Description("this is mysql write batchSize")
+        private int batchSize = 5000;
+
         /*
          * demo: insert into your_table values(${0},${1},${2})
          * demo: replace into table select '${0}', ifnull((select cnt from table where id = '${0}'),0)+{1};
@@ -169,6 +174,36 @@ public class MysqlSink
         public String getQuery()
         {
             return query;
+        }
+
+        public int getBatchSize()
+        {
+            return batchSize;
+        }
+
+        public void setJdbcUrl(String jdbcUrl)
+        {
+            this.jdbcUrl = jdbcUrl;
+        }
+
+        public void setUser(String user)
+        {
+            this.user = user;
+        }
+
+        public void setPassword(String password)
+        {
+            this.password = password;
+        }
+
+        public void setQuery(String query)
+        {
+            this.query = query;
+        }
+
+        public void setBatchSize(int batchSize)
+        {
+            this.batchSize = batchSize;
         }
     }
 

@@ -73,7 +73,7 @@ public class ProxyAllHttpServer
                 throws ServletException, IOException
         {
             try {
-                proxyLink(req, resp, new URI(req.getRequestURL().toString()), null, null);
+                proxyLink(req, resp, new URI(req.getRequestURL().toString()), null);
             }
             catch (URISyntaxException e) {
                 throw new IOException(e);

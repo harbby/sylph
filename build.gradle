@@ -5,8 +5,8 @@ plugins {
 }
 
 allprojects {
-  group 'ideal'
-  version '0.6.0-SNAPSHOT'  //SNAPSHOT
+  group 'com.github.harbby'
+  version '0.6.0-alpha3'  //SNAPSHOT
 
   apply plugin: 'java'
   apply plugin: 'maven'
@@ -24,19 +24,20 @@ allprojects {
   }
 
   ext.deps = [
-          flink    : '1.7.2',
-          jetty    : "9.4.6.v20170531",   //8.1.17.v20150415   "9.4.6.v20170531"
-          hadoop   : "2.7.4",
-          hbase    : '1.1.2',
-          spark    : "2.4.3",
-          scala    : '2.11.8',
-          joda_time: '2.9.3',
-          slf4j  : '1.7.25',
-          guice    : '4.2.1',
-          gadtry   : '1.5.0',
-          guava    : '25.1-jre',
-          jackson  : '2.9.5',
-          jersey   : '2.28'
+          flink               : '1.7.2',
+          jetty               : "9.4.6.v20170531",   //8.1.17.v20150415   "9.4.6.v20170531"
+          hadoop              : "2.7.4",
+          hbase               : '1.1.2',
+          spark               : "2.4.3",
+          scala               : '2.11.8',
+          joda_time           : '2.9.3',
+          slf4j               : '1.7.25',
+          guice               : '4.2.1',
+          gadtry              : '1.5.0',
+          guava               : '25.1-jre',
+          jackson             : '2.9.5',
+          jersey              : '2.28',
+          scala_binary_version: '2.11'
   ]
 }
 
@@ -54,7 +55,7 @@ subprojects {
     //maven{ url 'http://maven.aliyun.com/nexus/content/groups/public'}
     mavenCentral()
   }
-  
+
   dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     testCompile 'org.mockito:mockito-core:2.23.4'
@@ -140,6 +141,64 @@ subprojects {
       version true
       links "https://harbby.github.io/project/sylph/en/docs/intro/"
       title "sylph"
+    }
+  }
+
+  apply plugin: 'signing'
+
+  signing {
+    sign configurations.archives
+  }
+
+  ext {
+    shouldSign = project.hasProperty('mavenUsername')
+    mavenUsername = project.hasProperty('mavenUsername') ? project.mavenUsername : ''
+    mavenPassword = project.hasProperty('mavenPassword') ? project.mavenPassword : ''
+  }
+
+  uploadArchives {
+    repositories {
+      mavenDeployer {
+        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+        repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+          authentication(userName: mavenUsername, password: mavenPassword)
+        }
+
+        snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+          authentication(userName: mavenUsername, password: mavenPassword)
+        }
+
+        pom.project {
+          name project.name
+          packaging 'jar'
+          // optionally artifactId can be defined here
+          description 'A lightweight API test framework'
+          url 'https://github.com/harbby/sylph'
+
+          scm {
+            connection 'https://github.com/harbby/sylph.git'
+            developerConnection 'git@github.com:harbby/sylph.git'
+            url 'https://github.com/harbby/sylph'
+          }
+
+          licenses {
+            license {
+              name 'The Apache Software License, Version 2.0'
+              url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+              distribution 'repo'
+            }
+          }
+
+          developers {
+            developer {
+              id 'harbby'
+              name 'harbby'
+              email 'yezhixinghai@gmail.com'
+            }
+          }
+        }
+      }
     }
   }
 }
