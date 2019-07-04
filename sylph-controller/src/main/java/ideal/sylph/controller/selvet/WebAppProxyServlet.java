@@ -96,7 +96,7 @@ public class WebAppProxyServlet
             }
             URI toFetch = builder.path(rest).build();
 
-            proxyLink(req, resp, toFetch, null, null);
+            proxyLink(req, resp, toFetch, null);
         }
         catch (URISyntaxException e) {
             throw new IOException(e);
