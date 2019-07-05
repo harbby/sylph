@@ -7,7 +7,6 @@ export class AnsiColors extends React.Component {
         let regexp = /\\[\d*m/g;
         let symbolList = log.match(regexp);
         let splitList = log.split(regexp);
-        //debugger
         let colorMap = {
             '[30m': "black",
             '[31m': "red",
@@ -21,26 +20,19 @@ export class AnsiColors extends React.Component {
             '[m': "black"
         }
         let renderList = [];
+        let row = []
         for (let i = 0; i < splitList.length; i++) {
             if (i === 0) {
-                renderList.push({
-                    color: "black",
-                    val: splitList[i]
-                })
+                row.push(<span style={{ color: 'black' }}>{splitList[i]}</span>)
                 continue;
             }
-            renderList.push({
-                color: colorMap[symbolList[i - 1]],
-                val: splitList[i]
-            })
+            row.push(<span style={{ color: colorMap[symbolList[i - 1]] }}>{splitList[i]}</span>)
         }
-
+        renderList.push(<pre style={{ marginBottom: '0em', overflow: 'visible' }}>{row}</pre>);
 
         return (
-            <div>
-                {(() => {
-                    return renderList.map(l => <span style={{ color: l.color, marginBottom: '0em' }}>{l.val}</span>)
-                })()}
+            <div >
+                {renderList}
             </div>
         );
     }

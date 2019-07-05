@@ -145,15 +145,15 @@ subprojects {
   }
 
   apply plugin: 'signing'
-
-  signing {
-    sign configurations.archives
+  ext {
+    shouldSign = rootProject.hasProperty('mavenUsername')
+    mavenUsername = rootProject.hasProperty('mavenUsername') ? rootProject.mavenUsername : ''
+    mavenPassword = rootProject.hasProperty('mavenPassword') ? rootProject.mavenPassword : ''
   }
 
-  ext {
-    shouldSign = project.hasProperty('mavenUsername')
-    mavenUsername = project.hasProperty('mavenUsername') ? project.mavenUsername : ''
-    mavenPassword = project.hasProperty('mavenPassword') ? project.mavenPassword : ''
+  signing {
+    required { shouldSign }
+    sign configurations.archives
   }
 
   uploadArchives {
