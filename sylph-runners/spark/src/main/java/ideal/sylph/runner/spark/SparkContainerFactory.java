@@ -31,8 +31,9 @@ import org.apache.spark.SparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.streaming.StreamingContext;
 
-import java.io.Serializable;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
@@ -87,14 +88,14 @@ public class SparkContainerFactory
             public VmFuture startAsyncExecutor()
                     throws Exception
             {
-                Serializable jobDAG = job.getJobDAG();
+                Supplier<?> jobDAG = job.getJobDAG();
                 url.set(null);
                 return launcher.startAsync(() -> {
-                    SparkConf sparkConf = new SparkConf().setMaster("local[*]");
+                    SparkConf sparkConf = new SparkConf().setMaster("local[*]").setAppName("spark_local");
                     SparkContext sparkContext = new SparkContext(sparkConf);
-                    sparkContext.getConf().setAppName("spark_local");
 
-                    Object appContext = requireNonNull(jobDAG, "sparkJobHandle is null");
+                    Object appContext = requireNonNull(jobDAG.get(), "sparkJobHandle is null");
+                    sparkContext.setLogLevel("WARN");
                     if (appContext instanceof SparkSession) {
                         SparkSession sparkSession = (SparkSession) appContext;
                         checkArgument(sparkSession.streams().active().length > 0, "no stream pipeline");
@@ -105,6 +106,11 @@ public class SparkContainerFactory
                         ssc.start();
                         ssc.awaitTermination();
                     }
+                    else {
+                        throw new IllegalAccessException();
+                    }
+                    System.out.println("sleep........");
+                    TimeUnit.SECONDS.sleep(99999);
                     return true;
                 });
             }

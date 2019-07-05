@@ -78,7 +78,7 @@ export default class JobList extends React.Component {
               cancelText="No"
               placement="left"
             >
-              <a href="#">Deploy</a>
+              <a href="/#">Deploy</a>
             </Popconfirm >
           );
           let StopBtn = (
@@ -91,7 +91,7 @@ export default class JobList extends React.Component {
               cancelText="No"
               placement="left"
             >
-              <a href="#">Stop</a>
+              <a href="/#">Stop</a>
             </Popconfirm>
           );
           return (
@@ -108,7 +108,7 @@ export default class JobList extends React.Component {
                 cancelText="No"
                 placement="left"
               >
-                <a href="#" style={{ color: "red" }}>Delete</a>
+                <a href="/#" style={{ color: "red" }}>Delete</a>
               </Popconfirm>
               <Divider type="vertical" />
               <a onClick={() => {
