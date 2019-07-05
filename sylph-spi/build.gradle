@@ -17,5 +17,4 @@ dependencies {
 
   compile group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: deps.jackson
   compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: deps.jackson
-  
 }
