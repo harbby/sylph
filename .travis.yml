@@ -8,6 +8,9 @@ services:
 
 script: "./gradlew clean checkstyle licenseMain licenseTest assemble --no-daemon"
 
+env:
+  - CI=false
+
 before_deploy:
 - echo build start... sylph
 before_cache:
