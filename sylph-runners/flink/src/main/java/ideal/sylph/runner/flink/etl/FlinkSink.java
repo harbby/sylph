@@ -17,12 +17,8 @@ package ideal.sylph.runner.flink.etl;
 
 import ideal.sylph.etl.api.RealTimeSink;
 import org.apache.flink.api.common.functions.RuntimeContext;
-import org.apache.flink.api.common.state.ListState;
-import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.state.OperatorStateStore;
-import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
-import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.state.CheckpointListener;
 import org.apache.flink.runtime.state.FunctionInitializationContext;
@@ -73,17 +69,17 @@ public final class FlinkSink
         super.close();
     }
 
-    private ListState<Tuple2<String, Long>> unionState;  //all partition
+    //private ListState<Tuple2<String, Long>> unionState;  //all partition
 
     @Override
     public void initializeState(FunctionInitializationContext context)
             throws Exception
     {
         OperatorStateStore stateStore = context.getOperatorStateStore();
-        ListStateDescriptor<Tuple2<String, Long>> descriptor = new ListStateDescriptor<>(
-                "sink_partition_state",
-                TypeInformation.of(new TypeHint<Tuple2<String, Long>>() {}));
-        this.unionState = stateStore.getUnionListState(descriptor);
+//        ListStateDescriptor<Tuple2<String, Long>> descriptor = new ListStateDescriptor<>(
+//                "sink_partition_state",
+//                TypeInformation.of(new TypeHint<Tuple2<String, Long>>() {}));
+//        this.unionState = stateStore.getUnionListState(descriptor);
     }
 
     @Override
