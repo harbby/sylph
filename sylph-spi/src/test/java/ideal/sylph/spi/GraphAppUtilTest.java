@@ -15,23 +15,26 @@
  */
 package ideal.sylph.spi;
 
+import com.github.harbby.gadtry.aop.mock.Mock;
+import com.github.harbby.gadtry.aop.mock.MockGo;
+import com.github.harbby.gadtry.aop.mock.MockGoJUnitRunner;
 import ideal.sylph.spi.job.EtlFlow;
 import ideal.sylph.spi.model.NodeInfo;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
+import static com.github.harbby.gadtry.aop.mock.MockGo.when;
+import static com.github.harbby.gadtry.aop.mock.MockGoArgument.anyMap;
+import static com.github.harbby.gadtry.aop.mock.MockGoArgument.anyString;
 
+@RunWith(MockGoJUnitRunner.class)
 public class GraphAppUtilTest
 {
     final String jobFlow = "---\n" +
@@ -86,7 +89,7 @@ public class GraphAppUtilTest
     @Before
     public void setUp()
     {
-        MockitoAnnotations.initMocks(this);
+        MockGo.initMocks(this);
     }
 
     @Test

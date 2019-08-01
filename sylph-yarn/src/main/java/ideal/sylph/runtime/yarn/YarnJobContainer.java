@@ -90,7 +90,7 @@ public class YarnJobContainer
     @Override
     public String getRunId()
     {
-        return yarnAppId == null ? "none" : yarnAppId.toString();
+        return yarnAppId == null ? "" : yarnAppId.toString();
     }
 
     public synchronized void setYarnAppId(ApplicationId appId)

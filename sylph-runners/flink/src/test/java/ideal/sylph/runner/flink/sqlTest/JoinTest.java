@@ -75,11 +75,14 @@ public class JoinTest
         tableEnv.registerTableSource("tb0", new SylphTableSource(rowTypeInfo, dataSource));
 
         final AntlrSqlParser sqlParser = new AntlrSqlParser();
-        this.dimTable = (CreateTable) sqlParser.createStatement("create batch table users(id string, name string, city string) with(type = '" + JoinOperator.class.getName() + "')");
+        this.dimTable = (CreateTable) sqlParser.createStatement(
+                "create batch table users(id string, name string, city string) with(type = '"
+                        + JoinOperator.class.getName() + "')");
     }
 
     @Test
     public void leftJoinTest()
+            throws Exception
     {
         String leftJoin = "select tb1.*,users.* from tb1 left join users on tb1.user_id=users.id";
 
@@ -89,16 +92,34 @@ public class JoinTest
                 .build();
 
         flinkSqlParser.parser(leftJoin, ImmutableList.of(dimTable));
+        System.out.println(tableEnv.execEnv().getExecutionPlan());
+        tableEnv.execEnv().execute();
+    }
 
-        String plan = tableEnv.execEnv().getExecutionPlan();
-        System.out.println(plan);
-        Assert.assertNotNull(plan);
+    @Test
+    public void moreLeftJoinTest()
+            throws Exception
+    {
+        String leftJoin = "select tb1.*,users.name from tb1 left join users on tb1.user_id=users.id";
+        String leftJoin2 = "select tb1.*,users.city from tb1 left join users on tb1.user_id=users.id";
+
+        FlinkSqlParser flinkSqlParser = FlinkSqlParser.builder()
+                .setTableEnv(tableEnv)
+                .setConnectorStore(ConnectorStore.getDefault())
+                .build();
+
+        flinkSqlParser.parser(leftJoin, ImmutableList.of(dimTable));
+        flinkSqlParser.parser(leftJoin2, ImmutableList.of(dimTable));
+        System.out.println(tableEnv.execEnv().getExecutionPlan());
+        tableEnv.execEnv().execute();
     }
 
     @Test
     public void leftJoinTest2()
     {
-        String leftJoin = "select tb2.user_id as uid,tb2.*,users.* from (select tb1.* from tb1 join users on tb1.user_id=users.id) as tb2 left join users on tb2.user_id=users.id";
+        String leftJoin = "select tb2.user_id as uid,tb2.*,users.* from " +
+                "(select tb1.* from tb1 join users on tb1.user_id=users.id) as tb2 " +
+                "left join users on tb2.user_id=users.id";
 
         FlinkSqlParser flinkSqlParser = FlinkSqlParser.builder()
                 .setTableEnv(tableEnv)

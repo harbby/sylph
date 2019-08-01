@@ -39,22 +39,17 @@ import org.apache.spark.streaming.dstream.DStream;
 import org.apache.spark.streaming.kafka.HasOffsetRanges;
 import org.apache.spark.streaming.kafka.KafkaCluster;
 import org.apache.spark.streaming.kafka.KafkaUtils;
-import org.apache.spark.streaming.kafka.KafkaUtils$;
 import org.apache.spark.streaming.kafka.OffsetRange;
 import scala.collection.JavaConverters;
 import scala.collection.immutable.Map$;
-import scala.collection.mutable.ArrayBuffer;
 import scala.reflect.ClassTag$;
-import scala.util.Either;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
+import static com.github.harbby.spark.sql.kafka.util.KafkaUtil.getFromOffset;
 import static ideal.sylph.runner.spark.SQLHepler.schemaToSparkType;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
@@ -149,32 +144,6 @@ public class KafkaSource08
         }
     }
 
-    public static Map<TopicAndPartition, Long> getFromOffset(KafkaCluster kafkaCluster, String topics, String groupId)
-    {
-        Set<String> topicSets = Arrays.stream(topics.split(",")).collect(Collectors.toSet());
-        return getFromOffset(kafkaCluster, topicSets, groupId);
-    }
-
-    public static Map<TopicAndPartition, Long> getFromOffset(KafkaCluster kafkaCluster, Set<String> topics, String groupId)
-    {
-        scala.collection.immutable.Set<String> scalaTopicSets = JavaConverters.asScalaSetConverter(topics).asScala().toSet();
-        Either<ArrayBuffer<Throwable>, scala.collection.immutable.Set<TopicAndPartition>> partitions = kafkaCluster.getPartitions(scalaTopicSets);
-        if (partitions.isLeft()) {
-            throwsThrowable(partitions.left().get().head());
-        }
-        Either<ArrayBuffer<Throwable>, scala.collection.immutable.Map<TopicAndPartition, Object>> groupOffsets = kafkaCluster.getConsumerOffsets(groupId,
-                partitions.right().get());
-
-        scala.collection.immutable.Map<TopicAndPartition, Object> fromOffsets;
-        if (groupOffsets.isRight()) {
-            fromOffsets = groupOffsets.right().get();
-        }
-        else {
-            fromOffsets = KafkaUtils$.MODULE$.getFromOffsets(kafkaCluster, kafkaCluster.kafkaParams(), scalaTopicSets);
-        }
-        return JavaConverters.mapAsJavaMapConverter(fromOffsets).asJava().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, v -> (long) v.getValue()));
-    }
-
     private static JavaDStream<ConsumerRecord<byte[], byte[]>> settingCommit(
             JavaInputDStream<ConsumerRecord<byte[], byte[]>> inputStream,
             Map<String, String> kafkaParams,
@@ -212,7 +181,8 @@ public class KafkaSource08
                 kafkaOffsetCommitter.addAll(offsets);
             }
         };
-        JavaDStream<ConsumerRecord<byte[], byte[]>> dStream = new JavaDStream<>(sylphKafkaOffset, ClassTag$.MODULE$.apply(ConsumerRecord.class));
+        JavaDStream<ConsumerRecord<byte[], byte[]>> dStream = new JavaDStream<>(
+                sylphKafkaOffset, ClassTag$.MODULE$.<ConsumerRecord<byte[], byte[]>>apply(ConsumerRecord.class));
         return dStream;
 //        inputStream = inputStream.transform(rdd -> {
 //            OffsetRange[] offsets = ((HasOffsetRanges) rdd.rdd()).offsetRanges();

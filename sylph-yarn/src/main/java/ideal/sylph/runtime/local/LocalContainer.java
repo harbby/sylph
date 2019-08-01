@@ -33,7 +33,7 @@ public abstract class LocalContainer
     public String getRunId()
     {
         if (vmFuture == null) {
-            return "node";
+            return "";
         }
 
         Process process = vmFuture.getVmProcess();

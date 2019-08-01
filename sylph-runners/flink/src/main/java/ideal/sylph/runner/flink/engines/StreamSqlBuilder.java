@@ -64,7 +64,7 @@ import static ideal.sylph.runner.flink.engines.StreamSqlUtil.schemaToRowTypeInfo
 
 public class StreamSqlBuilder
 {
-    private static final Logger logger = LoggerFactory.getLogger(FlinkStreamEtlEngine.class);
+    private static final Logger logger = LoggerFactory.getLogger(StreamSqlBuilder.class);
 
     private final ConnectorStore connectorStore;
     private final StreamTableEnvironment tableEnv;

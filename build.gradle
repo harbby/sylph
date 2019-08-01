@@ -33,7 +33,7 @@ allprojects {
           joda_time           : '2.9.3',
           slf4j               : '1.7.25',
           guice               : '4.2.1',
-          gadtry              : '1.5.0',
+          gadtry              : '1.6.2',
           guava               : '25.1-jre',
           jackson             : '2.9.5',
           jersey              : '2.28',
@@ -58,7 +58,7 @@ subprojects {
 
   dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
-    testCompile 'org.mockito:mockito-core:2.23.4'
+    testCompile group: 'com.github.harbby', name: 'gadtry', version: deps.gadtry
   }
 
   task clearOutDir(type: Delete) {

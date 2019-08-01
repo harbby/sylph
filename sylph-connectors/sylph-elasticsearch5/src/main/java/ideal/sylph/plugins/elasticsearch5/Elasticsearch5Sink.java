@@ -15,9 +15,9 @@
  */
 package ideal.sylph.plugins.elasticsearch5;
 
+import com.github.harbby.gadtry.ioc.Autowired;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
-import ideal.sylph.etl.PluginConfig;
 import ideal.sylph.etl.Row;
 import ideal.sylph.etl.Schema;
 import ideal.sylph.etl.SinkContext;
@@ -27,9 +27,7 @@ import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
-import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
 import java.net.InetAddress;
 import java.util.HashMap;
@@ -43,25 +41,28 @@ import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 public class Elasticsearch5Sink
         implements RealTimeSink
 {
-    private static final int MAX_BATCH_BULK = 50;
     private final Schema schema;
     private final ElasticsearchSinkConfig config;
+    private final ClientFactory clientFactory;
 
     private TransportClient client;
     private int idIndex = -1;
     private final AtomicInteger cnt = new AtomicInteger(0);
     private BulkRequestBuilder bulkBuilder;
 
-    public Elasticsearch5Sink(SinkContext context, ElasticsearchSinkConfig config)
+    @Autowired
+    public Elasticsearch5Sink(SinkContext context, ClientFactory clientFactory)
     {
-        schema = context.getSchema();
-        this.config = config;
-        if (!Strings.isNullOrEmpty(config.idField)) {
-            int fieldIndex = schema.getFieldIndex(config.idField);
-            checkState(fieldIndex != -1, config.idField + " does not exist, only " + schema.getFields());
+        this.config = clientFactory.getConfig();
+        this.schema = context.getSchema();
+        this.clientFactory = clientFactory;
+
+        if (!Strings.isNullOrEmpty(config.getIdField())) {
+            int fieldIndex = schema.getFieldIndex(config.getIdField());
+            checkState(fieldIndex != -1, config.getIdField() + " does not exist, only " + schema.getFields());
             this.idIndex = fieldIndex;
         }
-        if (config.update) {
+        if (config.isUpdate()) {
             checkState(idIndex != -1, "This is Update mode, `id_field` must be set");
         }
     }
@@ -73,18 +74,16 @@ public class Elasticsearch5Sink
         for (String fieldName : schema.getFieldNames()) {
             map.put(fieldName, value.getAs(fieldName));
         }
-        if (config.update) {  //is update
+        if (config.isUpdate()) {  //is update
             Object id = value.getAs(idIndex);
-            if (id == null) {
-                return;
-            }
-            UpdateRequestBuilder requestBuilder = client.prepareUpdate(config.index, config.type, id.toString());
+            checkState(id != null, "this is  update mode,but id is null %s", value);
+            UpdateRequestBuilder requestBuilder = client.prepareUpdate(config.getIndex(), config.getType(), id.toString());
             requestBuilder.setDoc(map);
             requestBuilder.setDocAsUpsert(true);
             bulkBuilder.add(requestBuilder.request());
         }
         else {
-            IndexRequestBuilder requestBuilder = client.prepareIndex(config.index, config.type);
+            IndexRequestBuilder requestBuilder = client.prepareIndex(config.getIndex(), config.getType());
             if (idIndex != -1) {
                 Object id = value.getAs(idIndex);
                 if (id != null) {
@@ -95,10 +94,8 @@ public class Elasticsearch5Sink
             requestBuilder.setSource(map);
             bulkBuilder.add(requestBuilder.request());
         }
-        if (cnt.getAndIncrement() > MAX_BATCH_BULK) {
-            client.bulk(bulkBuilder.request()).actionGet();
-            cnt.set(0);
-            bulkBuilder = client.prepareBulk();
+        if (cnt.getAndIncrement() > config.getBatchSize()) {
+            this.flush();
         }
     }
 
@@ -106,14 +103,10 @@ public class Elasticsearch5Sink
     public boolean open(long partitionId, long version)
             throws Exception
     {
-        String clusterName = config.clusterName;
-        String hosts = config.hosts;
-        Settings settings = Settings.builder().put("cluster.name", clusterName)
-                .put("client.transport.sniff", true).build();
-
-        TransportClient client = new PreBuiltTransportClient(settings);
-        for (String ip : hosts.split(",")) {
-            client.addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(ip.split(":")[0]), Integer.valueOf(ip.split(":")[1])));
+        TransportClient client = clientFactory.createClient();
+        for (String ip : config.getHosts().split(",")) {
+            client.addTransportAddress(new InetSocketTransportAddress(
+                    InetAddress.getByName(ip.split(":")[0]), Integer.valueOf(ip.split(":")[1])));
         }
         this.client = client;
         this.bulkBuilder = client.prepareBulk();
@@ -121,40 +114,23 @@ public class Elasticsearch5Sink
     }
 
     @Override
-    public void close(Throwable errorOrNull)
+    public void flush()
     {
-        try (TransportClient closeClient = client) {
-            if (bulkBuilder != null && closeClient != null) {
-                closeClient.bulk(bulkBuilder.request());
-            }
-        }
+        client.bulk(bulkBuilder.request()).actionGet();
+        cnt.set(0);
+        bulkBuilder = client.prepareBulk();
     }
 
-    public static class ElasticsearchSinkConfig
-            extends PluginConfig
+    @Override
+    public void close(Throwable errorOrNull)
     {
-        @Name("cluster_name")
-        @Description("this is es cluster name")
-        private String clusterName;
-
-        @Name("cluster_hosts")
-        @Description("this is es cluster hosts")
-        private String hosts;
-
-        @Name("es_index")
-        @Description("this is es index")
-        private String index;
-
-        @Name("id_field")
-        @Description("this is es id_field")
-        private String idField;
-
-        @Name("update")
-        @Description("update or insert")
-        private boolean update = false;
-
-        @Name("index_type")
-        @Description("this is es index_type, Do not set")
-        private String type = "default";
+        if (errorOrNull != null) {
+            errorOrNull.printStackTrace();
+        }
+        try (TransportClient closeClient = client) {
+            if (bulkBuilder != null && closeClient != null) {
+                this.flush();
+            }
+        }
     }
 }

@@ -17,13 +17,19 @@ package ideal.sylph.runner.flink.etl;
 
 import ideal.sylph.etl.api.RealTimeSink;
 import org.apache.flink.api.common.functions.RuntimeContext;
+import org.apache.flink.api.common.state.OperatorStateStore;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.runtime.state.CheckpointListener;
+import org.apache.flink.runtime.state.FunctionInitializationContext;
+import org.apache.flink.runtime.state.FunctionSnapshotContext;
+import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
 import org.apache.flink.types.Row;
 
 public final class FlinkSink
         extends RichSinkFunction<Row>
+        implements CheckpointedFunction, CheckpointListener
 {
     private final RealTimeSink realTimeSink;
     private final TypeInformation<Row> typeInformation;
@@ -61,5 +67,32 @@ public final class FlinkSink
     {
         realTimeSink.close(null);
         super.close();
+    }
+
+    //private ListState<Tuple2<String, Long>> unionState;  //all partition
+
+    @Override
+    public void initializeState(FunctionInitializationContext context)
+            throws Exception
+    {
+        OperatorStateStore stateStore = context.getOperatorStateStore();
+//        ListStateDescriptor<Tuple2<String, Long>> descriptor = new ListStateDescriptor<>(
+//                "sink_partition_state",
+//                TypeInformation.of(new TypeHint<Tuple2<String, Long>>() {}));
+//        this.unionState = stateStore.getUnionListState(descriptor);
+    }
+
+    @Override
+    public void snapshotState(FunctionSnapshotContext context)
+            throws Exception
+    {
+        realTimeSink.flush();
+        //unionState.add(thisState);
+    }
+
+    @Override
+    public void notifyCheckpointComplete(long checkpointId)
+            throws Exception
+    {
     }
 }
