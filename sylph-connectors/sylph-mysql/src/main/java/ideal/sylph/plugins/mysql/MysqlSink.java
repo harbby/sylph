@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static org.apache.flink.shaded.guava18.com.google.common.base.Preconditions.checkState;
 
 @Name("mysql")
@@ -89,6 +89,14 @@ public class MysqlSink
     }
 
     @Override
+    public void flush()
+            throws SQLException
+    {
+        statement.executeBatch();
+        num = 0;
+    }
+
+    @Override
     public void process(Row row)
     {
         try {
@@ -101,12 +109,11 @@ public class MysqlSink
             statement.addBatch();
             // submit batch
             if (num++ >= config.getBatchSize()) {
-                statement.executeBatch();
-                num = 0;
+                this.flush();
             }
         }
         catch (SQLException e) {
-            throwsException(e);
+            throwsThrowable(e);
         }
     }
 
@@ -116,11 +123,8 @@ public class MysqlSink
         try (Connection conn = connection) {
             try (Statement stmt = statement) {
                 if (stmt != null) {
-                    stmt.executeBatch();
+                    this.flush();
                 }
-            }
-            catch (SQLException e) {
-                logger.error("close executeBatch fail", e);
             }
         }
         catch (SQLException e) {
