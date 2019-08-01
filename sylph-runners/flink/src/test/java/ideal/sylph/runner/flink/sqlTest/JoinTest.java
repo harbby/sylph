@@ -100,8 +100,8 @@ public class JoinTest
     public void moreLeftJoinTest()
             throws Exception
     {
-        String leftJoin = "insert into print select tb1.*,users.name from tb1 left join users on tb1.user_id=users.id";
-        String leftJoin2 = "insert into print select tb1.*,users.city from tb1 left join users on tb1.user_id=users.id";
+        String leftJoin = "select tb1.*,users.name from tb1 left join users on tb1.user_id=users.id";
+        String leftJoin2 = "select tb1.*,users.city from tb1 left join users on tb1.user_id=users.id";
 
         FlinkSqlParser flinkSqlParser = FlinkSqlParser.builder()
                 .setTableEnv(tableEnv)
