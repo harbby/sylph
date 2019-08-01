@@ -15,65 +15,38 @@
  */
 package ideal.sylph.plugins.mysql;
 
-import ideal.sylph.annotation.Name;
-import ideal.sylph.etl.PluginConfig;
+import com.github.harbby.gadtry.ioc.IocFactory;
+import com.google.common.collect.ImmutableMap;
+import ideal.sylph.spi.NodeLoader;
+import ideal.sylph.spi.PluginConfigFactory;
 import org.junit.Assert;
 import org.junit.Test;
-import sun.reflect.ReflectionFactory;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
 
 public class MysqlSinkTest
 {
     @Test
-    public void parserPluginTest()
-            throws IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException
+    public void createMysqlConfig()
+            throws Exception
     {
-        Constructor constructor = MysqlSink.class.getConstructors()[0];
-
-        for (Class<?> type : constructor.getParameterTypes()) {
-            if (PluginConfig.class.isAssignableFrom(type)) {
-                try {
-                    type.getDeclaredConstructor();
-                    Assert.assertTrue(true);
-                }
-                catch (NoSuchMethodException e) {
-                    Assert.fail();
-                }
-
-                PluginConfig pluginConfig = (PluginConfig) getInstance(type);
-                for (Field field : type.getDeclaredFields()) {
-                    Name name = field.getAnnotation(Name.class);
-                    if (name != null) {
-                        field.setAccessible(true);
-                        Assert.assertNotNull(name);
-                        field.set(pluginConfig, "@Name[" + name.value() + "]");
-                    }
-                }
-                Assert.assertNotNull(pluginConfig);
-                Assert.assertNotNull(pluginConfig.toString());
-                System.out.println(type + " class -> " + pluginConfig);
-                try {
-                    Object mysqlSink = constructor.newInstance(pluginConfig);
-                    Assert.assertTrue(mysqlSink instanceof MysqlSink);
-                }
-                catch (Exception e) {
-                    String error = e.getCause().getMessage();
-                    Assert.assertNotNull(error);
-                }
-            }
-        }
+        String query = "select 1";
+        Map<String, Object> config = ImmutableMap.<String, Object>builder()
+                .put("query", query)
+                .build();
+        MysqlSink.MysqlConfig mysqlConfig =
+                PluginConfigFactory.INSTANCE.createPluginConfig(MysqlSink.MysqlConfig.class, config);
+        Assert.assertEquals(mysqlConfig.getQuery(), query);
     }
 
-    @SuppressWarnings("unchecked")
-    private static <T> T getInstance(Class<T> type)
-            throws IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchMethodException
+    @Test
+    public void createMysqlSink()
     {
-        Constructor superCons = Object.class.getConstructor();  //获取Object的构造器
-        ReflectionFactory reflFactory = ReflectionFactory.getReflectionFactory();
-        Constructor<T> c = (Constructor<T>) reflFactory.newConstructorForSerialization(type, superCons);
-        return c.newInstance();
+        IocFactory iocFactory = IocFactory.create();
+        Map<String, Object> config = ImmutableMap.<String, Object>builder()
+                .put("query", "insert into table1 values(${0},${1},${2})")
+                .build();
+        MysqlSink sink = NodeLoader.getPluginInstance(MysqlSink.class, iocFactory, config);
+        Assert.assertNotNull(sink);
     }
 }

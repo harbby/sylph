@@ -4,4 +4,5 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 dependencies {
+  compile group: 'com.github.harbby', name: 'gadtry', version: deps.gadtry
 }

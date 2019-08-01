@@ -32,11 +32,13 @@ import ideal.sylph.spi.job.JobStore;
 
 import java.io.File;
 import java.io.Serializable;
+import java.lang.annotation.Annotation;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collection;
 import java.util.function.Supplier;
 
+import static com.github.harbby.gadtry.base.Strings.isNotBlank;
 import static com.google.common.base.Preconditions.checkState;
 import static ideal.sylph.main.service.JobEngineManager.getClassLoaderDependJars;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -58,8 +60,10 @@ public class JobEngineImpl
     {
         this.factory = requireNonNull(factory, "factory is null");
         this.jobEngineHandle = requireNonNull(jobEngineHandle, "jobEngineHandle is null");
-        this.name = buildName(jobEngineHandle);
-        this.description = buildDescription(jobEngineHandle);
+        this.name = getAnnotation(jobEngineHandle, Name.class).value();
+        this.description = getAnnotation(jobEngineHandle, Description.class).value();
+        checkState(isNotBlank(name), "%s Missing @Name annotation",
+                jobEngineHandle.getClass().getName());
     }
 
     @Override
@@ -122,19 +126,9 @@ public class JobEngineImpl
         }
     }
 
-    private String buildName(JobEngineHandle jobActuator)
+    private <T extends Annotation> T getAnnotation(JobEngineHandle jobActuator, Class<T> annotationClass)
     {
-        String errorMessage = jobActuator.getClass().getName() + " Missing @Name annotation";
-        Name actuatorName = jobActuator.getClass().getAnnotation(Name.class);
-        String name = requireNonNull(actuatorName, errorMessage).value();
-        checkState(name.length() > 0, errorMessage);
-        return name;
-    }
-
-    private String buildDescription(JobEngineHandle jobActuator)
-    {
-        String errorMessage = jobActuator.getClass().getName() + " Missing @Name annotation";
-        Description description = jobActuator.getClass().getAnnotation(Description.class);
-        return requireNonNull(description, errorMessage).value();
+        T annotation = jobActuator.getClass().getAnnotation(annotationClass);
+        return requireNonNull(annotation, "Missing annotation " + annotationClass);
     }
 }

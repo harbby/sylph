@@ -1,4 +1,7 @@
 
 dependencies {
   compile 'com.github.harbby:es-shaded:6.4.0-1'
+
+  compile 'org.apache.flink:flink-connector-elasticsearch6_2.11:1.7.2'
+  
 }

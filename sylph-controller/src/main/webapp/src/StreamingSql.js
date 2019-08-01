@@ -54,7 +54,7 @@ export default class StreamingSql extends React.Component {
     async fetchGetData(url) {
         let result = await fetch(url, { method: "GET" });
         result = await result.json();
-        this.setState({ jobName: result.jobName, query: result.queryText, jobType: result.type, config: JSON.parse(result.config), editConfig: JSON.parse(result.config) })
+        this.setState({ jobName: result.jobName, query: result.queryText, engine: result.type, config: JSON.parse(result.config), editConfig: JSON.parse(result.config) })
     }
 
     componentDidMount() {
@@ -105,10 +105,6 @@ export default class StreamingSql extends React.Component {
     render = () => {
         const { Option } = Select;
 
-        const onClose = () => {
-            this.setState({ showErrorMessage: '' })
-        };
-
         const getErrorMessage = () => {
             if (!this.state.showErrorMessage) return;
             return (
@@ -118,7 +114,7 @@ export default class StreamingSql extends React.Component {
                     type={"error"}
                     showIcon
                     closable
-                    onClose={onClose}
+                    onClose={() => this.setState({ showErrorMessage: '' })}
                 />
             )
         }
@@ -162,7 +158,7 @@ export default class StreamingSql extends React.Component {
                         <Tag style={{ fontSize: "16px", padding: "5px 25px" }} color="blue">Job: {this.state.jobName}</Tag>
                     </Col>
                     <Col span={20} style={{ textAlign: 'right' }}>
-                        <Select style={{ margin: "0 10px" }} defaultValue="StreamSql" onSelect={(e) => { this.setState({ engine: e }) }}>
+                        <Select style={{ margin: "0 10px" }} defaultValue="StreamSql" value={this.state.engine} onSelect={(e) => { this.setState({ engine: e }) }}>
                             <Option value="StreamSql">FlinkStreamSql</Option>
                             <Option value="SparkStreamingSql">SparkStreamingSql</Option>
                             <Option value="StructuredStreamingSql">StructuredStreamingSql</Option>
@@ -192,9 +188,13 @@ export default class StreamingSql extends React.Component {
                     <Drawer
                         title="Setting job config"
                         width={"50%"}
-                        onClose={this.onClose}
+                        onClose={()=>{
+                            this.setState({
+                                visible: false,
+                                editConfig: this.state.config
+                            });
+                        }}
                         visible={this.state.visible}
-
                     >
                         {/* <EditableTable dataSource={this.state.config}></EditableTable> */}
                         <p>basic configuration:</p>

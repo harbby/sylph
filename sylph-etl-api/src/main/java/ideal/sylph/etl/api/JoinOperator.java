@@ -15,24 +15,8 @@
  */
 package ideal.sylph.etl.api;
 
-import ideal.sylph.etl.Collector;
-import ideal.sylph.etl.PipelinePlugin;
-import ideal.sylph.etl.Row;
-import ideal.sylph.etl.Schema;
-
-/**
- * JoinOperator
- * */
-public interface RealTimeTransForm
-        extends PipelinePlugin, RealTimePipeline
+public interface JoinOperator
+        extends RealTimeTransForm
 {
-    /**
-     * line 级别的 需要注意线程安全问题
-     **/
-    void process(Row input, Collector<Row> collector);
-
-    /**
-     * driver 上运行
-     */
-    Schema getSchema();
+    String getJoinKey();
 }

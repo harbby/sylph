@@ -83,7 +83,7 @@ public class FlinkEnvFactory
                             .around(proxyContext -> {
                                 JobID jobId = (JobID) proxyContext.getArgs()[0];
 
-                                logger.info("{}", proxyContext.getInfo());
+                                logger.info("mock {}", proxyContext.getMethod());
                                 return new SylphFsCheckpointStorage(getCheckpointPath(), getSavepointPath(), jobId, getMinFileSizeThreshold());
                             });
                 }

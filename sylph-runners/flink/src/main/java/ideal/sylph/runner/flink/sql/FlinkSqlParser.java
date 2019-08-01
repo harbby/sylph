@@ -47,6 +47,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableException;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
+import org.apache.flink.table.plan.schema.RelTable;
 import org.apache.flink.types.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -216,8 +217,13 @@ public class FlinkSqlParser
         RowTypeInfo rowTypeInfo = getJoinOutScheam(joinSelectFields);
         joinResultStream.getTransformation().setOutputType(rowTypeInfo);
         //--register tmp joinTable
-        tableEnv.registerDataStream(joinInfo.getJoinTableName(), joinResultStream);
-
+        if (tableEnv.isRegistered(joinInfo.getJoinTableName())) {
+            Table table = tableEnv.fromDataStream(joinResultStream);
+            tableEnv.replaceRegisteredTable(joinInfo.getJoinTableName(), new RelTable(table.getRelNode()));
+        }
+        else {
+            tableEnv.registerDataStream(joinInfo.getJoinTableName(), joinResultStream);
+        }
         //next update join select query
         joinQueryUpdate(joinInfo, rowTypeInfo.getFieldNames());
     }

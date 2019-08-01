@@ -60,13 +60,17 @@ public interface Row
         @Override
         public String mkString(String seq)
         {
-            throw new UnsupportedOperationException("this " + this.getClass().getName() + " method have't mkString!");
+            StringBuilder stringBuilder = new StringBuilder();
+            for (int i = 0; i < values.length; i++) {
+                stringBuilder.append(seq).append(values[i]);
+            }
+            return stringBuilder.substring(1);
         }
 
         @Override
         public String mkString()
         {
-            throw new UnsupportedOperationException("this " + this.getClass().getName() + " method have't mkString!");
+            return this.mkString(",");
         }
 
         @Override

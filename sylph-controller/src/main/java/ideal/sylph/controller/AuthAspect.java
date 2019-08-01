@@ -40,10 +40,10 @@ public class AuthAspect
                 .around(proxy -> {
                     HttpSession session = SESSION_THREAD_LOCAL.get();
                     String user = session == null ? null : ((LoginController.User) session.getAttribute("user")).getUserName();
-                    String action = proxy.getInfo().getName();
+                    String action = proxy.getName();
                     logger.info("[auth] user:{}, action: {}, args: {}", user, action, proxy.getArgs());
                     Object value = proxy.proceed();
-                    switch (proxy.getInfo().getName()) {
+                    switch (proxy.getName()) {
                         case "getAllJobs":
                             return value;  //按照权限进行过滤
                         default:

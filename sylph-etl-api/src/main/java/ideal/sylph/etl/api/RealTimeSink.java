@@ -22,6 +22,13 @@ public interface RealTimeSink
         extends PipelinePlugin, RealTimePipeline
 {
     /**
+     * ByCommitState
+     */
+    default void flush()
+            throws Exception
+    {}
+
+    /**
      * line 级别的 需要注意线程安全问题
      **/
     void process(Row value);
