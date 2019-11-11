@@ -24,56 +24,48 @@ import java.util.Set;
  * udaf  presto array_agg
  */
 public final class ArrayAgg
-        extends AggregateFunction<Object[], ArrayAgg.WeightedAvgAccum>
+        extends AggregateFunction<Object[], Set<Object>>
 {
     @Override
-    public WeightedAvgAccum createAccumulator()
+    public Set<Object> createAccumulator()
     {
-        return new WeightedAvgAccum();
+        return new HashSet<>();
     }
 
     @Override
-    public Object[] getValue(WeightedAvgAccum acc)
+    public Object[] getValue(Set<Object> acc)
     {
-        return acc.set.toArray();
+        return acc.toArray();
     }
 
-    public void accumulate(WeightedAvgAccum acc, Object iValue)
+    public void accumulate(Set<Object> acc, Object iValue)
     {
-        acc.set.add(iValue);
+        acc.add(iValue);
     }
 
     /**
      * go back
      */
-    public void retract(WeightedAvgAccum acc, Object iValue)
+    public void retract(Set<Object> acc, Object iValue)
     {
-        acc.set.remove(iValue);
+        acc.remove(iValue);
     }
 
     /**
      * merge partition
      */
-    public void merge(WeightedAvgAccum acc, Iterable<WeightedAvgAccum> it)
+    public void merge(Set<Object> acc, Iterable<Set<Object>> accs)
     {
-        for (WeightedAvgAccum avgAccum : it) {
-            acc.set.addAll(avgAccum.set);
+        for (Set<Object> it : accs) {
+            acc.addAll(it);
         }
     }
 
     /**
      * init
      */
-    public void resetAccumulator(WeightedAvgAccum acc)
+    public void resetAccumulator(Set<Object> acc)
     {
-        acc.set.clear();
-    }
-
-    /**
-     * status
-     */
-    public static class WeightedAvgAccum
-    {
-        private final Set<Object> set = new HashSet<>();
+        acc.clear();
     }
 }
