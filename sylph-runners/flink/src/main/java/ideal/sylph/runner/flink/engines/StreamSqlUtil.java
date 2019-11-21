@@ -34,7 +34,9 @@ import javax.annotation.Nullable;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
 import java.sql.Date;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
@@ -156,6 +158,10 @@ public final class StreamSqlUtil
                 return Double.class;
             case "float":
                 return Float.class;
+            case "decimal" :
+                return BigDecimal.class;
+            case "time":
+                return Time.class;
             case "byte":
                 return Byte.class;
             case "timestamp":
