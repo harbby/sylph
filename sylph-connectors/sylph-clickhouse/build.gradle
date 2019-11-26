@@ -4,6 +4,9 @@ dependencies {
     }
     compileOnly group: 'org.apache.flink', name: 'flink-table_2.11', version: deps.flink
     compileOnly group: 'org.slf4j', name: 'slf4j-api', version: deps.log4j12
-    compile group: 'com.github.housepower', name: 'clickhouse-native-jdbc', version: '1.5-stable'
-
+    compile("ru.yandex.clickhouse:clickhouse-jdbc:0.1.55"){
+        exclude(group: "org.slf4j")
+        exclude(group: "com.fasterxml.jackson.core")
+        exclude(group: "com.google.guava")
+    }
 }

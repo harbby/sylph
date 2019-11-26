@@ -70,22 +70,7 @@ public class ClickHouseSink
         int ith = 1;
         try {
             for (String fieldName : schema.getFieldNames()) {
-                //Byte  Double  String  Date  Long  .....
-                if (nametypes.get(fieldName).equals("java.sql.Date")) {
-                    statement.setDate(ith, java.sql.Date.valueOf(row.getAs(fieldName).toString()));
-                }
-                else if ((nametypes.get(fieldName).equals("java.lang.Long"))) {
-                    statement.setLong(ith, row.getAs(fieldName));
-                }
-                else if ((nametypes.get(fieldName).equals("java.lang.Double"))) {
-                    statement.setDouble(ith, row.getAs(fieldName));
-                }
-                else if ((nametypes.get(fieldName).equals("java.lang.Integer"))) {
-                    statement.setByte(ith, Byte.valueOf(row.getAs(fieldName)));
-                }
-                else {
-                    statement.setString(ith, row.getAs(fieldName));
-                }
+                statement.setObject(ith, row.getAs(fieldName));
                 ith += 1;
             }
             statement.addBatch();
@@ -103,7 +88,7 @@ public class ClickHouseSink
     public boolean open(long partitionId, long version)
             throws SQLException, ClassNotFoundException
     {
-        Class.forName("com.github.housepower.jdbc.ClickHouseDriver");
+        Class.forName("ru.yandex.clickhouse.ClickHouseDriver");
         this.connection = DriverManager.getConnection(config.jdbcUrl, config.user, config.password);
         this.statement = connection.prepareStatement(prepareStatementQuery);
         return true;
