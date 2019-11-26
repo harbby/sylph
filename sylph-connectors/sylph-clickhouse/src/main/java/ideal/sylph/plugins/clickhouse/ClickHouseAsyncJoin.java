@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.plugins.mysql;
+package ideal.sylph.plugins.clickhouse;
 
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
@@ -23,12 +23,12 @@ import ideal.sylph.plugins.jdbc.JdbcAsyncJoin;
 /**
  * mysql AsyncFunction
  */
-@Name("mysql")
-@Description("this is `join mode` mysql config table")
-public class MysqlAsyncJoin
+@Name("ClickHouseSink")
+@Description("this is `join mode` ClickHouseSink config table")
+public class ClickHouseAsyncJoin
         extends JdbcAsyncJoin
 {
-    public MysqlAsyncJoin(JoinContext context, JdbcJoinConfig jdbcJoinConfig)
+    public ClickHouseAsyncJoin(JoinContext context, JdbcJoinConfig jdbcJoinConfig)
     {
         super(context, jdbcJoinConfig);
     }
@@ -36,6 +36,6 @@ public class MysqlAsyncJoin
     @Override
     public String getJdbcDriver()
     {
-        return "com.mysql.jdbc.Driver";
+        return "com.github.housepower.jdbc.ClickHouseDriver";
     }
 }

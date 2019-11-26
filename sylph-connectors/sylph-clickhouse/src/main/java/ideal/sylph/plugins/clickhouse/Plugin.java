@@ -28,6 +28,7 @@ public class Plugin
     {
         return MutableSet.<Class<? extends PipelinePlugin>>builder()
                 .add(ClickHouseSink.class)
+                .add(ClickHouseAsyncJoin.class)
                 .build();
     }
 }

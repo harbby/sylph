@@ -43,4 +43,5 @@ include 'sylph-docs'
 include 'sylph-yarn'
 include 'sylph-base-kafka'
 //include 'sylph-cli'
+include 'sylph-base-jdbc'
 

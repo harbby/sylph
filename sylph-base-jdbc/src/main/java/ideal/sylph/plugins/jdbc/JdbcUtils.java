@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.plugins.mysql.utils;
-
-import org.apache.flink.shaded.guava18.com.google.common.collect.ImmutableList;
-import org.apache.flink.shaded.guava18.com.google.common.collect.ImmutableMap;
+package ideal.sylph.plugins.jdbc;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -37,11 +36,11 @@ public class JdbcUtils
     public static List<Map<String, Object>> resultToList(ResultSet rs)
             throws SQLException
     {
-        ImmutableList.Builder<Map<String, Object>> listBuilder = ImmutableList.builder();
+        List<Map<String, Object>> listBuilder = new ArrayList<>();
         ResultSetMetaData metaData = rs.getMetaData();
         int columnCount = metaData.getColumnCount();
         while (rs.next()) {
-            ImmutableMap.Builder<String, Object> mapBuilder = ImmutableMap.builder();
+            Map<String, Object> mapBuilder = new HashMap<>(columnCount);
             for (int i = 1; i <= columnCount; i++) {
                 String columnName = metaData.getColumnLabel(i);
                 Object value = rs.getObject(i);
@@ -49,8 +48,8 @@ public class JdbcUtils
                     mapBuilder.put(columnName, value);
                 }
             }
-            listBuilder.add(mapBuilder.build());
+            listBuilder.add(mapBuilder);
         }
-        return listBuilder.build();
+        return listBuilder;
     }
 }
