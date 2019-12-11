@@ -126,7 +126,7 @@ public class FlinkStreamSqlEngine
                 .setCallable(() -> {
                     System.out.println("************ job start ***************");
                     StreamExecutionEnvironment execEnv = FlinkEnvFactory.getStreamEnv(jobConfig, jobId);
-                    StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(execEnv);
+                    StreamTableEnvironment tableEnv = StreamTableEnvironment.create(execEnv);
                     StreamSqlBuilder streamSqlBuilder = new StreamSqlBuilder(tableEnv, connectorStore, new AntlrSqlParser());
                     Arrays.stream(sqlSplit).forEach(streamSqlBuilder::buildStreamBySql);
                     StreamGraph streamGraph = execEnv.getStreamGraph();

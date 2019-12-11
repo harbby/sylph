@@ -57,4 +57,5 @@ artifacts {
   'default' dist
 }
 
-tasks.remove(tasks.findByName("uploadArchives"))
+tasks.findByName("uploadArchives").setEnabled(false)
+//tasks.remove(tasks.findByName("uploadArchives"))

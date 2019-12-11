@@ -47,7 +47,13 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableException;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
-import org.apache.flink.table.plan.schema.RelTable;
+import org.apache.flink.table.api.java.internal.StreamTableEnvironmentImpl;
+import org.apache.flink.table.catalog.Catalog;
+import org.apache.flink.table.catalog.CatalogBaseTable;
+import org.apache.flink.table.catalog.ObjectPath;
+import org.apache.flink.table.catalog.QueryOperationCatalogView;
+import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
+import org.apache.flink.table.catalog.exceptions.TableAlreadyExistException;
 import org.apache.flink.types.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -217,9 +223,18 @@ public class FlinkSqlParser
         RowTypeInfo rowTypeInfo = getJoinOutScheam(joinSelectFields);
         joinResultStream.getTransformation().setOutputType(rowTypeInfo);
         //--register tmp joinTable
-        if (tableEnv.isRegistered(joinInfo.getJoinTableName())) {
+
+        Catalog catalog = tableEnv.getCatalog(tableEnv.getCurrentCatalog()).get();
+        if (catalog.tableExists(ObjectPath.fromString(joinInfo.getJoinTableName()))) {
             Table table = tableEnv.fromDataStream(joinResultStream);
-            tableEnv.replaceRegisteredTable(joinInfo.getJoinTableName(), new RelTable(table.getRelNode()));
+            CatalogBaseTable tableTable = new QueryOperationCatalogView(table.getQueryOperation());
+            try {
+                catalog.createTable(ObjectPath.fromString(joinInfo.getJoinTableName()),  tableTable,true);
+            }
+            catch (TableAlreadyExistException | DatabaseNotExistException e) {
+                e.printStackTrace();
+            }
+            //tableEnv.replaceRegisteredTable(joinInfo.getJoinTableName(), new RelTable(table.getRelNode()));
         }
         else {
             tableEnv.registerDataStream(joinInfo.getJoinTableName(), joinResultStream);

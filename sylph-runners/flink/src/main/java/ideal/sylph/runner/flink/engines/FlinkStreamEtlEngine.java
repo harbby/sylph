@@ -106,7 +106,7 @@ public class FlinkStreamEtlEngine
                 .setCallable(() -> {
                     System.out.println("************ job start ***************");
                     StreamExecutionEnvironment execEnv = FlinkEnvFactory.getStreamEnv(jobConfig, jobId);
-                    StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(execEnv);
+                    StreamTableEnvironment tableEnv = StreamTableEnvironment.create(execEnv);
                     SourceContext sourceContext = new SourceContext() {};
 
                     final IocFactory iocFactory = IocFactory.create(new FlinkBean(tableEnv), binder -> {

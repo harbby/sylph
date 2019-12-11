@@ -175,6 +175,8 @@ public class FlinkContainerFactory
                 1,      // The maximum number of concurrent checkpoint attempts.
                 RETAIN_ON_CANCELLATION,
                 true   //CheckpointingMode.EXACTLY_ONCE //这是默认值
+                ,true  //todo: cfg.isPreferCheckpointForRecovery()
+                ,0  //todo: cfg.getTolerableCheckpointFailureNumber()
         );
 
         //set checkPoint
@@ -184,9 +186,9 @@ public class FlinkContainerFactory
         StateBackend stateBackend = new FsStateBackend(appCheckPath.toString(), true)
         {
             @Override
-            public FsStateBackend configure(org.apache.flink.configuration.Configuration config)
+            public FsStateBackend configure(org.apache.flink.configuration.Configuration config, ClassLoader classLoader)
             {
-                FsStateBackend fsStateBackend = super.configure(config);
+                FsStateBackend fsStateBackend = super.configure(config, classLoader);
                 return AopFactory.proxy(FsStateBackend.class).byInstance(fsStateBackend)
                         .returnType(CheckpointStorage.class)
                         .around(proxyContext -> {

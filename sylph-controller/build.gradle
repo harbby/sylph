@@ -1,16 +1,17 @@
 plugins {
-  id "com.moowork.node" version "1.2.0"
+  //id "com.moowork.node" version "1.3.1"
+  id("com.github.node-gradle.node") version "2.2.0"
 }
 
 node {
   // Version of node to use.
-  version = '10.16.0'
+  version = '12.13.1'
 
   // Version of npm to use.
-  npmVersion = '6.9.0'
+  npmVersion = '6.12.1'
 
   // Version of Yarn to use.
-  yarnVersion = '1.9.4'
+  yarnVersion = '1.19.2'
 
   // Base URL for fetching node distributions (change if you have a mirror).
   distBaseUrl = 'https://nodejs.org/dist'

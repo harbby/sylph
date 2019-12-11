@@ -53,6 +53,10 @@ statement
     | INSERT INTO qualifiedName columnAliases? queryStream                    #insertInto
     ;
 
+extend
+    : EXTEND string
+    ;
+
 watermark
     : identifier FOR identifier BY (
       SYSTEM_OFFSET '('offset=INTEGER_VALUE')'
@@ -67,6 +71,7 @@ queryStream
 tableElement
     : columnDefinition
     | proctime
+    | extend
     ;
 
 proctime
@@ -304,6 +309,7 @@ BATCH: 'BATCH';
 FUNCTION: 'FUNCTION';
 SYSTEM_OFFSET: 'SYSTEM_OFFSET';
 ROWMAX_OFFSET: 'ROWMAX_OFFSET';
+EXTEND: 'EXTEND';
 WATERMARK: 'WATERMARK';
 FULL: 'FULL';
 FUNCTIONS: 'FUNCTIONS';
