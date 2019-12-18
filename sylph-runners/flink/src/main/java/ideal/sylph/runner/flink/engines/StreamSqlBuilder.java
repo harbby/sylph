@@ -211,7 +211,7 @@ public class StreamSqlBuilder
         RowTypeInfo tableTypeInfo = (RowTypeInfo) inputStream.getType();
         waterMarkOptional.ifPresent(waterMark -> {
             logger.info("createStreamTable Watermark is {}", waterMark);
-            ((StreamTableEnvironmentImpl)tableEnv).execEnv().setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+            ((StreamTableEnvironmentImpl) tableEnv).execEnv().setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
             DataStream<Row> waterMarkStream = buildWaterMark(waterMark, tableTypeInfo, inputStream);
             String fields = String.join(",", ImmutableList.<String>builder()
                     .add(tableTypeInfo.getFieldNames())

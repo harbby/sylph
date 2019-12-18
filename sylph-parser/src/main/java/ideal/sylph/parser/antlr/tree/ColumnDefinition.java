@@ -32,7 +32,7 @@ public final class ColumnDefinition
     private final Optional<String> comment;
     private final Optional<String> extend;
 
-    public ColumnDefinition(NodeLocation location, Identifier name, String type,Optional<String> extend, Optional<String> comment)
+    public ColumnDefinition(NodeLocation location, Identifier name, String type, Optional<String> extend, Optional<String> comment)
     {
         this(Optional.of(location), name, type, extend, comment);
     }

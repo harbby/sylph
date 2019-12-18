@@ -111,7 +111,7 @@ subprojects {
     }
     header rootProject.file('src/license/LICENSE-HEADER.txt')
     strictCheck true
-    excludes(["**/*.properties", "**/*.sql"])
+    excludes(["**/*.properties", "**/*.sql", "**/*.xml"])
     //include "**/*.java"
   }
   //assemble.dependsOn 'licenseMain','licenseTest'

@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2018 The Sylph Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ideal.sylph.plugins.hdfs2;
 
 import ideal.sylph.annotation.Description;
@@ -132,26 +147,25 @@ public class HdfsSink2
                 .name(this.getClass().getSimpleName());
     }
 
-    public static class LocalShuffle<IN>
-            extends RichSinkFunction<IN>
-            implements CheckpointedFunction
-            , CheckpointListener, ProcessingTimeCallback
+    public static class LocalShuffle<T>
+            extends RichSinkFunction<T>
+            implements CheckpointedFunction, CheckpointListener, ProcessingTimeCallback
     {
-        private final List<RichSinkFunction<IN>> sinks;
-        private final BlockingQueue<Tuple2<IN, Context>> queue = new LinkedBlockingDeque<>(10_000);
+        private final List<RichSinkFunction<T>> sinks;
+        private final BlockingQueue<Tuple2<T, Context>> queue = new LinkedBlockingDeque<>(10_000);
         private ExecutorService service;
         private volatile boolean running = true;
 
-        public LocalShuffle(int split, RichSinkFunction<IN> userSink)
+        public LocalShuffle(int split, RichSinkFunction<T> userSink)
                 throws IOException, ClassNotFoundException, IllegalAccessException, NoSuchFieldException
         {
             this.sinks = new ArrayList<>(split);
-            SerializedValue<RichSinkFunction<IN>> serializedValue = new SerializedValue<>(userSink);
+            SerializedValue<RichSinkFunction<T>> serializedValue = new SerializedValue<>(userSink);
             for (int i = 0; i < split; i++) {
-                StreamingFileSink<IN> sink = (StreamingFileSink<IN>) serializedValue.deserializeValue(this.getClass().getClassLoader());
+                StreamingFileSink<T> sink = (StreamingFileSink<T>) serializedValue.deserializeValue(this.getClass().getClassLoader());
                 Field field = StreamingFileSink.class.getDeclaredField("bucketsBuilder");
                 field.setAccessible(true);
-                StreamingFileSink<IN> mockSink = new StreamingFileSink<IN>((StreamingFileSink.BulkFormatBuilder<IN, ?>) field.get(sink), 0)
+                StreamingFileSink<T> mockSink = new StreamingFileSink<T>((StreamingFileSink.BulkFormatBuilder<T, ?>) field.get(sink), 0)
                 {
                     @Override
                     public RuntimeContext getRuntimeContext()
@@ -168,12 +182,12 @@ public class HdfsSink2
         {
             super.open(parameters);
             this.service = Executors.newFixedThreadPool(sinks.size());
-            for (RichSinkFunction<IN> sink : sinks) {
+            for (RichSinkFunction<T> sink : sinks) {
                 sink.open(parameters);
                 service.submit(() -> {
                     while (running) {
                         try {
-                            Tuple2<IN, Context> tuple2 = queue.take();
+                            Tuple2<T, Context> tuple2 = queue.take();
                             sink.invoke(tuple2.f0, tuple2.f1);
                         }
                         catch (InterruptedException e) {
@@ -196,13 +210,13 @@ public class HdfsSink2
             running = false;
             super.close();
             service.shutdown();
-            for (RichSinkFunction<IN> sink : sinks) {
+            for (RichSinkFunction<T> sink : sinks) {
                 sink.close();
             }
         }
 
         @Override
-        public void invoke(IN value, Context context)
+        public void invoke(T value, Context context)
                 throws Exception
         {
             queue.put(Tuple2.of(value, context));
@@ -212,7 +226,7 @@ public class HdfsSink2
         public void notifyCheckpointComplete(long checkpointId)
                 throws Exception
         {
-            for (RichSinkFunction<IN> sink : sinks) {
+            for (RichSinkFunction<T> sink : sinks) {
                 if (sink instanceof CheckpointListener) {
                     ((CheckpointListener) sink).notifyCheckpointComplete(checkpointId);
                 }
@@ -223,7 +237,7 @@ public class HdfsSink2
         public void snapshotState(FunctionSnapshotContext context)
                 throws Exception
         {
-            for (RichSinkFunction<IN> sink : sinks) {
+            for (RichSinkFunction<T> sink : sinks) {
                 if (sink instanceof CheckpointedFunction) {
                     ((CheckpointedFunction) sink).snapshotState(context);
                 }
@@ -234,7 +248,7 @@ public class HdfsSink2
         public void initializeState(FunctionInitializationContext context)
                 throws Exception
         {
-            for (RichSinkFunction<IN> sink : sinks) {
+            for (RichSinkFunction<T> sink : sinks) {
                 if (sink instanceof CheckpointedFunction) {
                     ((CheckpointedFunction) sink).initializeState(context);
                 }
@@ -245,7 +259,7 @@ public class HdfsSink2
         public void onProcessingTime(long timestamp)
                 throws Exception
         {
-            for (RichSinkFunction<IN> sink : sinks) {
+            for (RichSinkFunction<T> sink : sinks) {
                 if (sink instanceof ProcessingTimeCallback) {
                     ((ProcessingTimeCallback) sink).onProcessingTime(timestamp);
                 }

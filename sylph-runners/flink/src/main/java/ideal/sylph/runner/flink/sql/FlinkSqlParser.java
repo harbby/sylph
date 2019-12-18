@@ -228,7 +228,7 @@ public class FlinkSqlParser
             Table table = tableEnv.fromDataStream(joinResultStream);
             CatalogBaseTable tableTable = new QueryOperationCatalogView(table.getQueryOperation());
             try {
-                catalog.createTable(ObjectPath.fromString(joinInfo.getJoinTableName()),  tableTable,true);
+                catalog.createTable(ObjectPath.fromString(joinInfo.getJoinTableName()), tableTable, true);
             }
             catch (TableAlreadyExistException | DatabaseNotExistException e) {
                 e.printStackTrace();

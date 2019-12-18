@@ -174,9 +174,9 @@ public class FlinkContainerFactory
                 jobConfig.getMinPauseBetweenCheckpoints(), // make sure 1000 ms of progress happen between checkpoints
                 1,      // The maximum number of concurrent checkpoint attempts.
                 RETAIN_ON_CANCELLATION,
-                true   //CheckpointingMode.EXACTLY_ONCE //这是默认值
-                ,true  //todo: cfg.isPreferCheckpointForRecovery()
-                ,0  //todo: cfg.getTolerableCheckpointFailureNumber()
+                true,   //CheckpointingMode.EXACTLY_ONCE //这是默认值
+                true,  //todo: cfg.isPreferCheckpointForRecovery()
+                0  //todo: cfg.getTolerableCheckpointFailureNumber()
         );
 
         //set checkPoint

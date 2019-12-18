@@ -28,7 +28,6 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.security.pkcs11.wrapper.CK_LOCKMUTEX;
 
 /**
  * Enabling and Configuring Checkpointing
