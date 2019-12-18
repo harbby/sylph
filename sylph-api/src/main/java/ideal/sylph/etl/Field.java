@@ -48,7 +48,7 @@ public final class Field
 
     public Optional<String> getExtend()
     {
-        return Optional.of(extend);
+        return Optional.ofNullable(extend);
     }
 
     public Class<?> getJavaTypeClass()

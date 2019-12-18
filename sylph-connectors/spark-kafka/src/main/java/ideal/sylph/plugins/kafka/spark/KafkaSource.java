@@ -27,8 +27,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema;
-import org.apache.spark.sql.types.StructType;
+import org.apache.spark.sql.catalyst.expressions.GenericRow;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
@@ -43,12 +42,10 @@ import scala.reflect.ClassTag$;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
-import static ideal.sylph.runner.spark.SQLHepler.schemaToSparkType;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Name("kafka")
@@ -82,7 +79,7 @@ public class KafkaSource
         kafkaParams.put("group.id", groupId); //注意不同的流 group.id必须要不同 否则会出现offect commit提交失败的错误
         kafkaParams.put("auto.offset.reset", offsetMode); //latest   earliest
 
-        Set<String> topicSets = Arrays.stream(topics.split(",")).collect(Collectors.toSet());
+        List<String> topicSets = Arrays.asList(topics.split(","));
         JavaInputDStream<ConsumerRecord<byte[], byte[]>> inputStream = KafkaUtils.createDirectStream(
                 ssc, LocationStrategies.PreferConsistent(), ConsumerStrategies.Subscribe(topicSets, kafkaParams));
 
@@ -92,26 +89,25 @@ public class KafkaSource
             public void commitOffsets(RDD<?> kafkaRdd)
             {
                 OffsetRange[] offsetRanges = ((HasOffsetRanges) kafkaRdd).offsetRanges();
-                log().info("commitKafkaOffsets {}", offsetRanges);
+                log().info("commitKafkaOffsets {}", (Object) offsetRanges);
                 DStream<?> firstDStream = DStreamUtil.getFirstDStream(inputStream.dstream());
                 ((CanCommitOffsets) firstDStream).commitAsync(offsetRanges);
             }
         };
-        JavaDStream<ConsumerRecord<byte[], byte[]>> dStream = new JavaDStream<>(sylphKafkaOffset, ClassTag$.MODULE$.apply(ConsumerRecord.class));
 
+        JavaDStream<ConsumerRecord<byte[], byte[]>> javaDStream = new JavaDStream<>(sylphKafkaOffset, ClassTag$.MODULE$.apply(ConsumerRecord.class));
         if ("json".equalsIgnoreCase(config.getValueType())) {
             JsonSchema jsonParser = new JsonSchema(context.getSchema());
-            return inputStream
+            return javaDStream
                     .map(record -> jsonParser.deserialize(record.key(), record.value(), record.topic(), record.partition(), record.offset()));
         }
         else {
-            StructType structType = schemaToSparkType(context.getSchema());
-            return inputStream
+            List<String> names = context.getSchema().getFieldNames();
+            return javaDStream
                     .map(record -> {
-                        String[] names = structType.names();
-                        Object[] values = new Object[names.length];
-                        for (int i = 0; i < names.length; i++) {
-                            switch (names[i]) {
+                        Object[] values = new Object[names.size()];
+                        for (int i = 0; i < names.size(); i++) {
+                            switch (names.get(i)) {
                                 case "_topic":
                                     values[i] = record.topic();
                                     continue;
@@ -119,7 +115,7 @@ public class KafkaSource
                                     values[i] = new String(record.value(), UTF_8);
                                     continue;
                                 case "_key":
-                                    values[i] = new String(record.key(), UTF_8);
+                                    values[i] = record.key() == null ? null : new String(record.key(), UTF_8);
                                     continue;
                                 case "_partition":
                                     values[i] = record.partition();
@@ -134,7 +130,7 @@ public class KafkaSource
                                     values[i] = null;
                             }
                         }
-                        return (Row) new GenericRowWithSchema(values, structType);
+                        return new GenericRow(values);  //GenericRowWithSchema
                     });  //.window(Duration(10 * 1000))
         }
     }

@@ -124,7 +124,7 @@ public class HdfsSink2
         stream.map(row -> {
             StringBuilder builder = new StringBuilder();
             for (int i = 0; i < row.getArity(); i++) {
-                builder.append(",").append(row.getField(i));
+                builder.append("\u0001").append(row.getField(i));
             }
             return builder.substring(1).getBytes(UTF_8);
         })
@@ -268,10 +268,6 @@ public class HdfsSink2
         @Description("default:5MB")
         private long batchBufferSize = 5 * 1024 * 1024;
 
-        @Name("maxCloseMinute")
-        @Description("default:30 Minute")
-        private long maxCloseMinute = 30;
-
         public long getBatchBufferSize()
         {
             return this.batchBufferSize;
@@ -285,11 +281,6 @@ public class HdfsSink2
         public String getWriteDir()
         {
             return this.writeDir;
-        }
-
-        public long getMaxCloseMinute()
-        {
-            return maxCloseMinute;
         }
     }
 }

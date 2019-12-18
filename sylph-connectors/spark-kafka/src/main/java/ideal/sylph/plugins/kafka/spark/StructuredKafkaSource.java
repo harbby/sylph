@@ -37,6 +37,7 @@ import java.util.function.Supplier;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static ideal.sylph.runner.spark.SQLHepler.schemaToSparkType;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Name("kafka")
 @Version("1.0.0")
@@ -96,10 +97,11 @@ public class StructuredKafkaSource
                                     values[i] = record.<String>getAs("topic");
                                     continue;
                                 case "_message":
-                                    values[i] = record.getAs("value");
+                                    values[i] = new String(record.getAs("value"), UTF_8);
                                     continue;
                                 case "_key":
-                                    values[i] = record.getAs("key");
+                                    byte[] key = record.getAs("key");
+                                    values[i] = key == null ? null : new String(key, UTF_8);
                                     continue;
                                 case "_partition":
                                     values[i] = record.<Integer>getAs("partition");

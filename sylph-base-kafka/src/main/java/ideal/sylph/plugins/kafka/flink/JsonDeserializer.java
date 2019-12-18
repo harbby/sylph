@@ -34,8 +34,8 @@ public class JsonDeserializer
     private static final Configuration jsonConfig = Configuration.builder()
             .jsonProvider(new JacksonJsonProvider())
             .mappingProvider(new JacksonMappingProvider())
-            .options(Option.DEFAULT_PATH_LEAF_TO_NULL)
-            .options(Option.SUPPRESS_EXCEPTIONS)  //path 不存在时返回null
+            .options(Option.DEFAULT_PATH_LEAF_TO_NULL)  //path 不存在时返回null
+            //.options(Option.SUPPRESS_EXCEPTIONS)  //path 不存在时返回null
             .build();
 
     private Supplier<ReadContext> jsonContext;

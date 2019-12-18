@@ -127,7 +127,7 @@ public abstract class KafkaBaseSource
                         values[i] = new String(record.value(), UTF_8);
                         continue;
                     case "_key":
-                        values[i] = new String(record.key(), UTF_8);
+                        values[i] = record.key() == null ? null : new String(record.key(), UTF_8);
                         continue;
                     case "_partition":
                         values[i] = record.partition();
