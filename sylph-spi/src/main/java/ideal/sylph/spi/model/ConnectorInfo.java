@@ -21,7 +21,7 @@ import com.google.common.collect.ImmutableSet;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.annotation.Version;
-import ideal.sylph.etl.PipelinePlugin;
+import ideal.sylph.etl.Operator;
 import ideal.sylph.etl.PluginConfig;
 import ideal.sylph.etl.api.RealTimePipeline;
 import ideal.sylph.etl.api.RealTimeSink;
@@ -60,7 +60,7 @@ public class ConnectorInfo
     private final String driverClass;
     private final transient TypeArgument[] javaGenerics;
     //-------------
-    private final PipelinePlugin.PipelineType pipelineType;  //source transform or sink
+    private final Operator.PipelineType pipelineType;  //source transform or sink
     private File pluginFile = new File(System.getProperty("java.io.tmpdir"));
     private List<Map<String, Object>> pluginConfig = Collections.emptyList(); //Injected by the specific runner
 
@@ -71,7 +71,7 @@ public class ConnectorInfo
             boolean realTime,
             String driverClass,
             TypeArgument[] javaGenerics,
-            PipelinePlugin.PipelineType pipelineType)
+            Operator.PipelineType pipelineType)
     {
         this.names = requireNonNull(names, "names is null");
         this.description = requireNonNull(description, "description is null");
@@ -117,7 +117,7 @@ public class ConnectorInfo
         return version;
     }
 
-    public PipelinePlugin.PipelineType getPipelineType()
+    public Operator.PipelineType getPipelineType()
     {
         return pipelineType;
     }
@@ -185,10 +185,10 @@ public class ConnectorInfo
     /**
      * "This method can only be called by the runner, otherwise it will report an error No classFound"
      */
-    public static List<Map<String, Object>> getConnectorDefaultConfig(Class<? extends PipelinePlugin> javaClass)
+    public static List<Map<String, Object>> getConnectorDefaultConfig(Class<? extends Operator> javaClass)
     {
         Constructor<?>[] constructors = javaClass.getConstructors();
-        checkState(constructors.length == 1, "PipelinePlugin " + javaClass + " must one constructor");
+        checkState(constructors.length == 1, "Operator " + javaClass + " must one constructor");
         Constructor<?> constructor = constructors[0];
 
         for (Class<?> argmentType : constructor.getParameterTypes()) {
@@ -207,9 +207,9 @@ public class ConnectorInfo
         return ImmutableList.of();
     }
 
-    public static ConnectorInfo getPluginInfo(Class<? extends PipelinePlugin> javaClass)
+    public static ConnectorInfo getPluginInfo(Class<? extends Operator> javaClass)
     {
-        PipelinePlugin.PipelineType pipelineType = parserDriverType(javaClass);
+        Operator.PipelineType pipelineType = parserDriverType(javaClass);
         boolean realTime = RealTimePipeline.class.isAssignableFrom(javaClass); //is realTime ?
         TypeArgument[] javaGenerics = realTime ? new TypeArgument[0] : getClassGenericInfo(javaClass, pipelineType);
 
@@ -235,23 +235,23 @@ public class ConnectorInfo
         );
     }
 
-    private static PipelinePlugin.PipelineType parserDriverType(Class<? extends PipelinePlugin> javaClass)
+    private static Operator.PipelineType parserDriverType(Class<? extends Operator> javaClass)
     {
         if (Source.class.isAssignableFrom(javaClass)) {
-            return PipelinePlugin.PipelineType.source;
+            return Operator.PipelineType.source;
         }
         else if (TransForm.class.isAssignableFrom(javaClass) || RealTimeTransForm.class.isAssignableFrom(javaClass)) {
-            return PipelinePlugin.PipelineType.transform;
+            return Operator.PipelineType.transform;
         }
         else if (Sink.class.isAssignableFrom(javaClass) || RealTimeSink.class.isAssignableFrom(javaClass)) {
-            return PipelinePlugin.PipelineType.sink;
+            return Operator.PipelineType.sink;
         }
         else {
             throw new IllegalArgumentException("Unknown type " + javaClass.getName());
         }
     }
 
-    private static TypeArgument[] getClassGenericInfo(Class<? extends PipelinePlugin> javaClass, PipelinePlugin.PipelineType pipelineType)
+    private static TypeArgument[] getClassGenericInfo(Class<? extends Operator> javaClass, Operator.PipelineType pipelineType)
     {
         Map<String, TypeArgument[]> typesMap = JavaTypes.getClassGenericInfo(javaClass);
         String genericString = JavaTypes.getClassGenericString(javaClass);

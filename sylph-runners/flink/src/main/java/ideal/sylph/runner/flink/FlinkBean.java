@@ -33,8 +33,7 @@ public class FlinkBean
     @Override
     public void configure(Binder binder)
     {
-        binder.bind(org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.class, ((StreamTableEnvironmentImpl)tableEnv).execEnv());
-        binder.bind(org.apache.flink.table.api.java.StreamTableEnvironment.class, tableEnv);
+        binder.bind(org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.class, ((StreamTableEnvironmentImpl) tableEnv).execEnv());
         binder.bind(org.apache.flink.table.api.java.StreamTableEnvironment.class, tableEnv);
     }
 }

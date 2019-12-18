@@ -44,7 +44,7 @@ public final class FlinkSink
     public void invoke(Row value, Context context)
             throws Exception
     {
-        realTimeSink.process(new FlinkRow(value, typeInformation));
+        realTimeSink.process(new FlinkRecord(value, typeInformation));
     }
 
     @Override

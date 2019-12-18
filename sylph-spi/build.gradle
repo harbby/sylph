@@ -7,9 +7,9 @@ dependencies {
   compile group: 'org.slf4j', name: 'slf4j-api', version: deps.slf4j
   compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
 
-  compile(project(':sylph-etl-api'))
+  compile(project(':sylph-api'))
   compile group: 'com.github.harbby', name: 'gadtry', version: deps.gadtry
-  compile group: 'org.javassist', name: 'javassist', version: '3.24.0-GA'
+  //compile group: 'org.javassist', name: 'javassist', version: '3.26.0-GA'
   compile group: 'commons-io', name: 'commons-io', version: '2.6'
 
   compile group: 'com.google.guava', name: 'guava', version: deps.guava

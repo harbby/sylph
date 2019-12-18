@@ -16,7 +16,7 @@
 package ideal.sylph.spi;
 
 import com.github.harbby.gadtry.collection.mutable.MutableSet;
-import ideal.sylph.etl.PipelinePlugin;
+import ideal.sylph.etl.Operator;
 import ideal.sylph.spi.model.ConnectorInfo;
 
 import java.io.Serializable;
@@ -51,7 +51,7 @@ public class ConnectorStore
         return new ConnectorStore(Collections.emptySet())
         {
             @Override
-            public <T> Class<T> getConnectorDriver(String driverOrName, PipelinePlugin.PipelineType pipelineType)
+            public <T> Class<T> getConnectorDriver(String driverOrName, Operator.PipelineType pipelineType)
             {
                 try {
                     return (Class<T>) Class.forName(driverOrName);
@@ -63,7 +63,7 @@ public class ConnectorStore
         };
     }
 
-    public <T> Class<T> getConnectorDriver(String driverOrName, PipelinePlugin.PipelineType pipelineType)
+    public <T> Class<T> getConnectorDriver(String driverOrName, Operator.PipelineType pipelineType)
     {
         requireNonNull(driverOrName, "driverOrName is null");
         try {
@@ -81,7 +81,7 @@ public class ConnectorStore
         return (int) connectorMap.values().stream().distinct().count();
     }
 
-    public Optional<ConnectorInfo> findConnectorInfo(String driverOrName, PipelinePlugin.PipelineType pipelineType)
+    public Optional<ConnectorInfo> findConnectorInfo(String driverOrName, Operator.PipelineType pipelineType)
     {
         requireNonNull(pipelineType, "pipelineType is null");
         return Optional.ofNullable(connectorMap.get(driverOrName + "\u0001" + pipelineType));

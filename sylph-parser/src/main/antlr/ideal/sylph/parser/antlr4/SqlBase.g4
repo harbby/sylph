@@ -53,10 +53,6 @@ statement
     | INSERT INTO qualifiedName columnAliases? queryStream                    #insertInto
     ;
 
-extend
-    : EXTEND string
-    ;
-
 watermark
     : identifier FOR identifier BY (
       SYSTEM_OFFSET '('offset=INTEGER_VALUE')'
@@ -71,15 +67,18 @@ queryStream
 tableElement
     : columnDefinition
     | proctime
-    | extend
     ;
 
 proctime
     : identifier AS 'PROCTIME()'
     ;
 
+extend
+    : EXTEND string
+    ;
+
 columnDefinition
-    : identifier type (COMMENT string)?
+    : identifier type (COMMENT string)? (extend)?
     ;
 
 properties

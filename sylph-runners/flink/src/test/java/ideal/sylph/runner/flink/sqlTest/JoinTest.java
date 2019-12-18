@@ -16,6 +16,7 @@
 package ideal.sylph.runner.flink.sqlTest;
 
 import ideal.sylph.etl.Collector;
+import ideal.sylph.etl.Record;
 import ideal.sylph.etl.Schema;
 import ideal.sylph.etl.api.RealTimeTransForm;
 import ideal.sylph.etl.join.JoinContext;
@@ -32,7 +33,6 @@ import org.apache.flink.calcite.shaded.com.google.common.collect.ImmutableList;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.Types;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.table.api.java.internal.StreamTableEnvironmentImpl;
@@ -213,7 +213,7 @@ public class JoinTest
         }
 
         @Override
-        public void process(ideal.sylph.etl.Row input, Collector<ideal.sylph.etl.Row> collector)
+        public void process(Record input, Collector<Record> collector)
         {
         }
 

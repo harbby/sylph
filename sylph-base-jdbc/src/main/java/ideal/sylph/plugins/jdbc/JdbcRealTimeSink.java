@@ -18,7 +18,7 @@ package ideal.sylph.plugins.jdbc;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.etl.PluginConfig;
-import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Record;
 import ideal.sylph.etl.api.RealTimeSink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,12 +84,12 @@ public abstract class JdbcRealTimeSink
     }
 
     @Override
-    public void process(Row row)
+    public void process(Record record)
     {
         try {
             int i = 1;
             for (String key : keys) {
-                Object value = isNumeric(key) ? row.getAs(Integer.parseInt(key)) : row.getAs(key);
+                Object value = isNumeric(key) ? record.getAs(Integer.parseInt(key)) : record.getAs(key);
                 statement.setObject(i, value);
                 i += 1;
             }

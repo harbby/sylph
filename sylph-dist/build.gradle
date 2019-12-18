@@ -48,8 +48,8 @@ task dist(type: Tar) {
     into tarpath + "/modules"
   }
 
-  from(project.files('build/etl-plugins')) {
-    into(tarpath + "/etl-plugins")
+  from(project.files('build/plugins')) {
+    into(tarpath + "/plugins")
   }
 }
 

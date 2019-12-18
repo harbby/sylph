@@ -15,7 +15,7 @@
  */
 package ideal.sylph.plugins.hdfs.parquet;
 
-import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Record;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -31,7 +31,7 @@ public interface HDFSFactory
     public void writeLine(long eventTime, Collection<Object> evalRow)
             throws IOException;
 
-    public void writeLine(long eventTime, Row row)
+    public void writeLine(long eventTime, Record record)
             throws IOException;
 
     public void close()

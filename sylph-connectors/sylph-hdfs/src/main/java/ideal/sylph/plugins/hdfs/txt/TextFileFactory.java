@@ -15,7 +15,7 @@
  */
 package ideal.sylph.plugins.hdfs.txt;
 
-import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Record;
 import ideal.sylph.etl.Schema;
 import ideal.sylph.plugins.hdfs.HdfsSink;
 import ideal.sylph.plugins.hdfs.parquet.HDFSFactory;
@@ -204,10 +204,10 @@ public class TextFileFactory
     }
 
     @Override
-    public void writeLine(long eventTime, Row row)
+    public void writeLine(long eventTime, Record record)
             throws IOException
     {
-        String value = row.mkString("\u0001");
+        String value = record.mkString("\u0001");
         this.writeLine(eventTime, value);
     }
 

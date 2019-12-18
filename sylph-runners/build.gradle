@@ -2,11 +2,11 @@ subprojects {
   apply plugin: 'com.github.harbby.gradle.serviceloader'
   serviceLoader {
     serviceInterface 'ideal.sylph.spi.Runner'
-    serviceInterface 'ideal.sylph.etl.PipelinePlugin'
+    serviceInterface 'ideal.sylph.etl.Operator'
   }
 
   dependencies {
-    compile(project(":sylph-etl-api"))
+    compile(project(":sylph-api"))
   }
 
   def modules = project(':sylph-dist').buildDir.path + "/modules/${name}"

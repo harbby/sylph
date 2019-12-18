@@ -18,12 +18,12 @@ dependencies {
   }
 
   //--table sql---
-  compile group: 'org.apache.flink', name: 'flink-table-api-java-bridge_2.12', version: deps.flink
-  compile group: 'org.apache.flink', name: 'flink-table-planner_2.12', version: deps.flink
+  compileOnly group: 'org.apache.flink', name: 'flink-table-api-java-bridge_2.12', version: deps.flink
+  compileOnly group: 'org.apache.flink', name: 'flink-table-planner_2.12', version: deps.flink
 
   //-------cep-------------------
-  compile "org.apache.flink:flink-cep_2.12:$deps.flink"
-  compile "org.apache.flink:flink-cep-scala_2.12:$deps.flink"
+  compileOnly "org.apache.flink:flink-cep_2.12:$deps.flink"
+  compileOnly "org.apache.flink:flink-cep-scala_2.12:$deps.flink"
 
   //--- other----
   compileOnly(project(':sylph-spi'))

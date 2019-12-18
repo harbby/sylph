@@ -33,7 +33,7 @@ allprojects {
           joda_time           : '2.9.3',
           slf4j               : '1.7.25',
           guice               : '4.2.1',
-          gadtry              : '1.6.2',
+          gadtry              : '1.6.3',
           guava               : '25.1-jre',
           jackson             : '2.9.5',
           jersey              : '2.28',

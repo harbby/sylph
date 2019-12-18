@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static ideal.sylph.runner.spark.SQLHepler.schemaToSparkType;
 
 @Name("kafka")
@@ -56,6 +57,9 @@ public class StructuredKafkaSource
         String brokers = config.getBrokers(); //需要把集群的host 配置到程序所在机器
         String groupId = config.getGroupid(); //消费者的名字
         String offsetMode = config.getOffsetMode();
+
+        checkState(!"largest".equals(offsetMode), "kafka 0.10+, use latest");
+        checkState(!"smallest".equals(offsetMode), "kafka 0.10+, use earliest");
 
         Map<String, Object> kafkaParams = new HashMap<>(config.getOtherConfig());
         kafkaParams.put("subscribe", topics);
