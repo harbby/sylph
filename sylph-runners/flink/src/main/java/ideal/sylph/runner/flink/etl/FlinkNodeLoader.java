@@ -150,7 +150,7 @@ public final class FlinkNodeLoader
         return (stream) -> {
             requireNonNull(stream, "Transform find input stream is null");
             DataStream<Row> dataStream = transform.transform(stream);
-            logger.info("transform {} schema to:", driver, dataStream.getType());
+            logger.info("transform {} schema to: {}", driver, dataStream.getType());
             return dataStream;
         };
     }

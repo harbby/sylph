@@ -24,6 +24,7 @@ import ideal.sylph.etl.api.RealTimeSink;
 import org.apache.kudu.ColumnSchema;
 import org.apache.kudu.Type;
 import org.apache.kudu.client.KuduClient;
+import org.apache.kudu.client.KuduException;
 import org.apache.kudu.client.KuduSession;
 import org.apache.kudu.client.KuduTable;
 import org.apache.kudu.client.Operation;
@@ -123,13 +124,20 @@ public class KuduSink
             kuduSession.apply(operation);
             // submit batch
             if (rowNumCnt++ > maxBatchSize) {
-                rowNumCnt = 0;
-                kuduSession.flush(); //真正落地
+                this.flush();
             }
         }
         catch (IOException e) {
             throwsException(e);
         }
+    }
+
+    @Override
+    public void flush()
+            throws KuduException
+    {
+        kuduSession.flush(); //真正落地
+        rowNumCnt = 0;
     }
 
     private void appendColumn(Operation operation, String name, Object value)
@@ -199,7 +207,8 @@ public class KuduSink
     {
         try (KuduClient client = kuduClient) {
             if (kuduSession != null) {
-                kuduSession.close();
+                this.flush();
+                this.kuduSession.close();
             }
         }
         catch (IOException e) {

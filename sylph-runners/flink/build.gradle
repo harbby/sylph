@@ -32,4 +32,6 @@ dependencies {
 
   //colour
   compile group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
+
+  testCompile "org.apache.flink:flink-runtime-web_2.11:${deps.flink}"
 }
