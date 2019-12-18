@@ -24,7 +24,7 @@ header:
 sidebar:
   docs:
     Intro: guide
-    What is: What is STLPH
+    What is: What is SYLPH
     Get Start: Quick start
     Etl is: ETL Job
     batch join: stream join batch
