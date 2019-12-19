@@ -18,7 +18,7 @@ package ideal.sylph.plugins.elasticsearch6;
 import com.github.harbby.gadtry.ioc.Autowired;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
-import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Record;
 import ideal.sylph.etl.Schema;
 import ideal.sylph.etl.SinkContext;
 import ideal.sylph.etl.api.RealTimeSink;
@@ -68,7 +68,7 @@ public class Elasticsearch6Sink
     }
 
     @Override
-    public void process(Row value)
+    public void process(Record value)
     {
         Map<String, Object> map = new HashMap<>();
         for (String fieldName : schema.getFieldNames()) {

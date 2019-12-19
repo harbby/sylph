@@ -16,7 +16,7 @@
 package ideal.sylph.runner.flink.sql;
 
 import ideal.sylph.etl.api.RealTimeTransForm;
-import ideal.sylph.runner.flink.etl.FlinkRow;
+import ideal.sylph.runner.flink.etl.FlinkRecord;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.configuration.Configuration;
@@ -86,7 +86,7 @@ public class AsyncFunctionHelper
         {
             CompletableFuture<Collection<Row>> resultFuture = CompletableFuture.supplyAsync(() -> {
                 List<Row> rows = new ArrayList<>();
-                transForm.process(new FlinkRow(input, streamRowType), record -> rows.add(FlinkRow.parserRow(record)));
+                transForm.process(new FlinkRecord(input, streamRowType), record -> rows.add(FlinkRecord.parserRow(record)));
                 return rows;
             });
 

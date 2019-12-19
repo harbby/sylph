@@ -17,6 +17,7 @@ package ideal.sylph.plugins.mysql;
 
 import com.github.harbby.gadtry.ioc.IocFactory;
 import com.google.common.collect.ImmutableMap;
+import ideal.sylph.plugins.jdbc.JdbcRealTimeSink;
 import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.PluginConfigFactory;
 import org.junit.Assert;
@@ -34,8 +35,8 @@ public class MysqlSinkTest
         Map<String, Object> config = ImmutableMap.<String, Object>builder()
                 .put("query", query)
                 .build();
-        MysqlSink.MysqlConfig mysqlConfig =
-                PluginConfigFactory.INSTANCE.createPluginConfig(MysqlSink.MysqlConfig.class, config);
+        JdbcRealTimeSink.JdbcConfig mysqlConfig =
+                PluginConfigFactory.INSTANCE.createPluginConfig(JdbcRealTimeSink.JdbcConfig.class, config);
         Assert.assertEquals(mysqlConfig.getQuery(), query);
     }
 

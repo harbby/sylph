@@ -52,7 +52,7 @@ public class JsonPathUdfTest
 
         StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.createLocalEnvironment();
         execEnv.setParallelism(2);
-        tableEnv = TableEnvironment.getTableEnvironment(execEnv);
+        tableEnv = StreamTableEnvironment.create(execEnv);
         tableEnv.registerFunction("get_json_object", new UDFJson());
         table = tableEnv.sqlQuery("select '" + json + "' as message");
     }
@@ -74,7 +74,7 @@ public class JsonPathUdfTest
                         result.put(jsonKey, (String) value.getField(0));
                     }
                 });
-        tableEnv.execEnv().execute();
+        tableEnv.execute("");
         Assert.assertEquals("123", result.get(jsonKey));
     }
 
@@ -97,7 +97,7 @@ public class JsonPathUdfTest
                         }
                     }
                 });
-        tableEnv.execEnv().execute();
+        tableEnv.execute("");
         Assert.assertNull(result.get(jsonKey));
     }
 }

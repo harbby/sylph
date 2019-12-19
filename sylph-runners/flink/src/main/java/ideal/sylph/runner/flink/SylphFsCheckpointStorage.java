@@ -16,6 +16,7 @@
 package ideal.sylph.runner.flink;
 
 import org.apache.flink.api.common.JobID;
+import org.apache.flink.configuration.CheckpointingOptions;
 import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.runtime.state.CheckpointStorageLocation;
@@ -24,7 +25,6 @@ import org.apache.flink.runtime.state.CheckpointStreamFactory;
 import org.apache.flink.runtime.state.CheckpointStreamFactory.CheckpointStateOutputStream;
 import org.apache.flink.runtime.state.filesystem.AbstractFsCheckpointStorage;
 import org.apache.flink.runtime.state.filesystem.FsCheckpointStorageLocation;
-import org.apache.flink.runtime.state.filesystem.FsCheckpointStreamFactory;
 import org.apache.flink.runtime.state.filesystem.FsCheckpointStreamFactory.FsCheckpointStateOutputStream;
 
 import javax.annotation.Nullable;
@@ -51,6 +51,8 @@ public class SylphFsCheckpointStorage
 
     private final int fileSizeThreshold;
 
+    private final int writeBufferSize;
+
     public SylphFsCheckpointStorage(
             Path checkpointBaseDirectory,
             @Nullable Path defaultSavepointDirectory,
@@ -62,7 +64,8 @@ public class SylphFsCheckpointStorage
                 checkpointBaseDirectory,
                 defaultSavepointDirectory,
                 jobId,
-                fileSizeThreshold);
+                fileSizeThreshold,
+                CheckpointingOptions.FS_WRITE_BUFFER_SIZE.defaultValue()); //todo:FsStateBackend#getWriteBufferSize
     }
 
     public SylphFsCheckpointStorage(
@@ -70,7 +73,8 @@ public class SylphFsCheckpointStorage
             Path checkpointBaseDirectory,
             @Nullable Path defaultSavepointDirectory,
             JobID jobId,
-            int fileSizeThreshold)
+            int fileSizeThreshold,
+            int writeBufferSize)
             throws IOException
     {
         super(jobId, defaultSavepointDirectory);
@@ -83,6 +87,7 @@ public class SylphFsCheckpointStorage
         this.sharedStateDirectory = new Path(checkpointsDirectory, CHECKPOINT_SHARED_STATE_DIR);
         this.taskOwnedStateDirectory = new Path(checkpointsDirectory, CHECKPOINT_TASK_OWNED_STATE_DIR);
         this.fileSizeThreshold = fileSizeThreshold;
+        this.writeBufferSize = writeBufferSize;
 
         // initialize the dedicated directories
         fileSystem.mkdirs(checkpointsDirectory);
@@ -125,7 +130,8 @@ public class SylphFsCheckpointStorage
                 sharedStateDirectory,
                 taskOwnedStateDirectory,
                 CheckpointStorageLocationReference.getDefault(),
-                fileSizeThreshold);
+                fileSizeThreshold,
+                writeBufferSize);
     }
 
     @Override
@@ -144,7 +150,8 @@ public class SylphFsCheckpointStorage
                     sharedStateDirectory,
                     taskOwnedStateDirectory,
                     reference,
-                    fileSizeThreshold);
+                    fileSizeThreshold,
+                    writeBufferSize);
         }
         else {
             // location encoded in the reference
@@ -156,7 +163,8 @@ public class SylphFsCheckpointStorage
                     path,
                     path,
                     reference,
-                    fileSizeThreshold);
+                    fileSizeThreshold,
+                    writeBufferSize);
         }
     }
 
@@ -167,7 +175,7 @@ public class SylphFsCheckpointStorage
         return new FsCheckpointStateOutputStream(
                 taskOwnedStateDirectory,
                 fileSystem,
-                FsCheckpointStreamFactory.DEFAULT_WRITE_BUFFER_SIZE,
+                CheckpointingOptions.FS_WRITE_BUFFER_SIZE.defaultValue(), //todo:FsStateBackend#getWriteBufferSize
                 fileSizeThreshold);
     }
 
@@ -176,6 +184,6 @@ public class SylphFsCheckpointStorage
             throws IOException
     {
         final CheckpointStorageLocationReference reference = encodePathAsReference(location);
-        return new FsCheckpointStorageLocation(fs, location, location, location, reference, fileSizeThreshold);
+        return new FsCheckpointStorageLocation(fs, location, location, location, reference, fileSizeThreshold, writeBufferSize);
     }
 }

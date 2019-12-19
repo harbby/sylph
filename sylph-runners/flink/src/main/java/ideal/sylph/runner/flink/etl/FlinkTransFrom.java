@@ -15,6 +15,7 @@
  */
 package ideal.sylph.runner.flink.etl;
 
+import ideal.sylph.etl.Record;
 import ideal.sylph.etl.api.RealTimeTransForm;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -57,12 +58,12 @@ public class FlinkTransFrom
     public void flatMap(Row row, Collector<Row> collector)
             throws Exception
     {
-        ideal.sylph.etl.Collector<ideal.sylph.etl.Row> rowCollector = new ideal.sylph.etl.Collector<ideal.sylph.etl.Row>()
+        ideal.sylph.etl.Collector<Record> rowCollector = new ideal.sylph.etl.Collector<Record>()
         {
             @Override
-            public void collect(ideal.sylph.etl.Row record)
+            public void collect(Record record)
             {
-                collector.collect(FlinkRow.parserRow(record));
+                collector.collect(FlinkRecord.parserRow(record));
             }
 
             @Override
@@ -71,6 +72,6 @@ public class FlinkTransFrom
                 collector.close();
             }
         };
-        realTimeTransForm.process(new FlinkRow(row, typeInformation), rowCollector);
+        realTimeTransForm.process(new FlinkRecord(row, typeInformation), rowCollector);
     }
 }

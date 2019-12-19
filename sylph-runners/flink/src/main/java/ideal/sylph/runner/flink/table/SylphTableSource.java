@@ -73,6 +73,6 @@ public class SylphTableSource
     @Override
     public String explainSource()
     {
-        return TableConnectorUtil.generateRuntimeName(this.getClass(), getTableSchema().getColumnNames());
+        return TableConnectorUtil.generateRuntimeName(this.getClass(), getTableSchema().getFieldNames());
     }
 }

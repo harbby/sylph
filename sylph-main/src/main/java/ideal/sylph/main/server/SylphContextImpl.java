@@ -20,7 +20,7 @@ import com.github.harbby.gadtry.classloader.Module;
 import ideal.sylph.etl.Plugin;
 import ideal.sylph.main.service.JobEngineManager;
 import ideal.sylph.main.service.JobManager;
-import ideal.sylph.main.service.PipelinePluginLoader;
+import ideal.sylph.main.service.OperatorLoader;
 import ideal.sylph.spi.SylphContext;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.JobContainer;
@@ -46,9 +46,9 @@ public class SylphContextImpl
 
     private JobManager jobManager;
     private JobEngineManager runnerManger;
-    private PipelinePluginLoader pluginLoader;
+    private OperatorLoader pluginLoader;
 
-    SylphContextImpl(JobManager jobManager, JobEngineManager runnerManger, PipelinePluginLoader pluginLoader)
+    SylphContextImpl(JobManager jobManager, JobEngineManager runnerManger, OperatorLoader pluginLoader)
     {
         this.jobManager = requireNonNull(jobManager, "jobManager is null");
         this.runnerManger = requireNonNull(runnerManger, "runnerManger is null");

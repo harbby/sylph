@@ -19,7 +19,7 @@ import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.annotation.Version;
 import ideal.sylph.etl.PluginConfig;
-import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Record;
 import ideal.sylph.etl.Schema;
 import ideal.sylph.etl.SinkContext;
 import ideal.sylph.etl.api.RealTimeSink;
@@ -68,7 +68,7 @@ public class HdfsSink
     }
 
     @Override
-    public void process(Row value)
+    public void process(Record value)
     {
         try {
             long eventTime = value.getAs(eventTimeIndex);

@@ -18,6 +18,7 @@ package ideal.sylph.runner.flink;
 import com.github.harbby.gadtry.ioc.Bean;
 import com.github.harbby.gadtry.ioc.Binder;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
+import org.apache.flink.table.api.java.internal.StreamTableEnvironmentImpl;
 
 public class FlinkBean
         implements Bean
@@ -32,8 +33,7 @@ public class FlinkBean
     @Override
     public void configure(Binder binder)
     {
-        binder.bind(org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.class, tableEnv.execEnv());
-        binder.bind(org.apache.flink.table.api.StreamTableEnvironment.class, tableEnv);
+        binder.bind(org.apache.flink.streaming.api.environment.StreamExecutionEnvironment.class, ((StreamTableEnvironmentImpl) tableEnv).execEnv());
         binder.bind(org.apache.flink.table.api.java.StreamTableEnvironment.class, tableEnv);
     }
 }

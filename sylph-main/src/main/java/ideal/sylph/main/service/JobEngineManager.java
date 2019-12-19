@@ -19,7 +19,7 @@ import com.github.harbby.gadtry.base.Closeables;
 import com.github.harbby.gadtry.classloader.PluginLoader;
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.google.common.collect.ImmutableList;
-import ideal.sylph.etl.PipelinePlugin;
+import ideal.sylph.etl.Operator;
 import ideal.sylph.main.server.ServerMainConfig;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
@@ -58,7 +58,7 @@ public class JobEngineManager
 {
     private static final Logger logger = LoggerFactory.getLogger(JobEngineManager.class);
     private final Map<String, JobEngine> jobActuatorMap = new HashMap<>();
-    private final PipelinePluginLoader pluginLoader;
+    private final OperatorLoader pluginLoader;
     private final ServerMainConfig config;
 
     private static final List<String> SPI_PACKAGES = ImmutableList.<String>builder()
@@ -78,7 +78,7 @@ public class JobEngineManager
             .build();
 
     @Autowired
-    public JobEngineManager(PipelinePluginLoader pluginLoader, ServerMainConfig config)
+    public JobEngineManager(OperatorLoader pluginLoader, ServerMainConfig config)
     {
         this.pluginLoader = requireNonNull(pluginLoader, "pluginLoader is null");
         this.config = requireNonNull(config, "config is null");
@@ -109,7 +109,7 @@ public class JobEngineManager
     private void createRunner(final Runner runner)
     {
         RunnerContext runnerContext = new RunnerContextImpl(pluginLoader::getPluginsInfo);
-        logger.info("Runner: {} starts loading {}", runner.getClass().getName(), PipelinePlugin.class.getName());
+        logger.info("Runner: {} starts loading {}", runner.getClass().getName(), Operator.class.getName());
 
         checkArgument(runner.getContainerFactory() != null, runner.getClass() + " getContainerFactory() return null");
 

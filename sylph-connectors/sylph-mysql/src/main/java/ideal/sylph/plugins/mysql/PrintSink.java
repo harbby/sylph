@@ -17,7 +17,7 @@ package ideal.sylph.plugins.mysql;
 
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
-import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Record;
 import ideal.sylph.etl.api.RealTimeSink;
 
 @Name("console")
@@ -37,7 +37,7 @@ public class PrintSink
     }
 
     @Override
-    public void process(Row value)
+    public void process(Record value)
     {
         System.out.println(value.mkString());
     }

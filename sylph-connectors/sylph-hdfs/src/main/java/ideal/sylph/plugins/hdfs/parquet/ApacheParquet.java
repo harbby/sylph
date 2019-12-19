@@ -15,7 +15,7 @@
  */
 package ideal.sylph.plugins.hdfs.parquet;
 
-import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Record;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -140,12 +140,12 @@ public class ApacheParquet
     }
 
     @Override
-    public void writeLine(Row row)
+    public void writeLine(Record record)
     {
         Group group = groupFactory.newGroup();
         List<ColumnDescriptor> columns = schema.getColumns();
-        for (int i = 0; i < row.size(); i++) {
-            Object value = row.getAs(i);
+        for (int i = 0; i < record.size(); i++) {
+            Object value = record.getAs(i);
             addValueToGroup(columns.get(i).getType().javaType, group, i, value);
         }
         try {

@@ -34,7 +34,6 @@ import ideal.sylph.spi.job.JobConfig;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.graph.StreamGraph;
-import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.fusesource.jansi.Ansi;
 import org.slf4j.Logger;
@@ -106,7 +105,7 @@ public class FlinkStreamEtlEngine
                 .setCallable(() -> {
                     System.out.println("************ job start ***************");
                     StreamExecutionEnvironment execEnv = FlinkEnvFactory.getStreamEnv(jobConfig, jobId);
-                    StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(execEnv);
+                    StreamTableEnvironment tableEnv = StreamTableEnvironment.create(execEnv);
                     SourceContext sourceContext = new SourceContext() {};
 
                     final IocFactory iocFactory = IocFactory.create(new FlinkBean(tableEnv), binder -> {

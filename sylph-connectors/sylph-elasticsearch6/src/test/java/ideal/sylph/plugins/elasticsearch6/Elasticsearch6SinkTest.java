@@ -21,7 +21,7 @@ import com.github.harbby.gadtry.aop.mock.MockGoJUnitRunner;
 import com.github.harbby.gadtry.ioc.IocFactory;
 import com.github.harbby.gadtry.memory.UnsafeHelper;
 import com.google.common.collect.ImmutableMap;
-import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Record;
 import ideal.sylph.etl.Schema;
 import ideal.sylph.etl.SinkContext;
 import ideal.sylph.spi.NodeLoader;
@@ -107,7 +107,7 @@ public class Elasticsearch6SinkTest
     {
         Elasticsearch6Sink sink = getSink(configMap, Schema.newBuilder().build());
         Assert.assertTrue(sink.open(0, 0));
-        sink.process(Row.of(new Object[] {"test"}));
+        sink.process(Record.of(new Object[] {"test"}));
 
         AtomicBoolean closed = new AtomicBoolean(false);
         doAnswer(a -> {
@@ -133,7 +133,7 @@ public class Elasticsearch6SinkTest
         }).when(transportClient).bulk(any());
 
         Assert.assertTrue(sink.open(0, 0));
-        sink.process(Row.of(new Object[] {"test"}));
+        sink.process(Record.of(new Object[] {"test"}));
 
         Assert.assertEquals(0, flushData.size());
         sink.close(null);   //Trigger flush
