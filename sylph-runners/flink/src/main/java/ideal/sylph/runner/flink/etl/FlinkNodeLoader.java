@@ -17,7 +17,7 @@ package ideal.sylph.runner.flink.etl;
 
 import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.ioc.IocFactory;
-import ideal.sylph.etl.PipelinePlugin;
+import ideal.sylph.etl.Operator;
 import ideal.sylph.etl.Schema;
 import ideal.sylph.etl.api.RealTimeSink;
 import ideal.sylph.etl.api.RealTimeTransForm;
@@ -59,7 +59,7 @@ public final class FlinkNodeLoader
     @Override
     public UnaryOperator<DataStream<Row>> loadSource(String driverStr, final Map<String, Object> config)
     {
-        final Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, PipelinePlugin.PipelineType.source);
+        final Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, Operator.PipelineType.source);
         checkState(Source.class.isAssignableFrom(driverClass),
                 "The Source driver must is Source.class, But your " + driverClass);
         checkDataStreamRow(Source.class, driverClass);
@@ -89,7 +89,7 @@ public final class FlinkNodeLoader
     @Override
     public UnaryOperator<DataStream<Row>> loadSink(String driverStr, final Map<String, Object> config)
     {
-        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, PipelinePlugin.PipelineType.sink);
+        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, Operator.PipelineType.sink);
         checkState(RealTimeSink.class.isAssignableFrom(driverClass) || Sink.class.isAssignableFrom(driverClass),
                 "The Sink driver must is RealTimeSink.class or Sink.class, But your " + driverClass);
         if (Sink.class.isAssignableFrom(driverClass)) {
@@ -128,7 +128,7 @@ public final class FlinkNodeLoader
     @Override
     public final UnaryOperator<DataStream<Row>> loadTransform(String driverStr, final Map<String, Object> config)
     {
-        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, PipelinePlugin.PipelineType.transform);
+        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, Operator.PipelineType.transform);
         checkState(RealTimeTransForm.class.isAssignableFrom(driverClass) || TransForm.class.isAssignableFrom(driverClass),
                 "driverStr must is RealTimeSink.class or Sink.class");
         if (TransForm.class.isAssignableFrom(driverClass)) {
@@ -150,7 +150,7 @@ public final class FlinkNodeLoader
         return (stream) -> {
             requireNonNull(stream, "Transform find input stream is null");
             DataStream<Row> dataStream = transform.transform(stream);
-            logger.info("transform {} schema to:", driver, dataStream.getType());
+            logger.info("transform {} schema to: {}", driver, dataStream.getType());
             return dataStream;
         };
     }
@@ -169,7 +169,7 @@ public final class FlinkNodeLoader
             // schema必须要在driver上面指定
             Schema schema = realTimeTransForm.getSchema();
             if (schema != null) {
-                RowTypeInfo outPutStreamType = FlinkRow.parserRowType(schema);
+                RowTypeInfo outPutStreamType = FlinkRecord.parserRowType(schema);
                 return tmp.returns(outPutStreamType);
             }
             return tmp;

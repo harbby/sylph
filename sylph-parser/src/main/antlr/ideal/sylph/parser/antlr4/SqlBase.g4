@@ -73,8 +73,12 @@ proctime
     : identifier AS 'PROCTIME()'
     ;
 
+extend
+    : EXTEND string
+    ;
+
 columnDefinition
-    : identifier type (COMMENT string)?
+    : identifier type (COMMENT string)? (extend)?
     ;
 
 properties
@@ -304,6 +308,7 @@ BATCH: 'BATCH';
 FUNCTION: 'FUNCTION';
 SYSTEM_OFFSET: 'SYSTEM_OFFSET';
 ROWMAX_OFFSET: 'ROWMAX_OFFSET';
+EXTEND: 'EXTEND';
 WATERMARK: 'WATERMARK';
 FULL: 'FULL';
 FUNCTIONS: 'FUNCTIONS';

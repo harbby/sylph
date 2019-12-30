@@ -20,18 +20,16 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 public class ClientFactory
+        implements Serializable
 {
     private final ElasticsearchSinkConfig config;
-    private final Settings settings;
 
     public ClientFactory(ElasticsearchSinkConfig config)
     {
         this.config = config;
-        String clusterName = config.getClusterName();
-        this.settings = Settings.builder().put("cluster.name", clusterName)
-                .put("client.transport.sniff", true).build();
     }
 
     public ElasticsearchSinkConfig getConfig()
@@ -42,6 +40,9 @@ public class ClientFactory
     public TransportClient createClient()
             throws IOException
     {
+        String clusterName = config.getClusterName();
+        Settings settings = Settings.builder().put("cluster.name", clusterName)
+                .put("client.transport.sniff", true).build();
         return new PreBuiltTransportClient(settings);
     }
 }

@@ -23,7 +23,7 @@ header:
 sidebar:
   docs:
     Intro: 新手指南
-    What is: STLPH是什么
+    What is: SYLPH是什么
     Get Start: 快速入门
     Etl is: ETL任务.
     batch join: 维表join

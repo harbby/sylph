@@ -15,7 +15,7 @@ SYLPH 中，使用restful风格接口:
 
 ## 使用 Service
 
-接口在`sylph-controller`模块中管理,主要分布在`ideal.sylph.controller.action`包下:
+接口在`sylph-web`模块中管理,主要分布在`ideal.sylph.controller.action`包下:
 
 ```java
     @javax.inject.Singleton

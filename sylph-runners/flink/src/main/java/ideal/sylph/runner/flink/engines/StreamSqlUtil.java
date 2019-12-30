@@ -158,7 +158,7 @@ public final class StreamSqlUtil
                 return Double.class;
             case "float":
                 return Float.class;
-            case "decimal" :
+            case "decimal":
                 return BigDecimal.class;
             case "time":
                 return Time.class;
@@ -187,14 +187,14 @@ public final class StreamSqlUtil
         Matcher item = Pattern.compile(arrayRegularExpression).matcher(type);
         while (item.find()) {
             Type arrayType = parserSqlType(item.group(0));
-            return JavaTypes.make(List.class, new Type[] {arrayType}, null);
+            return JavaTypes.makeArrayType(arrayType);
         }
 
         item = Pattern.compile(mapRegularExpression).matcher(type);
         while (item.find()) {
             Type keyClass = parserSqlType(item.group(1));
             Type valueClass = parserSqlType(item.group(2));
-            return JavaTypes.make(Map.class, new Type[] {keyClass, valueClass}, null);
+            return JavaTypes.makeMapType(Map.class, keyClass, valueClass);
         }
 
         throw new IllegalArgumentException("this TYPE " + type + " have't support!");

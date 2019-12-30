@@ -37,7 +37,8 @@ public class KafkaSourceConfig
     private String groupid = "sylph_streamSql_test1";
 
     @Name("auto.offset.reset")
-    @Description("this is auto.offset.reset mode")
+    @Description("this is auto.offset.reset," +
+            "\tearliest, latest, or json string {\"topicA\":{\"0\":23,\"1\":-1},\"topicB\":{\"0\":-2}}")
     private String offsetMode = "latest";
 
     @Name("value_type")

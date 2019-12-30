@@ -20,17 +20,17 @@ import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
 
+import java.io.Serializable;
+
 public class ClientFactory
+        implements Serializable
 {
     private final ElasticsearchSinkConfig config;
-    private final Settings settings;
 
     @Autowired
     public ClientFactory(ElasticsearchSinkConfig config)
     {
         this.config = config;
-        this.settings = Settings.builder().put("cluster.name", config.getClusterName())
-                .put("client.transport.sniff", true).build();
     }
 
     public ElasticsearchSinkConfig getConfig()
@@ -40,6 +40,8 @@ public class ClientFactory
 
     public TransportClient createClient()
     {
+        Settings settings = Settings.builder().put("cluster.name", config.getClusterName())
+                .put("client.transport.sniff", true).build();
         return new PreBuiltTransportClient(settings);
     }
 }

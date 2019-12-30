@@ -181,13 +181,14 @@ public class SQLHepler
         }
     }
 
-    public static Schema getTableSchema(CreateTable createStream)
+    public static Schema getTableSchema(CreateTable createTable)
     {
-        final List<ColumnDefinition> columns = createStream.getElements();
+        final List<ColumnDefinition> columns = createTable.getElements();
         Schema.SchemaBuilder builder = Schema.newBuilder();
-        columns.forEach(columnDefinition -> {
-            builder.add(columnDefinition.getName().getValue(), parserSqlType(columnDefinition.getType()));
-        });
+        columns.forEach(column -> builder.add(
+                column.getName().getValue(),
+                parserSqlType(column.getType()),
+                column.getExtend()));
         return builder.build();
     }
 

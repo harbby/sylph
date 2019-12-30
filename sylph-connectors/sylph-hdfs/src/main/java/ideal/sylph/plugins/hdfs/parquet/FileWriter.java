@@ -15,7 +15,7 @@
  */
 package ideal.sylph.plugins.hdfs.parquet;
 
-import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Record;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -35,7 +35,7 @@ public interface FileWriter
 
     public void writeLine(Collection<Object> evalRow);
 
-    public void writeLine(Row row);
+    public void writeLine(Record record);
 
     public void close()
             throws IOException;

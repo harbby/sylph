@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.util.concurrent.ExecutionException;
 
 /**
  * see {@link org.apache.flink.streaming.api.environment.LocalStreamEnvironment#execute(String)}
@@ -72,12 +73,13 @@ public class MiniExecutor
         this.jobGraph = jobGraph;
 
         miniCluster.start();
-        configuration.setInteger(RestOptions.PORT, miniCluster.getRestAddress().getPort());
+        configuration.setInteger(RestOptions.PORT, miniCluster.getRestAddress().get().getPort());
     }
 
     public URI getWebUi()
+            throws ExecutionException, InterruptedException
     {
-        return miniCluster.getRestAddress();
+        return miniCluster.getRestAddress().get();
     }
 
     public JobExecutionResult executeJobBlocking()

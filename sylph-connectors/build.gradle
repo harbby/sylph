@@ -14,12 +14,12 @@ subprojects {
 
   dependencies {
     compileOnly group: 'com.github.harbby', name: 'gadtry', version: deps.gadtry
-    compileOnly project(":sylph-etl-api")
+    compileOnly project(":sylph-api")
     
     testCompile project(":sylph-spi")
   }
 
-  def plugins = project(':sylph-dist').buildDir.path + "/etl-plugins/${name}"
+  def plugins = project(':sylph-dist').buildDir.path + "/plugins/${name}"
   task buildPlugins(type: Copy) {
 
     if (project.name == 'sylph-elasticsearch6') {

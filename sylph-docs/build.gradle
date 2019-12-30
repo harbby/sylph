@@ -47,4 +47,5 @@ task run(type: YarnTask, dependsOn: build_docs) {
   args = ['run', 'server']
 }
 
-tasks.remove(tasks.findByName("uploadArchives"))
+tasks.findByName("uploadArchives").setEnabled(false)
+//tasks.remove(tasks.findByName("uploadArchives"))
