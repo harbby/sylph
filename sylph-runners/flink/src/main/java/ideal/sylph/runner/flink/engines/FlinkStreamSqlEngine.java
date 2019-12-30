@@ -21,7 +21,7 @@ import com.github.harbby.gadtry.jvm.JVMLaunchers;
 import com.google.common.collect.ImmutableSet;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
-import ideal.sylph.etl.PipelinePlugin;
+import ideal.sylph.etl.Operator;
 import ideal.sylph.parser.antlr.AntlrSqlParser;
 import ideal.sylph.parser.antlr.tree.CreateTable;
 import ideal.sylph.runner.flink.FlinkJobConfig;
@@ -34,7 +34,6 @@ import ideal.sylph.spi.model.ConnectorInfo;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.graph.StreamGraph;
-import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.fusesource.jansi.Ansi;
 import org.slf4j.Logger;
@@ -126,7 +125,7 @@ public class FlinkStreamSqlEngine
                 .setCallable(() -> {
                     System.out.println("************ job start ***************");
                     StreamExecutionEnvironment execEnv = FlinkEnvFactory.getStreamEnv(jobConfig, jobId);
-                    StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(execEnv);
+                    StreamTableEnvironment tableEnv = StreamTableEnvironment.create(execEnv);
                     StreamSqlBuilder streamSqlBuilder = new StreamSqlBuilder(tableEnv, connectorStore, new AntlrSqlParser());
                     Arrays.stream(sqlSplit).forEach(streamSqlBuilder::buildStreamBySql);
                     StreamGraph streamGraph = execEnv.getStreamGraph();
@@ -142,15 +141,15 @@ public class FlinkStreamSqlEngine
         return jobGraph;
     }
 
-    private static PipelinePlugin.PipelineType getPipeType(CreateTable.Type type)
+    private static Operator.PipelineType getPipeType(CreateTable.Type type)
     {
         switch (type) {
             case BATCH:
-                return PipelinePlugin.PipelineType.transform;
+                return Operator.PipelineType.transform;
             case SINK:
-                return PipelinePlugin.PipelineType.sink;
+                return Operator.PipelineType.sink;
             case SOURCE:
-                return PipelinePlugin.PipelineType.source;
+                return Operator.PipelineType.source;
             default:
                 throw new IllegalArgumentException("this type " + type + " have't support!");
         }

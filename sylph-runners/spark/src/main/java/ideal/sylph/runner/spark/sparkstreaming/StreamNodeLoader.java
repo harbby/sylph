@@ -17,14 +17,14 @@ package ideal.sylph.runner.spark.sparkstreaming;
 
 import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.ioc.IocFactory;
-import ideal.sylph.etl.PipelinePlugin;
+import ideal.sylph.etl.Operator;
 import ideal.sylph.etl.Schema;
 import ideal.sylph.etl.api.RealTimeSink;
 import ideal.sylph.etl.api.RealTimeTransForm;
 import ideal.sylph.etl.api.Sink;
 import ideal.sylph.etl.api.Source;
 import ideal.sylph.etl.api.TransForm;
-import ideal.sylph.runner.spark.SparkRow;
+import ideal.sylph.runner.spark.SparkRecord;
 import ideal.sylph.spi.ConnectorStore;
 import ideal.sylph.spi.NodeLoader;
 import org.apache.spark.TaskContext;
@@ -70,7 +70,7 @@ public class StreamNodeLoader
     @Override
     public UnaryOperator<JavaDStream<Row>> loadSource(String driverStr, Map<String, Object> config)
     {
-        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, PipelinePlugin.PipelineType.source);
+        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, Operator.PipelineType.source);
         checkState(Source.class.isAssignableFrom(driverClass));
 
         checkState(driverClass.getGenericInterfaces()[0] instanceof ParameterizedType);
@@ -94,7 +94,7 @@ public class StreamNodeLoader
 
     public Consumer<JavaRDD<Row>> loadRDDSink(String driverStr, Map<String, Object> config)
     {
-        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, PipelinePlugin.PipelineType.sink);
+        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, Operator.PipelineType.sink);
         Object driver = getPluginInstance(driverClass, config);
 
         final Sink<JavaRDD<Row>> sink;
@@ -137,7 +137,7 @@ public class StreamNodeLoader
     @Override
     public UnaryOperator<JavaDStream<Row>> loadTransform(String driverStr, Map<String, Object> config)
     {
-        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, PipelinePlugin.PipelineType.transform);
+        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, Operator.PipelineType.transform);
         Object driver = getPluginInstance(driverClass, config);
 
         final TransForm<JavaDStream<Row>> transform;
@@ -173,7 +173,7 @@ public class StreamNodeLoader
                 int partitionId = TaskContext.getPartitionId();
                 boolean openOK = realTimeSink.open(partitionId, 0); //初始化 返回是否正常 如果正常才处理数据
                 if (openOK) {
-                    partition.forEachRemaining(row -> realTimeSink.process(SparkRow.make(row)));
+                    partition.forEachRemaining(row -> realTimeSink.process(SparkRecord.make(row)));
                 }
             }
             catch (Exception e) {
@@ -194,9 +194,9 @@ public class StreamNodeLoader
             int partitionId = TaskContext.getPartitionId();
             if (realTimeTransForm.open(partitionId, 0)) {
                 partition.forEachRemaining(row -> {
-                    realTimeTransForm.process(SparkRow.make(row), (transOutrow) -> {
+                    realTimeTransForm.process(SparkRecord.make(row), (transOutrow) -> {
                         //TODO: SparkRow.parserRow(x) with schema ?
-                        list.add(SparkRow.parserRow(transOutrow));
+                        list.add(SparkRecord.parserRow(transOutrow));
                     });
                 });
             }

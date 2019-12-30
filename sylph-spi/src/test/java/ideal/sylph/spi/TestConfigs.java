@@ -18,7 +18,7 @@ package ideal.sylph.spi;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.etl.PluginConfig;
-import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Record;
 import ideal.sylph.etl.api.RealTimeSink;
 import ideal.sylph.etl.api.Sink;
 
@@ -39,7 +39,7 @@ public class TestConfigs
         }
 
         @Override
-        public void process(Row value)
+        public void process(Record value)
         {
         }
 
@@ -59,14 +59,14 @@ public class TestConfigs
     @Name("spi_test_sink_plugin")
     @Description("this is spi_test_plugin")
     public static class TestSinkPlugin
-            implements Sink<Stream<Row>>
+            implements Sink<Stream<Record>>
     {
         public TestSinkPlugin(HashSet<String> hashSet, TestConfigs.TestDefaultValueConfig config)
         {
         }
 
         @Override
-        public void run(Stream<Row> stream)
+        public void run(Stream<Record> stream)
         {
         }
     }

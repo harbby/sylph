@@ -41,6 +41,7 @@ import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
+import org.apache.flink.table.api.java.internal.StreamTableEnvironmentImpl;
 import org.apache.flink.table.functions.AggregateFunction;
 import org.apache.flink.table.functions.ScalarFunction;
 import org.apache.flink.table.functions.TableFunction;
@@ -210,7 +211,7 @@ public class StreamSqlBuilder
         RowTypeInfo tableTypeInfo = (RowTypeInfo) inputStream.getType();
         waterMarkOptional.ifPresent(waterMark -> {
             logger.info("createStreamTable Watermark is {}", waterMark);
-            tableEnv.execEnv().setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+            ((StreamTableEnvironmentImpl) tableEnv).execEnv().setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
             DataStream<Row> waterMarkStream = buildWaterMark(waterMark, tableTypeInfo, inputStream);
             String fields = String.join(",", ImmutableList.<String>builder()
                     .add(tableTypeInfo.getFieldNames())

@@ -22,7 +22,7 @@ import com.github.harbby.gadtry.jvm.JVMLaunchers;
 import com.google.common.collect.ImmutableSet;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
-import ideal.sylph.etl.PipelinePlugin;
+import ideal.sylph.etl.Operator;
 import ideal.sylph.parser.antlr.AntlrSqlParser;
 import ideal.sylph.parser.antlr.tree.CreateTable;
 import ideal.sylph.spi.ConnectorStore;
@@ -159,15 +159,15 @@ public class SparkStreamingSqlEngine
         return (Serializable) appGetter;
     }
 
-    private static PipelinePlugin.PipelineType getPipeType(CreateTable.Type type)
+    private static Operator.PipelineType getPipeType(CreateTable.Type type)
     {
         switch (type) {
             case BATCH:
-                return PipelinePlugin.PipelineType.transform;
+                return Operator.PipelineType.transform;
             case SINK:
-                return PipelinePlugin.PipelineType.sink;
+                return Operator.PipelineType.sink;
             case SOURCE:
-                return PipelinePlugin.PipelineType.source;
+                return Operator.PipelineType.source;
             default:
                 throw new IllegalArgumentException("this type " + type + " have't support!");
         }

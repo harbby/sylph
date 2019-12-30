@@ -35,7 +35,7 @@ public class TestStreamMode
         StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.getExecutionEnvironment();
         execEnv.setParallelism(2);
         execEnv.setStreamTimeCharacteristic(TimeCharacteristic.ProcessingTime);
-        tableEnv = TableEnvironment.getTableEnvironment(execEnv);
+        tableEnv = StreamTableEnvironment.create(execEnv);
     }
 
     @Test

@@ -15,8 +15,7 @@
  */
 package ideal.sylph.plugins.hdfs.txt;
 
-import com.hadoop.compression.lzo.LzopCodec;
-import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Record;
 import ideal.sylph.etl.Schema;
 import ideal.sylph.plugins.hdfs.HdfsSink;
 import ideal.sylph.plugins.hdfs.parquet.HDFSFactory;
@@ -24,6 +23,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.Lz4Codec;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -158,7 +158,7 @@ public class TextFileFactory
     private FileChannel createOutputStream(String rowKey, TextTimeParser timeParser, long split)
     {
         Configuration hadoopConf = new Configuration();
-        CompressionCodec codec = ReflectionUtils.newInstance(LzopCodec.class, hadoopConf);
+        CompressionCodec codec = ReflectionUtils.newInstance(Lz4Codec.class, hadoopConf);
         String outputPath = this.writeTableDir + timeParser.getPartitionPath() + "_partition_" + this.partition + "_split" + split + codec.getDefaultExtension();
         logger.info("create {} text file {}", rowKey, outputPath);
         try {
@@ -204,10 +204,10 @@ public class TextFileFactory
     }
 
     @Override
-    public void writeLine(long eventTime, Row row)
+    public void writeLine(long eventTime, Record record)
             throws IOException
     {
-        String value = row.mkString("\u0001");
+        String value = record.mkString("\u0001");
         this.writeLine(eventTime, value);
     }
 

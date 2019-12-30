@@ -22,42 +22,52 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
-public class ParquetUtilTest {
-
+public class ParquetUtilTest
+{
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
 
     @Test
-    public void testBuildSchema() {
-        ArrayList<Field> arrayList = new ArrayList(Arrays.asList(
+    public void testBuildSchema()
+    {
+        List<Field> arrayList = Arrays.asList(
+                new Field("String", String.class),
+                new Field("Byte", Byte.class), new Field("Short", Short.class),
+                new Field("Integer", Integer.class),
+                new Field("Long", Long.class),
+                new Field("Date", Date.class),
                 new Field("Float", Float.class),
                 new Field("Double", Double.class),
-                new Field("String", String.class),
-                new Field("byte[]", Object.class),
-                new Field("Integer", Integer.class),
-                new Field("Boolean", Boolean.class),
                 new Field("BigDecimal", BigDecimal.class),
-                new Field("Long", Long.class), new Field("Date", Date.class),
-                new Field("Byte", Byte.class), new Field("Short", Short.class)));
+                new Field("Boolean", Boolean.class),
+                new Field("byte[]", byte[].class));
 
         String actual = "message row { optional binary String (UTF8); " +
                 "optional INT32 Byte; optional INT32 Short; " +
                 "optional INT32 Integer; optional INT64 Long; " +
                 "optional INT64 Date; optional FLOAT Float; " +
                 "optional DOUBLE Double; optional DOUBLE BigDecimal; " +
-                "optional BOOLEAN Boolean; optional binary byte[] (UTF8); } ";
-        
+                "optional BOOLEAN Boolean; optional binary byte[]; } ";
+
         Assert.assertEquals(actual, ParquetUtil.buildSchema(arrayList));
     }
 
     @Test
-    public void testBuildSchemaThrowsException() {
+    public void testBuildSchemaThrowsExceptionGiveMapType()
+    {
         thrown.expect(UnsupportedOperationException.class);
-        ParquetUtil.buildSchema(new ArrayList(Arrays.asList(new Field("Map", Map.class))));
+        ParquetUtil.buildSchema(Arrays.asList(new Field("Map", Map.class)));
+    }
+
+    @Test
+    public void testBuildSchemaThrowsException()
+    {
+        thrown.expect(UnsupportedOperationException.class);
+        ParquetUtil.buildSchema(Arrays.asList(new Field("Object", Object.class)));
     }
 }

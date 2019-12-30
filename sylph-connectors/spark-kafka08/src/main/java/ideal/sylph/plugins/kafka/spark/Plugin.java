@@ -16,7 +16,7 @@
 package ideal.sylph.plugins.kafka.spark;
 
 import com.github.harbby.gadtry.collection.mutable.MutableSet;
-import ideal.sylph.etl.PipelinePlugin;
+import ideal.sylph.etl.Operator;
 
 import java.util.Set;
 
@@ -24,9 +24,9 @@ public class Plugin
         implements ideal.sylph.etl.Plugin
 {
     @Override
-    public Set<Class<? extends PipelinePlugin>> getConnectors()
+    public Set<Class<? extends Operator>> getConnectors()
     {
-        return MutableSet.<Class<? extends PipelinePlugin>>builder()
+        return MutableSet.<Class<? extends Operator>>builder()
                 .add(ideal.sylph.plugins.kafka.spark.KafkaSource08.class)
                 .add(ideal.sylph.plugins.kafka.spark.StructuredKafkaSource08.class)
                 .build();
