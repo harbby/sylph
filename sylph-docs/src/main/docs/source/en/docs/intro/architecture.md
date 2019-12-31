@@ -2,7 +2,7 @@
 
 ### 架构图
 
-![sylph架构图](https://github.com/JFanZhao/sylph-1/blob/master/sylph-docs/src/main/docs/source/en/docs/intro/sylph%E6%9E%B6%E6%9E%84%E5%9B%BE.png)
+![sylph架构图](sylph-architecture.png)
 
 - **Running Environment：** 任务运行环境，目前支持local和yarn两种。由 job.runtime.mode 决定。
 - **Container：** Container是任务提交给运行环境的单元，包含LocalContainer和YarnContainer两种，由 job.runtime.mode 决定；LocalContainer即任务运行在本地，可以在本地测试使用（支持Mac，Linux以及Windows环境）；YarnContainer即提交到yarn环境下环境运行，yarn环境在sylph-env.sh中设置。由Container 向发布任务到运行环境、停止任务运行、获取任务运行状态等。Container由JobManager创建，并将其加入运行队列中，进行调度。
