@@ -16,10 +16,11 @@
 package ideal.sylph.runtime.local;
 
 import com.github.harbby.gadtry.jvm.VmFuture;
+import com.sun.jna.Platform;
 import ideal.sylph.spi.job.JobContainerAbs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import java.lang.reflect.Field;
 import java.util.concurrent.Future;
 
 public abstract class LocalContainer
@@ -33,9 +34,8 @@ public abstract class LocalContainer
     public String getRunId()
     {
         if (vmFuture == null) {
-            return "";
+            return "node";
         }
-
         Process process = vmFuture.getVmProcess();
         String system = process.getClass().getName();
         if ("java.lang.UNIXProcess".equals(system)) {
@@ -43,8 +43,9 @@ public abstract class LocalContainer
             return String.valueOf(pid);
         }
         else {
-            //todo: widnows get pid
-            return "windows";
+            //todo: widnows get pid not return "windows";
+            logger.debug("#### win 获取 "+getProcessId(process));
+            return getProcessId(process);
         }
     }
 
@@ -53,7 +54,8 @@ public abstract class LocalContainer
             throws Exception
     {
         this.vmFuture = startAsyncExecutor();
-        return String.valueOf(vmFuture.getPid());
+        //return String.valueOf(vmFuture.getPid());
+        return this.getRunId();
     }
 
     public abstract VmFuture startAsyncExecutor()
@@ -97,5 +99,29 @@ public abstract class LocalContainer
             }
         }
         return super.getStatus();
+    }
+
+    public static String getProcessId(Process process) {
+        long pid = -1;
+        Field field = null;
+        if (Platform.isWindows()) {
+            try {
+                field = process.getClass().getDeclaredField("handle");
+                field.setAccessible(true);
+                pid = Kernel32.INSTANCE.GetProcessId((Long) field.get(process));
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        } else if (Platform.isLinux() || Platform.isAIX()) {
+            try {
+                Class<?> clazz = Class.forName("java.lang.UNIXProcess");
+                field = clazz.getDeclaredField("pid");
+                field.setAccessible(true);
+                pid = (Integer) field.get(process);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
+        return String.valueOf(pid);
     }
 }

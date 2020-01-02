@@ -25,15 +25,12 @@ import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.table.functions.ScalarFunction;
 
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 @Name("get_json_object")
 public class UDFJson
         extends ScalarFunction
 {
     private static final Configuration jsonConf = Configuration.defaultConfiguration().addOptions(Option.SUPPRESS_EXCEPTIONS);
-    private final HashCache<String, ReadContext> cache = new HashCache<>();
 
     /**
      * @return json string or null
@@ -48,7 +45,7 @@ public class UDFJson
         if (!pathString.startsWith("$")) {
             pathString = "$." + pathString;
         }
-        ReadContext context = cache.computeIfAbsent(jsonString, key -> JsonPath.using(jsonConf).parse(jsonString));
+        ReadContext context = JsonPath.using(jsonConf).parse(jsonString);
         Object value = context.read(pathString);
 
         if (value == null) {
@@ -66,27 +63,5 @@ public class UDFJson
     public TypeInformation<String> getResultType(Class<?>[] signature)
     {
         return Types.STRING;
-    }
-
-    // An LRU cache using a linked hash map
-    private static class HashCache<K, V>
-            extends LinkedHashMap<K, V>
-    {
-        private static final int CACHE_SIZE = 16;
-        private static final int INIT_SIZE = 32;
-        private static final float LOAD_FACTOR = 0.6f;
-
-        HashCache()
-        {
-            super(INIT_SIZE, LOAD_FACTOR);
-        }
-
-        private static final long serialVersionUID = 1;
-
-        @Override
-        protected boolean removeEldestEntry(Map.Entry<K, V> eldest)
-        {
-            return size() > CACHE_SIZE;
-        }
     }
 }

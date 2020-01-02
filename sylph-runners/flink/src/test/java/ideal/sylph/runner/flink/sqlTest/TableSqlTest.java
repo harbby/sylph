@@ -22,6 +22,7 @@ import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
+import org.apache.flink.table.api.java.internal.StreamTableEnvironmentImpl;
 import org.apache.flink.types.Row;
 import org.junit.Assert;
 import org.junit.Test;
@@ -32,7 +33,7 @@ public class TableSqlTest
     {
         StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.createLocalEnvironment();
         execEnv.setParallelism(2);
-        StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(execEnv);
+        StreamTableEnvironment tableEnv = StreamTableEnvironment.create(execEnv);
         return tableEnv;
     }
 
@@ -56,7 +57,7 @@ public class TableSqlTest
         StreamTableEnvironment tableEnv = getTableEnv();
 
         tableEnv.toAppendStream(tableEnv.sqlQuery("select cast(null as varchar) as a1"), Row.class).print();
-        tableEnv.execEnv().execute();
+        tableEnv.execute("");
     }
 
     @Test
@@ -66,7 +67,7 @@ public class TableSqlTest
         StreamTableEnvironment tableEnv = getTableEnv();
 
         tableEnv.toAppendStream(tableEnv.sqlQuery("select LOCALTIMESTAMP as `check_time`"), Row.class).print();
-        tableEnv.execEnv().execute();
+        tableEnv.execute("");
     }
 
 //    @Test
@@ -95,7 +96,7 @@ public class TableSqlTest
     public void selectCastErrorTest()
             throws Exception
     {
-        StreamTableEnvironment tableEnv = getTableEnv();
+        StreamTableEnvironmentImpl tableEnv = (StreamTableEnvironmentImpl) getTableEnv();
 
         DataStreamSource<Row> stream = tableEnv.execEnv().fromElements(Row.of("a1", "3.14"));
         Table table = tableEnv.fromDataStream(stream, "name,age");
@@ -112,7 +113,7 @@ public class TableSqlTest
                     }
                 });
         try {
-            tableEnv.execEnv().execute();
+            tableEnv.execute("");
             Assert.fail();
         }
         catch (Exception e) {
@@ -124,7 +125,7 @@ public class TableSqlTest
     public void selectSinkErrorTest()
             throws Exception
     {
-        StreamTableEnvironment tableEnv = getTableEnv();
+        StreamTableEnvironmentImpl tableEnv = (StreamTableEnvironmentImpl) getTableEnv();
 
         DataStreamSource<Row> stream = tableEnv.execEnv().fromElements(Row.of("a1", "3.14"));
         Table table = tableEnv.fromDataStream(stream, "name,age");
@@ -140,7 +141,7 @@ public class TableSqlTest
                     }
                 });
         try {
-            tableEnv.execEnv().execute();
+            tableEnv.execute("");
             Assert.fail();
         }
         catch (Exception e) {

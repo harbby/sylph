@@ -22,7 +22,7 @@ import com.github.harbby.gadtry.ioc.Binder;
 import ideal.sylph.controller.ServerConfig;
 import ideal.sylph.main.service.JobEngineManager;
 import ideal.sylph.main.service.JobManager;
-import ideal.sylph.main.service.PipelinePluginLoader;
+import ideal.sylph.main.service.OperatorLoader;
 import ideal.sylph.main.service.SqliteDbJobStore;
 import ideal.sylph.spi.SylphContext;
 import ideal.sylph.spi.job.JobStore;
@@ -49,7 +49,7 @@ public final class SylphBean
         binder.bind(JobStore.class).by(SqliteDbJobStore.class).withSingle();
 
         //  --- Binding parameter
-        binder.bind(PipelinePluginLoader.class).withSingle();
+        binder.bind(OperatorLoader.class).withSingle();
         binder.bind(JobEngineManager.class).withSingle();
         binder.bind(JobManager.class).withSingle();
 
@@ -61,7 +61,7 @@ public final class SylphBean
     {
         @Autowired private JobManager jobManager;
         @Autowired private JobEngineManager runnerManger;
-        @Autowired private PipelinePluginLoader pluginLoader;
+        @Autowired private OperatorLoader pluginLoader;
 
         @Override
         public SylphContext get()

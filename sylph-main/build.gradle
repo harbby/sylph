@@ -7,7 +7,7 @@ dependencies {
   compile 'org.xerial:sqlite-jdbc:3.25.2'
   compile group: 'commons-dbutils', name: 'commons-dbutils', version: '1.7'
   
-  compile project(':sylph-controller')
+  compile project(':sylph-web')
   compile(project(':sylph-spi'))
 
   testCompile group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'

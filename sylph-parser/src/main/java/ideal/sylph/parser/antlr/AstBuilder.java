@@ -203,7 +203,6 @@ public class AstBuilder
         }
 
         List<TableElement> elements = visit(context.tableElement(), TableElement.class);
-
         return new CreateTable(
                 requireNonNull(type, "table type is null,but must is SOURCE or SINK or BATCH"),
                 getLocation(context),
@@ -243,16 +242,28 @@ public class AstBuilder
     }
 
     @Override
+    public Node visitExtend(SqlBaseParser.ExtendContext context)
+    {
+        return visit(context.string());
+    }
+
+    @Override
     public Node visitColumnDefinition(SqlBaseParser.ColumnDefinitionContext context)
     {
         Optional<String> comment = Optional.empty();
         if (context.COMMENT() != null) {
             comment = Optional.of(((StringLiteral) visit(context.string())).getValue());
         }
+        Optional<String> extend = Optional.empty();
+        if (context.extend() != null) {
+            extend = Optional.of(((StringLiteral) visit(context.extend())).getValue());
+        }
+
         return new ColumnDefinition(
                 getLocation(context),
                 (Identifier) visit(context.identifier()),
                 getType(context.type()),
+                extend,
                 comment);
     }
 

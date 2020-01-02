@@ -16,7 +16,7 @@
 package ideal.sylph.runner.flink.sql;
 
 import com.github.harbby.gadtry.ioc.IocFactory;
-import ideal.sylph.etl.PipelinePlugin;
+import ideal.sylph.etl.Operator;
 import ideal.sylph.etl.api.RealTimeTransForm;
 import ideal.sylph.etl.join.JoinContext;
 import ideal.sylph.etl.join.SelectField;
@@ -47,7 +47,12 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableException;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
-import org.apache.flink.table.plan.schema.RelTable;
+import org.apache.flink.table.catalog.Catalog;
+import org.apache.flink.table.catalog.CatalogBaseTable;
+import org.apache.flink.table.catalog.ObjectPath;
+import org.apache.flink.table.catalog.QueryOperationCatalogView;
+import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
+import org.apache.flink.table.catalog.exceptions.TableAlreadyExistException;
 import org.apache.flink.types.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -217,9 +222,18 @@ public class FlinkSqlParser
         RowTypeInfo rowTypeInfo = getJoinOutScheam(joinSelectFields);
         joinResultStream.getTransformation().setOutputType(rowTypeInfo);
         //--register tmp joinTable
-        if (tableEnv.isRegistered(joinInfo.getJoinTableName())) {
+
+        Catalog catalog = tableEnv.getCatalog(tableEnv.getCurrentCatalog()).get();
+        if (catalog.tableExists(ObjectPath.fromString(joinInfo.getJoinTableName()))) {
             Table table = tableEnv.fromDataStream(joinResultStream);
-            tableEnv.replaceRegisteredTable(joinInfo.getJoinTableName(), new RelTable(table.getRelNode()));
+            CatalogBaseTable tableTable = new QueryOperationCatalogView(table.getQueryOperation());
+            try {
+                catalog.createTable(ObjectPath.fromString(joinInfo.getJoinTableName()), tableTable, true);
+            }
+            catch (TableAlreadyExistException | DatabaseNotExistException e) {
+                e.printStackTrace();
+            }
+            //tableEnv.replaceRegisteredTable(joinInfo.getJoinTableName(), new RelTable(table.getRelNode()));
         }
         else {
             tableEnv.registerDataStream(joinInfo.getJoinTableName(), joinResultStream);
@@ -232,7 +246,7 @@ public class FlinkSqlParser
     {
         Map<String, Object> withConfig = batchTable.getWithConfig();
         String driverOrName = (String) withConfig.get("type");
-        Class<?> driver = connectorStore.getConnectorDriver(driverOrName, PipelinePlugin.PipelineType.transform);
+        Class<?> driver = connectorStore.getConnectorDriver(driverOrName, Operator.PipelineType.transform);
         checkState(RealTimeTransForm.class.isAssignableFrom(driver), "batch table type driver must is RealTimeTransForm");
 
         // instance

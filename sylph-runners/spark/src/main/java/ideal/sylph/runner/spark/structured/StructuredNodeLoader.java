@@ -16,13 +16,13 @@
 package ideal.sylph.runner.spark.structured;
 
 import com.github.harbby.gadtry.ioc.IocFactory;
-import ideal.sylph.etl.PipelinePlugin;
+import ideal.sylph.etl.Operator;
 import ideal.sylph.etl.api.RealTimeSink;
 import ideal.sylph.etl.api.RealTimeTransForm;
 import ideal.sylph.etl.api.Sink;
 import ideal.sylph.etl.api.Source;
 import ideal.sylph.etl.api.TransForm;
-import ideal.sylph.runner.spark.SparkRow;
+import ideal.sylph.runner.spark.SparkRecord;
 import ideal.sylph.runner.spark.sparkstreaming.StreamNodeLoader;
 import ideal.sylph.spi.ConnectorStore;
 import ideal.sylph.spi.NodeLoader;
@@ -63,7 +63,7 @@ public class StructuredNodeLoader
     @Override
     public UnaryOperator<Dataset<Row>> loadSource(String driverStr, Map<String, Object> config)
     {
-        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, PipelinePlugin.PipelineType.source);
+        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, Operator.PipelineType.source);
         Source<Dataset<Row>> source = (Source<Dataset<Row>>) getPluginInstance(driverClass, config);
 
         return stream -> {
@@ -85,7 +85,7 @@ public class StructuredNodeLoader
 
     public Function<Dataset<Row>, DataStreamWriter<Row>> loadSinkWithComplic(String driverStr, Map<String, Object> config)
     {
-        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, PipelinePlugin.PipelineType.sink);
+        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, Operator.PipelineType.sink);
         Object driver = getPluginInstance(driverClass, config);
 
         final Sink<DataStreamWriter<Row>> sink;
@@ -128,7 +128,7 @@ public class StructuredNodeLoader
     @Override
     public UnaryOperator<Dataset<Row>> loadTransform(String driverStr, Map<String, Object> config)
     {
-        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, PipelinePlugin.PipelineType.transform);
+        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, Operator.PipelineType.transform);
         Object driver = getPluginInstance(driverClass, config);
 
         final TransForm<Dataset<Row>> transform;
@@ -157,7 +157,7 @@ public class StructuredNodeLoader
             @Override
             public void process(Row value)
             {
-                realTimeSink.process(SparkRow.make(value));
+                realTimeSink.process(SparkRecord.make(value));
             }
 
             @Override

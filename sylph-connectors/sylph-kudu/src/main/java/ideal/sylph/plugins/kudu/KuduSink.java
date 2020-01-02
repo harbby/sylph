@@ -18,7 +18,7 @@ package ideal.sylph.plugins.kudu;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.etl.PluginConfig;
-import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Record;
 import ideal.sylph.etl.SinkContext;
 import ideal.sylph.etl.api.RealTimeSink;
 import org.apache.kudu.ColumnSchema;
@@ -113,12 +113,12 @@ public class KuduSink
     }
 
     @Override
-    public void process(Row row)
+    public void process(Record record)
     {
         Operation operation = operationCreater.get();
         try {
             for (int i = 0; i < fieldNames.size(); i++) {
-                appendColumn(operation, fieldNames.get(i), row.getField(i));
+                appendColumn(operation, fieldNames.get(i), record.getField(i));
             }
 
             kuduSession.apply(operation);

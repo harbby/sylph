@@ -5,21 +5,25 @@ configurations.all {
 }
 
 dependencies {
-  compileOnly(group: 'org.apache.flink', name: 'flink-streaming-java_2.11', version: deps.flink) {
+  compileOnly(group: 'org.apache.flink', name: 'flink-streaming-java_2.12', version: deps.flink) {
   }
-  compileOnly group: 'org.apache.flink', name: 'flink-shaded-hadoop2', version: deps.flink
 
-  compileOnly(group: 'org.apache.flink', name: 'flink-streaming-scala_2.11', version: deps.flink) {
+  compileOnly group: 'org.apache.flink', name: 'flink-shaded-hadoop2', version: '1.7.2'
+  //compileOnly group: 'org.apache.flink', name: 'flink-shaded-hadoop-2', version: '2.7.5-7.0'
+
+  compileOnly(group: 'org.apache.flink', name: 'flink-streaming-scala_2.12', version: deps.flink) {
   }
-  compileOnly(group: 'org.apache.flink', name: 'flink-yarn_2.11', version: deps.flink) {
+  compileOnly(group: 'org.apache.flink', name: 'flink-yarn_2.12', version: deps.flink) {
+    exclude(module: 'flink-shaded-hadoop-2')
   }
 
   //--table sql---
-  compile group: 'org.apache.flink', name: 'flink-table_2.11', version: deps.flink
+  compileOnly group: 'org.apache.flink', name: 'flink-table-api-java-bridge_2.12', version: deps.flink
+  compileOnly group: 'org.apache.flink', name: 'flink-table-planner_2.12', version: deps.flink
 
   //-------cep-------------------
-  compile "org.apache.flink:flink-cep_2.11:$deps.flink"
-  compile "org.apache.flink:flink-cep-scala_2.11:$deps.flink"
+  compileOnly "org.apache.flink:flink-cep_2.12:$deps.flink"
+  compileOnly "org.apache.flink:flink-cep-scala_2.12:$deps.flink"
 
   //--- other----
   compileOnly(project(':sylph-spi'))
@@ -33,5 +37,5 @@ dependencies {
   //colour
   compile group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
 
-  testCompile "org.apache.flink:flink-runtime-web_2.11:${deps.flink}"
+  testCompile "org.apache.flink:flink-runtime-web_2.12:${deps.flink}"
 }

@@ -16,7 +16,7 @@
 package ideal.sylph.spi.job;
 
 import com.google.common.collect.ImmutableSet;
-import ideal.sylph.etl.PipelinePlugin;
+import ideal.sylph.etl.Operator;
 import ideal.sylph.spi.model.ConnectorInfo;
 import ideal.sylph.spi.model.NodeInfo;
 
@@ -47,7 +47,7 @@ public abstract class EtlJobEngineHandle
         ImmutableSet.Builder<ConnectorInfo> builder = ImmutableSet.builder();
         for (NodeInfo nodeInfo : flow.getNodes()) {
             String driverOrName = nodeInfo.getDriverClass();
-            PipelinePlugin.PipelineType type = PipelinePlugin.PipelineType.valueOf(nodeInfo.getNodeType());
+            Operator.PipelineType type = Operator.PipelineType.valueOf(nodeInfo.getNodeType());
             Optional<ConnectorInfo> pluginInfo = this.getConnectorStore().findConnectorInfo(driverOrName, type);
             pluginInfo.ifPresent(builder::add);
         }

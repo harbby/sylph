@@ -68,7 +68,7 @@ public class NodeInfo
         this.nodeX = nodeX;
         this.nodeY = nodeY;
         //--- parser driver class
-        String json = JsonTextUtil.readJsonText(this.getNodeText());
+        String json = JsonTextUtil.readJsonText(nodeText);
         Map<String, Map<String, Object>> nodeTextMap = MAPPER.readValue(json, new GenericTypeReference(Map.class, String.class, Map.class));
         this.driverClass = (String) requireNonNull(nodeTextMap.getOrDefault("plugin", Collections.emptyMap()).get("driver"), "config key driver is not setting");
         this.userConfig = requireNonNull(nodeTextMap.get("user"), "user config is null");

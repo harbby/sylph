@@ -16,7 +16,7 @@
 package ideal.sylph.spi;
 
 import com.github.harbby.gadtry.classloader.DirClassLoader;
-import ideal.sylph.etl.PipelinePlugin;
+import ideal.sylph.etl.Operator;
 import ideal.sylph.spi.model.ConnectorInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,7 +68,7 @@ public class RunnerContextImpl
                         classLoader.addDir(it.getKey());
                         for (ConnectorInfo info : it.getValue()) {
                             try {
-                                Class<? extends PipelinePlugin> plugin = classLoader.loadClass(info.getDriverClass()).asSubclass(PipelinePlugin.class);
+                                Class<? extends Operator> plugin = classLoader.loadClass(info.getDriverClass()).asSubclass(Operator.class);
                                 List<Map<String, Object>> config = getConnectorDefaultConfig(plugin);
                                 info.setPluginConfig(config);
                             }

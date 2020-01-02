@@ -65,8 +65,7 @@ public class ParquetUtil
                 case "Map":
                     throw new UnsupportedOperationException("this type[Map] have't support!");
                 default:
-                    sb.append("optional binary ").append(fieldName).append(" (UTF8); ");
-                    break;
+                    throw new UnsupportedOperationException("this " + type + " have't support!");
             }
         }
         sb.append("} ");

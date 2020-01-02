@@ -18,7 +18,7 @@ package ideal.sylph.plugins.kafka.spark;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ideal.sylph.etl.Schema;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema;
+import org.apache.spark.sql.catalyst.expressions.GenericRow;
 import org.apache.spark.sql.types.ArrayType;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
@@ -96,7 +96,7 @@ public class JsonSchema
                 values[i] = value;
             }
         }
-        return new GenericRowWithSchema(values, rowTypeInfo);
+        return new GenericRow(values);
     }
 
     public boolean isEndOfStream(Row nextElement)

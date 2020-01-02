@@ -16,7 +16,7 @@
 package ideal.sylph.plugins.hdfs.parquet;
 
 import com.google.common.collect.ImmutableList;
-import ideal.sylph.etl.Row;
+import ideal.sylph.etl.Record;
 import ideal.sylph.plugins.hdfs.factory.HDFSFactorys;
 import ideal.sylph.plugins.hdfs.factory.TimeParser;
 import ideal.sylph.plugins.hdfs.utils.CommonUtil;
@@ -263,12 +263,12 @@ public class ParquetFactory
     }
 
     @Override
-    public void writeLine(long eventTime, Row evalRow)
+    public void writeLine(long eventTime, Record evalRecord)
     {
         try {
             streamData.put(() -> {
                 ApacheParquet parquet = getParquetWriter(eventTime);
-                parquet.writeLine(evalRow);
+                parquet.writeLine(evalRecord);
             });
         }
         catch (InterruptedException e) {

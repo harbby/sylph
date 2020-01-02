@@ -15,6 +15,6 @@ dependencies {
   }
 
   compileOnly(project(':sylph-spi'))
-
+  compile group: 'net.java.dev.jna', name: 'jna', version: '5.4.0'
   compile group: 'com.github.harbby', name: 'gadtry', version: deps.gadtry
 }

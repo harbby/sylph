@@ -75,9 +75,9 @@ public class FlinkEnvFactory
             StateBackend stateBackend = new FsStateBackend(appCheckPath.toString(), true)
             {
                 @Override
-                public FsStateBackend configure(org.apache.flink.configuration.Configuration config)
+                public FsStateBackend configure(org.apache.flink.configuration.Configuration config, ClassLoader classLoader)
                 {
-                    FsStateBackend fsStateBackend = super.configure(config);
+                    FsStateBackend fsStateBackend = super.configure(config, classLoader);
                     return AopFactory.proxy(FsStateBackend.class).byInstance(fsStateBackend)
                             .returnType(CheckpointStorage.class)
                             .around(proxyContext -> {
