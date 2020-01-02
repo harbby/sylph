@@ -20,6 +20,7 @@ import com.sun.jna.Platform;
 import ideal.sylph.spi.job.JobContainerAbs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Field;
 import java.util.concurrent.Future;
 
@@ -44,7 +45,7 @@ public abstract class LocalContainer
         }
         else {
             //todo: widnows get pid not return "windows";
-            logger.debug("#### win 获取 "+getProcessId(process));
+            logger.debug("#### win 获取 " + getProcessId(process));
             return getProcessId(process);
         }
     }
@@ -101,24 +102,28 @@ public abstract class LocalContainer
         return super.getStatus();
     }
 
-    public static String getProcessId(Process process) {
+    public static String getProcessId(Process process)
+    {
         long pid = -1;
         Field field = null;
         if (Platform.isWindows()) {
             try {
                 field = process.getClass().getDeclaredField("handle");
                 field.setAccessible(true);
-                pid = Kernel32.INSTANCE.GetProcessId((Long) field.get(process));
-            } catch (Exception ex) {
+                pid = Kernel32.INSTANCE.getProcessId((Long) field.get(process));
+            }
+            catch (Exception ex) {
                 ex.printStackTrace();
             }
-        } else if (Platform.isLinux() || Platform.isAIX()) {
+        }
+        else if (Platform.isLinux() || Platform.isAIX()) {
             try {
                 Class<?> clazz = Class.forName("java.lang.UNIXProcess");
                 field = clazz.getDeclaredField("pid");
                 field.setAccessible(true);
                 pid = (Integer) field.get(process);
-            } catch (Throwable e) {
+            }
+            catch (Throwable e) {
                 e.printStackTrace();
             }
         }
