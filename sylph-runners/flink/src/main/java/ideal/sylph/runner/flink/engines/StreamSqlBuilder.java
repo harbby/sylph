@@ -129,7 +129,8 @@ public class StreamSqlBuilder
                 tableEnv.toAppendStream(table, Row.class).print();
             }
             catch (ValidationException e) {
-                checkState(e.getMessage().contains("Append"), "");
+                checkState(e.getMessage().equals("Table is not an append-only table. Use the toRetractStream() in order to handle add and retract messages."),
+                        "sylph and flink versions are not compatible, please feedback to the community");
                 tableEnv.toRetractStream(table, Row.class).print();
             }
             //----------------------------
@@ -147,7 +148,8 @@ public class StreamSqlBuilder
                 table.insertInto(insertInto.getTableName());
             }
             catch (TableException e) {
-                checkState(e.getMessage().contains("Append"), "");
+                checkState(e.getMessage().equals("AppendStreamTableSink requires that Table has only insert changes."),
+                        "sylph and flink versions are not compatible, please feedback to the community");
                 DataStream<Row> retractStream = tableEnv.toRetractStream(table, Row.class)
                         .filter(x -> x.f0).map(x -> x.f1).returns(table.getSchema().toRowType());
                 tableEnv.fromDataStream(retractStream).insertInto(insertInto.getTableName());

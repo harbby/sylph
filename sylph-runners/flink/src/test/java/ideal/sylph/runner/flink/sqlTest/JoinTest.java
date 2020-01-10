@@ -23,7 +23,7 @@ import ideal.sylph.etl.join.JoinContext;
 import ideal.sylph.parser.antlr.AntlrSqlParser;
 import ideal.sylph.parser.antlr.tree.CreateTable;
 import ideal.sylph.runner.flink.sql.FlinkSqlParser;
-import ideal.sylph.runner.flink.sqlTest.utils.PrintTableSink;
+import ideal.sylph.runner.flink.resource.PrintTableSink;
 import ideal.sylph.runner.flink.table.SylphTableSource;
 import ideal.sylph.runner.flink.udf.TimeUtil;
 import ideal.sylph.spi.ConnectorStore;
