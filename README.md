@@ -2,7 +2,7 @@
 
 Welcome to Sylph !
 
-The Sylph is Streaming Job Manager. 
+Sylph is Streaming Job Manager. 
 
 Sylph uses SQL Query to describe calculations and bind multiple source(input)/sink(output) to visually develop and deploy streaming applications.
 Through Web IDE makes it easy to develop, deploy, monitor streaming applications and analyze streaming application behavior at any time.  
