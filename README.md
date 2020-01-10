@@ -1,4 +1,7 @@
 # Sylph [![Build Status](http://img.shields.io/travis/harbby/sylph.svg?style=flat&branch=master)](https://travis-ci.org/harbby/sylph)
+
+Welcome to Sylph !
+
 The Sylph is Streaming Job Manager. 
 
 Sylph uses SQL Query to describe calculations and bind multiple source(input)/sink(output) to visually develop and deploy streaming applications.
