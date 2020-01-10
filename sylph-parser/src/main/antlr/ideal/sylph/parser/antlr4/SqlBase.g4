@@ -50,7 +50,7 @@ statement
     | CREATE VIEW TABLE (IF NOT EXISTS)? qualifiedName
         (WATERMARK watermark)?
         AS queryStream                                                        #createStreamAsSelect
-    | INSERT INTO qualifiedName columnAliases? queryStream                    #insertInto
+    | INSERT INTO qualifiedName columnAliases? (queryStream | withQuery)      #insertInto
     ;
 
 watermark
@@ -61,7 +61,34 @@ watermark
     ;
 
 queryStream
-    : (WITH | SELECT) (.*?) EOF | '('(WITH | SELECT) (.*?)')'
+    : SELECT (.*?) (allowedLateness)? (trigger)?
+    ;
+
+withQuery
+    : WITH asQuery (',' asQuery)*
+      queryStream
+    ;
+asQuery
+    : identifier AS '(' queryStream ')'
+    ;
+
+/*
+SELECT
+  id,
+  TUMBLE_START(rowtime, INTERVAL '1' DAY) as start_time,
+  COUNT(*) as cnt
+FROM source
+GROUP BY id, TUMBLE(rowtime, INTERVAL '1' DAY)
+WINDOW LATE WITH DELAY 300 SECONDS
+trigger WITH EVERY 60 SECONDS
+*/
+
+trigger
+    : TRIGGER WITH EVERY (string | value=INTEGER_VALUE) SECONDS
+    ;
+
+allowedLateness
+    : WINDOW LATE WITH DELAY (string | value=INTEGER_VALUE) SECONDS
     ;
 
 tableElement
@@ -302,6 +329,12 @@ FOLLOWING: 'FOLLOWING';
 FOR: 'FOR';
 FORMAT: 'FORMAT';
 FROM: 'FROM';
+WINDOW: 'WINDOW';
+SECONDS: 'SECONDS';
+LATE: 'LATE';
+DELAY: 'DELAY';
+EVERY: 'EVERY';
+TRIGGER: 'TRIGGER';
 SOURCE: 'SOURCE';
 SINK: 'SINK';
 BATCH: 'BATCH';

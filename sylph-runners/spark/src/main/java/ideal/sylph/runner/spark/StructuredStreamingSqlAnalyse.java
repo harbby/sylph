@@ -209,7 +209,7 @@ public class StructuredStreamingSqlAnalyse
             throws Exception
     {
         String tableName = insert.getTableName();
-        String query = insert.getQuery();
+        String query = insert.getSelectQuery().getQuery();
 
         Dataset<Row> df = sparkSession.sql(query);
         sinks.get(tableName).apply(df);

@@ -108,7 +108,7 @@ public class FlinkStreamEtlEngine
                     StreamTableEnvironment tableEnv = StreamTableEnvironment.create(execEnv);
                     SourceContext sourceContext = new SourceContext() {};
 
-                    final IocFactory iocFactory = IocFactory.create(new FlinkBean(tableEnv), binder -> {
+                    final IocFactory iocFactory = IocFactory.create(new FlinkBean(execEnv, tableEnv), binder -> {
                         binder.bind(SourceContext.class, sourceContext);
                     });
                     FlinkNodeLoader loader = new FlinkNodeLoader(connectorStore, iocFactory);

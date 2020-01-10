@@ -45,7 +45,6 @@ import org.apache.flink.calcite.shaded.com.google.common.collect.ImmutableList;
 import org.apache.flink.shaded.guava18.com.google.common.collect.ImmutableMap;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.table.api.Table;
-import org.apache.flink.table.api.TableException;
 import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.catalog.CatalogBaseTable;
@@ -133,7 +132,7 @@ public class FlinkSqlParser
         }
     }
 
-    public void parser(String query, List<CreateTable> batchTablesList)
+    public Table parser(String query, List<CreateTable> batchTablesList)
     {
         Map<String, CreateTable> batchTables = batchTablesList.stream()
                 .collect(Collectors.toMap(CreateTable::getName, v -> v));
@@ -149,14 +148,14 @@ public class FlinkSqlParser
 
         List<String> registerViews = new ArrayList<>();
         try {
-            translate(plan, batchTables, registerViews);
+            return translate(plan, batchTables, registerViews);
         }
         finally {
             //registerViews.forEach(tableName -> tableEnv.sqlQuery("drop table " + tableName));
         }
     }
 
-    private void translate(List<Object> execNodes, Map<String, CreateTable> batchTables, List<String> registerViews)
+    private Table translate(List<Object> execNodes, Map<String, CreateTable> batchTables, List<String> registerViews)
     {
         for (Object it : execNodes) {
             if (it instanceof SqlNode) {
@@ -176,13 +175,7 @@ public class FlinkSqlParser
                 else if (sqlKind == SELECT) {
                     logger.warn("You entered the select query statement, only one for testing");
                     String sql = sqlNode.toString();
-                    Table table = tableEnv.sqlQuery(sql);
-                    try {
-                        tableEnv.toAppendStream(table, Row.class).print();
-                    }
-                    catch (TableException e) {
-                        tableEnv.toRetractStream(table, Row.class).print();
-                    }
+                    return tableEnv.sqlQuery(sql);
                 }
                 else if (sqlKind == WITH_ITEM) {
                     SqlWithItem sqlWithItem = (SqlWithItem) sqlNode;
@@ -199,6 +192,7 @@ public class FlinkSqlParser
                 throw new IllegalArgumentException(it.toString());
             }
         }
+        return null;
     }
 
     private void translateJoin(JoinInfo joinInfo, Map<String, CreateTable> batchTables)

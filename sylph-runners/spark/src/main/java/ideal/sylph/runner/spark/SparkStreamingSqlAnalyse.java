@@ -228,7 +228,7 @@ public class SparkStreamingSqlAnalyse
     public void insertInto(InsertInto insert)
     {
         String tableName = insert.getTableName();
-        String query = insert.getQuery();
+        String query = insert.getSelectQuery().getQuery();
         builder.addHandler(sparkSession -> {
             Dataset<Row> df = sparkSession.sql(query);
             builder.getSink(tableName).apply(df);
