@@ -4,7 +4,6 @@
 #export JAVA_HOME=/opt/cloudera/parcels/jdk8
 
 # set your HADOOP_CONF_DIR
-#export HADOOP_CONF_DIR=/opt/cloudera/parcels/CDH/lib/hadoop/etc/hadoop
 export HADOOP_CONF_DIR=/ideal/hadoop/hadoop/etc/hadoop
 
 # set your FLINK_HOME
