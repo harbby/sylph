@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # set your JAVA_HOME
 #export JAVA_HOME=/opt/cloudera/parcels/jdk8
 
