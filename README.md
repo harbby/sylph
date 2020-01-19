@@ -82,6 +82,8 @@ Support `flink-stream` `spark-streaming` `spark-structured-streaming(spark2.2x)`
 
 ## Building
 sylph builds use Gradle and requires Java 8.
+Also if you read a chinese deploy docs,[Chinese deploy docs](sylph-docs/src/main/docs/source/zh-cn/docs/intro/deploy.md) 
+may can help you.
 ```
 # Build and install distributions
 ./gradlew clean assemble
