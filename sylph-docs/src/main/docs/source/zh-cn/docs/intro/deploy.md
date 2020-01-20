@@ -166,15 +166,15 @@
   - **VM Options:** -Dconfig=etc/sylph/sylph.properties -Dlogging.config=etc/sylph/logback.xml
   - **Program arguments:** 如命令行运行中修改sylph-env.sh，将flink等的环境配置进来，以";"分割
   - **Working directory:** 目录到编译后的 sylph-dist/build目录下，即 $clone后的sylph目录/sylph-dist/build，全路径
-  - **Environment variables：**与Program arguments相同
+  - **Environment variables：** 与Program arguments相同
   - **Use classpath of module:** sylph-main
-  - **JRE：**1.8
+  - **JRE：** 1.8
 
 - **Run**
 
   运行配置好的application即可
 
-至此，部署顺利完成，如果在部署或者使用过程中可以提[issues](https://github.com/harbby/sylph/issues)或者通过[联系我们](https://github.com/harbby/sylph/tree/master#getting-help)。希望sylph可以让您愉快
+至此，部署顺利完成，如果您在部署或者使用过程中有任何问题，欢迎提[issues](https://github.com/harbby/sylph/issues)或者通过[联系我们](https://github.com/harbby/sylph/tree/master#getting-help)。希望sylph可以让您愉快
 
 ## 附录
 
