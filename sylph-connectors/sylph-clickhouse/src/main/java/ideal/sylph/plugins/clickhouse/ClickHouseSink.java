@@ -32,6 +32,6 @@ public class ClickHouseSink
     @Override
     public String getJdbcDriver()
     {
-        return "com.github.housepower.jdbc.ClickHouseDriver";
+        return "ru.yandex.clickhouse.ClickHouseDriver";
     }
 }

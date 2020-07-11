@@ -19,6 +19,7 @@ import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.etl.PluginConfig;
 import ideal.sylph.etl.Record;
+import ideal.sylph.etl.api.ConditionRealTimeSink;
 import ideal.sylph.etl.api.RealTimeSink;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +38,7 @@ import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 public abstract class JdbcRealTimeSink
-        implements RealTimeSink
+        extends ConditionRealTimeSink
 {
     private static final Logger logger = LoggerFactory.getLogger(JdbcRealTimeSink.class);
 
@@ -47,7 +48,15 @@ public abstract class JdbcRealTimeSink
 
     private transient Connection connection;
     private transient PreparedStatement statement;
+    /**
+     * num condition
+     */
     private int num = 0;
+    /**
+     * time condition
+     */
+    private long lastTime = System.currentTimeMillis();;
+
 
     public JdbcRealTimeSink(JdbcConfig mysqlConfig)
     {
@@ -77,10 +86,8 @@ public abstract class JdbcRealTimeSink
 
     @Override
     public void flush()
-            throws SQLException
-    {
+            throws SQLException {
         statement.executeBatch();
-        num = 0;
     }
 
     @Override
@@ -94,14 +101,32 @@ public abstract class JdbcRealTimeSink
                 i += 1;
             }
             statement.addBatch();
-            // submit batch
-            if (num++ >= config.getBatchSize()) {
+            // flush condition
+            if (updateCondition()) {
                 this.flush();
+                this.resetParameters();
             }
         }
         catch (SQLException e) {
             throwsThrowable(e);
         }
+    }
+
+    @Override
+    protected boolean updateCondition() {
+        boolean update = false;
+        if (num++ >= config.getBatchSize()) {
+            update = true;
+        } else if ((System.currentTimeMillis() - lastTime) >= config.getFlushMillis() && num > 1) {
+            update = true;
+        }
+        return update;
+    }
+
+    @Override
+    protected void resetParameters() {
+        num = 0;
+        lastTime = System.currentTimeMillis();
     }
 
     @Override
@@ -111,6 +136,7 @@ public abstract class JdbcRealTimeSink
             try (Statement stmt = statement) {
                 if (stmt != null) {
                     this.flush();
+                    this.resetParameters();
                 }
             }
         }
@@ -145,6 +171,20 @@ public abstract class JdbcRealTimeSink
         @Name("batchSize")
         @Description("this is mysql write batchSize")
         private int batchSize = 5000;
+
+        @Name("flushMillis")
+        @Description("this is jdbc flush mills")
+        private long flushMillis = 600000;
+
+
+        public long getFlushMillis() {
+            return flushMillis;
+        }
+
+        public void setFlushMillis(long flushMillis) {
+            this.flushMillis = flushMillis;
+        }
+
 
         public String getJdbcUrl()
         {

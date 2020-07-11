@@ -21,9 +21,9 @@ import ideal.sylph.etl.join.JoinContext;
 import ideal.sylph.plugins.jdbc.JdbcAsyncJoin;
 
 /**
- * mysql AsyncFunction
+ * ClickHouse AsyncFunction
  */
-@Name("ClickHouseSink")
+@Name("ClickHouse")
 @Description("this is `join mode` ClickHouseSink config table")
 public class ClickHouseAsyncJoin
         extends JdbcAsyncJoin
@@ -36,6 +36,6 @@ public class ClickHouseAsyncJoin
     @Override
     public String getJdbcDriver()
     {
-        return "com.github.housepower.jdbc.ClickHouseDriver";
+        return "ru.yandex.clickhouse.ClickHouseDriver";
     }
 }
