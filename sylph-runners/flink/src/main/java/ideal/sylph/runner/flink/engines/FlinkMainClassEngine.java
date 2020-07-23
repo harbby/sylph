@@ -26,13 +26,12 @@ import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.model.ConnectorInfo;
+import org.apache.flink.api.dag.Pipeline;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.ExecutionEnvironmentFactory;
 import org.apache.flink.client.program.OptimizerPlanEnvironment;
 import org.apache.flink.client.program.ProgramInvocationException;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.optimizer.Optimizer;
-import org.apache.flink.optimizer.plan.FlinkPlan;
 import org.apache.flink.optimizer.plan.OptimizedPlan;
 import org.apache.flink.optimizer.plantranslate.JobGraphGenerator;
 import org.apache.flink.runtime.jobgraph.JobGraph;
@@ -57,7 +56,7 @@ import static org.fusesource.jansi.Ansi.Color.YELLOW;
 /**
  * 通过main class 加载Job和编译
  * <p>
- * flink submit通过{@link org.apache.flink.client.program.OptimizerPlanEnvironment#getOptimizedPlan} 加载和编译
+ * flink submit通过{@link org.apache.flink.client.program.OptimizerPlanEnvironment#getPipeline} 加载和编译
  * 具体思路是1: setAsContext(); 设置创建静态env(session)
  * 2, 反射执行 用户main()方法
  * 3, return plan JobGraph
@@ -102,7 +101,7 @@ public class FlinkMainClassEngine
                 .setCallable(() -> {
                     //---set env
                     Configuration configuration = new Configuration();
-                    OptimizerPlanEnvironment planEnvironment = new OptimizerPlanEnvironment(new Optimizer(configuration));
+                    OptimizerPlanEnvironment planEnvironment = new OptimizerPlanEnvironment(configuration);
                     ExecutionEnvironmentFactory factory = () -> planEnvironment;
                     Method method = ExecutionEnvironment.class.getDeclaredMethod("initializeContextEnvironment", ExecutionEnvironmentFactory.class);
                     method.setAccessible(true);
@@ -118,6 +117,11 @@ public class FlinkMainClassEngine
                     Class<?> mainClass = Class.forName(flow.mainClass);
                     Method main = mainClass.getMethod("main", String[].class);
                     try {
+                        /**
+                         * {@link org.apache.flink.client.program.OptimizerPlanEnvironment#executeAsync(String)}
+                         *
+                         * throw new OptimizerPlanEnvironment.ProgramAbortException();
+                         * */
                         main.invoke(null, (Object) new String[0]);
                         throwsException(ProgramInvocationException.class);
                     }
@@ -125,9 +129,9 @@ public class FlinkMainClassEngine
                         throw e;
                     }
                     catch (Throwable t) {
-                        Field field = OptimizerPlanEnvironment.class.getDeclaredField("optimizerPlan");
+                        Field field = OptimizerPlanEnvironment.class.getDeclaredField("pipeline");
                         field.setAccessible(true);
-                        FlinkPlan flinkPlan = (FlinkPlan) field.get(planEnvironment);
+                        Pipeline flinkPlan = (Pipeline) field.get(planEnvironment);
                         if (flinkPlan == null) {
                             throw new ProgramInvocationException("The program caused an error: ", t);
                         }

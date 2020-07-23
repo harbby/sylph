@@ -20,13 +20,13 @@ import ideal.sylph.annotation.Name;
 import ideal.sylph.annotation.Version;
 import ideal.sylph.etl.PluginConfig;
 import ideal.sylph.etl.api.Sink;
-import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.serialization.BulkWriter;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.runtime.state.CheckpointListener;
 import org.apache.flink.runtime.state.FunctionInitializationContext;
 import org.apache.flink.runtime.state.FunctionSnapshotContext;
+import org.apache.flink.shaded.guava18.com.google.common.annotations.VisibleForTesting;
 import org.apache.flink.streaming.api.checkpoint.CheckpointedFunction;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
@@ -60,15 +60,13 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 @Description("this is hdfs RealTimeSink")
 @Version("1.0.0")
 public class HdfsSink2
-        implements Sink<DataStream<Row>>
-{
+        implements Sink<DataStream<Row>> {
     private final long batchSize;
     private final Class<? extends CompressionCodec> codecClass;
     private final String writerDir;
 
     public HdfsSink2(Hdfs2SinkConfig config)
-            throws ClassNotFoundException
-    {
+            throws ClassNotFoundException {
         this.batchSize = config.getBatchBufferSize();
         this.writerDir = config.getWriteDir();
         switch (config.getZipType().trim().toLowerCase()) {
@@ -88,7 +86,7 @@ public class HdfsSink2
                 codecClass = BZip2Codec.class;
                 break;
             case "default":
-                codecClass = DefaultCodec.class;
+                codecClass = DefaultCodec.class;  //zlib
                 break;
             default:
                 codecClass = NoneCodec.class;
@@ -96,20 +94,17 @@ public class HdfsSink2
     }
 
     @Override
-    public void run(DataStream<Row> stream)
-    {
+    public void run(DataStream<Row> stream) {
         final RichSinkFunction<byte[]> sink = StreamingFileSink.forBulkFormat(
                 new Path(writerDir),
-                (BulkWriter.Factory<byte[]>) fsDataOutputStream -> new BulkWriter<byte[]>()
-                {
+                (BulkWriter.Factory<byte[]>) fsDataOutputStream -> new BulkWriter<byte[]>() {
                     private final CompressionCodec codec = ReflectionUtils.newInstance(codecClass, new Configuration());
                     private final CompressionOutputStream outputStream = codec.createOutputStream(fsDataOutputStream);
                     private long bufferSize;
 
                     @Override
                     public void addElement(byte[] element)
-                            throws IOException
-                    {
+                            throws IOException {
                         outputStream.write(element);
                         outputStream.write(10); //write \n
                         bufferSize += element.length;
@@ -121,15 +116,13 @@ public class HdfsSink2
 
                     @Override
                     public void flush()
-                            throws IOException
-                    {
+                            throws IOException {
                         outputStream.flush();
                     }
 
                     @Override
                     public void finish()
-                            throws IOException
-                    {
+                            throws IOException {
                         outputStream.finish();
                         outputStream.close();
                     }
@@ -147,39 +140,37 @@ public class HdfsSink2
                 .name(this.getClass().getSimpleName());
     }
 
+    @VisibleForTesting
     public static class LocalShuffle<T>
             extends RichSinkFunction<T>
-            implements CheckpointedFunction, CheckpointListener, ProcessingTimeCallback
-    {
+            implements CheckpointedFunction, CheckpointListener, ProcessingTimeCallback {
         private final List<RichSinkFunction<T>> sinks;
         private final BlockingQueue<Tuple2<T, Context>> queue = new LinkedBlockingDeque<>(10_000);
         private ExecutorService service;
         private volatile boolean running = true;
 
         public LocalShuffle(int split, RichSinkFunction<T> userSink)
-                throws IOException, ClassNotFoundException, IllegalAccessException, NoSuchFieldException
-        {
+                throws IOException, ClassNotFoundException, IllegalAccessException, NoSuchFieldException {
             this.sinks = new ArrayList<>(split);
             SerializedValue<RichSinkFunction<T>> serializedValue = new SerializedValue<>(userSink);
             for (int i = 0; i < split; i++) {
                 StreamingFileSink<T> sink = (StreamingFileSink<T>) serializedValue.deserializeValue(this.getClass().getClassLoader());
                 Field field = StreamingFileSink.class.getDeclaredField("bucketsBuilder");
                 field.setAccessible(true);
-                StreamingFileSink<T> mockSink = new StreamingFileSink<T>((StreamingFileSink.BulkFormatBuilder<T, ?>) field.get(sink), 0)
-                {
-                    @Override
-                    public RuntimeContext getRuntimeContext()
-                    {
-                        return LocalShuffle.this.getRuntimeContext();
-                    }
-                };
+//                StreamingFileSink<T> mockSink = new StreamingFileSink<T>((StreamingFileSink.BulkFormatBuilder) field.get(sink), 0) {
+//                    @Override
+//                    public RuntimeContext getRuntimeContext()
+//                    {
+//                        return LocalShuffle.this.getRuntimeContext();
+//                    }
+//                };
+//                sinks.add(mockSink);
             }
         }
 
         @Override
         public void open(org.apache.flink.configuration.Configuration parameters)
-                throws Exception
-        {
+                throws Exception {
             super.open(parameters);
             this.service = Executors.newFixedThreadPool(sinks.size());
             for (RichSinkFunction<T> sink : sinks) {
@@ -189,11 +180,9 @@ public class HdfsSink2
                         try {
                             Tuple2<T, Context> tuple2 = queue.take();
                             sink.invoke(tuple2.f0, tuple2.f1);
-                        }
-                        catch (InterruptedException e) {
+                        } catch (InterruptedException e) {
                             break;
-                        }
-                        catch (Exception e) {
+                        } catch (Exception e) {
                             //todo; exit taskmanager
                             e.printStackTrace();
                             throw new RuntimeException(e);
@@ -205,8 +194,7 @@ public class HdfsSink2
 
         @Override
         public void close()
-                throws Exception
-        {
+                throws Exception {
             running = false;
             super.close();
             service.shutdown();
@@ -217,15 +205,13 @@ public class HdfsSink2
 
         @Override
         public void invoke(T value, Context context)
-                throws Exception
-        {
+                throws Exception {
             queue.put(Tuple2.of(value, context));
         }
 
         @Override
         public void notifyCheckpointComplete(long checkpointId)
-                throws Exception
-        {
+                throws Exception {
             for (RichSinkFunction<T> sink : sinks) {
                 if (sink instanceof CheckpointListener) {
                     ((CheckpointListener) sink).notifyCheckpointComplete(checkpointId);
@@ -235,8 +221,7 @@ public class HdfsSink2
 
         @Override
         public void snapshotState(FunctionSnapshotContext context)
-                throws Exception
-        {
+                throws Exception {
             for (RichSinkFunction<T> sink : sinks) {
                 if (sink instanceof CheckpointedFunction) {
                     ((CheckpointedFunction) sink).snapshotState(context);
@@ -246,8 +231,7 @@ public class HdfsSink2
 
         @Override
         public void initializeState(FunctionInitializationContext context)
-                throws Exception
-        {
+                throws Exception {
             for (RichSinkFunction<T> sink : sinks) {
                 if (sink instanceof CheckpointedFunction) {
                     ((CheckpointedFunction) sink).initializeState(context);
@@ -257,8 +241,7 @@ public class HdfsSink2
 
         @Override
         public void onProcessingTime(long timestamp)
-                throws Exception
-        {
+                throws Exception {
             for (RichSinkFunction<T> sink : sinks) {
                 if (sink instanceof ProcessingTimeCallback) {
                     ((ProcessingTimeCallback) sink).onProcessingTime(timestamp);
@@ -268,8 +251,7 @@ public class HdfsSink2
     }
 
     public static class Hdfs2SinkConfig
-            extends PluginConfig
-    {
+            extends PluginConfig {
         @Name("hdfs_write_dir")
         @Description("this is write dir")
         private String writeDir;
@@ -282,18 +264,15 @@ public class HdfsSink2
         @Description("default:5MB")
         private long batchBufferSize = 5 * 1024 * 1024;
 
-        public long getBatchBufferSize()
-        {
+        public long getBatchBufferSize() {
             return this.batchBufferSize;
         }
 
-        public String getZipType()
-        {
+        public String getZipType() {
             return zipType;
         }
 
-        public String getWriteDir()
-        {
+        public String getWriteDir() {
             return this.writeDir;
         }
     }

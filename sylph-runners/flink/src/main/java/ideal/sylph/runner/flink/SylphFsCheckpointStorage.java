@@ -39,8 +39,7 @@ import static org.apache.flink.util.Preconditions.checkArgument;
  * An implementation of durable checkpoint storage to file systems.
  */
 public class SylphFsCheckpointStorage
-        extends AbstractFsCheckpointStorage
-{
+        extends AbstractFsCheckpointStorage {
     private final FileSystem fileSystem;
 
     private final Path checkpointsDirectory;
@@ -58,8 +57,7 @@ public class SylphFsCheckpointStorage
             @Nullable Path defaultSavepointDirectory,
             JobID jobId,
             int fileSizeThreshold)
-            throws IOException
-    {
+            throws IOException {
         this(checkpointBaseDirectory.getFileSystem(),
                 checkpointBaseDirectory,
                 defaultSavepointDirectory,
@@ -75,8 +73,7 @@ public class SylphFsCheckpointStorage
             JobID jobId,
             int fileSizeThreshold,
             int writeBufferSize)
-            throws IOException
-    {
+            throws IOException {
         super(jobId, defaultSavepointDirectory);
 
         checkArgument(fileSizeThreshold >= 0);
@@ -97,8 +94,7 @@ public class SylphFsCheckpointStorage
 
     // ------------------------------------------------------------------------
 
-    public Path getCheckpointsDirectory()
-    {
+    public Path getCheckpointsDirectory() {
         return checkpointsDirectory;
     }
 
@@ -107,15 +103,17 @@ public class SylphFsCheckpointStorage
     // ------------------------------------------------------------------------
 
     @Override
-    public boolean supportsHighlyAvailableStorage()
-    {
+    public boolean supportsHighlyAvailableStorage() {
         return true;
     }
 
     @Override
+    public void initializeBaseLocations() throws IOException {
+    }
+
+    @Override
     public CheckpointStorageLocation initializeLocationForCheckpoint(long checkpointId)
-            throws IOException
-    {
+            throws IOException {
         checkArgument(checkpointId >= 0);
 
         // prepare all the paths needed for the checkpoints
@@ -138,8 +136,7 @@ public class SylphFsCheckpointStorage
     public CheckpointStreamFactory resolveCheckpointStorageLocation(
             long checkpointId,
             CheckpointStorageLocationReference reference)
-            throws IOException
-    {
+            throws IOException {
         if (reference.isDefaultReference()) {
             // default reference, construct the default location for that particular checkpoint
             final Path checkpointDir = createCheckpointDirectory(checkpointsDirectory, checkpointId);
@@ -152,8 +149,7 @@ public class SylphFsCheckpointStorage
                     reference,
                     fileSizeThreshold,
                     writeBufferSize);
-        }
-        else {
+        } else {
             // location encoded in the reference
             final Path path = decodePathFromReference(reference);
 
@@ -170,8 +166,7 @@ public class SylphFsCheckpointStorage
 
     @Override
     public CheckpointStateOutputStream createTaskOwnedStateStream()
-            throws IOException
-    {
+            throws IOException {
         return new FsCheckpointStateOutputStream(
                 taskOwnedStateDirectory,
                 fileSystem,
@@ -181,8 +176,7 @@ public class SylphFsCheckpointStorage
 
     @Override
     protected CheckpointStorageLocation createSavepointLocation(FileSystem fs, Path location)
-            throws IOException
-    {
+            throws IOException {
         final CheckpointStorageLocationReference reference = encodePathAsReference(location);
         return new FsCheckpointStorageLocation(fs, location, location, location, reference, fileSizeThreshold, writeBufferSize);
     }
