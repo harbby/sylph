@@ -1,7 +1,7 @@
 dependencies {
     compile group: 'joda-time', name: 'joda-time', version: deps.joda_time
     compileOnly group: 'org.apache.hadoop', name: 'hadoop-common', version: deps.hadoop
-    compileOnly(group: 'org.apache.flink', name: 'flink-streaming-scala_2.11', version: deps.flink) {
+    compileOnly(group: 'org.apache.flink', name: 'flink-streaming-scala_2.12', version: deps.flink) {
         exclude(module: 'flink-shaded-hadoop2')
     }
 }

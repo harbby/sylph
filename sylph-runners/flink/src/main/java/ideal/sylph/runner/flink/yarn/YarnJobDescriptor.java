@@ -29,8 +29,6 @@ import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 
-import java.io.IOException;
-
 public class YarnJobDescriptor
         extends YarnClusterDescriptor {
     private static final String APPLICATION_TYPE = "Sylph_FLINK";
@@ -41,13 +39,12 @@ public class YarnJobDescriptor
     private final String jobName;
 
     YarnJobDescriptor(
-            FlinkConfiguration flinkConf,
+            Configuration flinkConf,
             YarnClient yarnClient,
             YarnConfiguration yarnConfiguration,
             FlinkJobConfig appConf,
-            String jobId)
-            throws IOException {
-        super(flinkConf.flinkConfiguration(), yarnConfiguration, yarnClient, YarnClientYarnClusterInformationRetriever.create(yarnClient), false);
+            String jobId) {
+        super(flinkConf, yarnConfiguration, yarnClient, YarnClientYarnClusterInformationRetriever.create(yarnClient), false);
         this.jobName = jobId;
         this.yarnClient = yarnClient;
         this.appConf = appConf;
@@ -83,7 +80,7 @@ public class YarnJobDescriptor
         //flinkConfiguration.set(CoreOptions.FLINK_JVM_OPTIONS, " ");
         //flinkConfiguration.set(CoreOptions.FLINK_TM_JVM_OPTIONS, " ");
 
-        //flinkConfiguration.setInteger(YarnConfigOptions.APPLICATION_ATTEMPTS.key(), MAX_ATTEMPT);
+        flinkConfiguration.setInteger(YarnConfigOptions.APPLICATION_ATTEMPTS.key(), MAX_ATTEMPT);
         flinkConfiguration.setInteger(YarnConfigOptions.APP_MASTER_VCORES, 1);  //default 1
 
         //flinkConfiguration.setString(HighAvailabilityOptions.HA_CLUSTER_ID, ...);

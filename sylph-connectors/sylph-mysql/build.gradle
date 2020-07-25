@@ -1,4 +1,4 @@
 dependencies {
   compile project(':sylph-base-jdbc')
-  runtime group: 'mysql', name: 'mysql-connector-java', version: '5.1.38'
+  runtime group: 'mysql', name: 'mysql-connector-java', version: '8.0.15'
 }

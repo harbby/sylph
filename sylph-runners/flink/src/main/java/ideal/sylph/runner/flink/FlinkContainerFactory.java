@@ -15,13 +15,12 @@
  */
 package ideal.sylph.runner.flink;
 
-import com.github.harbby.gadtry.aop.AopFactory;
+import com.github.harbby.gadtry.aop.AopGo;
 import com.github.harbby.gadtry.ioc.IocFactory;
 import com.github.harbby.gadtry.jvm.JVMLauncher;
 import com.github.harbby.gadtry.jvm.JVMLaunchers;
 import com.github.harbby.gadtry.jvm.VmCallable;
 import com.github.harbby.gadtry.jvm.VmFuture;
-import ideal.sylph.runner.flink.yarn.FlinkConfiguration;
 import ideal.sylph.runner.flink.yarn.FlinkYarnJobLauncher;
 import ideal.sylph.runtime.local.LocalContainer;
 import ideal.sylph.runtime.yarn.YarnJobContainer;
@@ -31,11 +30,11 @@ import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobContainer;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.JobID;
+import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings;
 import org.apache.flink.runtime.jobgraph.tasks.CheckpointCoordinatorConfiguration;
 import org.apache.flink.runtime.jobgraph.tasks.JobCheckpointingSettings;
-import org.apache.flink.runtime.state.CheckpointStorage;
 import org.apache.flink.runtime.state.StateBackend;
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.util.SerializedValue;
@@ -53,6 +52,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.github.harbby.gadtry.aop.mock.MockGoArgument.any;
 import static ideal.sylph.runner.flink.local.MiniExecutor.FLINK_WEB;
 import static ideal.sylph.runner.flink.local.MiniExecutor.createVmCallable;
 import static org.apache.flink.runtime.checkpoint.CheckpointRetentionPolicy.RETAIN_ON_CANCELLATION;
@@ -66,7 +66,6 @@ public class FlinkContainerFactory
 
     private final IocFactory injector = IocFactory.create(new YarnModule(), binder -> {
         binder.bind(FlinkYarnJobLauncher.class).withSingle();
-        binder.bind(FlinkConfiguration.class).byCreator(FlinkConfiguration::of).withSingle();
     });
 
     @Override
@@ -168,16 +167,16 @@ public class FlinkContainerFactory
             return;
         }
         //---setting flink job
-        CheckpointCoordinatorConfiguration config = new CheckpointCoordinatorConfiguration(
-                jobConfig.getCheckpointInterval(), //default is -1 表示关闭 建议1minutes
-                jobConfig.getCheckpointTimeout(),  //10 minutes  this default
-                jobConfig.getMinPauseBetweenCheckpoints(), // make sure 1000 ms of progress happen between checkpoints
-                1,      // The maximum number of concurrent checkpoint attempts.
-                RETAIN_ON_CANCELLATION,
-                true,   //CheckpointingMode.EXACTLY_ONCE //这是默认值
-                true,  //todo: cfg.isPreferCheckpointForRecovery()
-                0  //todo: cfg.getTolerableCheckpointFailureNumber()
-        );
+        CheckpointCoordinatorConfiguration config = CheckpointCoordinatorConfiguration.builder()
+                .setCheckpointInterval(jobConfig.getCheckpointInterval())  //default is -1 表示关闭 建议1minutes
+                .setCheckpointTimeout(jobConfig.getCheckpointTimeout())    //10 minutes  this default
+                .setMinPauseBetweenCheckpoints(jobConfig.getMinPauseBetweenCheckpoints())  // make sure 1000 ms of progress happen between checkpoints
+                .setMaxConcurrentCheckpoints(1)   // The maximum number of concurrent checkpoint attempts.
+                .setCheckpointRetentionPolicy(RETAIN_ON_CANCELLATION)
+                .setExactlyOnce(true)   //CheckpointingMode.EXACTLY_ONCE //这是默认值
+                .setUnalignedCheckpointsEnabled(true)  //todo: cfg.isPreferCheckpointForRecovery()
+                .setTolerableCheckpointFailureNumber(0)     //todo: cfg.getTolerableCheckpointFailureNumber()
+                .build();
 
         //set checkPoint
         //default  execEnv.getStateBackend() is null default is asynchronousSnapshots = true;
@@ -186,17 +185,19 @@ public class FlinkContainerFactory
         StateBackend stateBackend = new FsStateBackend(appCheckPath.toString(), true)
         {
             @Override
-            public FsStateBackend configure(org.apache.flink.configuration.Configuration config, ClassLoader classLoader)
+            public FsStateBackend configure(ReadableConfig config, ClassLoader classLoader)
             {
                 FsStateBackend fsStateBackend = super.configure(config, classLoader);
-                return AopFactory.proxy(FsStateBackend.class).byInstance(fsStateBackend)
-                        .returnType(CheckpointStorage.class)
-                        .around(proxyContext -> {
-                            //Object value = proxyContext.proceed();
-                            JobID jobId = (JobID) proxyContext.getArgs()[0];
-                            logger.info("mock {}", proxyContext.getMethod());
-                            return new SylphFsCheckpointStorage(getCheckpointPath(), getSavepointPath(), jobId, getMinFileSizeThreshold());
-                        });
+                return AopGo.proxy(FsStateBackend.class).byInstance(fsStateBackend)
+                        .aop(binder -> {
+                            binder.doAround(proxyContext -> {
+                                //Object value = proxyContext.proceed();
+                                JobID jobId = (JobID) proxyContext.getArgs()[0];
+                                logger.info("mock {}", proxyContext.getMethod());
+                                return new SylphFsCheckpointStorage(getCheckpointPath(), getSavepointPath(), jobId, getMinFileSizeThreshold());
+                            }).when().createCheckpointStorage(any());
+                        })
+                        .build();
             }
         };
         JobCheckpointingSettings settings = jobGraph.getCheckpointingSettings();

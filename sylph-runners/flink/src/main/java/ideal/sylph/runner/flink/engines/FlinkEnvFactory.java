@@ -15,11 +15,11 @@
  */
 package ideal.sylph.runner.flink.engines;
 
-import com.github.harbby.gadtry.aop.AopFactory;
+import com.github.harbby.gadtry.aop.AopGo;
 import ideal.sylph.runner.flink.FlinkJobConfig;
 import ideal.sylph.runner.flink.SylphFsCheckpointStorage;
 import org.apache.flink.api.common.JobID;
-import org.apache.flink.runtime.state.CheckpointStorage;
+import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.runtime.state.StateBackend;
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.streaming.api.CheckpointingMode;
@@ -28,6 +28,8 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static com.github.harbby.gadtry.aop.mock.MockGoArgument.any;
 
 /**
  * Enabling and Configuring Checkpointing
@@ -75,17 +77,19 @@ public class FlinkEnvFactory
             StateBackend stateBackend = new FsStateBackend(appCheckPath.toString(), true)
             {
                 @Override
-                public FsStateBackend configure(org.apache.flink.configuration.Configuration config, ClassLoader classLoader)
+                public FsStateBackend configure(ReadableConfig config, ClassLoader classLoader)
                 {
                     FsStateBackend fsStateBackend = super.configure(config, classLoader);
-                    return AopFactory.proxy(FsStateBackend.class).byInstance(fsStateBackend)
-                            .returnType(CheckpointStorage.class)
-                            .around(proxyContext -> {
-                                JobID jobId = (JobID) proxyContext.getArgs()[0];
-
-                                logger.info("mock {}", proxyContext.getMethod());
-                                return new SylphFsCheckpointStorage(getCheckpointPath(), getSavepointPath(), jobId, getMinFileSizeThreshold());
-                            });
+                    return AopGo.proxy(FsStateBackend.class).byInstance(fsStateBackend)
+                            .aop(binder -> {
+                                binder.doAround(proxyContext -> {
+                                    //Object value = proxyContext.proceed();
+                                    JobID jobId = (JobID) proxyContext.getArgs()[0];
+                                    logger.info("mock {}", proxyContext.getMethod());
+                                    return new SylphFsCheckpointStorage(getCheckpointPath(), getSavepointPath(), jobId, getMinFileSizeThreshold());
+                                }).when().createCheckpointStorage(any());
+                            })
+                            .build();
                 }
             };
             execEnv.setStateBackend(stateBackend);

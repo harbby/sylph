@@ -45,8 +45,8 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableException;
 import org.apache.flink.table.api.ValidationException;
-import org.apache.flink.table.api.java.StreamTableEnvironment;
-import org.apache.flink.table.api.java.internal.StreamTableEnvironmentImpl;
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
+import org.apache.flink.table.api.bridge.java.internal.StreamTableEnvironmentImpl;
 import org.apache.flink.table.functions.AggregateFunction;
 import org.apache.flink.table.functions.ScalarFunction;
 import org.apache.flink.table.functions.TableFunction;
@@ -134,7 +134,8 @@ public class StreamSqlBuilder
                 tableEnv.toRetractStream(table, Row.class).print();
             }
             //----------------------------
-            triggerHelper.settingTrigger(execEnv.getStreamGraph(), selectQuery);
+            //todo: java.lang.IllegalStateException: No operators defined in streaming topology. Cannot execute.
+            //triggerHelper.settingTrigger(execEnv.getStreamGraph(), selectQuery);
         }
         else if (statement instanceof InsertInto) {
             InsertInto insertInto = (InsertInto) statement;
@@ -155,7 +156,8 @@ public class StreamSqlBuilder
                 tableEnv.fromDataStream(retractStream).insertInto(insertInto.getTableName());
             }
             //----------------------------
-            triggerHelper.settingTrigger(execEnv.getStreamGraph(), selectQuery);
+            //todo: java.lang.IllegalStateException: No operators defined in streaming topology. Cannot execute.
+            //triggerHelper.settingTrigger(execEnv.getStreamGraph(), selectQuery);
         }
         else {
             throw new IllegalArgumentException("this driver class " + statement.getClass() + " have't support!");

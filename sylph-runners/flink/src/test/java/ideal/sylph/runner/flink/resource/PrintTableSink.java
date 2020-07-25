@@ -18,6 +18,7 @@ package ideal.sylph.runner.flink.resource;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.table.api.Types;
 import org.apache.flink.table.sinks.AppendStreamTableSink;
 import org.apache.flink.table.sinks.TableSink;
@@ -56,8 +57,8 @@ public class PrintTableSink
     }
 
     @Override
-    public void emitDataStream(DataStream<Row> dataStream)
+    public DataStreamSink<?> consumeDataStream(DataStream<Row> dataStream)
     {
-        dataStream.print();
+        return dataStream.print();
     }
 }

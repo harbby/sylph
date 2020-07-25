@@ -15,6 +15,7 @@
  */
 package ideal.sylph.runner.spark;
 
+import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.collection.mutable.MutableSet;
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.github.harbby.gadtry.jvm.JVMException;
@@ -27,6 +28,7 @@ import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.SqlFlow;
+import org.apache.commons.lang3.JavaVersion;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
 import org.fusesource.jansi.Ansi;
@@ -34,7 +36,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
+import java.net.URL;
 import java.net.URLClassLoader;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -105,6 +110,8 @@ public class StructuredStreamingSqlEngine
                 .setConsole((line) -> System.out.println(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
                 .setCallable(() -> {
                     System.out.println("************ job start ***************");
+                    URL path = JavaVersion.class.getProtectionDomain().getCodeSource().getLocation();
+                    System.out.println(path);
                     appGetter.get();
                     return true;
                 })

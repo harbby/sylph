@@ -77,7 +77,7 @@ public class StructuredNodeLoader
     {
         return stream -> {
             //-------启动job-------
-            StreamingQuery streamingQuery = loadSinkWithComplic(driverStr, config).apply(stream).start(); //start job
+            StreamingQuery streamingQuery = loadSinkWithComplic(driverStr, config).apply(stream).start(""); //start job
             //streamingQuery.stop()
             return null;
         };

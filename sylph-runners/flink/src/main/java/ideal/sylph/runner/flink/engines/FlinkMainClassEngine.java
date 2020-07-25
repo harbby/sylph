@@ -101,7 +101,7 @@ public class FlinkMainClassEngine
                 .setCallable(() -> {
                     //---set env
                     Configuration configuration = new Configuration();
-                    OptimizerPlanEnvironment planEnvironment = new OptimizerPlanEnvironment(configuration);
+                    OptimizerPlanEnvironment planEnvironment = new OptimizerPlanEnvironment(configuration, jobClassLoader, jobConfig.getParallelism());
                     ExecutionEnvironmentFactory factory = () -> planEnvironment;
                     Method method = ExecutionEnvironment.class.getDeclaredMethod("initializeContextEnvironment", ExecutionEnvironmentFactory.class);
                     method.setAccessible(true);

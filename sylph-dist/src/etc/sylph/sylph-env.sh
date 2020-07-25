@@ -8,6 +8,8 @@ export HADOOP_CONF_DIR=/ideal/hadoop/hadoop/etc/hadoop
 
 # set your FLINK_HOME
 export FLINK_HOME=/ideal/hadoop/flink
+export FLINK_CONF_DIR=$FLINK_HOME/conf
+
 
 # set your SPARK_HOME
 export SPARK_HOME=/ideal/hadoop/spark

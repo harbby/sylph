@@ -45,7 +45,7 @@ import org.apache.flink.calcite.shaded.com.google.common.collect.ImmutableList;
 import org.apache.flink.shaded.guava18.com.google.common.collect.ImmutableMap;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.table.api.Table;
-import org.apache.flink.table.api.java.StreamTableEnvironment;
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.catalog.CatalogBaseTable;
 import org.apache.flink.table.catalog.ObjectPath;
@@ -81,7 +81,7 @@ public class FlinkSqlParser
      * Fully consistent with the flink sql syntax
      * <p>
      * Returns the SQL parser config for this environment including a custom Calcite configuration.
-     * see {@link org.apache.flink.table.api.TableEnvironment#getSqlParserConfig}
+     * see {@link org.apache.flink.table.planner.PlanningConfigurationBuilder#getSqlParserConfig}
      * <p>
      * we use Java lex because back ticks are easier than double quotes in programming
      * and cases are preserved
