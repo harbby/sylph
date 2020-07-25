@@ -19,9 +19,11 @@ import com.github.harbby.gadtry.ioc.Autowired;
 import ideal.sylph.spi.job.Job;
 import org.apache.flink.client.program.ClusterClient;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.DeploymentOptionsInternal;
 import org.apache.flink.configuration.GlobalConfiguration;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.yarn.configuration.YarnConfigOptions;
+import org.apache.flink.yarn.configuration.YarnLogConfigUtil;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
@@ -77,9 +79,11 @@ public class FlinkYarnJobLauncher {
                 job.getName());
         descriptor.addShipFiles(userProvidedJars);
 
-        List<File> logFiles = Stream.of("log4j.properties", "logback.xml")   //"conf/flink-conf.yaml"
-                .map(x -> new File(flinkDonfDirectory, x)).collect(Collectors.toList());
-        descriptor.addShipFiles(logFiles);
+        //flinkConfiguration.setString(DeploymentOptionsInternal.CONF_DIR, flinkDonfDirectory);
+        YarnLogConfigUtil.setLogConfigFileInConfig(flinkConfiguration, flinkDonfDirectory);
+//        List<File> logFiles = Stream.of("log4j.properties", "logback.xml")   //"conf/flink-conf.yaml"
+//                .map(x -> new File(flinkDonfDirectory, x)).collect(Collectors.toList());
+//        descriptor.addShipFiles(logFiles);
 
         logger.info("start flink job {}", jobGraph.getJobID());
         try (ClusterClient<ApplicationId> client = descriptor.deploy(jobGraph, true)) {

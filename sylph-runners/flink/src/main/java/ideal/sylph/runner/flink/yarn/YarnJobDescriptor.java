@@ -19,10 +19,12 @@ import ideal.sylph.runner.flink.FlinkJobConfig;
 import org.apache.flink.client.deployment.ClusterSpecification;
 import org.apache.flink.client.program.ClusterClient;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.DeploymentOptionsInternal;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.yarn.YarnClientYarnClusterInformationRetriever;
 import org.apache.flink.yarn.YarnClusterDescriptor;
 import org.apache.flink.yarn.configuration.YarnConfigOptions;
+import org.apache.flink.yarn.configuration.YarnConfigOptionsInternal;
 import org.apache.flink.yarn.entrypoint.YarnJobClusterEntrypoint;
 import org.apache.flink.yarn.entrypoint.YarnSessionClusterEntrypoint;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
@@ -84,6 +86,8 @@ public class YarnJobDescriptor
         flinkConfiguration.setInteger(YarnConfigOptions.APP_MASTER_VCORES, 1);  //default 1
 
         //flinkConfiguration.setString(HighAvailabilityOptions.HA_CLUSTER_ID, ...);
+
+//        flinkConfiguration.setString(YarnConfigOptionsInternal.APPLICATION_LOG_CONFIG_FILE, "logback.xml");
 
         ClusterSpecification clusterSpecification = new ClusterSpecification.ClusterSpecificationBuilder()
                 .setMasterMemoryMB(appConf.getJobManagerMemoryMb())
