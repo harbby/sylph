@@ -15,44 +15,43 @@
  */
 package ideal.sylph.parser.antlr.tree;
 
-import ideal.sylph.parser.antlr.ParsingException;
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static java.util.Objects.requireNonNull;
-
-public class LongLiteral
-        extends Literal
+public class AllowedLateness
+        extends Node
 {
-    private final long value;
+    private final LongLiteral allowedLateness;
 
-    public LongLiteral(NodeLocation location, String value)
+    public AllowedLateness(NodeLocation location, String allowedLateness)
     {
-        this(Optional.ofNullable(location), value);
+        this(Optional.ofNullable(location), new LongLiteral(location, allowedLateness));
     }
 
-    private LongLiteral(Optional<NodeLocation> location, String value)
+    protected AllowedLateness(Optional<NodeLocation> location, LongLiteral allowedLateness)
     {
         super(location);
-        requireNonNull(value, "value is null");
-        try {
-            this.value = Long.parseLong(value);
-        }
-        catch (NumberFormatException e) {
-            throw new ParsingException("Invalid numeric literal: " + value);
-        }
+        this.allowedLateness = allowedLateness;
     }
 
-    public long getValue()
+    public long getAllowedLateness()
     {
-        return value;
+        return allowedLateness.getValue();
+    }
+
+    @Override
+    public List<? extends Node> getChildren()
+    {
+        return MutableList.of(allowedLateness);
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(value);
+        return Objects.hash(allowedLateness.getValue());
     }
 
     @Override
@@ -61,16 +60,16 @@ public class LongLiteral
         if (this == obj) {
             return true;
         }
-        if (obj == null || getClass() != obj.getClass()) {
+        if ((obj == null) || (getClass() != obj.getClass())) {
             return false;
         }
-        LongLiteral other = (LongLiteral) obj;
-        return Objects.equals(this.value, other.value);
+        AllowedLateness o = (AllowedLateness) obj;
+        return Objects.equals(allowedLateness.getValue(), o.allowedLateness.getValue());
     }
 
     @Override
     public String toString()
     {
-        return String.valueOf(this.getValue());
+        return String.valueOf(allowedLateness.getValue());
     }
 }

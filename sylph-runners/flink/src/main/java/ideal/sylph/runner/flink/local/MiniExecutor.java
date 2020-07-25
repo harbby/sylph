@@ -34,8 +34,7 @@ import java.util.concurrent.ExecutionException;
  * see {@link org.apache.flink.streaming.api.environment.LocalStreamEnvironment#execute(String)}
  */
 public class MiniExecutor
-        implements AutoCloseable
-{
+        implements AutoCloseable {
     private static final Logger logger = LoggerFactory.getLogger(MiniExecutor.class);
     public static final String FLINK_WEB = "Sylph FLink Local Job Web at ";
 
@@ -43,13 +42,10 @@ public class MiniExecutor
     private final JobGraph jobGraph;
 
     public MiniExecutor(JobGraph jobGraph)
-            throws Exception
-    {
-        jobGraph.setAllowQueuedScheduling(true);
-
+            throws Exception {
         Configuration configuration = new Configuration();
         configuration.addAll(jobGraph.getJobConfiguration());
-        configuration.setString(TaskManagerOptions.MANAGED_MEMORY_SIZE, "0");
+        //configuration.setString(TaskManagerOptions.MANAGED_MEMORY_SIZE, "0");
 
         // add (and override) the settings with what the user defined
         configuration.addAll(jobGraph.getJobConfiguration());
@@ -77,34 +73,29 @@ public class MiniExecutor
     }
 
     public URI getWebUi()
-            throws ExecutionException, InterruptedException
-    {
+            throws ExecutionException, InterruptedException {
         return miniCluster.getRestAddress().get();
     }
 
     public JobExecutionResult executeJobBlocking()
-            throws JobExecutionException, InterruptedException
-    {
+            throws JobExecutionException, InterruptedException {
         return miniCluster.executeJobBlocking(jobGraph);
     }
 
     @Override
     public void close()
-            throws Exception
-    {
+            throws Exception {
         miniCluster.close();
     }
 
     public static JobExecutionResult execute(JobGraph jobGraph)
-            throws Exception
-    {
+            throws Exception {
         try (MiniExecutor localExecutor = new MiniExecutor(jobGraph)) {
             return localExecutor.executeJobBlocking();
         }
     }
 
-    public static VmCallable<Boolean> createVmCallable(JobGraph jobGraph)
-    {
+    public static VmCallable<Boolean> createVmCallable(JobGraph jobGraph) {
         return () -> {
             try (MiniExecutor executor = new MiniExecutor(jobGraph)) {
                 System.out.println(FLINK_WEB + executor.getWebUi());

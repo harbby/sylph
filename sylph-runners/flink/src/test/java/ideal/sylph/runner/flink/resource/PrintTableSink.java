@@ -13,48 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.runner.flink.table;
+package ideal.sylph.runner.flink.resource;
 
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
+import org.apache.flink.table.api.Types;
 import org.apache.flink.table.sinks.AppendStreamTableSink;
 import org.apache.flink.table.sinks.TableSink;
 import org.apache.flink.types.Row;
 
-import java.util.function.UnaryOperator;
-
-import static java.util.Objects.requireNonNull;
-
-public class SylphTableSink
+public class PrintTableSink
         implements TableSink<Row>, AppendStreamTableSink<Row>
 {
-    private final RowTypeInfo rowTypeInfo;
-    private final UnaryOperator<DataStream<Row>> outPutStream;
-
-    public SylphTableSink(final RowTypeInfo rowTypeInfo, UnaryOperator<DataStream<Row>> outPutStream)
-    {
-        this.rowTypeInfo = requireNonNull(rowTypeInfo, "rowTypeInfo is null");
-        this.outPutStream = requireNonNull(outPutStream, "outPutStream is null");
-    }
+    public PrintTableSink() {}
 
     @Override
     public TypeInformation<Row> getOutputType()
     {
+        RowTypeInfo rowTypeInfo = new RowTypeInfo(getFieldTypes(), getFieldNames());
         return rowTypeInfo;
     }
 
     @Override
     public String[] getFieldNames()
     {
-        return rowTypeInfo.getFieldNames();
+        String[] fieldNames = {"product", "amount", "time"};
+        return fieldNames;
     }
 
     @Override
     public TypeInformation<?>[] getFieldTypes()
     {
-        return rowTypeInfo.getFieldTypes();
+        TypeInformation[] fieldTypes = {Types.STRING(), Types.STRING(), Types.LONG()};
+        return fieldTypes;
     }
 
     @Override
@@ -66,7 +59,6 @@ public class SylphTableSink
     @Override
     public DataStreamSink<?> consumeDataStream(DataStream<Row> dataStream)
     {
-        outPutStream.apply(dataStream); //active driver sink
-        return null;
+        return dataStream.print();
     }
 }

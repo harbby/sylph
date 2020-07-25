@@ -26,19 +26,20 @@ public class InsertInto
 {
     private final String insertQuery;
     private final QualifiedName tableName;
-    private final String query;
+    private final SelectQuery selectQuery;
 
-    public InsertInto(NodeLocation location, String insertQuery, QualifiedName qualifiedName, String query)
+    public InsertInto(NodeLocation location, String insertQuery,
+            QualifiedName qualifiedName, SelectQuery selectQuery)
     {
-        this(Optional.of(location), insertQuery, qualifiedName, query);
+        this(Optional.of(location), insertQuery, qualifiedName, selectQuery);
     }
 
-    private InsertInto(Optional<NodeLocation> location, String insertQuery, QualifiedName qualifiedName, String query)
+    private InsertInto(Optional<NodeLocation> location, String insertQuery, QualifiedName qualifiedName, SelectQuery selectQuery)
     {
         super(location);
         this.insertQuery = insertQuery;
         this.tableName = qualifiedName;
-        this.query = query;
+        this.selectQuery = selectQuery;
     }
 
     public String getTableName()
@@ -46,21 +47,21 @@ public class InsertInto
         return tableName.getParts().get(tableName.getParts().size() - 1);
     }
 
-    public String getQuery()
+    public SelectQuery getSelectQuery()
     {
-        return query;
+        return selectQuery;
     }
 
     @Override
     public List<? extends Node> getChildren()
     {
-        return MutableList.of();
+        return MutableList.of(selectQuery, selectQuery);
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(insertQuery, tableName, query);
+        return Objects.hash(insertQuery, tableName, selectQuery);
     }
 
     @Override
@@ -75,7 +76,7 @@ public class InsertInto
         InsertInto o = (InsertInto) obj;
         return Objects.equals(insertQuery, o.insertQuery) &&
                 Objects.equals(tableName, o.tableName) &&
-                Objects.equals(query, o.query);
+                Objects.equals(selectQuery, o.selectQuery);
     }
 
     @Override

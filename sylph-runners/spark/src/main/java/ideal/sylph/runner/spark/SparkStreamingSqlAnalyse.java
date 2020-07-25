@@ -228,7 +228,7 @@ public class SparkStreamingSqlAnalyse
     public void insertInto(InsertInto insert)
     {
         String tableName = insert.getTableName();
-        String query = insert.getQuery();
+        String query = insert.getSelectQuery().getQuery();
         builder.addHandler(sparkSession -> {
             Dataset<Row> df = sparkSession.sql(query);
             builder.getSink(tableName).apply(df);
@@ -239,7 +239,7 @@ public class SparkStreamingSqlAnalyse
     public void selectQuery(SelectQuery statement)
     {
         builder.addHandler(sparkSession -> {
-            Dataset<Row> df = sparkSession.sql(statement.toString());
+            Dataset<Row> df = sparkSession.sql(statement.getQuery());
             df.foreach((ForeachFunction<Row>) row -> System.out.println(row.mkString(",")));
             //df.show();
         });

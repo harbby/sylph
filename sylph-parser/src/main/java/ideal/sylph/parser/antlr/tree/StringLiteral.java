@@ -29,7 +29,7 @@ public class StringLiteral
 
     public StringLiteral(NodeLocation location, String value)
     {
-        this(Optional.of(location), value);
+        this(Optional.ofNullable(location), value);
     }
 
     private StringLiteral(Optional<NodeLocation> location, String value)

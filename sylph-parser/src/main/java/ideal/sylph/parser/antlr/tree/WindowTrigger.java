@@ -15,44 +15,43 @@
  */
 package ideal.sylph.parser.antlr.tree;
 
-import ideal.sylph.parser.antlr.ParsingException;
+import com.github.harbby.gadtry.collection.mutable.MutableList;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static java.util.Objects.requireNonNull;
-
-public class LongLiteral
-        extends Literal
+public class WindowTrigger
+        extends Node
 {
-    private final long value;
+    public final LongLiteral cycleTime;
 
-    public LongLiteral(NodeLocation location, String value)
+    public WindowTrigger(NodeLocation location, String cycleTime)
     {
-        this(Optional.ofNullable(location), value);
+        this(Optional.ofNullable(location), new LongLiteral(location, cycleTime));
     }
 
-    private LongLiteral(Optional<NodeLocation> location, String value)
+    protected WindowTrigger(Optional<NodeLocation> location, LongLiteral cycleTime)
     {
         super(location);
-        requireNonNull(value, "value is null");
-        try {
-            this.value = Long.parseLong(value);
-        }
-        catch (NumberFormatException e) {
-            throw new ParsingException("Invalid numeric literal: " + value);
-        }
+        this.cycleTime = cycleTime;
     }
 
-    public long getValue()
+    @Override
+    public List<? extends Node> getChildren()
     {
-        return value;
+        return MutableList.of(cycleTime);
+    }
+
+    public long getCycleTime()
+    {
+        return cycleTime.getValue();
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(value);
+        return Objects.hash(cycleTime.getValue());
     }
 
     @Override
@@ -61,16 +60,16 @@ public class LongLiteral
         if (this == obj) {
             return true;
         }
-        if (obj == null || getClass() != obj.getClass()) {
+        if ((obj == null) || (getClass() != obj.getClass())) {
             return false;
         }
-        LongLiteral other = (LongLiteral) obj;
-        return Objects.equals(this.value, other.value);
+        WindowTrigger o = (WindowTrigger) obj;
+        return Objects.equals(cycleTime.getValue(), o.cycleTime.getValue());
     }
 
     @Override
     public String toString()
     {
-        return String.valueOf(this.getValue());
+        return String.valueOf(cycleTime.getValue());
     }
 }

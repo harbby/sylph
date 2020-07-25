@@ -177,7 +177,7 @@ public class StructuredStreamingSqlAnalyse
             if (!isCompile) {
                 //UnsupportedOperationChecker.checkForContinuous();
                 writer = writer.option("checkpointLocation", checkpointLocation);
-                writer.start();
+                writer.start("");
             }
             return null;
         };
@@ -209,17 +209,20 @@ public class StructuredStreamingSqlAnalyse
             throws Exception
     {
         String tableName = insert.getTableName();
-        String query = insert.getQuery();
-
+        String query = insert.getSelectQuery().getQuery();
         Dataset<Row> df = sparkSession.sql(query);
-        sinks.get(tableName).apply(df);
+        UnaryOperator<Dataset<Row>> op = sinks.get(tableName);
+        if (op == null) {
+            throw new IllegalStateException("table " + tableName + " not found");
+        }
+        op.apply(df);  //.apply(df);
     }
 
     @Override
     public void selectQuery(SelectQuery statement)
             throws Exception
     {
-        Dataset<Row> df = sparkSession.sql(statement.toString());
+        Dataset<Row> df = sparkSession.sql(statement.getQuery());
         DataStreamWriter<Row> writer = df.writeStream()
                 .foreach(new ConsoleWriter())
                 .trigger(Trigger.Continuous("90 seconds"))

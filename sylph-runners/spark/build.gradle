@@ -5,6 +5,8 @@ configurations.all {
 }
 
 dependencies {
+  compileOnly group: 'joda-time', name: 'joda-time', version: '2.10.6'
+
   compile(project(':sylph-spi')) {
     exclude(group: 'com.fasterxml.jackson.dataformat')
     exclude(group: 'com.fasterxml.jackson.core')
@@ -15,18 +17,18 @@ dependencies {
   
   compileOnly 'org.scala-lang:scala-reflect:2.11.8'
 
-  compileOnly(group: 'org.apache.spark', name: 'spark-sql_2.11', version: deps.spark) {
+  compileOnly(group: 'org.apache.spark', name: 'spark-sql_2.12', version: deps.spark) {
     exclude(module: 'hadoop-client')
     exclude (module: 'scala-library')
     exclude module:  'scala-reflect'
   }
-  compileOnly(group: 'org.apache.spark', name: 'spark-streaming_2.11', version: deps.spark) {
+  compileOnly(group: 'org.apache.spark', name: 'spark-streaming_2.12', version: deps.spark) {
     exclude(module: '*')
   }
-  compileOnly("org.apache.spark:spark-yarn_2.11:$deps.spark") {
+  compileOnly("org.apache.spark:spark-yarn_2.12:$deps.spark") {
     exclude(module: '*')
   }
-  compileOnly group: 'org.apache.hadoop', name: 'hadoop-client', version: '2.7.3'
+  compileOnly 'org.apache.flink:flink-shaded-hadoop-2-uber:2.8.3-10.0'
   
   compile(project(':sylph-parser')) {
     exclude(module: 'guava')

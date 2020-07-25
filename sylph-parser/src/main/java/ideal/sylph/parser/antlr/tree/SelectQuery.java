@@ -15,38 +15,96 @@
  */
 package ideal.sylph.parser.antlr.tree;
 
-import com.github.harbby.gadtry.collection.mutable.MutableList;
-
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+
+import static com.github.harbby.gadtry.base.MoreObjects.toStringHelper;
 
 public class SelectQuery
         extends Statement
 {
-    private final String query;
+    private final StringLiteral query;
+    private final Optional<AllowedLateness> allowedLateness;
+    private final Optional<WindowTrigger> windowTrigger;
+    private final int queryEnd;
+    private Map<Identifier, SelectQuery> withTableQuery = Collections.EMPTY_MAP;
 
-    public SelectQuery(NodeLocation location, String query)
+    public SelectQuery(NodeLocation location, String query,
+            int queryEnd,
+            Optional<AllowedLateness> allowedLateness,
+            Optional<WindowTrigger> windowTrigger)
     {
-        this(Optional.of(location), query);
+        this(Optional.ofNullable(location), new StringLiteral(location, query), queryEnd, allowedLateness, windowTrigger);
     }
 
-    private SelectQuery(Optional<NodeLocation> location, String query)
+    private SelectQuery(Optional<NodeLocation> location, StringLiteral query,
+            int queryEnd,
+            Optional<AllowedLateness> allowedLateness,
+            Optional<WindowTrigger> windowTrigger)
     {
         super(location);
         this.query = query;
+        this.queryEnd = queryEnd;
+        this.allowedLateness = allowedLateness;
+        this.windowTrigger = windowTrigger;
+    }
+
+    public void setWithTableQuery(Map<Identifier, SelectQuery> withTableQuery)
+    {
+        this.withTableQuery = withTableQuery;
+    }
+
+    public Optional<AllowedLateness> getAllowedLateness()
+    {
+        return allowedLateness;
+    }
+
+    public Map<Identifier, SelectQuery> getWithTableQuery()
+    {
+        return withTableQuery;
+    }
+
+    public Optional<WindowTrigger> getWindowTrigger()
+    {
+        return windowTrigger;
+    }
+
+    public String getQuery()
+    {
+        StringBuilder builder = new StringBuilder();
+        for (Map.Entry<Identifier, SelectQuery> entry : withTableQuery.entrySet()) {
+            builder.append(",").append(entry.getKey().getValue()).append(" AS (").append(entry.getValue().getQuery()).append(")");
+        }
+        String withQuery = withTableQuery.isEmpty() ? "" : "WITH " + builder.substring(1);
+        return withQuery + query.getValue();
+    }
+
+    public int getQueryEndIndex()
+    {
+        return queryEnd;
     }
 
     @Override
     public List<? extends Node> getChildren()
     {
-        return MutableList.of();
+        return new ArrayList<Node>(3)
+        {
+            {
+                this.add(query);
+                allowedLateness.ifPresent(this::add);
+                windowTrigger.ifPresent(this::add);
+            }
+        };
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(query);
+        return Objects.hash(query, allowedLateness, windowTrigger);
     }
 
     @Override
@@ -59,12 +117,18 @@ public class SelectQuery
             return false;
         }
         SelectQuery o = (SelectQuery) obj;
-        return Objects.equals(query, o.query);
+        return Objects.equals(query, o.query) &&
+                Objects.equals(allowedLateness, o.allowedLateness) &&
+                Objects.equals(windowTrigger, o.windowTrigger);
     }
 
     @Override
     public String toString()
     {
-        return query;
+        return toStringHelper(this)
+                .add("query", query)
+                .add("allowedLateness", allowedLateness)
+                .add("windowTrigger", windowTrigger)
+                .toString();
     }
 }

@@ -22,6 +22,7 @@ import ideal.sylph.etl.Schema;
 import ideal.sylph.etl.SinkContext;
 import ideal.sylph.etl.SourceContext;
 import ideal.sylph.parser.antlr.AntlrSqlParser;
+import ideal.sylph.parser.antlr.ParsingException;
 import ideal.sylph.parser.antlr.tree.CreateFunction;
 import ideal.sylph.parser.antlr.tree.CreateStreamAsSelect;
 import ideal.sylph.parser.antlr.tree.CreateTable;
@@ -33,15 +34,19 @@ import ideal.sylph.parser.antlr.tree.WaterMark;
 import ideal.sylph.runner.flink.FlinkBean;
 import ideal.sylph.runner.flink.etl.FlinkNodeLoader;
 import ideal.sylph.runner.flink.sql.FlinkSqlParser;
+import ideal.sylph.runner.flink.sql.TriggerWindowHelper;
 import ideal.sylph.runner.flink.table.SylphTableSink;
 import ideal.sylph.spi.ConnectorStore;
 import ideal.sylph.spi.NodeLoader;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.Table;
-import org.apache.flink.table.api.java.StreamTableEnvironment;
-import org.apache.flink.table.api.java.internal.StreamTableEnvironmentImpl;
+import org.apache.flink.table.api.TableException;
+import org.apache.flink.table.api.ValidationException;
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
+import org.apache.flink.table.api.bridge.java.internal.StreamTableEnvironmentImpl;
 import org.apache.flink.table.functions.AggregateFunction;
 import org.apache.flink.table.functions.ScalarFunction;
 import org.apache.flink.table.functions.TableFunction;
@@ -56,6 +61,7 @@ import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static ideal.sylph.parser.antlr.tree.CreateTable.Type.SINK;
 import static ideal.sylph.parser.antlr.tree.CreateTable.Type.SOURCE;
 import static ideal.sylph.runner.flink.engines.StreamSqlUtil.buildWaterMark;
@@ -69,9 +75,11 @@ public class StreamSqlBuilder
 
     private final ConnectorStore connectorStore;
     private final StreamTableEnvironment tableEnv;
+    private final StreamExecutionEnvironment execEnv;
     private final AntlrSqlParser sqlParser;
 
     private final List<CreateTable> batchTables = new ArrayList<>();
+    private final TriggerWindowHelper triggerHelper = new TriggerWindowHelper();
 
     public StreamSqlBuilder(
             StreamTableEnvironment tableEnv,
@@ -81,6 +89,7 @@ public class StreamSqlBuilder
     {
         this.connectorStore = connectorStore;
         this.tableEnv = tableEnv;
+        this.execEnv = ((StreamTableEnvironmentImpl) tableEnv).execEnv();
         this.sqlParser = sqlParser;
     }
 
@@ -112,8 +121,43 @@ public class StreamSqlBuilder
         else if (statement instanceof CreateFunction) {
             createFunction((CreateFunction) statement);
         }
-        else if (statement instanceof InsertInto || statement instanceof SelectQuery) {
-            flinkSqlParser.parser(sql, ImmutableList.copyOf(batchTables));
+        else if (statement instanceof SelectQuery) {
+            SelectQuery selectQuery = (SelectQuery) statement;
+            String pushDownQuery = selectQuery.getQuery();
+            Table table = flinkSqlParser.parser(pushDownQuery, ImmutableList.copyOf(batchTables));
+            try {
+                tableEnv.toAppendStream(table, Row.class).print();
+            }
+            catch (ValidationException e) {
+                checkState(e.getMessage().equals("Table is not an append-only table. Use the toRetractStream() in order to handle add and retract messages."),
+                        "sylph and flink versions are not compatible, please feedback to the community");
+                tableEnv.toRetractStream(table, Row.class).print();
+            }
+            //----------------------------
+            //todo: java.lang.IllegalStateException: No operators defined in streaming topology. Cannot execute.
+            //triggerHelper.settingTrigger(execEnv.getStreamGraph(), selectQuery);
+        }
+        else if (statement instanceof InsertInto) {
+            InsertInto insertInto = (InsertInto) statement;
+            SelectQuery selectQuery = insertInto.getSelectQuery();
+            String pushDownQuery = selectQuery.getQuery();
+            Table table = flinkSqlParser.parser(pushDownQuery, ImmutableList.copyOf(batchTables));
+            if (table == null) {
+                throw new ParsingException("table is null");
+            }
+            try {
+                table.insertInto(insertInto.getTableName());
+            }
+            catch (TableException e) {
+                checkState(e.getMessage().equals("AppendStreamTableSink requires that Table has only insert changes."),
+                        "sylph and flink versions are not compatible, please feedback to the community");
+                DataStream<Row> retractStream = tableEnv.toRetractStream(table, Row.class)
+                        .filter(x -> x.f0).map(x -> x.f1).returns(table.getSchema().toRowType());
+                tableEnv.fromDataStream(retractStream).insertInto(insertInto.getTableName());
+            }
+            //----------------------------
+            //todo: java.lang.IllegalStateException: No operators defined in streaming topology. Cannot execute.
+            //triggerHelper.settingTrigger(execEnv.getStreamGraph(), selectQuery);
         }
         else {
             throw new IllegalArgumentException("this driver class " + statement.getClass() + " have't support!");
@@ -184,7 +228,7 @@ public class StreamSqlBuilder
             });
         }
 
-        final IocFactory iocFactory = IocFactory.create(new FlinkBean(tableEnv), bean);
+        final IocFactory iocFactory = IocFactory.create(new FlinkBean(execEnv, tableEnv), bean);
         NodeLoader<DataStream<Row>> loader = new FlinkNodeLoader(connectorStore, iocFactory);
 
         if (SOURCE == createStream.getType()) {  //Source.class.isAssignableFrom(driver)
@@ -211,7 +255,7 @@ public class StreamSqlBuilder
         RowTypeInfo tableTypeInfo = (RowTypeInfo) inputStream.getType();
         waterMarkOptional.ifPresent(waterMark -> {
             logger.info("createStreamTable Watermark is {}", waterMark);
-            ((StreamTableEnvironmentImpl) tableEnv).execEnv().setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+            execEnv.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
             DataStream<Row> waterMarkStream = buildWaterMark(waterMark, tableTypeInfo, inputStream);
             String fields = String.join(",", ImmutableList.<String>builder()
                     .add(tableTypeInfo.getFieldNames())
