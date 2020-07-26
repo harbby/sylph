@@ -1,5 +1,8 @@
 # Sylph [![Build Status](http://img.shields.io/travis/harbby/sylph.svg?style=flat&branch=master)](https://travis-ci.org/harbby/sylph)
-The Sylph is Streaming Job Manager. 
+
+Welcome to Sylph !
+
+Sylph is Streaming Job Manager. 
 
 Sylph uses SQL Query to describe calculations and bind multiple source(input)/sink(output) to visually develop and deploy streaming applications.
 Through Web IDE makes it easy to develop, deploy, monitor streaming applications and analyze streaming application behavior at any time.  
@@ -78,7 +81,9 @@ Support `flink-stream` `spark-streaming` `spark-structured-streaming(spark2.2x)`
 
 
 ## Building
-sylph builds use Gradle and requires Java 8.
+sylph builds use Gradle and requires Java 8.    
+Also if you want read a chinese deploy docs,[中文部署文档](sylph-docs/src/main/docs/source/zh-cn/docs/intro/deploy.md) 
+may can help you.
 ```
 # Build and install distributions
 ./gradlew clean assemble
@@ -109,4 +114,6 @@ Sylph comes with sample configuration that should work out-of-the-box for develo
 
 ## Getting Help
 * Send message to [Google Group](https://groups.google.com/forum/#!forum/sylph-streaming)
+* Add WeChat(微信) Group:
+[![loading...](https://raw.githubusercontent.com/harbby/harbby.github.io/master/logo/sylph/wechat.jpg)](https://travis-ci.org/harbby/sylph)
 * Add QQ Group: 438625067

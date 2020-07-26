@@ -19,7 +19,6 @@ touch $pidFile
 	return $pid;
  }
 
-
  function start()
  {
     pid=$(getPid)
