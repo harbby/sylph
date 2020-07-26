@@ -22,6 +22,7 @@ import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.client.api.YarnClientApplication;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.spark.SparkConf;
+import org.apache.spark.deploy.SparkHadoopUtil;
 import org.apache.spark.deploy.yarn.Client;
 import org.apache.spark.deploy.yarn.ClientArguments;
 
@@ -44,6 +45,7 @@ public class SylphSparkYarnClient
         Field field = Client.class.getDeclaredField("hadoopConf");    //scala 2.12
         field.setAccessible(true);
         YarnConfiguration yarnConfiguration = new YarnConfiguration(yarnClient.getConfig());
+        yarnConfiguration.addResource(new SparkHadoopUtil().newConfiguration(sparkConf));
         field.set(this, yarnConfiguration);
     }
 
