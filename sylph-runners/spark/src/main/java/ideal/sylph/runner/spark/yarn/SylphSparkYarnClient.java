@@ -40,7 +40,8 @@ public class SylphSparkYarnClient
         this.yarnQueue = yarnQueue;
 
         //String key = DRIVER_MEMORY; //test
-        Field field = Client.class.getDeclaredField("org$apache$spark$deploy$yarn$Client$$hadoopConf");
+        //Field field = Client.class.getDeclaredField("org$apache$spark$deploy$yarn$Client$$hadoopConf"); //scala 2.11
+        Field field = Client.class.getDeclaredField("hadoopConf");    //scala 2.12
         field.setAccessible(true);
         YarnConfiguration yarnConfiguration = new YarnConfiguration(yarnClient.getConfig());
         field.set(this, yarnConfiguration);

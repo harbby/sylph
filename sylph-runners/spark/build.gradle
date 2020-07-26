@@ -28,7 +28,6 @@ dependencies {
   compileOnly("org.apache.spark:spark-yarn_2.12:$deps.spark") {
     exclude(module: '*')
   }
-  compileOnly 'org.apache.flink:flink-shaded-hadoop-2-uber:2.8.3-10.0'
   
   compile(project(':sylph-parser')) {
     exclude(module: 'guava')

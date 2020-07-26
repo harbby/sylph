@@ -19,12 +19,10 @@ import ideal.sylph.runner.flink.FlinkJobConfig;
 import org.apache.flink.client.deployment.ClusterSpecification;
 import org.apache.flink.client.program.ClusterClient;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.configuration.DeploymentOptionsInternal;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.yarn.YarnClientYarnClusterInformationRetriever;
 import org.apache.flink.yarn.YarnClusterDescriptor;
 import org.apache.flink.yarn.configuration.YarnConfigOptions;
-import org.apache.flink.yarn.configuration.YarnConfigOptionsInternal;
 import org.apache.flink.yarn.entrypoint.YarnJobClusterEntrypoint;
 import org.apache.flink.yarn.entrypoint.YarnSessionClusterEntrypoint;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
@@ -32,7 +30,8 @@ import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 
 public class YarnJobDescriptor
-        extends YarnClusterDescriptor {
+        extends YarnClusterDescriptor
+{
     private static final String APPLICATION_TYPE = "Sylph_FLINK";
     private static final int MAX_ATTEMPT = 2;
 
@@ -45,7 +44,8 @@ public class YarnJobDescriptor
             YarnClient yarnClient,
             YarnConfiguration yarnConfiguration,
             FlinkJobConfig appConf,
-            String jobId) {
+            String jobId)
+    {
         super(flinkConf, yarnConfiguration, yarnClient, YarnClientYarnClusterInformationRetriever.create(yarnClient), false);
         this.jobName = jobId;
         this.yarnClient = yarnClient;
@@ -53,7 +53,8 @@ public class YarnJobDescriptor
     }
 
     @Override
-    protected String getYarnSessionClusterEntrypoint() {
+    protected String getYarnSessionClusterEntrypoint()
+    {
         return YarnSessionClusterEntrypoint.class.getName();
     }
 
@@ -62,12 +63,14 @@ public class YarnJobDescriptor
      * YarnApplicationMasterRunner
      */
     @Override
-    protected String getYarnJobClusterEntrypoint() {
+    protected String getYarnJobClusterEntrypoint()
+    {
         return YarnJobClusterEntrypoint.class.getName();
     }
 
     public ClusterClient<ApplicationId> deploy(JobGraph jobGraph, boolean detached)
-            throws Exception {
+            throws Exception
+    {
         // this is required because the slots are allocated lazily
         //jobGraph.setAllowQueuedScheduling(true);
 
