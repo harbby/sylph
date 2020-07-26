@@ -1,6 +1,6 @@
 dependencies {
   // conflict was found between the following modules:
-  compileOnly 'org.apache.flink:flink-shaded-hadoop-2-uber:2.8.3-10.0'
+  compileOnly group: 'org.apache.hadoop', name: 'hadoop-client', version: deps.hadoop
 
   compileOnly(project(':sylph-spi'))
   compile group: 'net.java.dev.jna', name: 'jna', version: '5.4.0'
