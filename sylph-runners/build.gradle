@@ -8,6 +8,9 @@ subprojects {
 
   dependencies {
     compile(project(":sylph-api"))
+
+    compileOnly group: 'org.apache.flink', name: 'flink-shaded-hadoop2', version: '1.7.2'
+    //compileOnly 'org.apache.flink:flink-shaded-hadoop-2-uber:2.8.3-10.0'
   }
 
   def modules = project(':sylph-dist').buildDir.path + "/modules/${name}"

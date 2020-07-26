@@ -15,7 +15,6 @@
  */
 package ideal.sylph.runner.spark;
 
-import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.collection.mutable.MutableSet;
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.github.harbby.gadtry.jvm.JVMException;
@@ -38,8 +37,6 @@ import org.slf4j.LoggerFactory;
 import java.io.Serializable;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.security.CodeSource;
-import java.security.ProtectionDomain;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;

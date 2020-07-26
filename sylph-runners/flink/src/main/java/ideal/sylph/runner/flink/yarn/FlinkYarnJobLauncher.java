@@ -19,7 +19,6 @@ import com.github.harbby.gadtry.ioc.Autowired;
 import ideal.sylph.spi.job.Job;
 import org.apache.flink.client.program.ClusterClient;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.configuration.DeploymentOptionsInternal;
 import org.apache.flink.configuration.GlobalConfiguration;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.yarn.configuration.YarnConfigOptions;
@@ -38,7 +37,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static ideal.sylph.runner.flink.FlinkRunner.FLINK_DIST;
 import static java.util.Objects.requireNonNull;
@@ -46,7 +44,8 @@ import static java.util.Objects.requireNonNull;
 /**
  *
  */
-public class FlinkYarnJobLauncher {
+public class FlinkYarnJobLauncher
+{
     private static final Logger logger = LoggerFactory.getLogger(FlinkYarnJobLauncher.class);
 
     @Autowired
@@ -54,12 +53,14 @@ public class FlinkYarnJobLauncher {
     @Autowired
     YarnConfiguration yarnConfiguration;
 
-    public YarnClient getYarnClient() {
+    public YarnClient getYarnClient()
+    {
         return yarnClient;
     }
 
     public ApplicationId start(Job job)
-            throws Exception {
+            throws Exception
+    {
         JobGraph jobGraph = job.getJobDAG();
         List<File> userProvidedJars = getUserAdditionalJars(job.getDepends());
         final Configuration flinkConfiguration = GlobalConfiguration.loadConfiguration();
@@ -79,7 +80,6 @@ public class FlinkYarnJobLauncher {
                 job.getName());
         descriptor.addShipFiles(userProvidedJars);
 
-        //flinkConfiguration.setString(DeploymentOptionsInternal.CONF_DIR, flinkDonfDirectory);
         YarnLogConfigUtil.setLogConfigFileInConfig(flinkConfiguration, flinkDonfDirectory);
 //        List<File> logFiles = Stream.of("log4j.properties", "logback.xml")   //"conf/flink-conf.yaml"
 //                .map(x -> new File(flinkDonfDirectory, x)).collect(Collectors.toList());
@@ -88,13 +88,15 @@ public class FlinkYarnJobLauncher {
         logger.info("start flink job {}", jobGraph.getJobID());
         try (ClusterClient<ApplicationId> client = descriptor.deploy(jobGraph, true)) {
             return client.getClusterId();
-        } catch (Throwable e) {
+        }
+        catch (Throwable e) {
             logger.error("submitting job {} failed", jobGraph.getJobID(), e);
             throw e;
         }
     }
 
-    private static File getFlinkJarFile(String flinkHome) {
+    private static File getFlinkJarFile(String flinkHome)
+    {
         String errorMessage = "error not search " + FLINK_DIST + "*.jar";
         File[] files = requireNonNull(new File(flinkHome, "lib").listFiles(), errorMessage);
         Optional<File> file = Arrays.stream(files)
@@ -102,7 +104,8 @@ public class FlinkYarnJobLauncher {
         return file.orElseThrow(() -> new IllegalArgumentException(errorMessage));
     }
 
-    private static List<File> getUserAdditionalJars(Collection<URL> userJars) {
+    private static List<File> getUserAdditionalJars(Collection<URL> userJars)
+    {
         return userJars.stream().map(jar -> {
             try {
                 final URI uri = jar.toURI();
@@ -110,12 +113,12 @@ public class FlinkYarnJobLauncher {
                 if (file.exists() && file.isFile()) {
                     return file;
                 }
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 logger.warn("add user jar error with URISyntaxException {}", jar);
             }
             return null;
-        })
-                //.filter(x -> Objects.nonNull(x) && !x.getName().startsWith(FlinkRunner.FLINK_DIST))
-                .collect(Collectors.toList());
+        }).collect(Collectors.toList());
+        //.filter(x -> Objects.nonNull(x) && !x.getName().startsWith(FlinkRunner.FLINK_DIST))
     }
 }

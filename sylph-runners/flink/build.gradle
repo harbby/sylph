@@ -8,8 +8,6 @@ dependencies {
   compileOnly(group: 'org.apache.flink', name: 'flink-streaming-java_2.12', version: deps.flink) {
   }
 
-  compileOnly 'org.apache.flink:flink-shaded-hadoop-2-uber:2.8.3-10.0'
-
   compileOnly(group: 'org.apache.flink', name: 'flink-streaming-scala_2.12', version: deps.flink) {
   }
   compileOnly(group: 'org.apache.flink', name: 'flink-yarn_2.12', version: deps.flink) {
