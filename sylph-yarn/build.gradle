@@ -1,3 +1,7 @@
+configurations.all {
+  resolutionStrategy { preferProjectModules() }
+}
+
 dependencies {
   // conflict was found between the following modules:
   compileOnly group: 'org.apache.hadoop', name: 'hadoop-client', version: deps.hadoop
