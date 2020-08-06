@@ -12,14 +12,18 @@ matrix:
     - jdk: openjdk8
       script: ./gradlew clean checkstyle licenseMain licenseTest --no-daemon
     - jdk: openjdk8
-      env: jdk=java8
+      env:
+        -jdk=java8
+        - CI=false
       script: ./gradlew clean assemble --no-daemon -Pjdk="$jdk"
     - jdk: openjdk11
-      env: jdk=java11
+      env:
+        -jdk=java11
+        - CI=false
       script: ./gradlew clean assemble --no-daemon -Pjdk="$jdk"
 
-env:
-  - CI=false
+#env:
+#  - CI=false
 
 before_deploy:
 - echo build start... sylph
