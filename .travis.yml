@@ -2,7 +2,7 @@ language: java
 #jdk:
 #- openjdk8
 sudo: required
-dist: trusty
+dist: focal
 
 services:
 - docker
