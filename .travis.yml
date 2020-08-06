@@ -9,14 +9,14 @@ services:
 
 matrix:
   include:
-    - jdk: openjdk8
-      script: "gradle clean checkstyle licenseMain licenseTest --no-daemon"
+    - script: "gradle clean checkstyle licenseMain licenseTest --no-daemon"
+      jdk: openjdk8
       dist: xenial
-    - jdk: openjdk8
-      script: "gradle clean assemble -Pjdk=java8 --no-daemon"
+    - script: "gradle clean assemble -Pjdk=java8 --no-daemon"
+      jdk: openjdk8
       dist: xenial
-    - jdk: openjdk11
-      script: "./gradlew clean assemble -Pjdk=java11 --no-daemon"
+    - script: "./gradlew clean assemble -Pjdk=java11 --no-daemon"
+      jdk: openjdk11
       dist: focal
 
 env:
