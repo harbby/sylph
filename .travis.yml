@@ -25,12 +25,12 @@ jobs:
 env:
   - CI=false
 
-before_deploy:
-- echo "build start... sylph"
-before_cache:
-- rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
-- rm -fr $HOME/.gradle/caches/*/plugin-resolution/
-cache:
-  directories:
-  - "$HOME/.gradle/caches/"
-  - "$HOME/.gradle/wrapper/"
+#before_deploy:
+#- echo "build start... sylph"
+#before_cache:
+#- rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+#- rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+#cache:
+#  directories:
+#  - "$HOME/.gradle/caches/"
+#  - "$HOME/.gradle/wrapper/"
