@@ -17,12 +17,12 @@ package ideal.sylph.spi;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.harbby.gadtry.collection.mutable.MutableMap;
+import com.github.harbby.gadtry.memory.UnsafeHelper;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.etl.PluginConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.reflect.ReflectionFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -46,7 +46,7 @@ public class PluginConfigFactory
     public <T extends PluginConfig> T createPluginConfig(Class<T> type, Map<String, Object> config)
             throws Exception
     {
-        T pluginConfig = pluginConfigInstance(type.asSubclass(PluginConfig.class));
+        T pluginConfig = pluginConfigInstance(type);
         //--- inject map config
         injectConfig(pluginConfig, config);
         return pluginConfig;
@@ -59,7 +59,7 @@ public class PluginConfigFactory
 
         //Ignore the constructor in the configuration class
         try {
-            Constructor<T> pluginConfigConstructor = type.getDeclaredConstructor();
+            Constructor<? extends T> pluginConfigConstructor = type.getDeclaredConstructor();
             logger.debug("find 'no parameter' constructor with [{}]", type);
             pluginConfigConstructor.setAccessible(true);
             return pluginConfigConstructor.newInstance();
@@ -67,13 +67,7 @@ public class PluginConfigFactory
         catch (NoSuchMethodException e) {
             logger.warn("Not find 'no parameter' constructor, use javassist inject with [{}]", type);
             // copy proxyConfig field value to pluginConfig ...
-            Constructor superCons = Object.class.getConstructor();
-            ReflectionFactory reflFactory = ReflectionFactory.getReflectionFactory();
-            Constructor<?> c = reflFactory.newConstructorForSerialization(type, superCons);
-            // or use unsafe, demo: PluginConfig pluginConfig = (PluginConfig) unsafe.allocateInstance(type)
-            @SuppressWarnings("unchecked")
-            T pluginConfig = (T) c.newInstance();
-            return pluginConfig;
+            return UnsafeHelper.allocateInstance2(type);
         }
     }
 

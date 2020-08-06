@@ -1,12 +1,23 @@
 language: java
-jdk:
-- openjdk8
+#jdk:
+#- openjdk8
 sudo: required
-dist: xenial
+dist: trusty
+
 services:
 - docker
 
-script: "./gradlew clean checkstyle licenseMain licenseTest assemble --no-daemon"
+matrix:
+  include:
+    - jdk: openjdk8
+      env: jdk=java8
+      script: ./gradlew clean checkstyle licenseMain licenseTest --no-daemon
+    - jdk: openjdk8
+      env: jdk=java8
+      script: ./gradlew clean assemble --no-daemon
+    - jdk: openjdk11
+      env: jdk=java11
+      script: ./gradlew clean assemble --no-daemon
 
 env:
   - CI=false
