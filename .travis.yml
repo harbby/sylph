@@ -2,7 +2,7 @@ language: java
 #jdk:
 #- openjdk8
 sudo: required
-dist: focal
+
 
 services:
 - docker
@@ -11,10 +11,13 @@ matrix:
   include:
     - jdk: openjdk8
       script: "./gradlew clean checkstyle licenseMain licenseTest --no-daemon"
+      dist: xenial
     - jdk: openjdk8
       script: "./gradlew clean assemble -Pjdk=java8 --no-daemon"
+      dist: xenial
     - jdk: openjdk11
       script: "./gradlew clean assemble -Pjdk=java11 --no-daemon"
+      dist: focal
 
 env:
   - CI=false
