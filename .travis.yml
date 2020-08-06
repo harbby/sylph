@@ -10,10 +10,10 @@ services:
 matrix:
   include:
     - jdk: openjdk8
-      script: "./gradlew clean checkstyle licenseMain licenseTest --no-daemon"
+      script: "gradle clean checkstyle licenseMain licenseTest --no-daemon"
       dist: xenial
     - jdk: openjdk8
-      script: "./gradlew clean assemble -Pjdk=java8 --no-daemon"
+      script: "gradle clean assemble -Pjdk=java8 --no-daemon"
       dist: xenial
     - jdk: openjdk11
       script: "./gradlew clean assemble -Pjdk=java11 --no-daemon"
