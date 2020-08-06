@@ -9,28 +9,28 @@ services:
 
 jobs:
   include:
-    - name: Job 1
-      jdk: openjdk8
+    - jdk: openjdk8
       dist: xenial
-      script: gradle clean checkstyle licenseMain licenseTest --no-daemon
-    - name: Job 2
-      jdk: openjdk8
-      dist: xenial
-      script: gradle clean assemble --no-daemon -Pjdk=java8
-    - name: Job 3
-      jdk: openjdk11
+      env:
+        - CI=false
+        - jdk=java8
+    - jdk: openjdk11
       dist: focal
-      script: ./gradlew clean assemble --no-daemon -Pjdk=java11
+      env:
+        - CI=false
+        - jdk=java11
+
+script: ./gradlew clean checkstyle licenseMain licenseTest assemble --no-daemon -Pjdk="$jdk"
 
 env:
   - CI=false
 
-#before_deploy:
-#- echo "build start... sylph"
-#before_cache:
-#- rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
-#- rm -fr $HOME/.gradle/caches/*/plugin-resolution/
-#cache:
-#  directories:
-#  - "$HOME/.gradle/caches/"
-#  - "$HOME/.gradle/wrapper/"
+before_deploy:
+- echo "build start... sylph"
+before_cache:
+- rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+- rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+cache:
+  directories:
+  - "$HOME/.gradle/caches/"
+  - "$HOME/.gradle/wrapper/"
