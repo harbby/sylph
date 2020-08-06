@@ -16,10 +16,10 @@ jobs:
       script: ./gradlew clean checkstyle licenseMain licenseTest --no-daemon
     - jdk: openjdk8
       dist: xenial
-      script: ./gradlew clean checkstyle licenseMain licenseTest assemble --no-daemon -Pjdk=java8
+      script: ./gradlew clean assemble --no-daemon -Pjdk=java8
     - jdk: openjdk11
       dist: focal
-      script: ./gradlew clean checkstyle licenseMain licenseTest assemble --no-daemon -Pjdk=java11
+      script: ./gradlew clean assemble --no-daemon -Pjdk=java11
 
 env:
   - CI=false
