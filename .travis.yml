@@ -10,14 +10,13 @@ services:
 matrix:
   include:
     - jdk: openjdk8
-      env: jdk=java8
       script: ./gradlew clean checkstyle licenseMain licenseTest --no-daemon
     - jdk: openjdk8
       env: jdk=java8
-      script: ./gradlew clean assemble --no-daemon
+      script: ./gradlew clean assemble --no-daemon -Pjdk="$jdk"
     - jdk: openjdk11
       env: jdk=java11
-      script: ./gradlew clean assemble --no-daemon
+      script: ./gradlew clean assemble --no-daemon -Pjdk="$jdk"
 
 env:
   - CI=false
