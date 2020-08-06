@@ -3,6 +3,8 @@ language: java
 #- openjdk8
 sudo: required
 
+install:
+  - ./gradlew -v
 
 services:
 - docker
@@ -11,16 +13,13 @@ jobs:
   include:
     - jdk: openjdk8
       dist: xenial
-      env:
-        - CI=false
-        - jdk=java8
+      script: ./gradlew clean checkstyle licenseMain licenseTest --no-daemon
+    - jdk: openjdk8
+      dist: xenial
+      script: ./gradlew clean checkstyle licenseMain licenseTest assemble --no-daemon -Pjdk=java8
     - jdk: openjdk11
       dist: focal
-      env:
-        - CI=false
-        - jdk=java11
-
-script: ./gradlew clean checkstyle licenseMain licenseTest assemble --no-daemon -Pjdk="$jdk"
+      script: ./gradlew clean checkstyle licenseMain licenseTest assemble --no-daemon -Pjdk=java11
 
 env:
   - CI=false
