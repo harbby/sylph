@@ -7,23 +7,26 @@ sudo: required
 services:
 - docker
 
-matrix:
+jobs:
   include:
-    - script: "gradle clean checkstyle licenseMain licenseTest --no-daemon"
-      jdk: openjdk8
+    - jdk: openjdk8
       dist: xenial
-    - script: "gradle clean assemble -Pjdk=java8 --no-daemon"
-      jdk: openjdk8
+      script:
+        - gradle clean checkstyle licenseMain licenseTest --no-daemon
+    - jdk: openjdk8
       dist: xenial
-    - script: "./gradlew clean assemble -Pjdk=java11 --no-daemon"
-      jdk: openjdk11
+      script:
+        - gradle clean assemble --no-daemon -Pjdk=java8
+    - jdk: openjdk11
       dist: focal
+      script:
+        - ./gradlew clean assemble --no-daemon -Pjdk=java11
 
 env:
   - CI=false
 
 before_deploy:
-- echo build start... sylph
+- echo "build start... sylph"
 before_cache:
 - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
 - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
