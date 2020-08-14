@@ -1,18 +1,31 @@
 language: java
-jdk:
-- openjdk8
+#jdk:
+#- openjdk8
 sudo: required
-dist: xenial
+
+install:
+  - ./gradlew -v
+
 services:
 - docker
 
-script: "./gradlew clean checkstyle licenseMain licenseTest assemble --no-daemon"
+jobs:
+  include:
+    - jdk: openjdk8
+      dist: xenial
+      script: ./gradlew clean checkstyle licenseMain licenseTest --no-daemon
+    - jdk: openjdk8
+      dist: xenial
+      script: ./gradlew clean assemble --no-daemon -Pjdk=java8
+    - jdk: openjdk11
+      dist: focal
+      script: ./gradlew clean assemble --no-daemon -Pjdk=java11
 
 env:
   - CI=false
 
 before_deploy:
-- echo build start... sylph
+- echo "build start... sylph"
 before_cache:
 - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
 - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
