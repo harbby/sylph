@@ -36,7 +36,7 @@ allprojects {
           guice               : '4.2.1',
           gadtry              : '1.7.2',
           guava               : '27.0-jre',
-          jackson             : '2.9.5',
+          jackson             : '2.9.8',
           jersey              : '2.28',
           scala_binary_version: '2.11'
   ]
