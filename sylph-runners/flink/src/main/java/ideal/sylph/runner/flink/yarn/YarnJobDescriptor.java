@@ -18,6 +18,7 @@ package ideal.sylph.runner.flink.yarn;
 import ideal.sylph.runner.flink.FlinkJobConfig;
 import org.apache.flink.client.deployment.ClusterSpecification;
 import org.apache.flink.client.program.ClusterClient;
+import org.apache.flink.configuration.ConfigConstants;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.yarn.YarnClientYarnClusterInformationRetriever;
@@ -28,6 +29,8 @@ import org.apache.flink.yarn.entrypoint.YarnSessionClusterEntrypoint;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 
 public class YarnJobDescriptor
         extends YarnClusterDescriptor
@@ -97,6 +100,9 @@ public class YarnJobDescriptor
                 .setSlotsPerTaskManager(appConf.getTaskManagerSlots())
                 .setTaskManagerMemoryMB(appConf.getTaskManagerMemoryMb())
                 .createClusterSpecification();
+        String flinkPlugins = System.getenv(ConfigConstants.ENV_FLINK_PLUGINS_DIR);
+        checkState(flinkPlugins != null, "must set env FLINK_PLUGINS_DIR");
+
         return this.deployJobCluster(clusterSpecification, jobGraph, detached).getClusterClient();
     }
 }
