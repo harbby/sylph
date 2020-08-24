@@ -9,6 +9,8 @@
 
 @rem set your FLINK_HOME
 @rem set FLINK_HOME=/ideal/hadoop/flink
+@rem set FLINK_PLUGINS_DIR=%FLINK_HOME%/plugins
+@rem set FLINK_CONF_DIR=%FLINK_HOME%/conf
 
 @rem set your SPARK_HOME
 @rem set SPARK_HOME=/ideal/hadoop/spark
