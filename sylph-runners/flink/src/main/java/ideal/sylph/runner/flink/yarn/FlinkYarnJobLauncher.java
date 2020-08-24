@@ -18,6 +18,7 @@ package ideal.sylph.runner.flink.yarn;
 import com.github.harbby.gadtry.ioc.Autowired;
 import ideal.sylph.spi.job.Job;
 import org.apache.flink.client.program.ClusterClient;
+import org.apache.flink.configuration.ConfigConstants;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.GlobalConfiguration;
 import org.apache.flink.runtime.jobgraph.JobGraph;
@@ -69,7 +70,10 @@ public class FlinkYarnJobLauncher
         if (!new File(flinkHome).exists()) {
             throw new IllegalArgumentException("FLINK_HOME " + flinkHome + " not exists");
         }
-        String flinkDonfDirectory = new File(flinkHome, "conf").getPath();
+        String flinkConfDirectory = System.getenv(ConfigConstants.ENV_FLINK_CONF_DIR);
+        if (flinkConfDirectory == null) {
+            flinkConfDirectory = new File(flinkHome, "conf").getPath();
+        }
         flinkConfiguration.setString(YarnConfigOptions.FLINK_DIST_JAR, getFlinkJarFile(flinkHome).getPath());
 
         final YarnJobDescriptor descriptor = new YarnJobDescriptor(
@@ -80,7 +84,7 @@ public class FlinkYarnJobLauncher
                 job.getName());
         descriptor.addShipFiles(userProvidedJars);
 
-        YarnLogConfigUtil.setLogConfigFileInConfig(flinkConfiguration, flinkDonfDirectory);
+        YarnLogConfigUtil.setLogConfigFileInConfig(flinkConfiguration, flinkConfDirectory);
 //        List<File> logFiles = Stream.of("log4j.properties", "logback.xml")   //"conf/flink-conf.yaml"
 //                .map(x -> new File(flinkDonfDirectory, x)).collect(Collectors.toList());
 //        descriptor.addShipFiles(logFiles);
