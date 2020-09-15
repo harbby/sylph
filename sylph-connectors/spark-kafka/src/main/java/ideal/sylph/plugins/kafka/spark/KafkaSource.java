@@ -122,10 +122,13 @@ public class KafkaSource
                                     continue;
                                 case "_offset":
                                     values[i] = record.offset();
+                                    continue;
                                 case "_timestamp":
                                     values[i] = record.timestamp();
+                                    continue;
                                 case "_timestampType":
                                     values[i] = record.timestampType().id;
+                                    continue;
                                 default:
                                     values[i] = null;
                             }

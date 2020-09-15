@@ -108,6 +108,7 @@ public class StructuredKafkaSource
                                     continue;
                                 case "_offset":
                                     values[i] = record.<Long>getAs("offset");
+                                    continue;
                                 default:
                                     values[i] = null;
                             }
