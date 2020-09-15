@@ -41,18 +41,11 @@ public class FlinkEnvFactory
 
     private static final Logger logger = LoggerFactory.getLogger(FlinkEnvFactory.class);
 
-    public static StreamExecutionEnvironment getStreamEnv(FlinkJobConfig jobConfig, String jobId)
-    {
-        StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.getExecutionEnvironment();
-
-        return setJobConfig(execEnv, jobConfig, jobId);
-    }
-
     /**
      * @deprecated see: {@link ideal.sylph.runner.flink.FlinkContainerFactory#setJobConfig)}
      */
     @Deprecated
-    private static StreamExecutionEnvironment setJobConfig(StreamExecutionEnvironment execEnv, FlinkJobConfig jobConfig, String jobId)
+    public static StreamExecutionEnvironment setJobConfig(StreamExecutionEnvironment execEnv, FlinkJobConfig jobConfig, String jobId)
     {
         if (jobConfig.getCheckpointInterval() > 0) {
             execEnv.enableCheckpointing(jobConfig.getCheckpointInterval());  //default is -1 表示关闭 建议1minutes

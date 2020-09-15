@@ -36,6 +36,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.graph.StreamGraph;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
+import org.apache.flink.table.api.bridge.java.internal.StreamTableEnvironmentImpl;
 import org.fusesource.jansi.Ansi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,17 +126,19 @@ public class FlinkStreamSqlEngine
                 .setConsole((line) -> logger.info(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset().toString()))
                 .setCallable(() -> {
                     System.out.println("************ job start ***************");
-                    StreamExecutionEnvironment execEnv = FlinkEnvFactory.getStreamEnv(jobConfig, jobId);
+                    StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.getExecutionEnvironment();
+                    FlinkEnvFactory.setJobConfig(execEnv, jobConfig, jobId);
                     EnvironmentSettings settings = EnvironmentSettings.newInstance()
                             .inStreamingMode()
                             //.useBlinkPlanner()
                             .useOldPlanner()
                             .build();
 
-                    StreamTableEnvironment tableEnv = StreamTableEnvironment.create(execEnv, settings);
+                    StreamTableEnvironmentImpl tableEnv = (StreamTableEnvironmentImpl) StreamTableEnvironment.create(execEnv, settings);
                     StreamSqlBuilder streamSqlBuilder = new StreamSqlBuilder(tableEnv, connectorStore, new AntlrSqlParser());
                     Arrays.stream(sqlSplit).forEach(streamSqlBuilder::buildStreamBySql);
-                    StreamGraph streamGraph = execEnv.getStreamGraph();
+
+                    StreamGraph streamGraph = (StreamGraph) tableEnv.getPipeline(jobId);
                     streamGraph.setJobName(jobId);
                     return streamGraph.getJobGraph();
                 })

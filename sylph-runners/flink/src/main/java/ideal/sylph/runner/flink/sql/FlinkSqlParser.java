@@ -46,12 +46,14 @@ import org.apache.flink.shaded.guava18.com.google.common.collect.ImmutableMap;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
+import org.apache.flink.table.api.bridge.java.internal.StreamTableEnvironmentImpl;
 import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.catalog.CatalogBaseTable;
 import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.QueryOperationCatalogView;
 import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
 import org.apache.flink.table.catalog.exceptions.TableAlreadyExistException;
+import org.apache.flink.table.catalog.exceptions.TableNotExistException;
 import org.apache.flink.types.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,6 +65,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 import static org.apache.calcite.sql.SqlKind.AS;
@@ -216,22 +219,8 @@ public class FlinkSqlParser
         RowTypeInfo rowTypeInfo = getJoinOutScheam(joinSelectFields);
         joinResultStream.getTransformation().setOutputType(rowTypeInfo);
         //--register tmp joinTable
-
-        Catalog catalog = tableEnv.getCatalog(tableEnv.getCurrentCatalog()).get();
-        if (catalog.tableExists(ObjectPath.fromString(joinInfo.getJoinTableName()))) {
-            Table table = tableEnv.fromDataStream(joinResultStream);
-            CatalogBaseTable tableTable = new QueryOperationCatalogView(table.getQueryOperation());
-            try {
-                catalog.createTable(ObjectPath.fromString(joinInfo.getJoinTableName()), tableTable, true);
-            }
-            catch (TableAlreadyExistException | DatabaseNotExistException e) {
-                e.printStackTrace();
-            }
-            //tableEnv.replaceRegisteredTable(joinInfo.getJoinTableName(), new RelTable(table.getRelNode()));
-        }
-        else {
-            tableEnv.registerDataStream(joinInfo.getJoinTableName(), joinResultStream);
-        }
+        tableEnv.dropTemporaryView(joinInfo.getJoinTableName());
+        tableEnv.registerDataStream(joinInfo.getJoinTableName(), joinResultStream);
         //next update join select query
         joinQueryUpdate(joinInfo, rowTypeInfo.getFieldNames());
     }

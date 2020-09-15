@@ -15,7 +15,6 @@
  */
 package ideal.sylph.runner.flink.engines;
 
-import com.github.harbby.gadtry.aop.AopGo;
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.github.harbby.gadtry.jvm.JVMException;
 import com.github.harbby.gadtry.jvm.JVMLauncher;
@@ -27,6 +26,14 @@ import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.model.ConnectorInfo;
+import org.apache.flink.api.dag.Pipeline;
+import org.apache.flink.api.java.ExecutionEnvironment;
+import org.apache.flink.api.java.ExecutionEnvironmentFactory;
+import org.apache.flink.client.program.OptimizerPlanEnvironment;
+import org.apache.flink.client.program.ProgramInvocationException;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.optimizer.plan.OptimizedPlan;
+import org.apache.flink.optimizer.plantranslate.JobGraphGenerator;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironmentFactory;
@@ -35,8 +42,8 @@ import org.fusesource.jansi.Ansi;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.net.URLClassLoader;
 import java.util.Collection;
 import java.util.Collections;
@@ -94,7 +101,9 @@ public class FlinkMainClassEngine
                 .setCallable(() -> {
                     //---set env
                     Class<?> mainClass = Class.forName(flow.mainClass);
-                    return getJobGraphForJarClass(mainClass, new String[0]);
+                    StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.getExecutionEnvironment();
+                    FlinkEnvFactory.setJobConfig(execEnv, jobConfig, jobId);
+                    return getJobGraphForJarClass(execEnv, mainClass, new String[0]);
                 })
                 .setClassLoader(jobClassLoader)
                 .addUserURLClassLoader(jobClassLoader)
@@ -103,10 +112,10 @@ public class FlinkMainClassEngine
         return launcher.startAndGet();
     }
 
-    private static JobGraph getJobGraphForJarClass(Class<?> mainClass, String[] args)
+    private static JobGraph getJobGraphForJarClass(StreamExecutionEnvironment execEnv, Class<?> mainClass, String[] args)
             throws Exception
     {
-        final StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.getExecutionEnvironment();
+
         final StreamExecutionEnvironment mock = AopGo.proxy(StreamExecutionEnvironment.class)
                 .byInstance(execEnv)
                 .aop(binder -> {

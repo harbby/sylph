@@ -19,42 +19,49 @@ import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
+import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.sinks.AppendStreamTableSink;
 import org.apache.flink.table.sinks.TableSink;
+import org.apache.flink.table.types.DataType;
+import org.apache.flink.table.types.utils.TypeConversions;
 import org.apache.flink.types.Row;
 
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 import static java.util.Objects.requireNonNull;
 
 public class SylphTableSink
-        implements TableSink<Row>, AppendStreamTableSink<Row>
+        implements AppendStreamTableSink<Row>
 {
-    private final RowTypeInfo rowTypeInfo;
+    private final TableSchema tableSchema;
     private final UnaryOperator<DataStream<Row>> outPutStream;
 
     public SylphTableSink(final RowTypeInfo rowTypeInfo, UnaryOperator<DataStream<Row>> outPutStream)
     {
-        this.rowTypeInfo = requireNonNull(rowTypeInfo, "rowTypeInfo is null");
+        requireNonNull(rowTypeInfo, "rowTypeInfo is null");
         this.outPutStream = requireNonNull(outPutStream, "outPutStream is null");
+
+        TableSchema.Builder builder = TableSchema.builder();
+        String[] names = rowTypeInfo.getFieldNames();
+        for (int i = 0; i < rowTypeInfo.getArity(); i++) {
+            DataType dataType = TypeConversions.fromLegacyInfoToDataType(rowTypeInfo.getTypeAt(i));
+            builder.field(names[i], dataType);
+        }
+        this.tableSchema = builder.build();
     }
 
     @Override
-    public TypeInformation<Row> getOutputType()
+    public DataType getConsumedDataType()
     {
-        return rowTypeInfo;
+
+        return tableSchema.toRowDataType();
     }
 
     @Override
-    public String[] getFieldNames()
+    public TableSchema getTableSchema()
     {
-        return rowTypeInfo.getFieldNames();
-    }
-
-    @Override
-    public TypeInformation<?>[] getFieldTypes()
-    {
-        return rowTypeInfo.getFieldTypes();
+        return tableSchema;
     }
 
     @Override
@@ -66,7 +73,8 @@ public class SylphTableSink
     @Override
     public DataStreamSink<?> consumeDataStream(DataStream<Row> dataStream)
     {
-        outPutStream.apply(dataStream); //active driver sink
-        return null;
+        Supplier<DataStreamSink<?>> supplier = (Supplier<DataStreamSink<?>>) outPutStream.apply(dataStream); //active driver sink
+        DataStreamSink<?> dataStreamSink = supplier.get();
+        return dataStreamSink;
     }
 }

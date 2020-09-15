@@ -21,4 +21,11 @@ public interface Sink<T>
         extends Operator
 {
     void run(final T stream);
+
+    //todo: support flink 1.11
+    default <S> S addSink(final T stream)
+    {
+        run(stream);
+        return null;
+    }
 }

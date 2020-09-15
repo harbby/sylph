@@ -4,7 +4,7 @@ dependencies {
   compileOnly(group: 'org.apache.flink', name: 'flink-streaming-scala_2.12', version: deps.flink) {
     exclude(module: 'flink-shaded-hadoop2')
   }
-  compile group: 'org.apache.flink', name: 'flink-connector-kafka-0.11_2.12', version: deps.flink
+  compile group: 'org.apache.flink', name: 'flink-connector-kafka_2.12', version: deps.flink
   compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: deps.jackson
 
   compileOnly project(":sylph-api")

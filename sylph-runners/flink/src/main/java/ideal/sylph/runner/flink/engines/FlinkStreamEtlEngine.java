@@ -104,7 +104,8 @@ public class FlinkStreamEtlEngine
         JVMLauncher<JobGraph> launcher = JVMLaunchers.<JobGraph>newJvm()
                 .setCallable(() -> {
                     System.out.println("************ job start ***************");
-                    StreamExecutionEnvironment execEnv = FlinkEnvFactory.getStreamEnv(jobConfig, jobId);
+                    StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.getExecutionEnvironment();
+                    FlinkEnvFactory.setJobConfig(execEnv, jobConfig, jobId);
                     StreamTableEnvironment tableEnv = StreamTableEnvironment.create(execEnv);
                     SourceContext sourceContext = new SourceContext() {};
 
