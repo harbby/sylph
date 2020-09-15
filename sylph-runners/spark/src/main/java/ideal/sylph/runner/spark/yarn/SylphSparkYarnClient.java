@@ -44,8 +44,9 @@ public class SylphSparkYarnClient
         //Field field = Client.class.getDeclaredField("org$apache$spark$deploy$yarn$Client$$hadoopConf"); //scala 2.11
         Field field = Client.class.getDeclaredField("hadoopConf");    //scala 2.12
         field.setAccessible(true);
-        YarnConfiguration yarnConfiguration = new YarnConfiguration(yarnClient.getConfig());
-        yarnConfiguration.addResource(new SparkHadoopUtil().newConfiguration(sparkConf));
+
+        YarnConfiguration yarnConfiguration = new YarnConfiguration(new SparkHadoopUtil().newConfiguration(sparkConf));
+        yarnConfiguration.addResource(yarnClient.getConfig());
         field.set(this, yarnConfiguration);
     }
 

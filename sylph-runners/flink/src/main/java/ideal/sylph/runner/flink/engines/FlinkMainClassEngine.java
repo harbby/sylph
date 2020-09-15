@@ -108,8 +108,9 @@ public class FlinkMainClassEngine
                     method.invoke(null, factory);
 
                     //--set streamEnv
-                    StreamExecutionEnvironment streamExecutionEnvironment = FlinkEnvFactory.getStreamEnv(jobConfig, jobId);
-                    StreamExecutionEnvironmentFactory streamFactory = () -> streamExecutionEnvironment;
+                    StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.getExecutionEnvironment();
+                    FlinkEnvFactory.setJobConfig(execEnv, jobConfig, jobId);
+                    StreamExecutionEnvironmentFactory streamFactory = () -> execEnv;
                     Method m1 = StreamExecutionEnvironment.class.getDeclaredMethod("initializeContextEnvironment", StreamExecutionEnvironmentFactory.class);
                     m1.setAccessible(true);
                     m1.invoke(null, streamFactory);

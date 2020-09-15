@@ -17,6 +17,7 @@ package ideal.sylph.controller.utils;
 
 import com.github.harbby.gadtry.io.IOUtils;
 import org.apache.http.Header;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpDelete;
@@ -83,10 +84,14 @@ public class ProxyUtil
                 BufferedHeader header = (BufferedHeader) httpResp.getFirstHeader("Location");
                 proxyLink(req, resp, new URI(header.getValue()), null);
             }
+            else if (httpResp.getStatusLine().getStatusCode() == HttpStatus.NOT_MODIFIED_304) {
+                resp.setStatus(304);
+            }
             else {
-                InputStream in = httpResp.getEntity().getContent();
+                HttpEntity httpEntity = httpResp.getEntity();
+                InputStream in = httpEntity.getContent();
                 if (in != null) {
-                    IOUtils.copyBytes(in, resp.getOutputStream(), 4096, true);
+                    IOUtils.copyBytes(in, resp.getOutputStream(), 4096, false);
                 }
             }
         }

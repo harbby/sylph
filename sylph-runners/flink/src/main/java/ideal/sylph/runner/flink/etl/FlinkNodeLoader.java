@@ -27,9 +27,12 @@ import ideal.sylph.etl.api.TransForm;
 import ideal.sylph.spi.ConnectorStore;
 import ideal.sylph.spi.NodeLoader;
 import ideal.sylph.spi.exception.SylphException;
+import org.apache.flink.api.dag.Transformation;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.types.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +40,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 import static com.google.common.base.Preconditions.checkState;
@@ -110,9 +114,28 @@ public final class FlinkNodeLoader
 
         return (stream) -> {
             requireNonNull(stream, "Sink find input stream is null");
-            sink.run(stream);
-            return null;
+            DataStreamSink<?> dataStreamSink = sink.addSink(stream);
+            return new DataStreamSinkSupplier(stream.getExecutionEnvironment(), stream.getTransformation(), dataStreamSink);
         };
+    }
+
+    private class DataStreamSinkSupplier
+            extends DataStream<Row>
+            implements Supplier<DataStreamSink<?>>
+    {
+        private final DataStreamSink<?> dataStreamSink;
+
+        public DataStreamSinkSupplier(StreamExecutionEnvironment environment, Transformation<Row> transformation, DataStreamSink<?> dataStreamSink)
+        {
+            super(environment, transformation);
+            this.dataStreamSink = dataStreamSink;
+        }
+
+        @Override
+        public DataStreamSink<?> get()
+        {
+            return dataStreamSink;
+        }
     }
 
     @Override
@@ -158,7 +181,21 @@ public final class FlinkNodeLoader
     private static Sink<DataStream<Row>> loadRealTimeSink(RealTimeSink realTimeSink)
     {
         // or user stream.addSink(new FlinkSink(realTimeSink, stream.getType()));
-        return (Sink<DataStream<Row>>) stream -> stream.addSink(new FlinkSink(realTimeSink, stream.getType())).name(realTimeSink.getClass().getName());
+        //return (Sink<DataStream<Row>>) stream -> stream.addSink(new FlinkSink(realTimeSink, stream.getType())).name(realTimeSink.getClass().getName());
+        return new Sink<DataStream<Row>>()
+        {
+            @Override
+            public void run(DataStream<Row> stream)
+            {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public <S> S addSink(DataStream<Row> stream)
+            {
+                return (S) stream.addSink(new FlinkSink(realTimeSink, stream.getType())).name(realTimeSink.getClass().getName());
+            }
+        };
     }
 
     private static TransForm<DataStream<Row>> loadRealTimeTransForm(RealTimeTransForm realTimeTransForm)

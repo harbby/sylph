@@ -24,7 +24,7 @@ import org.apache.flink.shaded.guava18.com.google.common.base.Supplier;
 import org.apache.flink.shaded.guava18.com.google.common.base.Suppliers;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer010;
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumerBase;
 import org.apache.flink.streaming.connectors.kafka.KafkaDeserializationSchema;
 import org.apache.flink.types.Row;
@@ -63,7 +63,7 @@ public class KafkaSource
     {
         //"enable.auto.commit"-> true
         //"auto.commit.interval.ms" -> 90000
-        return new FlinkKafkaConsumer010<>(
+        return new FlinkKafkaConsumer<>(
                 topicSets,
                 deserializationSchema,
                 properties);

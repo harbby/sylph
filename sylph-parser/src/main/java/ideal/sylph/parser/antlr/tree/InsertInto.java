@@ -52,6 +52,11 @@ public class InsertInto
         return selectQuery;
     }
 
+    public String getInsertQuery()
+    {
+        return insertQuery;
+    }
+
     @Override
     public List<? extends Node> getChildren()
     {
