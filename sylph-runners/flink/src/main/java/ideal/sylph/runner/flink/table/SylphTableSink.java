@@ -54,7 +54,6 @@ public class SylphTableSink
     @Override
     public DataType getConsumedDataType()
     {
-
         return tableSchema.toRowDataType();
     }
 
