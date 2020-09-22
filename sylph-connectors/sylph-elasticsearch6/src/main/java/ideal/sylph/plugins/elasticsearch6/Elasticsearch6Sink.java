@@ -51,11 +51,11 @@ public class Elasticsearch6Sink
     private BulkRequestBuilder bulkBuilder;
 
     @Autowired
-    public Elasticsearch6Sink(SinkContext context, ClientFactory clientFactory)
+    public Elasticsearch6Sink(SinkContext context, ElasticsearchSinkConfig config)
     {
-        this.config = clientFactory.getConfig();
+        this.config = config;
         this.schema = context.getSchema();
-        this.clientFactory = clientFactory;
+        this.clientFactory = new ClientFactory(config);
 
         if (!Strings.isNullOrEmpty(config.getIdField())) {
             int fieldIndex = schema.getFieldIndex(config.getIdField());

@@ -137,8 +137,14 @@ public class FlinkStreamSqlEngine
                     StreamTableEnvironmentImpl tableEnv = (StreamTableEnvironmentImpl) StreamTableEnvironment.create(execEnv, settings);
                     StreamSqlBuilder streamSqlBuilder = new StreamSqlBuilder(tableEnv, connectorStore, new AntlrSqlParser());
                     Arrays.stream(sqlSplit).forEach(streamSqlBuilder::buildStreamBySql);
+                    StreamGraph streamGraph;
+                    try {
+                        streamGraph = (StreamGraph) tableEnv.getPipeline(jobId);
+                    }
+                    catch (IllegalStateException e) {
+                        streamGraph = execEnv.getStreamGraph(jobId);
+                    }
 
-                    StreamGraph streamGraph = (StreamGraph) tableEnv.getPipeline(jobId);
                     streamGraph.setJobName(jobId);
                     return streamGraph.getJobGraph();
                 })

@@ -104,7 +104,7 @@ public class StructuredStreamingSqlEngine
         };
 
         JVMLauncher<Boolean> launcher = JVMLaunchers.<Boolean>newJvm()
-                .setConsole((line) -> System.out.println(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
+                .setConsole((line) -> logger.info(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset().toString()))
                 .setCallable(() -> {
                     System.out.println("************ job start ***************");
                     URL path = JavaVersion.class.getProtectionDomain().getCodeSource().getLocation();

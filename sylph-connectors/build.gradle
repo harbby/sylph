@@ -19,16 +19,8 @@ subprojects {
   def plugins = project(':sylph-dist').buildDir.path + "/plugins/${name}"
   task buildPlugins(type: Copy) {
 
-    if (project.name == 'sylph-elasticsearch6') {
-      println(project)
-      from(project.files("build/libs")) {
-        include '*-shaded.jar'    //只要这个包
-      }
-    }
-    else {
-      from(configurations.runtime)
-      from(jar)
-    }
+    from(configurations.runtime)
+    from(jar)
 
     into plugins
     //include   '*.jar'
