@@ -86,7 +86,7 @@ Also if you want read a chinese deploy docs,[中文部署文档](sylph-docs/src/
 may can help you.
 ```
 # Build and install distributions
-./gradlew clean assemble
+./gradlew clean assemble dist
 ```
 ## Running Sylph in your IDE
 After building Sylph for the first time, you can load the project into your IDE and run the server. Me recommend using IntelliJ IDEA.

@@ -11,11 +11,12 @@ services:
 
 jobs:
   include:
+    - name: check code
+      jdk: openjdk8
+      dist: focal
+      script: ./gradlew clean checkstyle licenseMain licenseTest webapp --no-daemon
     - jdk: openjdk8
-      dist: xenial
-      script: ./gradlew clean checkstyle licenseMain licenseTest --no-daemon
-    - jdk: openjdk8
-      dist: xenial
+      dist: focal
       script: ./gradlew clean assemble --no-daemon -Pjdk=java8
     - jdk: openjdk11
       dist: focal

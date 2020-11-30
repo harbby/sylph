@@ -30,11 +30,16 @@ node {
   yarnWorkDir = file("${project.buildDir}/yarn")
 
   // Set the work directory where node_modules should be located
-  nodeModulesDir = file("${project.projectDir}/src/main/webapp")
+  nodeModulesDir = file("${project.buildDir}")
 }
 
+task create_workdir(type: Copy) {
+  // copy .. ..
+  from('src/main/webapp')
+  into project.buildDir.path
+}
 //default yarn_install
-task package_install(type: YarnTask) {
+task package_install(type: YarnTask, dependsOn: create_workdir) {
   // add the express package only
   args = ['install']   //'--modules-folder', project.buildDir.path + '/node_modules'
 }
@@ -42,12 +47,12 @@ task build_package(type: YarnTask, dependsOn: package_install) {
   //只安装快递包
   args = ['run', 'build']
 }
-task build_webapp(type: Copy, dependsOn: build_package) {
-  from('src/main/webapp/build')
+task webapp(type: Copy, dependsOn: build_package) {
+  from("${project.buildDir}/build")
   into project(':sylph-dist').buildDir.path + '/webapp'
 }
-assemble.dependsOn 'build_webapp'
-project(':sylph-dist').dist.dependsOn build_webapp
+//assemble.dependsOn webapp
+project(':sylph-dist').dist.dependsOn webapp
 
 dependencies {
   annotationProcessor 'org.projectlombok:lombok:1.18.8'

@@ -11,8 +11,6 @@ task copyFiles(type: Copy, dependsOn: copyLibs) {
   into project.buildDir
 }
 
-assemble.dependsOn copyFiles
-
 task dist(type: Tar) {
   baseName = rootProject.getName()
   classifier = 'bin'
@@ -52,10 +50,12 @@ task dist(type: Tar) {
     into(tarpath + "/plugins")
   }
 }
+dist.dependsOn copyFiles
 
-artifacts {
-  'default' dist
-}
+
+//artifacts {
+//  'default' dist
+//}
 
 tasks.findByName("uploadArchives").setEnabled(false)
 //tasks.remove(tasks.findByName("uploadArchives"))
