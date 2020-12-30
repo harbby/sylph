@@ -1,0 +1,81 @@
+@import '~antd/es/style/themes/default.less';
+
+html,
+body,
+#root,
+.umi-plugin-layout-main {
+  height: 100%;
+}
+
+.colorWeak {
+  filter: invert(80%);
+}
+
+.ant-layout {
+  min-height: 100%;
+}
+
+canvas {
+  display: block;
+}
+
+body {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+@media (max-width: @screen-xs) {
+  .ant-table {
+    width: 100%;
+    overflow-x: auto;
+    &-thead > tr,
+    &-tbody > tr {
+      > th,
+      > td {
+        white-space: pre;
+        > span {
+          display: block;
+        }
+      }
+    }
+  }
+}
+.ant-pro-page-container-warp{
+  border-bottom: 1px solid #eeeeee;
+}
+.ant-pro-basicLayout-content > .ant-pro-page-container{
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.ant-pro-grid-content{
+  overflow: hidden;
+  flex: 1;
+}
+.ant-pro-grid-content-children{
+  height: 100%;
+}
+.ant-pro-grid-content-children>div{
+  height: 100%;
+  overflow: hidden;
+}
+.ant-pro-basicLayout-content{
+  display: flex;
+  margin-bottom: 0px;
+}
+.ant-pro-page-container-children-content {
+  margin: 0px;
+  height: 100%;
+}
+// 兼容IE11
+@media screen and(-ms-high-contrast: active), (-ms-high-contrast: none) {
+  body .ant-design-pro > .ant-layout {
+    min-height: 100vh;
+  }
+}

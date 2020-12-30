@@ -10,6 +10,7 @@ npm-debug.log*
 **/out/
 !src/**/out/
 
+.umi
 *.jar
 *.class
 *.log

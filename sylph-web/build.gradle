@@ -48,7 +48,7 @@ task build_package(type: YarnTask, dependsOn: package_install) {
   args = ['run', 'build']
 }
 task webapp(type: Copy, dependsOn: build_package) {
-  from("${project.buildDir}/build")
+  from("${project.buildDir}/dist")
   into project(':sylph-dist').buildDir.path + '/webapp'
 }
 //assemble.dependsOn webapp
