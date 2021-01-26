@@ -1,4 +1,4 @@
-# Sylph [![Build Status](http://img.shields.io/travis/harbby/sylph.svg?style=flat&branch=master)](https://travis-ci.org/harbby/sylph)
+# Sylph [![Build Status](https://travis-ci.com/harbby/sylph.svg?branch=master)](https://travis-ci.com/harbby/sylph)
 
 Welcome to Sylph !
 
