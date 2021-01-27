@@ -23,23 +23,22 @@ import org.apache.flink.runtime.state.CheckpointStorageLocation;
 import org.apache.flink.runtime.state.CheckpointStorageLocationReference;
 import org.apache.flink.runtime.state.CheckpointStreamFactory;
 import org.apache.flink.runtime.state.CheckpointStreamFactory.CheckpointStateOutputStream;
-import org.apache.flink.runtime.state.filesystem.AbstractFsCheckpointStorage;
+import org.apache.flink.runtime.state.filesystem.AbstractFsCheckpointStorageAccess;
 import org.apache.flink.runtime.state.filesystem.FsCheckpointStorageLocation;
 import org.apache.flink.runtime.state.filesystem.FsCheckpointStreamFactory.FsCheckpointStateOutputStream;
 
 import javax.annotation.Nullable;
-
 import java.io.IOException;
 
 import static java.util.Objects.requireNonNull;
 import static org.apache.flink.util.Preconditions.checkArgument;
 
 /**
- * copy {@link org.apache.flink.runtime.state.filesystem.FsCheckpointStorage}
+ * copy {@link org.apache.flink.runtime.state.filesystem.FsCheckpointStorageAccess}
  * An implementation of durable checkpoint storage to file systems.
  */
 public class SylphFsCheckpointStorage
-        extends AbstractFsCheckpointStorage
+        extends AbstractFsCheckpointStorageAccess
 {
     private final FileSystem fileSystem;
 

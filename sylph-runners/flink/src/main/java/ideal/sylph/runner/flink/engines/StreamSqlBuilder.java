@@ -47,6 +47,7 @@ import org.apache.flink.table.api.TableException;
 import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.table.api.bridge.java.internal.StreamTableEnvironmentImpl;
+import org.apache.flink.table.api.internal.TableEnvironmentInternal;
 import org.apache.flink.table.functions.AggregateFunction;
 import org.apache.flink.table.functions.ScalarFunction;
 import org.apache.flink.table.functions.TableFunction;
@@ -239,7 +240,7 @@ public class StreamSqlBuilder
         else if (SINK == createStream.getType()) {
             UnaryOperator<DataStream<Row>> outputStream = loader.loadSink(driverClass, withConfig);
             SylphTableSink tableSink = new SylphTableSink(tableTypeInfo, outputStream);
-            tableEnv.registerTableSink(tableName, tableSink.getFieldNames(), tableSink.getFieldTypes(), tableSink);
+            ((TableEnvironmentInternal)tableEnv).registerTableSinkInternal(tableName, tableSink);
         }
         else {
             throw new IllegalArgumentException("this driver class " + withConfig.get("type") + " have't support!");

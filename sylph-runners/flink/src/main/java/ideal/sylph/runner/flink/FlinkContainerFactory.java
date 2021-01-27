@@ -56,8 +56,8 @@ import static com.github.harbby.gadtry.aop.mock.MockGoArgument.any;
 import static ideal.sylph.runner.flink.local.MiniExecutor.FLINK_WEB;
 import static ideal.sylph.runner.flink.local.MiniExecutor.createVmCallable;
 import static org.apache.flink.runtime.checkpoint.CheckpointRetentionPolicy.RETAIN_ON_CANCELLATION;
-import static org.apache.flink.runtime.state.filesystem.AbstractFsCheckpointStorage.CHECKPOINT_DIR_PREFIX;
-import static org.apache.flink.runtime.state.filesystem.AbstractFsCheckpointStorage.METADATA_FILE_NAME;
+import static org.apache.flink.runtime.state.filesystem.AbstractFsCheckpointStorageAccess.CHECKPOINT_DIR_PREFIX;
+import static org.apache.flink.runtime.state.filesystem.AbstractFsCheckpointStorageAccess.METADATA_FILE_NAME;
 
 public class FlinkContainerFactory
         implements ContainerFactory
