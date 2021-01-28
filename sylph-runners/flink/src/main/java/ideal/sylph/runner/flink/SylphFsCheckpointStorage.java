@@ -28,6 +28,7 @@ import org.apache.flink.runtime.state.filesystem.FsCheckpointStorageLocation;
 import org.apache.flink.runtime.state.filesystem.FsCheckpointStreamFactory.FsCheckpointStateOutputStream;
 
 import javax.annotation.Nullable;
+
 import java.io.IOException;
 
 import static java.util.Objects.requireNonNull;
