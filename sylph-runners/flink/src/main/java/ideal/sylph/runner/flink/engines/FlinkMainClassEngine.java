@@ -115,7 +115,7 @@ public class FlinkMainClassEngine
                     binder.doAround(x -> null).when().execute((StreamGraph) null);
                 }).build();
 
-        StreamExecutionEnvironmentFactory streamFactory = () -> mock;
+        StreamExecutionEnvironmentFactory streamFactory = (configuration) -> mock;
         Method method = StreamExecutionEnvironment.class.getDeclaredMethod("initializeContextEnvironment", StreamExecutionEnvironmentFactory.class);
         method.setAccessible(true);
         method.invoke(null, streamFactory);
