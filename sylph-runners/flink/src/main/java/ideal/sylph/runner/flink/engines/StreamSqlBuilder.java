@@ -240,7 +240,7 @@ public class StreamSqlBuilder
         else if (SINK == createStream.getType()) {
             UnaryOperator<DataStream<Row>> outputStream = loader.loadSink(driverClass, withConfig);
             SylphTableSink tableSink = new SylphTableSink(tableTypeInfo, outputStream);
-            ((TableEnvironmentInternal)tableEnv).registerTableSinkInternal(tableName, tableSink);
+            ((TableEnvironmentInternal) tableEnv).registerTableSinkInternal(tableName, tableSink);
         }
         else {
             throw new IllegalArgumentException("this driver class " + withConfig.get("type") + " have't support!");
