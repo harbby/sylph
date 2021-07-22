@@ -15,7 +15,8 @@
  */
 package ideal.sylph.parser.antlr.tree;
 
-import com.github.harbby.gadtry.collection.mutable.MutableList;
+import com.github.harbby.gadtry.collection.ImmutableList;
+import com.github.harbby.gadtry.collection.MutableList;
 
 import java.util.List;
 import java.util.Objects;
@@ -69,7 +70,7 @@ public class Identifier
     @Override
     public List<Node> getChildren()
     {
-        return MutableList.of();
+        return ImmutableList.of();
     }
 
     @Override

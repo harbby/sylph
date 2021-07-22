@@ -15,13 +15,14 @@
  */
 package ideal.sylph.runner.flink.engines;
 
+import com.github.harbby.gadtry.base.Platform;
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.github.harbby.gadtry.ioc.IocFactory;
 import com.github.harbby.gadtry.jvm.JVMLauncher;
 import com.github.harbby.gadtry.jvm.JVMLaunchers;
+import ideal.sylph.TableContext;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
-import ideal.sylph.etl.SourceContext;
 import ideal.sylph.runner.flink.FlinkBean;
 import ideal.sylph.runner.flink.FlinkJobConfig;
 import ideal.sylph.runner.flink.etl.FlinkNodeLoader;
@@ -102,15 +103,15 @@ public class FlinkStreamEtlEngine
     {
         //---- build flow----
         JVMLauncher<JobGraph> launcher = JVMLaunchers.<JobGraph>newJvm()
-                .setCallable(() -> {
+                .task(() -> {
                     System.out.println("************ job start ***************");
                     StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.getExecutionEnvironment();
                     FlinkEnvFactory.setJobConfig(execEnv, jobConfig, jobId);
                     StreamTableEnvironment tableEnv = StreamTableEnvironment.create(execEnv);
-                    SourceContext sourceContext = new SourceContext() {};
+                    TableContext sourceContext = Platform.allocateInstance(TableContext.class);
 
                     final IocFactory iocFactory = IocFactory.create(new FlinkBean(execEnv, tableEnv), binder -> {
-                        binder.bind(SourceContext.class, sourceContext);
+                        binder.bind(TableContext.class, sourceContext);
                     });
                     FlinkNodeLoader loader = new FlinkNodeLoader(connectorStore, iocFactory);
                     buildGraph(loader, flow);
@@ -118,12 +119,10 @@ public class FlinkStreamEtlEngine
                     streamGraph.setJobName(jobId);
                     return streamGraph.getJobGraph();
                 })
-                .setConsole((line) -> logger.info(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset().toString()))
+                .setConsole((line) -> System.out.print(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset().toString()))
                 .addUserURLClassLoader(jobClassLoader)
                 .setClassLoader(jobClassLoader)
                 .build();
-        JobGraph jobGraph = launcher.startAndGet();
-        //setJobConfig(jobGraph, jobConfig, jobClassLoader, jobId);
-        return jobGraph;
+        return launcher.startAndGet(); //setJobConfig(jobGraph, jobConfig, jobClassLoader, jobId);
     }
 }

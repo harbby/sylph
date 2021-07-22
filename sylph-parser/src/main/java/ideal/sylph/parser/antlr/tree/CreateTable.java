@@ -15,14 +15,16 @@
  */
 package ideal.sylph.parser.antlr.tree;
 
-import com.github.harbby.gadtry.collection.mutable.MutableList;
+import com.github.harbby.gadtry.collection.MutableList;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static com.github.harbby.gadtry.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
@@ -38,12 +40,14 @@ public class CreateTable
 
     private final QualifiedName name;
     private final List<ColumnDefinition> elements;
-    private final List<Proctime> proctimeList;
+    private final Proctime proctime;
     private final boolean notExists;
     private final List<Property> properties;
     private final Optional<String> comment;
     private final Type type;
     private final Optional<WaterMark> watermark;
+    private final Map<String, Object> withProperties;
+    private final String connector;
 
     public CreateTable(Type type,
             NodeLocation location,
@@ -69,12 +73,21 @@ public class CreateTable
         super(location);
         this.name = requireNonNull(name, "table is null");
         this.elements = MutableList.copy(requireNonNull(elements, "elements is null"));
-        this.proctimeList = requireNonNull(proctimeList, "proctimeList is null");
         this.notExists = notExists;
         this.properties = requireNonNull(properties, "properties is null");
         this.comment = requireNonNull(comment, "comment is null");
         this.type = requireNonNull(type, "type is null");
         this.watermark = requireNonNull(watermark, "watermark is null");
+
+        checkState(proctimeList.size() <= 1, "proctime as PROCTIME() can only be one");
+        proctime = proctimeList.isEmpty() ? null : proctimeList.get(0);
+        this.withProperties = this.properties.stream()
+                .collect(Collectors.toMap(
+                        k -> k.getName(),
+                        v -> Expression.getJavaValue(v.getValue())));
+
+        this.connector = (String) this.withProperties.remove("connector");
+        checkState(connector != null, "the create table must be with(connector = '...')");
     }
 
     public String getName()
@@ -87,12 +100,12 @@ public class CreateTable
         return elements;
     }
 
-    public List<Proctime> getProctimes()
+    public Optional<Proctime> getProctimes()
     {
-        return proctimeList;
+        return Optional.ofNullable(proctime);
     }
 
-    public boolean isNotExists()
+    public boolean isCheckNotExists()
     {
         return notExists;
     }
@@ -102,12 +115,14 @@ public class CreateTable
         return properties;
     }
 
-    public Map<String, Object> getWithConfig()
+    public String getConnector()
     {
-        return this.getProperties().stream()
-                .collect(Collectors.toMap(
-                        k -> k.getName(),
-                        v -> Expression.getJavaValue(v.getValue())));
+        return connector;
+    }
+
+    public Map<String, Object> getWithProperties()
+    {
+        return new HashMap<>(withProperties);
     }
 
     public Optional<String> getComment()

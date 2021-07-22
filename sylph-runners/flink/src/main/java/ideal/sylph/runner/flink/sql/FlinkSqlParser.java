@@ -56,7 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 import static org.apache.calcite.sql.SqlKind.AS;
@@ -137,7 +137,7 @@ public class FlinkSqlParser
             plan = sqlParser.getPlan(query, sqlParserConfig);
         }
         catch (SqlParseException e) {
-            throw throwsException(e);
+            throw throwsThrowable(e);
         }
 
         List<String> registerViews = new ArrayList<>();
@@ -218,8 +218,8 @@ public class FlinkSqlParser
 
     private RealTimeTransForm getJoinTransForm(JoinContext joinContext, CreateTable batchTable)
     {
-        Map<String, Object> withConfig = batchTable.getWithConfig();
-        String driverOrName = (String) withConfig.get("type");
+        Map<String, Object> withConfig = batchTable.getWithProperties();
+        String driverOrName = batchTable.getConnector();
         Class<?> driver = connectorStore.getConnectorDriver(driverOrName, Operator.PipelineType.transform);
         checkState(RealTimeTransForm.class.isAssignableFrom(driver), "batch table type driver must is RealTimeTransForm");
 

@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileNotFoundException;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 public class YarnModule
         implements Bean
@@ -86,7 +86,7 @@ public class YarnModule
                         throw new FileNotFoundException("ENV HADOOP_CONF_DIR error, NOT Found HADOOP file: " + site);
                     }
                     catch (FileNotFoundException e) {
-                        throwsException(e);
+                        throwsThrowable(e);
                     }
                 }
             }

@@ -16,7 +16,7 @@
 package ideal.sylph.main.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.harbby.gadtry.classloader.Module;
+import com.github.harbby.gadtry.easyspi.Module;
 import ideal.sylph.etl.Plugin;
 import ideal.sylph.main.service.JobEngineManager;
 import ideal.sylph.main.service.JobManager;

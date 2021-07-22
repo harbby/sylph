@@ -15,22 +15,19 @@
  */
 package ideal.sylph.plugins.hdfs;
 
+import ideal.sylph.TableContext;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.annotation.Version;
 import ideal.sylph.etl.PluginConfig;
 import ideal.sylph.etl.Record;
 import ideal.sylph.etl.Schema;
-import ideal.sylph.etl.SinkContext;
 import ideal.sylph.etl.api.RealTimeSink;
 import ideal.sylph.plugins.hdfs.factory.HDFSFactorys;
-import ideal.sylph.plugins.hdfs.parquet.HDFSFactory;
-import org.apache.parquet.column.ParquetProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -44,24 +41,15 @@ public class HdfsSink
     private final HdfsSinkConfig config;
     private final String sinkTable;
     private final Schema schema;
-    private int eventTimeIndex = -1;
 
-    private HDFSFactory hdfsFactory;
+    private OutputFormat hdfsFactory;
 
-    public HdfsSink(HdfsSinkConfig config, SinkContext context)
+    public HdfsSink(HdfsSinkConfig config, TableContext context)
     {
         this.config = config;
-        this.sinkTable = context.getSinkTable();
+        this.sinkTable = context.getTableName();
         this.schema = context.getSchema();
         checkState(sinkTable.length() > 0, "sinkTable is " + sinkTable);
-
-        for (int i = 0; i < schema.getFieldNames().size(); i++) {
-            if (schema.getFieldNames().get(i).equalsIgnoreCase(config.eventTimeName)) {
-                this.eventTimeIndex = i;
-                break;
-            }
-        }
-        checkState(eventTimeIndex != -1, "eventTime_field " + config.eventTimeName + " does not exist,but only " + schema.getFieldNames());
 
         checkState("text".equals(config.format.toLowerCase()) || "parquet".equals(config.format.toLowerCase()),
                 "Hdfs sink format only supports text and parquet");
@@ -71,17 +59,7 @@ public class HdfsSink
     public void process(Record value)
     {
         try {
-            long eventTime = value.getAs(eventTimeIndex);
-            hdfsFactory.writeLine(eventTime, value);
-        }
-        catch (ClassCastException e) {
-            logger.error("eventTimeField {}, index [{}], but value is {}", config.eventTimeName, eventTimeIndex, value.getAs(eventTimeIndex));
-            try {
-                TimeUnit.MILLISECONDS.sleep(1);
-            }
-            catch (InterruptedException e1) {
-                Thread.currentThread().interrupt();
-            }
+            hdfsFactory.writeLine(value);
         }
         catch (IOException e) {
             logger.error("", e);
@@ -102,17 +80,8 @@ public class HdfsSink
                         .getOrCreate();
                 break;
 
-            case "parquet":
-                this.hdfsFactory = HDFSFactorys.getParquetWriter()
-                        .parquetVersion(ParquetProperties.WriterVersion.PARQUET_2_0)
-                        .tableName(sinkTable)
-                        .schema(schema)
-                        .partition(partitionId)
-                        .config(config)
-                        .getOrCreate();
-                break;
             default:
-                throw new UnsupportedOperationException("Hdfs sink format only supports text and parquet");
+                throw new UnsupportedOperationException("Hdfs sink format only supports text");
         }
 
         return true;
@@ -140,10 +109,6 @@ public class HdfsSink
         @Description("this is write dir")
         private String writeDir;
 
-        @Name("eventTime_field")
-        @Description("this is your data eventTime_field, 必须是13位时间戳")
-        private String eventTimeName;
-
         @Name("file.split.size")
         @Description("default:128MB")
         private long fileSplitSize = 128L;
@@ -164,11 +129,6 @@ public class HdfsSink
         public long getFileSplitSize()
         {
             return this.fileSplitSize;
-        }
-
-        public String getEventTimeName()
-        {
-            return this.eventTimeName;
         }
 
         public String getFormat()

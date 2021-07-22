@@ -16,10 +16,10 @@
 package ideal.sylph.plugins.kafka.spark;
 
 import com.github.harbby.gadtry.base.Lazys;
+import ideal.sylph.TableContext;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.annotation.Version;
-import ideal.sylph.etl.SourceContext;
 import ideal.sylph.etl.api.Source;
 import ideal.sylph.runner.spark.kafka.SylphKafkaOffset;
 import ideal.sylph.runner.spark.sparkstreaming.DStreamUtil;
@@ -56,12 +56,12 @@ public class KafkaSource
 {
     private final transient Supplier<JavaDStream<Row>> loadStream;
 
-    public KafkaSource(JavaStreamingContext ssc, KafkaSourceConfig config, SourceContext context)
+    public KafkaSource(JavaStreamingContext ssc, KafkaSourceConfig config, TableContext context)
     {
         this.loadStream = Lazys.goLazy(() -> createSource(ssc, config, context));
     }
 
-    public JavaDStream<Row> createSource(JavaStreamingContext ssc, KafkaSourceConfig config, SourceContext context)
+    public JavaDStream<Row> createSource(JavaStreamingContext ssc, KafkaSourceConfig config, TableContext context)
     {
         String topics = config.getTopics();
         String brokers = config.getBrokers(); //需要把集群的host 配置到程序所在机器

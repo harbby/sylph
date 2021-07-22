@@ -15,7 +15,7 @@
  */
 package ideal.sylph.runner.spark;
 
-import com.github.harbby.gadtry.collection.mutable.MutableSet;
+import com.github.harbby.gadtry.collection.MutableSet;
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.github.harbby.gadtry.jvm.JVMException;
 import com.github.harbby.gadtry.jvm.JVMLauncher;
@@ -41,7 +41,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static ideal.sylph.runner.spark.SQLHepler.buildSql;
 import static org.fusesource.jansi.Ansi.Color.GREEN;
 import static org.fusesource.jansi.Ansi.Color.YELLOW;
@@ -98,14 +98,14 @@ public class StructuredStreamingSqlEngine
                 buildSql(sqlAnalyse, jobId, sqlFlow);
             }
             catch (Exception e) {
-                throwsException(e);
+                throwsThrowable(e);
             }
             return sparkSession;
         };
 
         JVMLauncher<Boolean> launcher = JVMLaunchers.<Boolean>newJvm()
-                .setConsole((line) -> logger.info(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset().toString()))
-                .setCallable(() -> {
+                .setConsole((line) -> System.out.print(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset().toString()))
+                .task(() -> {
                     System.out.println("************ job start ***************");
                     URL path = JavaVersion.class.getProtectionDomain().getCodeSource().getLocation();
                     System.out.println(path);

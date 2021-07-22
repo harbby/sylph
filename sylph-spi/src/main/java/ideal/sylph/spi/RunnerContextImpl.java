@@ -15,7 +15,7 @@
  */
 package ideal.sylph.spi;
 
-import com.github.harbby.gadtry.classloader.DirClassLoader;
+import com.github.harbby.gadtry.easyspi.DirClassLoader;
 import ideal.sylph.etl.Operator;
 import ideal.sylph.spi.model.ConnectorInfo;
 import org.slf4j.Logger;

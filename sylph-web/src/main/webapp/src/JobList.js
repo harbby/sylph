@@ -114,7 +114,7 @@ export default class JobList extends React.Component {
               <a onClick={() => {
                 var toLink;
                 var type = record.type;
-                if (type === 'StreamSql' || type === 'FlinkMainClass' || type === 'StructuredStreamingSql' || type === 'SparkStreamingSql') {
+                if (type === 'FlinkStreamSql' || type === 'FlinkMainClass' || type === 'StructuredStreamingSql' || type === 'SparkStreamingSql') {
                   toLink = `/streamingSql/${record.jobId}`;
                 } else {
                   toLink = `/streamingEtl/${record.jobId}`;

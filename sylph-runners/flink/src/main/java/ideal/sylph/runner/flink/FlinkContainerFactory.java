@@ -48,6 +48,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -67,6 +69,8 @@ public class FlinkContainerFactory
     private final IocFactory injector = IocFactory.create(new YarnModule(), binder -> {
         binder.bind(FlinkYarnJobLauncher.class).withSingle();
     });
+
+    private final ExecutorService executor = Executors.newFixedThreadPool(50);
 
     @Override
     public JobContainer createYarnContainer(Job job, String lastRunid)
@@ -99,7 +103,7 @@ public class FlinkContainerFactory
                     if (url.get() == null && line.contains(FLINK_WEB)) {
                         url.set(line.split(FLINK_WEB)[1].trim());
                     }
-                    System.out.println(line);
+                    System.out.print(line);
                 })
                 .notDepThisJvmClassPath()
                 .addUserjars(job.getDepends())
@@ -125,7 +129,7 @@ public class FlinkContainerFactory
                     setSavepoint(jobGraph, appCheckPath, yarnConfiguration);
                 }
                 VmCallable<Boolean> taskCallable = createVmCallable(jobGraph);
-                return launcher.startAsync(taskCallable);
+                return launcher.startAsync(executor, taskCallable);
             }
         };
     }
@@ -202,11 +206,9 @@ public class FlinkContainerFactory
         };
         JobCheckpointingSettings settings = jobGraph.getCheckpointingSettings();
         JobCheckpointingSettings checkSettings = new JobCheckpointingSettings(
-                settings.getVerticesToTrigger(),
-                settings.getVerticesToAcknowledge(),
-                settings.getVerticesToConfirm(),
                 config,
                 new SerializedValue<>(stateBackend),
+                settings.getDefaultCheckpointStorage(),
                 settings.getMasterHooks()
         );
         jobGraph.setSnapshotSettings(checkSettings);

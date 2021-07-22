@@ -42,14 +42,14 @@ public final class SylphMaster
     private SylphMaster() {}
 
     private static final Logger logger = LoggerFactory.getLogger(SylphMaster.class);
-    private static final String logo = " *_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*\n" +
+    private static final String LOGO = "\n *_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*\n" +
             " |     Welcome to         __          __   ______    |\n" +
             " |  .     _____  __  __  / / ____    / /_  \\ \\ \\ \\   |\n" +
             " | /|\\   / ___/ / / / / / / / __ \\  / __ \\  \\ \\ \\ \\  |\n" +
             " |( | ) _\\__ \\ / /_/ / / / / /_/ / / / / /   ) ) ) ) |\n" +
             " | \\|/ /____/  \\__, / /_/ / .___/ /_/ /_/   / / / /  |\n" +
             " |  '         /____/     /_/               /_/_/_/   |\n" +
-            " |  :: Sylph ::  version = (v0.6.0-SNAPSHOT)         |\n" +
+            " |  :: Sylph ::  version = (v0.8.0-SNAPSHOT)         |\n" +
             " *---------------------------------------------------*";
 
     public static void main(String[] args)
@@ -76,7 +76,7 @@ public final class SylphMaster
             app.getInstance(JobManager.class).start();
             app.getInstance(ControllerApp.class).start();
             //ProcessHandle.current().pid()
-            logger.info("\n" + logo);
+            logger.info(LOGO);
             logger.info("======== SERVER STARTED this pid is {}========");
         }
         catch (Throwable e) {

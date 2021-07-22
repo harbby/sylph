@@ -44,7 +44,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 public class SQLHepler
 {
@@ -89,7 +89,7 @@ public class SQLHepler
                         "\nTableSink schema:    " + structTypeToString(tableSinkSchema));
             }
             catch (SparkException e) {
-                throwsException(e);
+                throwsThrowable(e);
             }
         }
 
@@ -108,7 +108,7 @@ public class SQLHepler
                             "\nTableSink schema:    " + structTypeToString(tableSinkSchema));
                 }
                 catch (SparkException e) {
-                    throwsException(e);
+                    throwsThrowable(e);
                 }
             }
         }

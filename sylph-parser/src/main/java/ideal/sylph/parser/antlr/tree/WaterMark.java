@@ -15,32 +15,33 @@
  */
 package ideal.sylph.parser.antlr.tree;
 
-import com.github.harbby.gadtry.collection.mutable.MutableList;
+import com.github.harbby.gadtry.collection.ImmutableList;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.github.harbby.gadtry.base.MoreObjects.checkArgument;
 import static com.github.harbby.gadtry.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
 public class WaterMark
         extends Node
 {
-    private final List<Identifier> identifiers;
+    private final Identifier rowTimeName;
     private final Identifier fieldName;
-    private final Identifier fieldForName;
-    private final Object offset;
+    private final long offset;
 
-    public WaterMark(NodeLocation location, List<Identifier> field, Object offset)
+    public WaterMark(NodeLocation location, Identifier rowTimeName, Identifier field, long offset)
     {
         super(Optional.of(location));
-        this.offset = requireNonNull(offset, "offset is null");
-        this.identifiers = requireNonNull(field, "field is null");
-        checkArgument(field.size() == 2, "field size must is 2,but is %s", field);
-        this.fieldName = field.get(0);
-        this.fieldForName = field.get(1);
+        this.offset = offset;
+        this.rowTimeName = requireNonNull(rowTimeName, "rowTimeName is null");
+        this.fieldName = requireNonNull(field, "field is null");
+    }
+
+    public String getRowTimeName()
+    {
+        return rowTimeName.getValue().replaceAll("`", "").replaceAll("\"", "");
     }
 
     public String getFieldName()
@@ -48,12 +49,12 @@ public class WaterMark
         return fieldName.getValue().replaceAll("`", "").replaceAll("\"", "");
     }
 
-    public String getFieldForName()
-    {
-        return fieldForName.getValue().replaceAll("`", "").replaceAll("\"", "");
-    }
-
-    public Object getOffset()
+    /**
+     * get the offset unit ms
+     *
+     * @return long ms
+     */
+    public long getOffset()
     {
         return offset;
     }
@@ -61,15 +62,13 @@ public class WaterMark
     @Override
     public List<? extends Node> getChildren()
     {
-        return MutableList.<Node>builder()
-                .addAll(identifiers)
-                .build();
+        return ImmutableList.of(fieldName);
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(identifiers, offset);
+        return Objects.hash(fieldName, offset);
     }
 
     @Override
@@ -82,7 +81,7 @@ public class WaterMark
             return false;
         }
         WaterMark o = (WaterMark) obj;
-        return Objects.equals(identifiers, o.identifiers) &&
+        return Objects.equals(fieldName, o.fieldName) &&
                 Objects.equals(offset, o.offset);
     }
 
@@ -90,54 +89,8 @@ public class WaterMark
     public String toString()
     {
         return toStringHelper(this)
-                .add("identifiers", identifiers)
+                .add("fieldName", fieldName)
                 .add("offset", offset)
                 .toString();
-    }
-
-    public static class SystemOffset
-    {
-        private final long offset;
-
-        public SystemOffset(long offset)
-        {
-            this.offset = offset;
-        }
-
-        public long getOffset()
-        {
-            return offset;
-        }
-
-        @Override
-        public String toString()
-        {
-            return toStringHelper(this)
-                    .add("offset", offset)
-                    .toString();
-        }
-    }
-
-    public static class RowMaxOffset
-    {
-        private final long offset;
-
-        public RowMaxOffset(long offset)
-        {
-            this.offset = offset;
-        }
-
-        public long getOffset()
-        {
-            return offset;
-        }
-
-        @Override
-        public String toString()
-        {
-            return toStringHelper(this)
-                    .add("offset", offset)
-                    .toString();
-        }
     }
 }

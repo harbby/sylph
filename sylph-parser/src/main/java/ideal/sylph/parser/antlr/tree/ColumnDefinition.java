@@ -15,7 +15,7 @@
  */
 package ideal.sylph.parser.antlr.tree;
 
-import com.github.harbby.gadtry.collection.mutable.MutableList;
+import com.github.harbby.gadtry.collection.ImmutableList;
 
 import java.util.List;
 import java.util.Objects;
@@ -69,7 +69,7 @@ public final class ColumnDefinition
     @Override
     public List<Node> getChildren()
     {
-        return MutableList.of(name);
+        return ImmutableList.of(name);
     }
 
     @Override

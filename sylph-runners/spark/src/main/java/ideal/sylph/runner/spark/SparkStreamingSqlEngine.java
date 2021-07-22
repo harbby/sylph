@@ -49,7 +49,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static ideal.sylph.runner.spark.SQLHepler.buildSql;
 import static java.util.Objects.requireNonNull;
 import static org.fusesource.jansi.Ansi.Color.GREEN;
@@ -93,8 +93,7 @@ public class SparkStreamingSqlEngine
                 .filter(statement -> statement instanceof CreateTable)
                 .forEach(statement -> {
                     CreateTable createTable = (CreateTable) statement;
-                    Map<String, Object> withConfig = createTable.getWithConfig();
-                    String driverOrName = (String) requireNonNull(withConfig.get("type"), "driver is null");
+                    String driverOrName = createTable.getConnector();
                     connectorStore.findConnectorInfo(driverOrName, getPipeType(createTable.getType()))
                             .ifPresent(builder::add);
                 });
@@ -137,14 +136,14 @@ public class SparkStreamingSqlEngine
                 buildSql(analyse, jobId, sqlFlow);
             }
             catch (Exception e) {
-                throwsException(e);
+                throwsThrowable(e);
             }
             return ssc;
         };
 
         JVMLauncher<Boolean> launcher = JVMLaunchers.<Boolean>newJvm()
-                .setConsole((line) -> logger.info(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset().toString()))
-                .setCallable(() -> {
+                .setConsole((line) -> System.out.print(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset().toString()))
+                .task(() -> {
                     System.out.println("************ job start ***************");
                     appGetter.get();
                     return true;

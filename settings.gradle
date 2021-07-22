@@ -14,10 +14,10 @@ include 'sylph-web'
 
 include 'sylph-runners'
 include 'sylph-runners:flink'
-project(':sylph-runners:flink').name = 'sylph-runner-flink'
+project(':sylph-runners:flink').name = 'sylph-flink'
 include ':sylph-runners:spark'
 //project(":sql-13").projectDir = new File(settingsDir, "spark/sql-13")
-project(':sylph-runners:spark').name = 'sylph-runner-spark'
+project(':sylph-runners:spark').name = 'sylph-spark'
 
 //----
 include 'sylph-api'
@@ -25,11 +25,6 @@ include 'sylph-connectors'
 include 'sylph-connectors:flink-kafka'
 include 'sylph-connectors:sylph-mysql'
 include 'sylph-connectors:sylph-hdfs'
-include 'sylph-connectors:flink-hdfs2'
-//include 'sylph-connectors:sylph-hbase'
-include 'sylph-connectors:sylph-elasticsearch6'
-include 'sylph-connectors:sylph-elasticsearch5'
-include 'sylph-connectors:sylph-clickhouse'
 include 'sylph-connectors:sylph-kudu'
 
 include 'sylph-connectors:spark-kafka'
@@ -37,8 +32,5 @@ include 'sylph-connectors:spark-kafka'
 //----
 include 'sylph-dist'
 include 'sylph-parser'
-include 'sylph-docs'
 include 'sylph-yarn'
 //include 'sylph-cli'
-include 'sylph-base-jdbc'
-

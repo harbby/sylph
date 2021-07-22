@@ -54,7 +54,7 @@ import static java.util.Objects.requireNonNull;
 import static org.fusesource.jansi.Ansi.Color.GREEN;
 import static org.fusesource.jansi.Ansi.Color.YELLOW;
 
-@Name("StreamSql")
+@Name("FlinkStreamSql")
 @Description("this is flink stream sql etl Actuator")
 public class FlinkStreamSqlEngine
         extends FlinkStreamEtlEngine
@@ -95,8 +95,7 @@ public class FlinkStreamSqlEngine
                 .filter(statement -> statement instanceof CreateTable)
                 .forEach(statement -> {
                     CreateTable createTable = (CreateTable) statement;
-                    Map<String, Object> withConfig = createTable.getWithConfig();
-                    String driverOrName = (String) requireNonNull(withConfig.get("type"), "driver is null");
+                    String driverOrName = createTable.getConnector();
                     getConnectorStore().findConnectorInfo(driverOrName, getPipeType(createTable.getType()))
                             .ifPresent(builder::add);
                 });
@@ -120,11 +119,10 @@ public class FlinkStreamSqlEngine
             FlinkJobConfig jobConfig,
             String[] sqlSplit,
             URLClassLoader jobClassLoader)
-            throws Exception
     {
         JVMLauncher<JobGraph> launcher = JVMLaunchers.<JobGraph>newJvm()
-                .setConsole((line) -> logger.info(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset().toString()))
-                .setCallable(() -> {
+                .setConsole((line) -> System.out.print(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset().toString()))
+                .task(() -> {
                     System.out.println("************ job start ***************");
                     StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.getExecutionEnvironment();
                     FlinkEnvFactory.setJobConfig(execEnv, jobConfig, jobId);
@@ -152,9 +150,7 @@ public class FlinkStreamSqlEngine
                 .setClassLoader(jobClassLoader)
                 .build();
 
-        JobGraph jobGraph = launcher.startAndGet();
-        //setJobConfig(jobGraph, jobConfig, jobClassLoader, jobId);
-        return jobGraph;
+        return launcher.startAndGet();
     }
 
     private static Operator.PipelineType getPipeType(CreateTable.Type type)

@@ -35,7 +35,7 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static java.util.Objects.requireNonNull;
 
 public class SqliteDbJobStore
@@ -79,7 +79,7 @@ public class SqliteDbJobStore
                     "files".getBytes());
         }
         catch (SQLException e) {
-            throw throwsException(e);
+            throw throwsThrowable(e);
         }
     }
 
@@ -90,7 +90,7 @@ public class SqliteDbJobStore
             return queryRunner.query("select * from jobs where id=?", new BeanHandler<>(DbJob.class, processor), jobId);
         }
         catch (Exception e) {
-            throw throwsException(e);
+            throw throwsThrowable(e);
         }
     }
 
@@ -101,7 +101,7 @@ public class SqliteDbJobStore
             return queryRunner.query("select * from jobs", new BeanListHandler<>(DbJob.class, processor));
         }
         catch (Exception e) {
-            throw throwsException(e);
+            throw throwsThrowable(e);
         }
     }
 

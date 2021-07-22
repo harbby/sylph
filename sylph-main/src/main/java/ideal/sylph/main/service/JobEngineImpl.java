@@ -17,7 +17,7 @@ package ideal.sylph.main.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.harbby.gadtry.base.Lazys;
-import com.github.harbby.gadtry.classloader.DirClassLoader;
+import com.github.harbby.gadtry.easyspi.DirClassLoader;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.spi.exception.StandardErrorCode;

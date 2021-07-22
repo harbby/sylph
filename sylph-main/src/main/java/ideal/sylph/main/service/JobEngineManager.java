@@ -16,7 +16,7 @@
 package ideal.sylph.main.service;
 
 import com.github.harbby.gadtry.base.Closeables;
-import com.github.harbby.gadtry.classloader.PluginLoader;
+import com.github.harbby.gadtry.easyspi.PluginLoader;
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.google.common.collect.ImmutableList;
 import ideal.sylph.etl.Operator;

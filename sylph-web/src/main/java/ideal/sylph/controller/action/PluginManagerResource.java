@@ -15,8 +15,8 @@
  */
 package ideal.sylph.controller.action;
 
-import com.github.harbby.gadtry.classloader.Module;
-import com.github.harbby.gadtry.collection.mutable.MutableMap;
+import com.github.harbby.gadtry.collection.MutableMap;
+import com.github.harbby.gadtry.easyspi.Module;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import ideal.sylph.etl.Plugin;

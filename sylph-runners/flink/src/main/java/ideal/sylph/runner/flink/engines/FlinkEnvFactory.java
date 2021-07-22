@@ -16,6 +16,7 @@
 package ideal.sylph.runner.flink.engines;
 
 import com.github.harbby.gadtry.aop.AopGo;
+import com.github.harbby.gadtry.base.Throwables;
 import ideal.sylph.runner.flink.FlinkJobConfig;
 import ideal.sylph.runner.flink.SylphFsCheckpointStorage;
 import org.apache.flink.api.common.JobID;
@@ -28,6 +29,8 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 import static com.github.harbby.gadtry.aop.mock.MockGoArgument.any;
 
@@ -42,7 +45,7 @@ public class FlinkEnvFactory
     private static final Logger logger = LoggerFactory.getLogger(FlinkEnvFactory.class);
 
     /**
-     * @deprecated see: {@link ideal.sylph.runner.flink.FlinkContainerFactory#setJobConfig)}
+     * deprecated see: {@link ideal.sylph.runner.flink.FlinkContainerFactory#setJobConfig)}
      */
     @Deprecated
     public static StreamExecutionEnvironment setJobConfig(StreamExecutionEnvironment execEnv, FlinkJobConfig jobConfig, String jobId)

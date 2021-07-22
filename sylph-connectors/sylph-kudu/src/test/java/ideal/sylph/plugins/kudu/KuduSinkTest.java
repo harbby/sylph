@@ -16,8 +16,8 @@
 package ideal.sylph.plugins.kudu;
 
 import com.github.harbby.gadtry.ioc.IocFactory;
+import ideal.sylph.TableContext;
 import ideal.sylph.etl.Schema;
-import ideal.sylph.etl.SinkContext;
 import ideal.sylph.parser.antlr.AntlrSqlParser;
 import ideal.sylph.parser.antlr.tree.CreateTable;
 import ideal.sylph.runner.flink.engines.StreamSqlBuilder;
@@ -65,11 +65,11 @@ public class KuduSinkTest
         CreateTable createStream = (CreateTable) sqlParser.createStatement(kuduSinkSql);
         final String tableName = createStream.getName();
         Schema schema = getTableSchema(createStream);
+        String connector = createStream.getConnector();
 
-        final Map<String, Object> withConfig = createStream.getWithConfig();
-        final String driverClass = (String) withConfig.get("type");
-
-        final IocFactory iocFactory = IocFactory.create(binder -> binder.bind(SinkContext.class, new SinkContext()
+        final Map<String, Object> withConfig = createStream.getWithProperties();
+        final String driverClass = createStream.getConnector();
+        final IocFactory iocFactory = IocFactory.create(binder -> binder.bind(TableContext.class, new TableContext()
         {
             @Override
             public Schema getSchema()
@@ -78,9 +78,15 @@ public class KuduSinkTest
             }
 
             @Override
-            public String getSinkTable()
+            public String getTableName()
             {
                 return tableName;
+            }
+
+            @Override
+            public String getConnector()
+            {
+                return connector;
             }
 
             @Override

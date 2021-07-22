@@ -68,7 +68,7 @@ public final class StreamSqlUtil
                 .returns(tableTypeInfo);
     }
 
-    static DataStream<Row> buildWaterMark(
+    static DataStream<Row> assignWaterMark(
             WaterMark waterMark,
             RowTypeInfo tableTypeInfo,
             DataStream<Row> dataStream)
@@ -76,56 +76,28 @@ public final class StreamSqlUtil
         String fieldName = waterMark.getFieldName();
         int fieldIndex = tableTypeInfo.getFieldIndex(fieldName);
         checkState(fieldIndex != -1, tableTypeInfo + " not with " + fieldName);
-        if (waterMark.getOffset() instanceof WaterMark.RowMaxOffset) {
-            long offset = ((WaterMark.RowMaxOffset) waterMark.getOffset()).getOffset();
-            return dataStream.assignTimestampsAndWatermarks(new AssignerWithPeriodicWatermarks<Row>()
+        long offset = waterMark.getOffset();
+        return dataStream.assignTimestampsAndWatermarks(new AssignerWithPeriodicWatermarks<Row>()
+        {
+            private final long maxOutOfOrderness = offset;  //最大允许的乱序时间
+            private long currentMaxTimestamp = Long.MIN_VALUE;
+
+            @Override
+            public long extractTimestamp(Row element, long previousElementTimestamp)
             {
-                private final long maxOutOfOrderness = offset;  // 5_000L;//最大允许的乱序时间是5s
-                private long currentMaxTimestamp = Long.MIN_VALUE;
+                long time = (Long) requireNonNull(element.getField(fieldIndex),
+                        String.format("row[%s] field %s[index: %s] is null", element, fieldName, fieldIndex));
+                this.currentMaxTimestamp = Math.max(currentMaxTimestamp, time);
+                return time;
+            }
 
-                @Override
-                public long extractTimestamp(Row element, long previousElementTimestamp)
-                {
-                    Long time = (Long) requireNonNull(element.getField(fieldIndex),
-                            String.format("row[%s] field %s[index: %s] is null", element, fieldName, fieldIndex));
-                    this.currentMaxTimestamp = Math.max(currentMaxTimestamp, time);
-                    return time;
-                }
-
-                @Nullable
-                @Override
-                public Watermark getCurrentWatermark()
-                {
-                    // return the watermark as current highest timestamp minus the out-of-orderness bound
-                    return new Watermark(currentMaxTimestamp - maxOutOfOrderness);
-                }
-            }).returns(tableTypeInfo);
-        }
-        else if (waterMark.getOffset() instanceof WaterMark.SystemOffset) {
-            long offset = ((WaterMark.SystemOffset) waterMark.getOffset()).getOffset();
-            return dataStream.assignTimestampsAndWatermarks(new AssignerWithPeriodicWatermarks<Row>()
+            @Override
+            public Watermark getCurrentWatermark()
             {
-                private final long maxOutOfOrderness = offset;  // 5_000L;//最大允许的乱序时间是5s
-
-                @Override
-                public long extractTimestamp(Row element, long previousElementTimestamp)
-                {
-                    Long time = (Long) requireNonNull(element.getField(fieldIndex),
-                            String.format("row[%s] field %s[index: %s] is null", element, fieldName, fieldIndex));
-                    return time;
-                }
-
-                @Nullable
-                @Override
-                public Watermark getCurrentWatermark()
-                {
-                    return new Watermark(System.currentTimeMillis() - maxOutOfOrderness);
-                }
-            }).returns(tableTypeInfo);
-        }
-        else {
-            throw new UnsupportedOperationException("this " + waterMark + " have't support!");
-        }
+                // return the watermark as current highest timestamp minus the out-of-orderness bound
+                return new Watermark(currentMaxTimestamp - maxOutOfOrderness);
+            }
+        }).returns(tableTypeInfo);
     }
 
     public static Schema getTableSchema(CreateTable createStream)

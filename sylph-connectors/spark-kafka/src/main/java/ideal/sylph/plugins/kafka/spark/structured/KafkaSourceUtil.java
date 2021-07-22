@@ -15,7 +15,7 @@
  */
 package ideal.sylph.plugins.kafka.spark.structured;
 
-import com.github.harbby.gadtry.collection.mutable.MutableList;
+import com.github.harbby.gadtry.collection.ImmutableList;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
@@ -35,7 +35,7 @@ public class KafkaSourceUtil
     /**
      * 下面这些参数 是结构化流官网 写明不支持的参数
      **/
-    private static final List<String> filterKeys = MutableList.of(
+    private static final List<String> filterKeys = ImmutableList.of(
             "kafka_group_id", "group.id",
             "key.deserializer",
             "value.deserializer",

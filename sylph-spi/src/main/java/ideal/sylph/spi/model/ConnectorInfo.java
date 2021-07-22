@@ -31,20 +31,28 @@ import ideal.sylph.etl.api.Source;
 import ideal.sylph.etl.api.TransForm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.reflect.generics.repository.AbstractRepository;
+import sun.reflect.generics.repository.ClassRepository;
+import sun.reflect.generics.tree.ClassSignature;
+import sun.reflect.generics.tree.ClassTypeSignature;
+import sun.reflect.generics.tree.SimpleClassTypeSignature;
 import sun.reflect.generics.tree.TypeArgument;
 
 import java.io.File;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static com.github.harbby.gadtry.base.MoreObjects.toStringHelper;
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static ideal.sylph.spi.PluginConfigFactory.getPluginConfigDefaultValues;
 import static java.util.Objects.requireNonNull;
 
@@ -200,7 +208,7 @@ public class ConnectorInfo
                 return getPluginConfigDefaultValues(argmentType.asSubclass(PluginConfig.class));
             }
             catch (Exception e) {
-                throw throwsException(e);
+                throw throwsThrowable(e);
             }
         }
 
@@ -253,11 +261,44 @@ public class ConnectorInfo
 
     private static TypeArgument[] getClassGenericInfo(Class<? extends Operator> javaClass, Operator.PipelineType pipelineType)
     {
-        Map<String, TypeArgument[]> typesMap = JavaTypes.getClassGenericInfo(javaClass);
+        Map<String, TypeArgument[]> typesMap = getClassGenericInfo(javaClass);
         String genericString = JavaTypes.getClassGenericString(javaClass);
 
         logger.info("--The {} is not RealTimePipeline--the Java generics is {} --", javaClass, genericString);
         TypeArgument[] types = typesMap.getOrDefault(pipelineType.getValue().getName(), new TypeArgument[0]);
         return types;
+    }
+
+    private static <T, R> R getReflectMethod(Method method, T t)
+            throws InvocationTargetException, IllegalAccessException
+    {
+        method.setAccessible(true);
+        return (R) method.invoke(t);
+    }
+
+    private static Map<String, TypeArgument[]> getClassGenericInfo(Class<?> javaClass)
+    {
+        try {
+            Map<String, TypeArgument[]> typeSignatureMap = new LinkedHashMap<>();
+            ClassRepository classRepository = getReflectMethod(Class.class.getDeclaredMethod("getGenericInfo"), javaClass);
+
+            if (classRepository == null) {
+                return Collections.emptyMap();
+            }
+            //-----2
+            ClassSignature tree = getReflectMethod(AbstractRepository.class.getDeclaredMethod("getTree"), classRepository);
+            //FormalTypeParameter[] formalTypeParameters = tree.getFormalTypeParameters();  //type 个数  === type[]
+            SimpleClassTypeSignature typeSignature = tree.getSuperclass().getPath().get(0);
+            typeSignatureMap.put(typeSignature.getName(), typeSignature.getTypeArguments());
+
+            for (ClassTypeSignature it : tree.getSuperInterfaces()) {
+                typeSignature = it.getPath().get(0);
+                typeSignatureMap.put(typeSignature.getName(), typeSignature.getTypeArguments());
+            }
+            return typeSignatureMap;
+        }
+        catch (Exception e) {
+            throw throwsThrowable(e);
+        }
     }
 }
