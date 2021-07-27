@@ -16,7 +16,8 @@
 package ideal.sylph.parser.antlr.tree;
 
 import com.github.harbby.gadtry.base.Iterators;
-import com.github.harbby.gadtry.collection.mutable.MutableList;
+import com.github.harbby.gadtry.collection.ImmutableList;
+import com.github.harbby.gadtry.collection.MutableList;
 
 import java.util.List;
 import java.util.Optional;
@@ -42,16 +43,16 @@ public class QualifiedName
     public static QualifiedName of(String name)
     {
         requireNonNull(name, "name is null");
-        return of(MutableList.of(name));
+        return of(ImmutableList.of(name));
     }
 
     public static QualifiedName of(Iterable<String> originalParts)
     {
         requireNonNull(originalParts, "originalParts is null");
         checkArgument(!isEmpty(originalParts), "originalParts is empty");
-        List<String> parts = MutableList.copy(map(originalParts, part -> part.toLowerCase(ENGLISH)));
+        List<String> parts = ImmutableList.copy(map(originalParts, part -> part.toLowerCase(ENGLISH)));
 
-        return new QualifiedName(MutableList.copy(originalParts), parts);
+        return new QualifiedName(ImmutableList.copy(originalParts), parts);
     }
 
     private QualifiedName(List<String> originalParts, List<String> parts)
@@ -79,6 +80,7 @@ public class QualifiedName
     /**
      * For an identifier of the form "a.b.c.d", returns "a.b.c"
      * For an identifier of the form "a", returns absent
+     * @return QualifiedName
      */
     public Optional<QualifiedName> getPrefix()
     {

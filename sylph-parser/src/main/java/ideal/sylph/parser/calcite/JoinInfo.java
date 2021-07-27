@@ -118,9 +118,6 @@ public class JoinInfo
         return joinType;
     }
 
-    /**
-     * get join out tmp table name
-     */
     public String getJoinTableName()
     {
         return this.getLeftTable().getAliasOrElseName() + "_" + this.getRightTable().getAliasOrElseName();

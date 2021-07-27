@@ -15,10 +15,10 @@
  */
 package ideal.sylph.plugins.kafka.flink;
 
+import ideal.sylph.TableContext;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.annotation.Version;
-import ideal.sylph.etl.SourceContext;
 import ideal.sylph.etl.api.Source;
 import org.apache.flink.shaded.guava18.com.google.common.base.Supplier;
 import org.apache.flink.shaded.guava18.com.google.common.base.Suppliers;
@@ -48,7 +48,7 @@ public class KafkaSource
     /**
      * 初始化(driver阶段执行)
      **/
-    public KafkaSource(StreamExecutionEnvironment execEnv, KafkaSourceConfig config, SourceContext context)
+    public KafkaSource(StreamExecutionEnvironment execEnv, KafkaSourceConfig config, TableContext context)
     {
         requireNonNull(execEnv, "execEnv is null");
         requireNonNull(config, "config is null");

@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 /**
  * Created by ideal on 17-5-8.
@@ -173,7 +173,7 @@ public class StructuredNodeLoader
                     return realTimeSink.open(partitionId, version);
                 }
                 catch (Exception e) {
-                    throw throwsException(e);
+                    throw throwsThrowable(e);
                 }
             }
         });

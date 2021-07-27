@@ -14,7 +14,7 @@ export default class StreamingSql extends React.Component {
         create: false,
         jobId: null,
         jobName: null,
-        engine: "StreamSql",
+        engine: "FlinkStreamSql",
         query: "create input table xxx()",
         config: {},
         editConfig: {},
@@ -158,8 +158,8 @@ export default class StreamingSql extends React.Component {
                         <Tag style={{ fontSize: "16px", padding: "5px 25px" }} color="blue">Job: {this.state.jobName}</Tag>
                     </Col>
                     <Col span={20} style={{ textAlign: 'right' }}>
-                        <Select style={{ margin: "0 10px" }} defaultValue="StreamSql" value={this.state.engine} onSelect={(e) => { this.setState({ engine: e }) }}>
-                            <Option value="StreamSql">FlinkStreamSql</Option>
+                        <Select style={{ margin: "0 10px" }} defaultValue="FlinkStreamSql" value={this.state.engine} onSelect={(e) => { this.setState({ engine: e }) }}>
+                            <Option value="FlinkStreamSql">FlinkStreamSql</Option>
                             <Option value="SparkStreamingSql">SparkStreamingSql</Option>
                             <Option value="StructuredStreamingSql">StructuredStreamingSql</Option>
                         </Select>

@@ -46,18 +46,16 @@ statement
         '(' tableElement (',' tableElement)* ')'
          (COMMENT string)?
          (WITH properties)?
-         (WATERMARK watermark)?                                               #createTable
-    | CREATE VIEW TABLE (IF NOT EXISTS)? qualifiedName
-        (WATERMARK watermark)?
-        AS queryStream                                                        #createStreamAsSelect
+         (watermark)?                                               #createTable
+    | CREATE VIEW (IF NOT EXISTS)? qualifiedName
+         (watermark)?
+         AS queryStream                                                       #createStreamAsSelect
     | INSERT INTO qualifiedName columnAliases? (queryStream | withQuery)      #insertInto
     ;
 
 watermark
-    : identifier FOR identifier BY (
-      SYSTEM_OFFSET '('offset=INTEGER_VALUE')'
-    | ROWMAX_OFFSET '('offset=INTEGER_VALUE')'
-    )
+    : WATERMARK FOR identifier AS
+      identifier '-' INTERVAL string (DAY | HOUR | MINUTE | SECOND | MILLISECONDS)?
     ;
 
 queryStream
@@ -339,8 +337,6 @@ SOURCE: 'SOURCE';
 SINK: 'SINK';
 BATCH: 'BATCH';
 FUNCTION: 'FUNCTION';
-SYSTEM_OFFSET: 'SYSTEM_OFFSET';
-ROWMAX_OFFSET: 'ROWMAX_OFFSET';
 EXTEND: 'EXTEND';
 WATERMARK: 'WATERMARK';
 FULL: 'FULL';

@@ -15,7 +15,7 @@
  */
 package ideal.sylph.runtime.yarn;
 
-import com.github.harbby.gadtry.aop.AopFactory;
+import com.github.harbby.gadtry.aop.AopGo;
 import com.github.harbby.gadtry.base.Closeables;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.JobContainer;
@@ -34,7 +34,7 @@ import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static ideal.sylph.spi.exception.StandardErrorCode.CONNECTION_ERROR;
 import static ideal.sylph.spi.job.JobContainer.Status.RUNNING;
 import static ideal.sylph.spi.job.JobContainer.Status.STOP;
@@ -110,7 +110,7 @@ public class YarnJobContainer
             return "N/A".equals(webUi) ? yarnClient.getApplicationReport(yarnAppId).getTrackingUrl() : webUi;
         }
         catch (YarnException | IOException e) {
-            throw throwsException(e);
+            throw throwsThrowable(e);
         }
     }
 
@@ -204,18 +204,21 @@ public class YarnJobContainer
             }
 
             //----create JobContainer Proxy
-            return AopFactory.proxy(JobContainer.class)
+            return AopGo.proxy(JobContainer.class)
                     .byInstance(yarnJobContainer)
-                    .around(proxyContext -> {
-                        /*
-                         * 通过这个 修改当前YarnClient的ClassLoader的为当前runner的加载器
-                         * 默认hadoop Configuration使用jvm的AppLoader,会出现 akka.version not setting的错误 原因是找不到akka相关jar包
-                         * 原因是hadoop Configuration 初始化: this.classLoader = Thread.currentThread().getContextClassLoader();
-                         * */
-                        try (Closeables ignored = Closeables.openThreadContextClassLoader(jobClassLoader)) {
-                            return proxyContext.proceed();
-                        }
-                    });
+                    .aop(binder -> {
+                        binder.doAround(proxyContext -> {
+                            /*
+                             * 通过这个 修改当前YarnClient的ClassLoader的为当前runner的加载器
+                             * 默认hadoop Configuration使用jvm的AppLoader,会出现 akka.version not setting的错误 原因是找不到akka相关jar包
+                             * 原因是hadoop Configuration 初始化: this.classLoader = Thread.currentThread().getContextClassLoader();
+                             * */
+                            try (Closeables ignored = Closeables.openThreadContextClassLoader(jobClassLoader)) {
+                                return proxyContext.proceed();
+                            }
+                        }).allMethod();
+                    })
+                    .build();
         }
     }
 }

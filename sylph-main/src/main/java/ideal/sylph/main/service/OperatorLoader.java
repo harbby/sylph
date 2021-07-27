@@ -15,8 +15,8 @@
  */
 package ideal.sylph.main.service;
 
-import com.github.harbby.gadtry.classloader.Module;
-import com.github.harbby.gadtry.classloader.PluginLoader;
+import com.github.harbby.gadtry.easyspi.Module;
+import com.github.harbby.gadtry.easyspi.PluginLoader;
 import com.google.common.collect.ImmutableSet;
 import ideal.sylph.etl.Operator;
 import ideal.sylph.etl.Plugin;

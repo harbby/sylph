@@ -31,7 +31,7 @@ public class SelectQuery
     private final Optional<AllowedLateness> allowedLateness;
     private final Optional<WindowTrigger> windowTrigger;
     private final int queryEnd;
-    private Map<Identifier, SelectQuery> withTableQuery = Collections.EMPTY_MAP;
+    private Map<Identifier, SelectQuery> withTableQuery = Collections.emptyMap();
 
     public SelectQuery(NodeLocation location, String query,
             int queryEnd,

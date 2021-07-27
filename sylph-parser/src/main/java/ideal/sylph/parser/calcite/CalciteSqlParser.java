@@ -15,7 +15,7 @@
  */
 package ideal.sylph.parser.calcite;
 
-import com.github.harbby.gadtry.collection.mutable.MutableList;
+import com.github.harbby.gadtry.collection.MutableList;
 import org.apache.calcite.config.Lex;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlIdentifier;

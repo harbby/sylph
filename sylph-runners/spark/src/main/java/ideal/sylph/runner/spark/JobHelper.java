@@ -84,11 +84,11 @@ final class JobHelper
         };
 
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
-                .setCallable(() -> {
+                .task(() -> {
                     appGetter.get();
                     return 1;
                 })
-                .setConsole((line) -> System.out.println(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
+                .setConsole((line) -> System.out.print(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
                 .addUserURLClassLoader(jobClassLoader)
                 .notDepThisJvmClassPath()
                 .setClassLoader(jobClassLoader)
@@ -118,11 +118,11 @@ final class JobHelper
         };
 
         JVMLauncher<Integer> launcher = JVMLaunchers.<Integer>newJvm()
-                .setCallable(() -> {
+                .task(() -> {
                     appGetter.get();
                     return 1;
                 })
-                .setConsole((line) -> System.out.println(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
+                .setConsole((line) -> System.out.print(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
                 .addUserURLClassLoader(jobClassLoader)
                 .notDepThisJvmClassPath()
                 .setClassLoader(jobClassLoader)

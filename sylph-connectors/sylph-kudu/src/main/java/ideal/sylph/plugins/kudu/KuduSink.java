@@ -15,11 +15,11 @@
  */
 package ideal.sylph.plugins.kudu;
 
+import ideal.sylph.TableContext;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.etl.PluginConfig;
 import ideal.sylph.etl.Record;
-import ideal.sylph.etl.SinkContext;
 import ideal.sylph.etl.api.RealTimeSink;
 import org.apache.kudu.ColumnSchema;
 import org.apache.kudu.Type;
@@ -40,7 +40,7 @@ import java.sql.Timestamp;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static java.util.Objects.requireNonNull;
 
 @Name("kudu")
@@ -65,15 +65,15 @@ public class KuduSink
 
     private Supplier<Operation> operationCreater;
 
-    public KuduSink(SinkContext context, KuduSinkConfig kuduSinkConfig)
+    public KuduSink(TableContext context, KuduSinkConfig kuduSinkConfig)
     {
         this.kuduSinkConfig = kuduSinkConfig;
         this.tableName = requireNonNull(kuduSinkConfig.tableName, "kudu.table is null");
         this.kuduHost = requireNonNull(kuduSinkConfig.hosts, "kudu.hosts is null");
         this.fieldNames = context.getSchema().getFieldNames();
 
-        this.maxBatchSize = (int) kuduSinkConfig.batchSize;
-        this.mutationBufferSpace = (int) kuduSinkConfig.mutationBufferSpace;
+        this.maxBatchSize = kuduSinkConfig.batchSize;
+        this.mutationBufferSpace = kuduSinkConfig.mutationBufferSpace;
 
         //--check write mode
         getOperationCreater(kuduSinkConfig.mode, null);
@@ -128,7 +128,7 @@ public class KuduSink
             }
         }
         catch (IOException e) {
-            throwsException(e);
+            throwsThrowable(e);
         }
     }
 
@@ -212,7 +212,7 @@ public class KuduSink
             }
         }
         catch (IOException e) {
-            throwsException(e);
+            throwsThrowable(e);
         }
     }
 

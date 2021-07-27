@@ -16,8 +16,8 @@
 package ideal.sylph.spi;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.harbby.gadtry.collection.mutable.MutableMap;
-import com.github.harbby.gadtry.memory.UnsafeHelper;
+import com.github.harbby.gadtry.base.Platform;
+import com.github.harbby.gadtry.collection.MutableMap;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.etl.PluginConfig;
@@ -67,7 +67,7 @@ public class PluginConfigFactory
         catch (NoSuchMethodException e) {
             logger.warn("Not find 'no parameter' constructor, use javassist inject with [{}]", type);
             // copy proxyConfig field value to pluginConfig ...
-            return UnsafeHelper.allocateInstance2(type);
+            return Platform.allocateInstance2(type);
         }
     }
 

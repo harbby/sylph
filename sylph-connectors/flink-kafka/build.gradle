@@ -1,5 +1,5 @@
 dependencies {
-  compileOnly project(':sylph-runners:sylph-runner-flink')
+  compileOnly project(':sylph-runners:sylph-flink')
 
   compileOnly(group: 'org.apache.flink', name: 'flink-streaming-scala_2.12', version: deps.flink) {
     exclude(module: 'flink-shaded-hadoop2')
@@ -14,6 +14,6 @@ dependencies {
 
   compile group: 'com.github.harbby', name: 'gadtry', version: deps.gadtry
 
-  testCompile project(':sylph-runners:sylph-runner-flink')
+  testCompile project(':sylph-runners:sylph-flink')
   testCompile project(':sylph-spi')
 }

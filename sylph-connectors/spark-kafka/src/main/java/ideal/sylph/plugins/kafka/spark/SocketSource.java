@@ -16,11 +16,11 @@
 package ideal.sylph.plugins.kafka.spark;
 
 import com.github.harbby.gadtry.base.Lazys;
+import ideal.sylph.TableContext;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.annotation.Version;
 import ideal.sylph.etl.PluginConfig;
-import ideal.sylph.etl.SourceContext;
 import ideal.sylph.etl.api.Source;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema;
@@ -49,12 +49,12 @@ public class SocketSource
     private static final long serialVersionUID = 1L;
     private final transient Supplier<JavaDStream<Row>> loadStream;
 
-    public SocketSource(JavaStreamingContext ssc, SocketSourceConfig config, SourceContext context)
+    public SocketSource(JavaStreamingContext ssc, SocketSourceConfig config, TableContext context)
     {
         this.loadStream = Lazys.goLazy(() -> createSource(ssc, config, context));
     }
 
-    public JavaDStream<Row> createSource(JavaStreamingContext ssc, SocketSourceConfig config, SourceContext context)
+    public JavaDStream<Row> createSource(JavaStreamingContext ssc, SocketSourceConfig config, TableContext context)
     {
         String socketLoad = requireNonNull(config.hosts, "socketLoad is not setting");
         StructType schema = new StructType(new StructField[] {

@@ -1,4 +1,6 @@
 dependencies {
-  compile project(':sylph-base-jdbc')
+  compile group: 'org.apache.flink', name: 'flink-shaded-guava', version: '18.0-5.0'
+  compileOnly project(":sylph-api")
+  compileOnly group: 'org.slf4j', name: 'slf4j-api', version: deps.slf4j
   runtime group: 'mysql', name: 'mysql-connector-java', version: '8.0.15'
 }

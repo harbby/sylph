@@ -13,27 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.etl;
+package ideal.sylph;
+
+import ideal.sylph.etl.Schema;
 
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.Map;
 
-public interface SourceContext
+public interface TableContext
         extends Serializable
 {
-    public default Schema getSchema()
-    {
-        throw new IllegalArgumentException("this method have't support!");
-    }
+    public Schema getSchema();
 
-    public default String getSourceTable()
-    {
-        throw new IllegalArgumentException("this method have't support!");
-    }
+    public String getTableName();
 
-    public default Map<String, Object> withConfig()
-    {
-        return Collections.emptyMap();
-    }
+    public String getConnector();
+
+    public Map<String, Object> withConfig();
 }

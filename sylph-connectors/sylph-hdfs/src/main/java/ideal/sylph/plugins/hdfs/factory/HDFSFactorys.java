@@ -17,24 +17,14 @@ package ideal.sylph.plugins.hdfs.factory;
 
 import ideal.sylph.etl.Schema;
 import ideal.sylph.plugins.hdfs.HdfsSink;
-import ideal.sylph.plugins.hdfs.parquet.HDFSFactory;
-import ideal.sylph.plugins.hdfs.parquet.ParquetFactory;
+import ideal.sylph.plugins.hdfs.OutputFormat;
 import ideal.sylph.plugins.hdfs.txt.TextFileFactory;
-import org.apache.parquet.column.ParquetProperties;
-import org.apache.parquet.schema.MessageType;
-import org.apache.parquet.schema.MessageTypeParser;
 
-import static ideal.sylph.plugins.hdfs.utils.ParquetUtil.buildSchema;
 import static java.util.Objects.requireNonNull;
 
 public class HDFSFactorys
 {
     private HDFSFactorys() {}
-
-    public static ParquetWriterBuilder getParquetWriter()
-    {
-        return new ParquetWriterBuilder();
-    }
 
     public static Builder getTextFileWriter()
     {
@@ -45,7 +35,7 @@ public class HDFSFactorys
             extends Builder
     {
         @Override
-        public HDFSFactory getOrCreate()
+        public OutputFormat getOrCreate()
         {
             requireNonNull(schema, "schema is null");
             requireNonNull(tableName, "必须传入tableName,如表 xxx_log");
@@ -97,31 +87,7 @@ public class HDFSFactorys
             return this;
         }
 
-        public abstract HDFSFactory getOrCreate();
-    }
-
-    public static class ParquetWriterBuilder
-            extends Builder
-    {
-        private ParquetProperties.WriterVersion parquetVersion = ParquetProperties.WriterVersion.PARQUET_2_0;
-
-        public ParquetWriterBuilder parquetVersion(ParquetProperties.WriterVersion parquetVersion)
-        {
-            this.parquetVersion = parquetVersion;
-            return this;
-        }
-
-        @Override
-        public HDFSFactory getOrCreate()
-        {
-            requireNonNull(schema, "schema is null");
-            requireNonNull(tableName, "必须传入tableName,如表 xxx_log");
-            requireNonNull(sinkConfig.getWriteDir(), "必须传入writeTableDir,如: hdfs:///tmp/hive/xxx_log");
-
-            String schemaString = buildSchema(schema.getFields());
-            MessageType type = MessageTypeParser.parseMessageType(schemaString);
-            return new ParquetFactory(sinkConfig.getWriteDir(), tableName, parquetVersion, type);
-        }
+        public abstract OutputFormat getOrCreate();
     }
 
     public static String getRowKey(String table, TimeParser timeParser)

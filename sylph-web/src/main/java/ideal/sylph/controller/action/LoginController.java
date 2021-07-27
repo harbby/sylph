@@ -16,6 +16,7 @@
 package ideal.sylph.controller.action;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.github.harbby.gadtry.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import lombok.Data;
 
@@ -63,7 +64,7 @@ public class LoginController
 
         //1...check user
         requireNonNull(user, "user is null");
-        if ("admin".equals(user.getUserName()) && "admin".equals(user.getPassword())) {
+        if (!Strings.isBlank(user.getUserName())) {
             session.setMaxInactiveInterval(30 * 60);
             session.setAttribute("user", user);
             return ImmutableMap.builder()

@@ -17,9 +17,8 @@ package ideal.sylph.runner.spark;
 
 import com.github.harbby.gadtry.ioc.Bean;
 import com.github.harbby.gadtry.ioc.IocFactory;
+import ideal.sylph.TableContext;
 import ideal.sylph.etl.Schema;
-import ideal.sylph.etl.SinkContext;
-import ideal.sylph.etl.SourceContext;
 import ideal.sylph.parser.antlr.tree.CreateFunction;
 import ideal.sylph.parser.antlr.tree.CreateStreamAsSelect;
 import ideal.sylph.parser.antlr.tree.CreateTable;
@@ -106,94 +105,77 @@ public class SparkStreamingSqlAnalyse
         final String tableName = createTable.getName();
         Schema schema = getTableSchema(createTable);
         final StructType tableSparkType = schemaToSparkType(schema);
+        final String connector = createTable.getConnector();
+        final Map<String, Object> withConfig = createTable.getWithProperties();
+        TableContext tableContext = new TableContext()
+        {
+            @Override
+            public Schema getSchema()
+            {
+                return schema;
+            }
 
-        final Map<String, Object> withConfig = createTable.getWithConfig();
-//        final String driverClass = (String) withConfig.get("type");
+            @Override
+            public String getTableName()
+            {
+                return tableName;
+            }
 
+            @Override
+            public String getConnector()
+            {
+                return connector;
+            }
+
+            @Override
+            public Map<String, Object> withConfig()
+            {
+                return withConfig;
+            }
+        };
         switch (createTable.getType()) {
             case SOURCE:
-                SourceContext sourceContext = new SourceContext()
-                {
-                    @Override
-                    public Schema getSchema()
-                    {
-                        return schema;
-                    }
-
-                    @Override
-                    public String getSourceTable()
-                    {
-                        return tableName;
-                    }
-
-                    @Override
-                    public Map<String, Object> withConfig()
-                    {
-                        return withConfig;
-                    }
-                };
-                createSourceTable(sourceContext, tableSparkType, createTable.getWatermark());
+                createSourceTable(tableContext, tableSparkType, createTable.getWatermark());
                 return;
             case SINK:
-                SinkContext sinkContext = new SinkContext()
-                {
-                    @Override
-                    public Schema getSchema()
-                    {
-                        return schema;
-                    }
-
-                    @Override
-                    public String getSinkTable()
-                    {
-                        return tableName;
-                    }
-
-                    @Override
-                    public Map<String, Object> withConfig()
-                    {
-                        return withConfig;
-                    }
-                };
-                createSinkTable(sinkContext, tableSparkType);
+                createSinkTable(tableContext, tableSparkType);
                 return;
             case BATCH:
-                throw new UnsupportedOperationException("The SparkStreaming engine BATCH TABLE have't support!");
+                throw new UnsupportedOperationException("The SparkStreaming engine BATCH TABLE haven't support!");
             default:
-                throw new IllegalArgumentException("this driver class " + withConfig.get("type") + " have't support!");
+                throw new IllegalArgumentException("this Connector " + connector + " haven't support!");
         }
     }
 
-    public void createSourceTable(SourceContext sourceContext, StructType tableSparkType, Optional<WaterMark> optionalWaterMark)
+    public void createSourceTable(TableContext sourceContext, StructType tableSparkType, Optional<WaterMark> optionalWaterMark)
     {
-        final String driverClass = (String) sourceContext.withConfig().get("type");
-        IocFactory iocFactory = IocFactory.create(sparkBean, binder -> binder.bind(SourceContext.class).byInstance(sourceContext));
+        final String driverClass = sourceContext.getConnector();
+        IocFactory iocFactory = IocFactory.create(sparkBean, binder -> binder.bind(TableContext.class).byInstance(sourceContext));
         StreamNodeLoader loader = new StreamNodeLoader(connectorStore, iocFactory);
 
         checkState(!optionalWaterMark.isPresent(), "spark streaming not support waterMark");
         UnaryOperator<JavaDStream<Row>> source = loader.loadSource(driverClass, sourceContext.withConfig());
-        builder.addSource(source, tableSparkType, sourceContext.getSourceTable());
+        builder.addSource(source, tableSparkType, sourceContext.getTableName());
     }
 
-    public void createSinkTable(SinkContext sinkContext, StructType tableSparkType)
+    public void createSinkTable(TableContext sinkContext, StructType tableSparkType)
     {
-        final String driverClass = (String) sinkContext.withConfig().get("type");
-        IocFactory iocFactory = IocFactory.create(sparkBean, binder -> binder.bind(SinkContext.class, sinkContext));
+        final String driverClass = sinkContext.getConnector();
+        IocFactory iocFactory = IocFactory.create(sparkBean, binder -> binder.bind(TableContext.class, sinkContext));
         StreamNodeLoader loader = new StreamNodeLoader(connectorStore, iocFactory);
 
         UnaryOperator<Dataset<Row>> outputStream = dataSet -> {
-            checkQueryAndTableSinkSchema(dataSet.schema(), tableSparkType, sinkContext.getSinkTable());
+            checkQueryAndTableSinkSchema(dataSet.schema(), tableSparkType, sinkContext.getTableName());
             loader.loadRDDSink(driverClass, sinkContext.withConfig()).accept(dataSet.javaRDD());
             return null;
         };
-        builder.addSink(sinkContext.getSinkTable(), outputStream);
+        builder.addSink(sinkContext.getTableName(), outputStream);
     }
 
     @Override
     public void createFunction(CreateFunction createFunction)
             throws Exception
     {
-        //todo: 需要字节码大法加持
         Class<?> functionClass = Class.forName(createFunction.getClassString());
         String functionName = createFunction.getFunctionName();
         List<ParameterizedType> funcs = Arrays.stream(functionClass.getGenericInterfaces())
@@ -205,18 +187,6 @@ public class SparkStreamingSqlAnalyse
         checkState(funcs.size() < 2, "It is invalid to implement multiple UDF interfaces, UDF class " + functionClass);
         Type[] types = funcs.get(0).getActualTypeArguments();
         DataType returnType = getSparkType(types[types.length - 1]);
-
-//                UDF1<Object, Object> udf1 = (a) -> null;
-//                UDF2<Object, Object, Object> udf2 = (a, b) -> null;
-//
-//                UDF2 ae = AopFactory.proxyInstance(udf2)
-//                        .byClass(UDF2.class)
-//                        .whereMethod((java.util.function.Function<MethodInfo, Boolean> & Serializable) methodInfo -> methodInfo.getName().equals("call"))
-//                        .around((Function<ProxyContext, Object> & Serializable) proxyContext -> {
-//                            TimeUtil.FromUnixTime fromUnixTime = (TimeUtil.FromUnixTime) functionClass.newInstance();
-//                            Method method = functionClass.getMethod("eval", proxyContext.getInfo().getParameterTypes());
-//                            return method.invoke(fromUnixTime, proxyContext.getArgs());
-//                        });
 
         builder.addHandler(sparkSession -> {
             sparkSession.udf().registerJava(functionName, functionClass.getName(), returnType);

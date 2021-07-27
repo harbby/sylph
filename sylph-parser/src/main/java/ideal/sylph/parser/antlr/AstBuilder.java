@@ -15,7 +15,7 @@
  */
 package ideal.sylph.parser.antlr;
 
-import com.github.harbby.gadtry.collection.mutable.MutableList;
+import com.github.harbby.gadtry.collection.ImmutableList;
 import ideal.sylph.parser.antlr.tree.AllowedLateness;
 import ideal.sylph.parser.antlr.tree.BooleanLiteral;
 import ideal.sylph.parser.antlr.tree.ColumnDefinition;
@@ -47,9 +47,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
@@ -188,18 +190,16 @@ public class AstBuilder
     @Override
     public Node visitWatermark(SqlBaseParser.WatermarkContext context)
     {
-        List<Identifier> field = visit(context.identifier(), Identifier.class);
-        if (context.SYSTEM_OFFSET() != null) {
-            int offset = Integer.parseInt(context.offset.getText());
-            return new WaterMark(getLocation(context), field, new WaterMark.SystemOffset(offset));
+        List<Identifier> fields = visit(context.identifier(), Identifier.class);
+        checkState(fields.size() == 2, "WATERMARK FOR rowtime AS event_time - INTERVAL ...");
+        long offset = Long.parseLong(visit(context.string(), StringLiteral.class).getValue());
+        if (context.SECOND() != null) {
+            offset = TimeUnit.SECONDS.toMillis(offset);
         }
-        else if (context.ROWMAX_OFFSET() != null) {
-            int offset = Integer.parseInt(context.offset.getText());
-            return new WaterMark(getLocation(context), field, new WaterMark.RowMaxOffset(offset));
+        else if (context.MINUTE() != null) {
+            offset = TimeUnit.MINUTES.toMillis(offset);
         }
-        else {
-            throw new IllegalArgumentException("Unable to determine Watermark type: " + context.getText());
-        }
+        return new WaterMark(getLocation(context), fields.get(0), fields.get(1), offset);
     }
 
     @Override
@@ -215,7 +215,7 @@ public class AstBuilder
         if (context.COMMENT() != null) {
             comment = Optional.of(((StringLiteral) visit(context.string())).getValue());
         }
-        List<Property> properties = MutableList.of();
+        List<Property> properties = ImmutableList.of();
         if (context.properties() != null) {
             properties = visit(context.properties().property(), Property.class);
         }

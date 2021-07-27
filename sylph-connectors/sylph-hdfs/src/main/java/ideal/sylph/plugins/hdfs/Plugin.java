@@ -15,7 +15,7 @@
  */
 package ideal.sylph.plugins.hdfs;
 
-import com.github.harbby.gadtry.collection.mutable.MutableSet;
+import com.github.harbby.gadtry.collection.MutableSet;
 import ideal.sylph.etl.Operator;
 
 import java.util.Set;

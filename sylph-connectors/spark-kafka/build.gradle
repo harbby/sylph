@@ -1,5 +1,5 @@
 dependencies {
-    compileOnly project(':sylph-runners:sylph-runner-spark')
+    compileOnly project(':sylph-runners:sylph-spark')
     
     //--------------------------------------------------spark----------------------------------------------------
     compileOnly(group: 'org.apache.spark', name: 'spark-sql_2.12', version: deps.spark) {

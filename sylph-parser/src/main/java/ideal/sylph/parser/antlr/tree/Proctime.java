@@ -15,7 +15,7 @@
  */
 package ideal.sylph.parser.antlr.tree;
 
-import com.github.harbby.gadtry.collection.mutable.MutableList;
+import com.github.harbby.gadtry.collection.MutableList;
 
 import java.util.List;
 import java.util.Objects;
@@ -39,9 +39,9 @@ public class Proctime
         this.name = name;
     }
 
-    public Identifier getName()
+    public String getName()
     {
-        return name;
+        return name.getValue();
     }
 
     @Override

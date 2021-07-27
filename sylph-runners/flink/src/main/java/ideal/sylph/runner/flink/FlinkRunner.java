@@ -15,7 +15,7 @@
  */
 package ideal.sylph.runner.flink;
 
-import com.github.harbby.gadtry.classloader.DirClassLoader;
+import com.github.harbby.gadtry.easyspi.DirClassLoader;
 import com.github.harbby.gadtry.ioc.IocFactory;
 import ideal.sylph.runner.flink.engines.FlinkMainClassEngine;
 import ideal.sylph.runner.flink.engines.FlinkStreamEtlEngine;
@@ -33,7 +33,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
@@ -72,7 +72,7 @@ public class FlinkRunner
                     .map(injector::getInstance).collect(Collectors.toSet());
         }
         catch (Exception e) {
-            throw throwsException(e);
+            throw throwsThrowable(e);
         }
     }
 

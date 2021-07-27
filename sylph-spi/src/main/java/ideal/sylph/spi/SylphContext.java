@@ -15,7 +15,7 @@
  */
 package ideal.sylph.spi;
 
-import com.github.harbby.gadtry.classloader.Module;
+import com.github.harbby.gadtry.easyspi.Module;
 import ideal.sylph.etl.Plugin;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobStore;

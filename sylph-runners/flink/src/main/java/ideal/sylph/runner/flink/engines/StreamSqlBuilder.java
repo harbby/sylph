@@ -15,12 +15,12 @@
  */
 package ideal.sylph.runner.flink.engines;
 
+import com.github.harbby.gadtry.collection.MutableList;
 import com.github.harbby.gadtry.ioc.Bean;
 import com.github.harbby.gadtry.ioc.IocFactory;
 import com.google.common.collect.ImmutableList;
+import ideal.sylph.TableContext;
 import ideal.sylph.etl.Schema;
-import ideal.sylph.etl.SinkContext;
-import ideal.sylph.etl.SourceContext;
 import ideal.sylph.parser.antlr.AntlrSqlParser;
 import ideal.sylph.parser.antlr.ParsingException;
 import ideal.sylph.parser.antlr.tree.CreateFunction;
@@ -39,7 +39,6 @@ import ideal.sylph.runner.flink.table.SylphTableSink;
 import ideal.sylph.spi.ConnectorStore;
 import ideal.sylph.spi.NodeLoader;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
-import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.Table;
@@ -47,6 +46,7 @@ import org.apache.flink.table.api.TableException;
 import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.table.api.bridge.java.internal.StreamTableEnvironmentImpl;
+import org.apache.flink.table.api.internal.TableEnvironmentInternal;
 import org.apache.flink.table.functions.AggregateFunction;
 import org.apache.flink.table.functions.ScalarFunction;
 import org.apache.flink.table.functions.TableFunction;
@@ -59,12 +59,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static ideal.sylph.parser.antlr.tree.CreateTable.Type.SINK;
 import static ideal.sylph.parser.antlr.tree.CreateTable.Type.SOURCE;
-import static ideal.sylph.runner.flink.engines.StreamSqlUtil.buildWaterMark;
+import static ideal.sylph.runner.flink.engines.StreamSqlUtil.assignWaterMark;
 import static ideal.sylph.runner.flink.engines.StreamSqlUtil.checkStream;
 import static ideal.sylph.runner.flink.engines.StreamSqlUtil.getTableSchema;
 import static ideal.sylph.runner.flink.engines.StreamSqlUtil.schemaToRowTypeInfo;
@@ -108,7 +107,7 @@ public class StreamSqlBuilder
             DataStream<Row> stream = tableEnv.toAppendStream(table, Row.class);
             stream.getTransformation().setOutputType(rowTypeInfo);
 
-            registerStreamTable(stream, createStreamAsSelect.getName(), createStreamAsSelect.getWatermark(), ImmutableList.of());
+            registerStreamTable(stream, createStreamAsSelect.getName(), createStreamAsSelect.getWatermark(), Optional.empty());
         }
         else if (statement instanceof CreateTable) {
             if (((CreateTable) statement).getType() == CreateTable.Type.BATCH) {
@@ -191,58 +190,50 @@ public class StreamSqlBuilder
         Schema schema = getTableSchema(createStream);
         RowTypeInfo tableTypeInfo = schemaToRowTypeInfo(schema);
 
-        final Map<String, Object> withConfig = createStream.getWithConfig();
-        final String driverClass = (String) withConfig.get("type");
+        final Map<String, Object> withConfig = createStream.getWithProperties();
+        final String connector = createStream.getConnector();
 
-        Bean bean = binder -> {};
-        if (SINK == createStream.getType()) {
-            bean = binder -> binder.bind(SinkContext.class, new SinkContext()
+        Bean bean = binder -> binder.bind(TableContext.class, new TableContext()
+        {
+            @Override
+            public Schema getSchema()
             {
-                @Override
-                public Schema getSchema()
-                {
-                    return schema;
-                }
+                return schema;
+            }
 
-                @Override
-                public String getSinkTable()
-                {
-                    return tableName;
-                }
-
-                @Override
-                public Map<String, Object> withConfig()
-                {
-                    return withConfig;
-                }
-            });
-        }
-        else if (SOURCE == createStream.getType()) {
-            bean = binder -> binder.bind(SourceContext.class, new SourceContext()
+            @Override
+            public String getTableName()
             {
-                @Override
-                public Schema getSchema()
-                {
-                    return schema;
-                }
-            });
-        }
+                return tableName;
+            }
 
+            @Override
+            public String getConnector()
+            {
+                return connector;
+            }
+
+            @Override
+            public Map<String, Object> withConfig()
+            {
+                return withConfig;
+            }
+        });
         final IocFactory iocFactory = IocFactory.create(new FlinkBean(execEnv, tableEnv), bean);
         NodeLoader<DataStream<Row>> loader = new FlinkNodeLoader(connectorStore, iocFactory);
 
-        if (SOURCE == createStream.getType()) {  //Source.class.isAssignableFrom(driver)
-            DataStream<Row> inputStream = checkStream(loader.loadSource(driverClass, withConfig).apply(null), tableTypeInfo);
+        if (SOURCE == createStream.getType()) {
+            DataStream<Row> inputStream = checkStream(loader.loadSource(connector, withConfig).apply(null), tableTypeInfo);
             //---------------------------------------------------
             registerStreamTable(inputStream, tableName, createStream.getWatermark(), createStream.getProctimes());
         }
         else if (SINK == createStream.getType()) {
-            UnaryOperator<DataStream<Row>> outputStream = loader.loadSink(driverClass, withConfig);
+            UnaryOperator<DataStream<Row>> outputStream = loader.loadSink(connector, withConfig);
             SylphTableSink tableSink = new SylphTableSink(tableTypeInfo, outputStream);
-            tableEnv.registerTableSink(tableName, tableSink.getFieldNames(), tableSink.getFieldTypes(), tableSink);
+            ((TableEnvironmentInternal) tableEnv).registerTableSinkInternal(tableName, tableSink);
         }
         else {
-            throw new IllegalArgumentException("this driver class " + withConfig.get("type") + " have't support!");
+            throw new IllegalArgumentException("this Connector " + createStream.getConnector() + " haven't support!");
         }
     }
 
@@ -250,26 +241,30 @@ public class StreamSqlBuilder
             DataStream<Row> inputStream,
             String tableName,
             Optional<WaterMark> waterMarkOptional,
-            List<Proctime> proctimes)
+            Optional<Proctime> proctimes)
     {
         RowTypeInfo tableTypeInfo = (RowTypeInfo) inputStream.getType();
-        waterMarkOptional.ifPresent(waterMark -> {
-            logger.info("createStreamTable Watermark is {}", waterMark);
-            execEnv.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-            DataStream<Row> waterMarkStream = buildWaterMark(waterMark, tableTypeInfo, inputStream);
-            String fields = String.join(",", ImmutableList.<String>builder()
-                    .add(tableTypeInfo.getFieldNames())
-                    .add(waterMark.getFieldForName() + ".rowtime")
-                    .addAll(proctimes.stream().map(x -> x.getName().getValue() + ".proctime").collect(Collectors.toList()))
-                    .build());
-            tableEnv.registerDataStream(tableName, waterMarkStream, fields);
-        });
-        if (!waterMarkOptional.isPresent()) {
-            String fields = String.join(",", ImmutableList.<String>builder()
-                    .add(tableTypeInfo.getFieldNames())
-                    .addAll(proctimes.stream().map(x -> x.getName().getValue() + ".proctime").collect(Collectors.toList()))
-                    .build());
-            tableEnv.registerDataStream(tableName, inputStream, fields);
+        List<String> fields = MutableList.of(tableTypeInfo.getFieldNames());
+        proctimes.map(x -> x.getName() + ".proctime").ifPresent(fields::add);
+
+        if (waterMarkOptional.isPresent()) {
+            logger.info("createStreamTable Watermark is {}", waterMarkOptional.get());
+            /*
+             * Deprecated
+             * In Flink 1.12 the default stream time characteristic has been changed to TimeCharacteristic.EventTime,
+             * thus you don't need to call this method for enabling event-time support anymore.
+             *
+             * execEnv.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+             */
+            if (proctimes.isPresent() && waterMarkOptional.get().getFieldName().equals(proctimes.get().getName())) {
+                throw new ParsingException("waterMark don't support proctime()");
+            }
+            DataStream<Row> waterMarkStream = assignWaterMark(waterMarkOptional.get(), tableTypeInfo, inputStream);
+            fields.add(waterMarkOptional.get().getRowTimeName() + ".rowtime");
+            tableEnv.registerDataStream(tableName, waterMarkStream, String.join(",", fields));
+        }
+        else {
+            tableEnv.registerDataStream(tableName, inputStream, String.join(",", fields));
         }
     }
 }

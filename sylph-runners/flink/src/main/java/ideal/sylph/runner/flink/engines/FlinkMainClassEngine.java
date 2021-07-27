@@ -16,6 +16,7 @@
 package ideal.sylph.runner.flink.engines;
 
 import com.github.harbby.gadtry.aop.AopGo;
+import com.github.harbby.gadtry.aop.mock.MockGoArgument;
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.github.harbby.gadtry.jvm.JVMException;
 import com.github.harbby.gadtry.jvm.JVMLauncher;
@@ -41,6 +42,7 @@ import java.net.URLClassLoader;
 import java.util.Collection;
 import java.util.Collections;
 
+import static com.github.harbby.gadtry.aop.mock.MockGoArgument.anyString;
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.fusesource.jansi.Ansi.Color.GREEN;
@@ -90,8 +92,8 @@ public class FlinkMainClassEngine
             throws JVMException
     {
         JVMLauncher<JobGraph> launcher = JVMLaunchers.<JobGraph>newJvm()
-                .setConsole((line) -> System.out.println(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
-                .setCallable(() -> {
+                .setConsole((line) -> System.out.print(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
+                .task(() -> {
                     //---set env
                     Class<?> mainClass = Class.forName(flow.mainClass);
                     StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -111,11 +113,11 @@ public class FlinkMainClassEngine
         final StreamExecutionEnvironment mock = AopGo.proxy(StreamExecutionEnvironment.class)
                 .byInstance(execEnv)
                 .aop(binder -> {
-                    binder.doAround(x -> null).when().execute((String) null);
-                    binder.doAround(x -> null).when().execute((StreamGraph) null);
+                    binder.doAround(x -> null).when().execute(anyString());
+                    binder.doAround(x -> null).when().execute((MockGoArgument.<StreamGraph>any()));
                 }).build();
 
-        StreamExecutionEnvironmentFactory streamFactory = () -> mock;
+        StreamExecutionEnvironmentFactory streamFactory = (configuration) -> mock;
         Method method = StreamExecutionEnvironment.class.getDeclaredMethod("initializeContextEnvironment", StreamExecutionEnvironmentFactory.class);
         method.setAccessible(true);
         method.invoke(null, streamFactory);

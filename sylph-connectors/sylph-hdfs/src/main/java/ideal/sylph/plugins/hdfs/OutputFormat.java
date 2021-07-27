@@ -13,27 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.plugins.hdfs.parquet;
+package ideal.sylph.plugins.hdfs;
 
 import ideal.sylph.etl.Record;
 
+import java.io.Closeable;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
 
-public interface HDFSFactory
+public interface OutputFormat
+        extends Closeable
 {
-    String getWriteDir();
-
-    void writeLine(long eventTime, Map<String, Object> evalRow)
-            throws IOException;
-
-    public void writeLine(long eventTime, Collection<Object> evalRow)
-            throws IOException;
-
-    public void writeLine(long eventTime, Record record)
-            throws IOException;
-
-    public void close()
+    public void writeLine(Record record)
             throws IOException;
 }

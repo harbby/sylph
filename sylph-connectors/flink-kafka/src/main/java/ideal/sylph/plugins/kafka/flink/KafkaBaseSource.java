@@ -18,9 +18,9 @@ package ideal.sylph.plugins.kafka.flink;
 import com.github.harbby.gadtry.base.ArrayType;
 import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.base.MapType;
+import ideal.sylph.TableContext;
 import ideal.sylph.etl.Field;
 import ideal.sylph.etl.Schema;
-import ideal.sylph.etl.SourceContext;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
@@ -57,7 +57,7 @@ public abstract class KafkaBaseSource
     /**
      * 初始化(driver阶段执行)
      **/
-    public DataStream<Row> createSource(StreamExecutionEnvironment execEnv, KafkaSourceConfig config, SourceContext context)
+    public DataStream<Row> createSource(StreamExecutionEnvironment execEnv, KafkaSourceConfig config, TableContext context)
     {
         requireNonNull(execEnv, "execEnv is null");
         requireNonNull(config, "config is null");

@@ -15,7 +15,7 @@
  */
 package ideal.sylph.spi;
 
-import com.github.harbby.gadtry.collection.mutable.MutableSet;
+import com.github.harbby.gadtry.collection.MutableSet;
 import ideal.sylph.etl.Operator;
 import ideal.sylph.spi.model.ConnectorInfo;
 
@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static java.util.Objects.requireNonNull;
 
 public class ConnectorStore
@@ -57,7 +57,7 @@ public class ConnectorStore
                     return (Class<T>) Class.forName(driverOrName);
                 }
                 catch (ClassNotFoundException e) {
-                    throw throwsException(e);
+                    throw throwsThrowable(e);
                 }
             }
         };
@@ -72,7 +72,7 @@ public class ConnectorStore
             return (Class<T>) Class.forName(driver);
         }
         catch (ClassNotFoundException e) {
-            throw throwsException(e);
+            throw throwsThrowable(e);
         }
     }
 

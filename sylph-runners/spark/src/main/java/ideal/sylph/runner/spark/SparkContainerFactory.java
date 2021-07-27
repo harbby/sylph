@@ -31,6 +31,8 @@ import org.apache.spark.SparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.streaming.StreamingContext;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -44,6 +46,8 @@ public class SparkContainerFactory
     private final IocFactory injector = IocFactory.create(new YarnModule(), binder -> {
         binder.bind(SparkAppLauncher.class).by(SparkAppLauncher.class).withSingle();
     });
+
+    private final ExecutorService executor = Executors.newFixedThreadPool(50);
 
     @Override
     public JobContainer createYarnContainer(Job job, String lastRunid)
@@ -70,7 +74,7 @@ public class SparkContainerFactory
                     if (url.get() == null && line.contains(logo)) {
                         url.set(line.split(logo)[1].trim());
                     }
-                    System.out.println(line);
+                    System.out.print(line);
                 })
                 .notDepThisJvmClassPath()
                 .addUserjars(job.getDepends())
@@ -90,7 +94,7 @@ public class SparkContainerFactory
             {
                 Supplier<?> jobDAG = job.getJobDAG();
                 url.set(null);
-                return launcher.startAsync(() -> {
+                return launcher.startAsync(executor, () -> {
                     SparkConf sparkConf = new SparkConf().setMaster("local[*]").setAppName("spark_local");
                     SparkContext sparkContext = new SparkContext(sparkConf);
 

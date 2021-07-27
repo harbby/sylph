@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static com.github.harbby.gadtry.base.Throwables.noCatch;
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static ideal.sylph.etl.join.JoinContext.JoinType.LEFT;
 
 public abstract class JdbcAsyncJoin
@@ -124,7 +124,7 @@ public abstract class JdbcAsyncJoin
                 }
             }
             catch (SQLException e) {
-                throw throwsException(e);
+                throw throwsThrowable(e);
             }
         }));
 

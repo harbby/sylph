@@ -17,9 +17,8 @@ package ideal.sylph.runner.spark;
 
 import com.github.harbby.gadtry.ioc.Bean;
 import com.github.harbby.gadtry.ioc.IocFactory;
+import ideal.sylph.TableContext;
 import ideal.sylph.etl.Schema;
-import ideal.sylph.etl.SinkContext;
-import ideal.sylph.etl.SourceContext;
 import ideal.sylph.parser.antlr.tree.CreateFunction;
 import ideal.sylph.parser.antlr.tree.CreateStreamAsSelect;
 import ideal.sylph.parser.antlr.tree.CreateTable;
@@ -94,85 +93,71 @@ public class StructuredStreamingSqlAnalyse
         final String tableName = createTable.getName();
         Schema schema = getTableSchema(createTable);
         final StructType tableSparkType = schemaToSparkType(schema);
+        final String connector = createTable.getConnector();
+        final Map<String, Object> withConfig = createTable.getWithProperties();
 
-        final Map<String, Object> withConfig = createTable.getWithConfig();
-//        final String driverClass = (String) withConfig.get("type");
+        TableContext tableContext = new TableContext()
+        {
+            @Override
+            public Schema getSchema()
+            {
+                return schema;
+            }
+
+            @Override
+            public String getTableName()
+            {
+                return tableName;
+            }
+
+            @Override
+            public String getConnector()
+            {
+                return connector;
+            }
+
+            @Override
+            public Map<String, Object> withConfig()
+            {
+                return withConfig;
+            }
+        };
 
         switch (createTable.getType()) {
             case SOURCE:
-                SourceContext sourceContext = new SourceContext()
-                {
-                    @Override
-                    public Schema getSchema()
-                    {
-                        return schema;
-                    }
-
-                    @Override
-                    public String getSourceTable()
-                    {
-                        return tableName;
-                    }
-
-                    @Override
-                    public Map<String, Object> withConfig()
-                    {
-                        return withConfig;
-                    }
-                };
-                createSourceTable(sourceContext, tableSparkType, createTable.getWatermark());
+                createSourceTable(tableContext, tableSparkType, createTable.getWatermark());
                 return;
             case SINK:
-                SinkContext sinkContext = new SinkContext()
-                {
-                    @Override
-                    public Schema getSchema()
-                    {
-                        return schema;
-                    }
-
-                    @Override
-                    public String getSinkTable()
-                    {
-                        return tableName;
-                    }
-
-                    @Override
-                    public Map<String, Object> withConfig()
-                    {
-                        return withConfig;
-                    }
-                };
-                createSinkTable(sinkContext, tableSparkType);
+                createSinkTable(tableContext, tableSparkType);
                 return;
             case BATCH:
-                throw new UnsupportedOperationException("The SparkStreaming engine BATCH TABLE have't support!");
+                throw new UnsupportedOperationException("The SparkStreaming engine BATCH TABLE haven't support!");
             default:
-                throw new IllegalArgumentException("this driver class " + withConfig.get("type") + " have't support!");
+                throw new IllegalArgumentException("this Connector " + connector + " haven't support!");
         }
     }
 
-    public void createSourceTable(SourceContext sourceContext, StructType tableSparkType, Optional<WaterMark> optionalWaterMark)
+    public void createSourceTable(TableContext sourceContext, StructType tableSparkType, Optional<WaterMark> optionalWaterMark)
     {
-        final String driverClass = (String) sourceContext.withConfig().get("type");
-        IocFactory iocFactory = IocFactory.create(sparkBean, binder -> binder.bind(SourceContext.class).byInstance(sourceContext));
+        final String driverClass = sourceContext.getConnector();
+        IocFactory iocFactory = IocFactory.create(sparkBean, binder -> binder.bind(TableContext.class).byInstance(sourceContext));
         StructuredNodeLoader loader = new StructuredNodeLoader(connectorStore, iocFactory);
 
         checkState(!optionalWaterMark.isPresent(), "spark streaming not support waterMark");
         UnaryOperator<Dataset<Row>> source = loader.loadSource(driverClass, sourceContext.withConfig());
 
-        source.apply(null).createOrReplaceTempView(sourceContext.getSourceTable());
+        source.apply(null).createOrReplaceTempView(sourceContext.getTableName());
         //builder.addSource(source, tableSparkType, sourceContext.getSourceTable());
     }
 
-    public void createSinkTable(SinkContext sinkContext, StructType tableSparkType)
+    public void createSinkTable(TableContext sinkContext, StructType tableSparkType)
     {
-        final String driverClass = (String) sinkContext.withConfig().get("type");
-        IocFactory iocFactory = IocFactory.create(sparkBean, binder -> binder.bind(SinkContext.class, sinkContext));
+        final String driverClass = sinkContext.getConnector();
+        IocFactory iocFactory = IocFactory.create(sparkBean, binder -> binder.bind(TableContext.class, sinkContext));
         StructuredNodeLoader loader = new StructuredNodeLoader(connectorStore, iocFactory);
 
         UnaryOperator<Dataset<Row>> outputStream = dataSet -> {
-            checkQueryAndTableSinkSchema(dataSet.schema(), tableSparkType, sinkContext.getSinkTable());
+            checkQueryAndTableSinkSchema(dataSet.schema(), tableSparkType, sinkContext.getTableName());
             DataStreamWriter<Row> writer = loader.loadSinkWithComplic(driverClass, sinkContext.withConfig()).apply(dataSet);
             if (!isCompile) {
                 //UnsupportedOperationChecker.checkForContinuous();
@@ -181,7 +166,7 @@ public class StructuredStreamingSqlAnalyse
             }
             return null;
         };
-        sinks.put(sinkContext.getSinkTable(), outputStream);
+        sinks.put(sinkContext.getTableName(), outputStream);
     }
 
     @Override
