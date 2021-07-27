@@ -16,7 +16,6 @@
 package ideal.sylph.parser.antlr.tree;
 
 import com.github.harbby.gadtry.collection.ImmutableList;
-import com.github.harbby.gadtry.collection.MutableList;
 
 import java.util.List;
 import java.util.Objects;

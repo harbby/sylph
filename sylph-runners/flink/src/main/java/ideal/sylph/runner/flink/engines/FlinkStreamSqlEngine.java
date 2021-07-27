@@ -47,10 +47,8 @@ import java.io.Serializable;
 import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Map;
 import java.util.stream.Stream;
 
-import static java.util.Objects.requireNonNull;
 import static org.fusesource.jansi.Ansi.Color.GREEN;
 import static org.fusesource.jansi.Ansi.Color.YELLOW;
 

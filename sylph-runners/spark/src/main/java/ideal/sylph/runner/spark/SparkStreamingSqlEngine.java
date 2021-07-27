@@ -44,14 +44,12 @@ import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.net.URLClassLoader;
 import java.util.Collection;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static ideal.sylph.runner.spark.SQLHepler.buildSql;
-import static java.util.Objects.requireNonNull;
 import static org.fusesource.jansi.Ansi.Color.GREEN;
 import static org.fusesource.jansi.Ansi.Color.YELLOW;
 
