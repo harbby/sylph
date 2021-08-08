@@ -15,30 +15,33 @@
  */
 package ideal.sylph.runner.flink.yarn;
 
+import com.github.harbby.gadtry.base.Throwables;
 import ideal.sylph.runner.flink.FlinkJobConfig;
 import org.apache.flink.client.deployment.ClusterSpecification;
 import org.apache.flink.client.program.ClusterClient;
+import org.apache.flink.client.program.ClusterClientProvider;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.configuration.JobManagerOptions;
-import org.apache.flink.configuration.MemorySize;
-import org.apache.flink.configuration.TaskManagerOptions;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.yarn.YarnClientYarnClusterInformationRetriever;
 import org.apache.flink.yarn.YarnClusterDescriptor;
-import org.apache.flink.yarn.configuration.YarnConfigOptions;
 import org.apache.flink.yarn.entrypoint.YarnJobClusterEntrypoint;
 import org.apache.flink.yarn.entrypoint.YarnSessionClusterEntrypoint;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 
+import java.lang.reflect.Method;
+
 public class YarnJobDescriptor
         extends YarnClusterDescriptor
 {
-    private static final String APPLICATION_TYPE = "Sylph_FLINK";
-    private static final int MAX_ATTEMPT = 2;
-
-    private final YarnClient yarnClient;
+    public static final String APPLICATION_TYPE = "SYLPH_FLINK";
+    public static final int MAX_ATTEMPT = 2;
+    private static final Method deployInternal = Throwables.noCatch(() -> {
+        Method m = YarnClusterDescriptor.class.getDeclaredMethod("deployInternal", ClusterSpecification.class, String.class, String.class, JobGraph.class, boolean.class);
+        m.setAccessible(true);
+        return m;
+    });
     private final FlinkJobConfig appConf;
     private final String jobName;
 
@@ -51,7 +54,6 @@ public class YarnJobDescriptor
     {
         super(flinkConf, yarnConfiguration, yarnClient, YarnClientYarnClusterInformationRetriever.create(yarnClient), false);
         this.jobName = jobId;
-        this.yarnClient = yarnClient;
         this.appConf = appConf;
     }
 
@@ -76,25 +78,6 @@ public class YarnJobDescriptor
     {
         // this is required because the slots are allocated lazily
         //jobGraph.setAllowQueuedScheduling(true);
-
-        Configuration flinkConfiguration = getFlinkConfiguration();
-
-        flinkConfiguration.setString(YarnConfigOptions.APPLICATION_NAME, jobName);
-        flinkConfiguration.setString(YarnConfigOptions.APPLICATION_QUEUE, appConf.getQueue());
-        flinkConfiguration.setString(YarnConfigOptions.APPLICATION_TYPE, APPLICATION_TYPE);
-        flinkConfiguration.setString(YarnConfigOptions.APPLICATION_TAGS, String.join(",", appConf.getAppTags()));
-
-        //flinkConfiguration.setString(CoreOptions.FLINK_JM_JVM_OPTIONS, " ");
-        //flinkConfiguration.set(CoreOptions.FLINK_JVM_OPTIONS, " ");
-        //flinkConfiguration.set(CoreOptions.FLINK_TM_JVM_OPTIONS, " ");
-
-        flinkConfiguration.setInteger(YarnConfigOptions.APPLICATION_ATTEMPTS.key(), MAX_ATTEMPT);
-        flinkConfiguration.setInteger(YarnConfigOptions.APP_MASTER_VCORES, 1);  //default 1
-
-        //flinkConfiguration.setString(HighAvailabilityOptions.HA_CLUSTER_ID, ...);
-
-//        flinkConfiguration.setString(YarnConfigOptionsInternal.APPLICATION_LOG_CONFIG_FILE, "logback.xml");
-
         ClusterSpecification clusterSpecification = new ClusterSpecification.ClusterSpecificationBuilder()
                 .setMasterMemoryMB(appConf.getJobManagerMemoryMb())
                 .setSlotsPerTaskManager(appConf.getTaskManagerSlots())
@@ -102,8 +85,13 @@ public class YarnJobDescriptor
                 .createClusterSpecification();
 
         //checkState(System.getenv(ConfigConstants.ENV_FLINK_PLUGINS_DIR) != null, "flink1.12 must set env FLINK_PLUGINS_DIR"); //flink1.12 need
-        flinkConfiguration.set(JobManagerOptions.TOTAL_PROCESS_MEMORY, new MemorySize((long) appConf.getJobManagerMemoryMb() * 1024 * 1024));
-        flinkConfiguration.set(TaskManagerOptions.TOTAL_PROCESS_MEMORY, new MemorySize((long) appConf.getTaskManagerMemoryMb() * 1024 * 1024));
-        return this.deployJobCluster(clusterSpecification, jobGraph, detached).getClusterClient();
+
+        @SuppressWarnings("unchecked")
+        ClusterClientProvider<ApplicationId> clientProvider = (ClusterClientProvider<ApplicationId>) deployInternal.invoke(this, clusterSpecification,
+                jobName
+                , getYarnJobClusterEntrypoint(),
+                jobGraph, detached);
+        //return this.deployJobCluster(clusterSpecification, jobGraph, detached).getClusterClient();
+        return clientProvider.getClusterClient();
     }
 }

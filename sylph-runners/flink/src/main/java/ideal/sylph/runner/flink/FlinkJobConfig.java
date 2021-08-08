@@ -34,7 +34,6 @@ public class FlinkJobConfig
     private String queue = "default";
 
     private int taskManagerMemoryMb = 1024;
-    private int taskManagerCount = 2;
     private int taskManagerSlots = 2;
     private int jobManagerMemoryMb = 1024;
     private Set<String> appTags = ImmutableSet.of("Sylph", "Flink");
@@ -54,11 +53,6 @@ public class FlinkJobConfig
     public void setQueue(String queue)
     {
         this.queue = queue;
-    }
-
-    public void setTaskManagerCount(int taskManagerCount)
-    {
-        this.taskManagerCount = taskManagerCount;
     }
 
     public void setTaskManagerMemoryMb(int taskManagerMemoryMb)
@@ -118,11 +112,6 @@ public class FlinkJobConfig
     public int getTaskManagerSlots()
     {
         return taskManagerSlots;
-    }
-
-    public int getTaskManagerCount()
-    {
-        return taskManagerCount;
     }
 
     public int getTaskManagerMemoryMb()
@@ -188,7 +177,6 @@ public class FlinkJobConfig
         return toStringHelper(this)
                 .add("queue", queue)
                 .add("memory", taskManagerMemoryMb)
-                .add("taskManagerCount", taskManagerCount)
                 .add("jobManagerMemoryMb", jobManagerMemoryMb)
                 .add("parallelism", parallelism)
                 .add("vCores", taskManagerSlots)

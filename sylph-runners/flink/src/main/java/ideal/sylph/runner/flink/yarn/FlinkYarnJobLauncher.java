@@ -16,11 +16,15 @@
 package ideal.sylph.runner.flink.yarn;
 
 import com.github.harbby.gadtry.ioc.Autowired;
+import ideal.sylph.runner.flink.FlinkJobConfig;
 import ideal.sylph.spi.job.Job;
 import org.apache.flink.client.program.ClusterClient;
 import org.apache.flink.configuration.ConfigConstants;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.GlobalConfiguration;
+import org.apache.flink.configuration.JobManagerOptions;
+import org.apache.flink.configuration.MemorySize;
+import org.apache.flink.configuration.TaskManagerOptions;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.yarn.configuration.YarnConfigOptions;
 import org.apache.flink.yarn.configuration.YarnLogConfigUtil;
@@ -64,7 +68,7 @@ public class FlinkYarnJobLauncher
     {
         JobGraph jobGraph = job.getJobDAG();
         List<File> userProvidedJars = getUserAdditionalJars(job.getDepends());
-        final Configuration flinkConfiguration = GlobalConfiguration.loadConfiguration();
+        Configuration flinkConfiguration = getFlinkConfiguration(job);
 
         String flinkHome = requireNonNull(System.getenv("FLINK_HOME"), "FLINK_HOME env not setting");
         if (!new File(flinkHome).exists()) {
@@ -81,7 +85,7 @@ public class FlinkYarnJobLauncher
                 yarnClient,
                 yarnConfiguration,
                 job.getConfig(),
-                job.getName());
+                job.getFullName());
         descriptor.addShipFiles(userProvidedJars);
 
         YarnLogConfigUtil.setLogConfigFileInConfig(flinkConfiguration, flinkConfDirectory);
@@ -97,6 +101,37 @@ public class FlinkYarnJobLauncher
             logger.error("submitting job {} failed", jobGraph.getJobID(), e);
             throw e;
         }
+    }
+
+    private Configuration getFlinkConfiguration(Job job)
+    {
+        FlinkJobConfig appConf = job.getConfig();
+        final Configuration flinkConfiguration = GlobalConfiguration.loadConfiguration();
+
+        flinkConfiguration.setString(YarnConfigOptions.APPLICATION_NAME, job.getFullName());
+        flinkConfiguration.setString(YarnConfigOptions.APPLICATION_QUEUE, appConf.getQueue());
+        flinkConfiguration.setString(YarnConfigOptions.APPLICATION_TYPE, YarnJobDescriptor.APPLICATION_TYPE);
+        flinkConfiguration.setString(YarnConfigOptions.APPLICATION_TAGS, String.join(",", appConf.getAppTags()));
+
+        //flinkConfiguration.setString(CoreOptions.FLINK_JM_JVM_OPTIONS, " ");
+        //flinkConfiguration.set(CoreOptions.FLINK_JVM_OPTIONS, " ");
+        //flinkConfiguration.set(CoreOptions.FLINK_TM_JVM_OPTIONS, " ");
+
+        flinkConfiguration.setInteger(YarnConfigOptions.APPLICATION_ATTEMPTS.key(), YarnJobDescriptor.MAX_ATTEMPT);
+        flinkConfiguration.setInteger(YarnConfigOptions.APP_MASTER_VCORES, 1);  //default 1
+
+        //set tm vcores
+        flinkConfiguration.setInteger(TaskManagerOptions.NUM_TASK_SLOTS, appConf.getTaskManagerSlots());
+        //flinkConfiguration.setInteger(YarnConfigOptions.VCORES, appConf.getTaskManagerSlots());
+
+        //flinkConfiguration.setString(HighAvailabilityOptions.HA_CLUSTER_ID, ...);
+
+//        flinkConfiguration.setString(YarnConfigOptionsInternal.APPLICATION_LOG_CONFIG_FILE, "logback.xml");
+
+        flinkConfiguration.set(JobManagerOptions.TOTAL_PROCESS_MEMORY, new MemorySize((long) appConf.getJobManagerMemoryMb() * 1024 * 1024));
+        flinkConfiguration.set(TaskManagerOptions.TOTAL_PROCESS_MEMORY, new MemorySize((long) appConf.getTaskManagerMemoryMb() * 1024 * 1024));
+
+        return flinkConfiguration;
     }
 
     private static File getFlinkJarFile(String flinkHome)
@@ -123,6 +158,5 @@ public class FlinkYarnJobLauncher
             }
             return null;
         }).collect(Collectors.toList());
-        //.filter(x -> Objects.nonNull(x) && !x.getName().startsWith(FlinkRunner.FLINK_DIST))
     }
 }

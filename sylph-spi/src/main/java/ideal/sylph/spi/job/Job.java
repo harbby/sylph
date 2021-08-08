@@ -59,6 +59,11 @@ public final class Job
         return this.name;
     }
 
+    public String getFullName()
+    {
+        return String.format("job%s:%s", getId(), getName());
+    }
+
     public File getWorkDir()
     {
         return this.workDir;
