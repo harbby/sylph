@@ -18,8 +18,10 @@ package ideal.sylph.runner.flink.yarn;
 import ideal.sylph.runner.flink.FlinkJobConfig;
 import org.apache.flink.client.deployment.ClusterSpecification;
 import org.apache.flink.client.program.ClusterClient;
-import org.apache.flink.configuration.ConfigConstants;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.JobManagerOptions;
+import org.apache.flink.configuration.MemorySize;
+import org.apache.flink.configuration.TaskManagerOptions;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.yarn.YarnClientYarnClusterInformationRetriever;
 import org.apache.flink.yarn.YarnClusterDescriptor;
@@ -29,8 +31,6 @@ import org.apache.flink.yarn.entrypoint.YarnSessionClusterEntrypoint;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
-
-import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 
 public class YarnJobDescriptor
         extends YarnClusterDescriptor
@@ -100,9 +100,10 @@ public class YarnJobDescriptor
                 .setSlotsPerTaskManager(appConf.getTaskManagerSlots())
                 .setTaskManagerMemoryMB(appConf.getTaskManagerMemoryMb())
                 .createClusterSpecification();
-        String flinkPlugins = System.getenv(ConfigConstants.ENV_FLINK_PLUGINS_DIR);
-        checkState(flinkPlugins != null, "must set env FLINK_PLUGINS_DIR");
 
+        //checkState(System.getenv(ConfigConstants.ENV_FLINK_PLUGINS_DIR) != null, "flink1.12 must set env FLINK_PLUGINS_DIR"); //flink1.12 need
+        flinkConfiguration.set(JobManagerOptions.TOTAL_PROCESS_MEMORY, new MemorySize((long) appConf.getJobManagerMemoryMb() * 1024 * 1024));
+        flinkConfiguration.set(TaskManagerOptions.TOTAL_PROCESS_MEMORY, new MemorySize((long) appConf.getTaskManagerMemoryMb() * 1024 * 1024));
         return this.deployJobCluster(clusterSpecification, jobGraph, detached).getClusterClient();
     }
 }
