@@ -16,27 +16,27 @@
 package ideal.sylph.spi;
 
 import com.github.harbby.gadtry.collection.MutableSet;
-import ideal.sylph.etl.Operator;
-import ideal.sylph.spi.model.ConnectorInfo;
+import ideal.sylph.etl.OperatorType;
+import ideal.sylph.spi.model.OperatorInfo;
 
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static java.util.Objects.requireNonNull;
 
-public class ConnectorStore
+public class OperatorMetaData
         implements Serializable
 {
-    private final Map<String, ConnectorInfo> connectorMap = new HashMap<>();
+    private final Map<String, OperatorInfo> connectorMap = new HashMap<>();
 
-    public ConnectorStore(Set<ConnectorInfo> connectors)
+    public OperatorMetaData(List<OperatorInfo> connectors)
     {
-        for (ConnectorInfo info : connectors) {
+        for (OperatorInfo info : connectors) {
             MutableSet.<String>builder().addAll(info.getNames()).add(info.getDriverClass())
                     .build()
                     .forEach(name -> connectorMap.put(name + "\u0001" + info.getPipelineType(), info));
@@ -46,12 +46,12 @@ public class ConnectorStore
     /**
      * use test
      */
-    public static ConnectorStore getDefault()
+    public static OperatorMetaData getDefault()
     {
-        return new ConnectorStore(Collections.emptySet())
+        return new OperatorMetaData(Collections.emptyList())
         {
             @Override
-            public <T> Class<T> getConnectorDriver(String driverOrName, Operator.PipelineType pipelineType)
+            public <T> Class<T> getConnectorDriver(String driverOrName, OperatorType pipelineType)
             {
                 try {
                     return (Class<T>) Class.forName(driverOrName);
@@ -63,7 +63,7 @@ public class ConnectorStore
         };
     }
 
-    public <T> Class<T> getConnectorDriver(String driverOrName, Operator.PipelineType pipelineType)
+    public <T> Class<T> getConnectorDriver(String driverOrName, OperatorType pipelineType)
     {
         requireNonNull(driverOrName, "driverOrName is null");
         try {
@@ -81,7 +81,7 @@ public class ConnectorStore
         return (int) connectorMap.values().stream().distinct().count();
     }
 
-    public Optional<ConnectorInfo> findConnectorInfo(String driverOrName, Operator.PipelineType pipelineType)
+    public Optional<OperatorInfo> findConnectorInfo(String driverOrName, OperatorType pipelineType)
     {
         requireNonNull(pipelineType, "pipelineType is null");
         return Optional.ofNullable(connectorMap.get(driverOrName + "\u0001" + pipelineType));

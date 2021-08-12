@@ -13,36 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.plugins.mysql;
+package ideal.sylph.etl;
 
-import ideal.sylph.etl.Collector;
-import ideal.sylph.etl.Record;
-import ideal.sylph.etl.Schema;
-import ideal.sylph.etl.api.RealTimeTransForm;
+import ideal.sylph.etl.api.Sink;
+import ideal.sylph.etl.api.Source;
+import ideal.sylph.etl.api.TransForm;
 
-public class TestTrans
-        implements RealTimeTransForm
+public enum OperatorType
 {
-    @Override
-    public void process(Record input, Collector<Record> collector)
+    source(Source.class),
+    transform(TransForm.class),
+    sink(Sink.class),
+    @Deprecated
+    batch_join(TransForm.class);
+
+    private final Class<? extends Operator> value;
+
+    OperatorType(Class<? extends Operator> value)
     {
-        collector.collect(input);
+        this.value = value;
     }
 
-    @Override
-    public Schema getSchema()
+    public Class<? extends Operator> getValue()
     {
-        return null;
+        return value;
     }
-
-    @Override
-    public boolean open(long partitionId, long version)
-            throws Exception
-    {
-        return true;
-    }
-
-    @Override
-    public void close(Throwable errorOrNull)
-    {}
 }

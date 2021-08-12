@@ -20,13 +20,13 @@ import com.github.harbby.gadtry.easyspi.Module;
 import ideal.sylph.etl.Plugin;
 import ideal.sylph.main.service.JobEngineManager;
 import ideal.sylph.main.service.JobManager;
-import ideal.sylph.main.service.OperatorLoader;
+import ideal.sylph.main.service.OperatorManager;
 import ideal.sylph.spi.SylphContext;
 import ideal.sylph.spi.exception.SylphException;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobStore;
-import ideal.sylph.spi.model.ConnectorInfo;
 import ideal.sylph.spi.model.JobInfo;
+import ideal.sylph.spi.model.OperatorInfo;
 
 import javax.validation.constraints.NotNull;
 
@@ -46,9 +46,9 @@ public class SylphContextImpl
 
     private JobManager jobManager;
     private JobEngineManager runnerManger;
-    private OperatorLoader pluginLoader;
+    private OperatorManager pluginLoader;
 
-    SylphContextImpl(JobManager jobManager, JobEngineManager runnerManger, OperatorLoader pluginLoader)
+    SylphContextImpl(JobManager jobManager, JobEngineManager runnerManger, OperatorManager pluginLoader)
     {
         this.jobManager = requireNonNull(jobManager, "jobManager is null");
         this.runnerManger = requireNonNull(runnerManger, "runnerManger is null");
@@ -124,7 +124,7 @@ public class SylphContextImpl
     }
 
     @Override
-    public List<ConnectorInfo> getAllConnectors()
+    public List<OperatorInfo> getAllConnectors()
     {
         return new ArrayList<>(pluginLoader.getPluginsInfo());
     }
@@ -137,6 +137,7 @@ public class SylphContextImpl
 
     @Override
     public void reload()
+            throws IOException
     {
         pluginLoader.reload();
     }
@@ -149,7 +150,7 @@ public class SylphContextImpl
     }
 
     @Override
-    public List<ConnectorInfo> getEnginePlugins(String actuator)
+    public List<OperatorInfo> getEnginePlugins(String actuator)
     {
         throw new UnsupportedOperationException("this method have't support!");
     }

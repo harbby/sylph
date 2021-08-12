@@ -27,7 +27,7 @@ import ideal.sylph.controller.ControllerApp;
 import ideal.sylph.main.server.SylphBean;
 import ideal.sylph.main.service.JobEngineManager;
 import ideal.sylph.main.service.JobManager;
-import ideal.sylph.main.service.OperatorLoader;
+import ideal.sylph.main.service.OperatorManager;
 import ideal.sylph.main.util.PropertiesUtil;
 import ideal.sylph.spi.job.JobStore;
 import org.slf4j.Logger;
@@ -69,7 +69,7 @@ public final class SylphMaster
             //----analysis
             logger.info("Analysis App dependencys {}", String.join("\n", app.analysis().printShow()));
 
-            app.getInstance(OperatorLoader.class).loadPlugins();
+            app.getInstance(OperatorManager.class).loadPlugins();
             app.getInstance(JobEngineManager.class).loadRunners();
             app.getInstance(JobStore.class).loadJobs();
 

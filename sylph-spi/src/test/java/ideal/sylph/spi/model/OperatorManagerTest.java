@@ -15,35 +15,40 @@
  */
 package ideal.sylph.spi.model;
 
-import com.github.harbby.gadtry.collection.mutable.MutableSet;
+import com.github.harbby.gadtry.collection.MutableList;
+import com.github.harbby.gadtry.collection.MutableMap;
 import ideal.sylph.annotation.Name;
-import ideal.sylph.etl.Operator;
-import ideal.sylph.spi.ConnectorStore;
-import ideal.sylph.spi.Runner;
-import ideal.sylph.spi.RunnerContext;
-import ideal.sylph.spi.RunnerContextImpl;
+import ideal.sylph.etl.OperatorType;
+import ideal.sylph.spi.OperatorMetaData;
 import ideal.sylph.spi.TestConfigs;
-import ideal.sylph.spi.job.ContainerFactory;
-import ideal.sylph.spi.job.JobEngineHandle;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Stream;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsException;
+import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 
 public class OperatorManagerTest
 {
-    private final Set<ConnectorInfo> connectors = MutableSet.<ConnectorInfo>builder()
-            .add(ConnectorInfo.getPluginInfo(TestConfigs.TestSinkPlugin.class))
-            .add(ConnectorInfo.getPluginInfo(TestConfigs.TestRealTimeSinkPlugin.class))
-            .add(ConnectorInfo.getPluginInfo(TestConfigs.TestErrorSinkPlugin.class))
+    private final List<OperatorInfo> connectors = MutableList.<OperatorInfo>builder()
+            .add(OperatorInfo.analyzePluginInfo(TestConfigs.TestRealTimeSinkPlugin.class, Collections.emptyList()))
+            .add(OperatorInfo.analyzePluginInfo(TestConfigs.TestErrorSinkPlugin.class, Collections.emptyList()))
             .build();
-    private final ConnectorStore connectorStore = new ConnectorStore(connectors);
+    private final OperatorMetaData operatorMetaData = new OperatorMetaData(connectors);
 
-    private final ConnectorStore defaultCs = ConnectorStore.getDefault();
+    private final OperatorMetaData defaultCs = OperatorMetaData.getDefault();
+
+    @Test
+    public void getDriverClass()
+    {
+        List<Map<String, Object>> configs = OperatorInfo.analyzeOperatorDefaultValue(TestConfigs.TestRealTimeSinkPlugin.class);
+        List<Map> mapList = Arrays.asList(MutableMap.of("key", "name", "description", "", "default", "sylph"),
+                MutableMap.of("key", "age", "description", "this is age", "default", ""));
+        Assert.assertEquals(configs, mapList);
+    }
 
     @Test
     public void defaultOperatorManagerLoadDriver()
@@ -54,7 +59,7 @@ public class OperatorManagerTest
         try {
             defaultCs.getConnectorDriver("a.b.c.d", null);
             Assert.fail();
-            throwsException(ClassNotFoundException.class);
+            throwsThrowable(ClassNotFoundException.class);
         }
         catch (ClassNotFoundException e) {
             Assert.assertEquals(e.getMessage(), "a.b.c.d");
@@ -65,45 +70,16 @@ public class OperatorManagerTest
     public void loadPluginDriver()
     {
         String name = TestConfigs.TestRealTimeSinkPlugin.class.getAnnotation(Name.class).value();
-        Class<?> aClass = connectorStore.getConnectorDriver(name, Operator.PipelineType.sink);
+        Class<?> aClass = operatorMetaData.getConnectorDriver(name, OperatorType.sink);
         Assert.assertEquals(TestConfigs.TestRealTimeSinkPlugin.class, aClass);
 
         try {
-            connectorStore.getConnectorDriver("a.b.c.d", Operator.PipelineType.sink);
+            operatorMetaData.getConnectorDriver("a.b.c.d", OperatorType.sink);
             Assert.fail();
-            throwsException(ClassNotFoundException.class);
+            throwsThrowable(ClassNotFoundException.class);
         }
         catch (ClassNotFoundException e) {
             Assert.assertEquals(e.getMessage(), "a.b.c.d");
-        }
-    }
-
-    @Test
-    public void filterRunnerPlugins()
-    {
-        RunnerContext runnerContext = new RunnerContextImpl(() -> connectors);
-        ConnectorStore connectorStore = runnerContext.createConnectorStore(MutableSet.of(Stream.class),
-                TestRunner.class);
-
-        Assert.assertEquals(connectorStore.size(), 2);
-
-        ConnectorStore connectorStore2 = runnerContext.createConnectorStore(new HashSet<>(), TestRunner.class);
-        Assert.assertEquals(connectorStore2.size(), 1);
-    }
-
-    public static class TestRunner
-            implements Runner
-    {
-        @Override
-        public Set<JobEngineHandle> create(RunnerContext context)
-        {
-            return null;
-        }
-
-        @Override
-        public Class<? extends ContainerFactory> getContainerFactory()
-        {
-            return null;
         }
     }
 }

@@ -15,9 +15,9 @@
  */
 package ideal.sylph.spi;
 
-import java.util.Set;
+import ideal.sylph.spi.job.JobEngineHandle;
 
 public interface RunnerContext
 {
-    ConnectorStore createConnectorStore(Set<Class<?>> filterKeyword, Class<? extends Runner> runnerClass);
+    public OperatorMetaData getLatestMetaData(JobEngineHandle engine);
 }

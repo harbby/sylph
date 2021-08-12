@@ -19,8 +19,8 @@ import com.github.harbby.gadtry.easyspi.Module;
 import ideal.sylph.etl.Plugin;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobStore;
-import ideal.sylph.spi.model.ConnectorInfo;
 import ideal.sylph.spi.model.JobInfo;
+import ideal.sylph.spi.model.OperatorInfo;
 
 import java.io.IOException;
 import java.util.List;
@@ -50,13 +50,14 @@ public interface SylphContext
      */
     List<String> getAllEngineNames();
 
-    List<ConnectorInfo> getEnginePlugins(String actuator);
+    List<OperatorInfo> getEnginePlugins(String actuator);
 
-    List<ConnectorInfo> getAllConnectors();
+    List<OperatorInfo> getAllConnectors();
 
     List<Module<Plugin>> getAllConnectorModules();
 
-    void reload();
+    void reload()
+            throws IOException;
 
     void deleteModule(String moduleName)
             throws IOException;

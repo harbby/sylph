@@ -15,25 +15,28 @@
  */
 package ideal.sylph.runner.flink;
 
+import com.github.harbby.gadtry.collection.ImmutableList;
 import com.github.harbby.gadtry.easyspi.DirClassLoader;
 import com.github.harbby.gadtry.ioc.IocFactory;
 import ideal.sylph.runner.flink.engines.FlinkMainClassEngine;
 import ideal.sylph.runner.flink.engines.FlinkStreamEtlEngine;
 import ideal.sylph.runner.flink.engines.FlinkStreamSqlEngine;
-import ideal.sylph.spi.ConnectorStore;
+import ideal.sylph.runner.flink.plugins.TestSource;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.ContainerFactory;
 import ideal.sylph.spi.job.JobEngineHandle;
+import ideal.sylph.spi.model.OperatorInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
@@ -42,6 +45,7 @@ public class FlinkRunner
 {
     public static final String FLINK_DIST = "flink-dist";
     private static final Logger logger = LoggerFactory.getLogger(FlinkRunner.class);
+    private final Set<JobEngineHandle> engines = new HashSet<>();
 
     @Override
     public Class<? extends ContainerFactory> getContainerFactory()
@@ -50,37 +54,39 @@ public class FlinkRunner
     }
 
     @Override
-    public Set<JobEngineHandle> create(RunnerContext context)
+    public Set<JobEngineHandle> getEngines()
+    {
+        return engines;
+    }
+
+    @Override
+    public void initialize(RunnerContext context)
+            throws Exception
     {
         requireNonNull(context, "context is null");
         String flinkHome = requireNonNull(System.getenv("FLINK_HOME"), "FLINK_HOME not setting");
         checkArgument(new File(flinkHome).exists(), "FLINK_HOME " + flinkHome + " not exists");
 
         final ClassLoader classLoader = this.getClass().getClassLoader();
-        try {
-            if (classLoader instanceof DirClassLoader) {
-                ((DirClassLoader) classLoader).addDir(new File(flinkHome, "lib"));
-            }
-            IocFactory injector = IocFactory.create(binder -> {
-                binder.bind(FlinkMainClassEngine.class).withSingle();
-                binder.bind(FlinkStreamEtlEngine.class).withSingle();
-                binder.bind(FlinkStreamSqlEngine.class).withSingle();
-                binder.bind(RunnerContext.class, context);
-            });
 
-            return Stream.of(FlinkMainClassEngine.class, FlinkStreamEtlEngine.class, FlinkStreamSqlEngine.class)
-                    .map(injector::getInstance).collect(Collectors.toSet());
+        if (classLoader instanceof DirClassLoader) {
+            ((DirClassLoader) classLoader).addDir(new File(flinkHome, "lib"));
         }
-        catch (Exception e) {
-            throw throwsThrowable(e);
-        }
+        IocFactory injector = IocFactory.create(binder -> {
+            binder.bind(FlinkMainClassEngine.class).withSingle();
+            binder.bind(FlinkStreamEtlEngine.class).withSingle();
+            binder.bind(FlinkStreamSqlEngine.class).withSingle();
+            binder.bind(RunnerContext.class, context);
+        });
+        Stream.of(FlinkMainClassEngine.class, FlinkStreamEtlEngine.class, FlinkStreamSqlEngine.class)
+                .map(injector::getInstance).forEach(engines::add);
     }
 
-    public static ConnectorStore createConnectorStore(RunnerContext context)
+    public List<OperatorInfo> getInternalOperator()
     {
-        final Set<Class<?>> keyword = Stream.of(
-                org.apache.flink.streaming.api.datastream.DataStream.class,
-                org.apache.flink.types.Row.class).collect(Collectors.toSet());
-        return context.createConnectorStore(keyword, FlinkRunner.class);
+        OperatorInfo operatorInfo = OperatorInfo.analyzePluginInfo(TestSource.class,
+                engines.stream().map(x -> x.getClass().getName())
+                        .collect(Collectors.toList()));
+        return ImmutableList.of(operatorInfo);
     }
 }

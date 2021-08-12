@@ -15,22 +15,24 @@
  */
 package ideal.sylph.runner.flink.engines;
 
+import com.github.harbby.gadtry.collection.ImmutableList;
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.github.harbby.gadtry.jvm.JVMLauncher;
 import com.github.harbby.gadtry.jvm.JVMLaunchers;
 import com.google.common.collect.ImmutableSet;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
-import ideal.sylph.etl.Operator;
+import ideal.sylph.etl.OperatorType;
 import ideal.sylph.parser.antlr.AntlrSqlParser;
 import ideal.sylph.parser.antlr.tree.CreateTable;
 import ideal.sylph.runner.flink.FlinkJobConfig;
-import ideal.sylph.spi.ConnectorStore;
+import ideal.sylph.runner.flink.FlinkRunner;
+import ideal.sylph.spi.OperatorMetaData;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.SqlFlow;
-import ideal.sylph.spi.model.ConnectorInfo;
+import ideal.sylph.spi.model.OperatorInfo;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.graph.StreamGraph;
@@ -43,10 +45,11 @@ import org.slf4j.LoggerFactory;
 
 import javax.validation.constraints.NotNull;
 
-import java.io.Serializable;
+import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static org.fusesource.jansi.Ansi.Color.GREEN;
@@ -58,6 +61,7 @@ public class FlinkStreamSqlEngine
         extends FlinkStreamEtlEngine
 {
     private static final Logger logger = LoggerFactory.getLogger(FlinkStreamSqlEngine.class);
+    private static final URLClassLoader classLoader = (URLClassLoader) FlinkRunner.class.getClassLoader();
     private final RunnerContext runnerContextr;
 
     @Autowired
@@ -74,12 +78,18 @@ public class FlinkStreamSqlEngine
         return new SqlFlow(flowBytes);
     }
 
+    @Override
+    public List<Class<?>> keywords()
+    {
+        return super.keywords();
+    }
+
     @NotNull
     @Override
-    public Collection<ConnectorInfo> parserFlowDepends(Flow inFlow)
+    public Collection<OperatorInfo> parserFlowDepends(Flow inFlow)
     {
         SqlFlow flow = (SqlFlow) inFlow;
-        ImmutableSet.Builder<ConnectorInfo> builder = ImmutableSet.builder();
+        ImmutableSet.Builder<OperatorInfo> builder = ImmutableSet.builder();
         AntlrSqlParser parser = new AntlrSqlParser();
         Stream.of(flow.getSqlSplit())
                 .map(query -> {
@@ -94,29 +104,28 @@ public class FlinkStreamSqlEngine
                 .forEach(statement -> {
                     CreateTable createTable = (CreateTable) statement;
                     String driverOrName = createTable.getConnector();
-                    getConnectorStore().findConnectorInfo(driverOrName, getPipeType(createTable.getType()))
+                    runnerContextr.getLatestMetaData(this).findConnectorInfo(driverOrName, getPipeType(createTable.getType()))
                             .ifPresent(builder::add);
                 });
         return builder.build();
     }
 
-    @NotNull
     @Override
-    public Serializable formJob(String jobId, Flow inFlow, JobConfig jobConfig, URLClassLoader jobClassLoader)
+    public JobGraph formJob(String jobId, Flow inFlow, JobConfig jobConfig, List<URL> pluginJars)
             throws Exception
     {
         SqlFlow flow = (SqlFlow) inFlow;
         //----- compile --
         final FlinkJobConfig jobParameter = (FlinkJobConfig) jobConfig;
-        return compile(jobId, getConnectorStore(), jobParameter, flow.getSqlSplit(), jobClassLoader);
+        return compile(jobId, runnerContextr.getLatestMetaData(this), jobParameter, flow.getSqlSplit(), pluginJars);
     }
 
     private static JobGraph compile(
             String jobId,
-            ConnectorStore connectorStore,
+            OperatorMetaData operatorMetaData,
             FlinkJobConfig jobConfig,
             String[] sqlSplit,
-            URLClassLoader jobClassLoader)
+            List<URL> pluginJars)
     {
         JVMLauncher<JobGraph> launcher = JVMLaunchers.<JobGraph>newJvm()
                 .setConsole((line) -> System.out.print(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset().toString()))
@@ -131,7 +140,7 @@ public class FlinkStreamSqlEngine
                             .build();
 
                     StreamTableEnvironmentImpl tableEnv = (StreamTableEnvironmentImpl) StreamTableEnvironment.create(execEnv, settings);
-                    StreamSqlBuilder streamSqlBuilder = new StreamSqlBuilder(tableEnv, connectorStore, new AntlrSqlParser());
+                    StreamSqlBuilder streamSqlBuilder = new StreamSqlBuilder(tableEnv, operatorMetaData, new AntlrSqlParser());
                     Arrays.stream(sqlSplit).forEach(streamSqlBuilder::buildStreamBySql);
                     StreamGraph streamGraph;
                     try {
@@ -144,22 +153,24 @@ public class FlinkStreamSqlEngine
                     streamGraph.setJobName(jobId);
                     return streamGraph.getJobGraph();
                 })
-                .addUserURLClassLoader(jobClassLoader)
-                .setClassLoader(jobClassLoader)
+                //.notDepThisJvmClassPath() //todo: filter web rest jars 应避免构建作业时平台依赖混入
+                .addUserjars(ImmutableList.copy(classLoader.getURLs())) //flink jars + runner jar
+                .addUserjars(pluginJars)
+                .setClassLoader(classLoader)
                 .build();
 
         return launcher.startAndGet();
     }
 
-    private static Operator.PipelineType getPipeType(CreateTable.Type type)
+    private static OperatorType getPipeType(CreateTable.Type type)
     {
         switch (type) {
             case BATCH:
-                return Operator.PipelineType.transform;
+                return OperatorType.transform;
             case SINK:
-                return Operator.PipelineType.sink;
+                return OperatorType.sink;
             case SOURCE:
-                return Operator.PipelineType.source;
+                return OperatorType.source;
             default:
                 throw new IllegalArgumentException("this type " + type + " have't support!");
         }

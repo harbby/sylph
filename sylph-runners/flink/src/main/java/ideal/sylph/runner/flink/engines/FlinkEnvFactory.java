@@ -42,7 +42,9 @@ public class FlinkEnvFactory
     private static final Logger logger = LoggerFactory.getLogger(FlinkEnvFactory.class);
 
     /**
-     * deprecated see: {@link ideal.sylph.runner.flink.FlinkContainerFactory#setJobConfig)}
+     * deprecated
+     *
+     * @see ideal.sylph.runner.flink.FlinkContainerFactory#setJobConfig
      */
     @Deprecated
     public static StreamExecutionEnvironment setJobConfig(StreamExecutionEnvironment execEnv, FlinkJobConfig jobConfig, String jobId)

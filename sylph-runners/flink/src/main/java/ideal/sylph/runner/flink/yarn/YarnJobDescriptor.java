@@ -73,6 +73,7 @@ public class YarnJobDescriptor
         return YarnJobClusterEntrypoint.class.getName();
     }
 
+    @SuppressWarnings("unchecked")
     public ClusterClient<ApplicationId> deploy(JobGraph jobGraph, boolean detached)
             throws Exception
     {
@@ -86,12 +87,14 @@ public class YarnJobDescriptor
 
         //checkState(System.getenv(ConfigConstants.ENV_FLINK_PLUGINS_DIR) != null, "flink1.12 must set env FLINK_PLUGINS_DIR"); //flink1.12 need
 
-        @SuppressWarnings("unchecked")
-        ClusterClientProvider<ApplicationId> clientProvider = (ClusterClientProvider<ApplicationId>) deployInternal.invoke(this, clusterSpecification,
-                jobName
-                , getYarnJobClusterEntrypoint(),
-                jobGraph, detached);
+        Object clientProvider = deployInternal.invoke(
+                this,
+                clusterSpecification,
+                jobName,
+                getYarnJobClusterEntrypoint(),
+                jobGraph,
+                detached);
         //return this.deployJobCluster(clusterSpecification, jobGraph, detached).getClusterClient();
-        return clientProvider.getClusterClient();
+        return ((ClusterClientProvider<ApplicationId>) clientProvider).getClusterClient();
     }
 }

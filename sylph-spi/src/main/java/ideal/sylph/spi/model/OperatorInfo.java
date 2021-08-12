@@ -15,13 +15,13 @@
  */
 package ideal.sylph.spi.model;
 
-import com.github.harbby.gadtry.base.JavaTypes;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.annotation.Version;
 import ideal.sylph.etl.Operator;
+import ideal.sylph.etl.OperatorType;
 import ideal.sylph.etl.PluginConfig;
 import ideal.sylph.etl.api.RealTimePipeline;
 import ideal.sylph.etl.api.RealTimeSink;
@@ -31,24 +31,15 @@ import ideal.sylph.etl.api.Source;
 import ideal.sylph.etl.api.TransForm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.reflect.generics.repository.AbstractRepository;
-import sun.reflect.generics.repository.ClassRepository;
-import sun.reflect.generics.tree.ClassSignature;
-import sun.reflect.generics.tree.ClassTypeSignature;
-import sun.reflect.generics.tree.SimpleClassTypeSignature;
-import sun.reflect.generics.tree.TypeArgument;
 
 import java.io.File;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static com.github.harbby.gadtry.base.MoreObjects.toStringHelper;
@@ -56,38 +47,40 @@ import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static ideal.sylph.spi.PluginConfigFactory.getPluginConfigDefaultValues;
 import static java.util.Objects.requireNonNull;
 
-public class ConnectorInfo
+public class OperatorInfo
         implements Serializable
 {
-    private static final Logger logger = LoggerFactory.getLogger(ConnectorInfo.class);
+    private static final Logger logger = LoggerFactory.getLogger(OperatorInfo.class);
 
     private final boolean realTime;
     private final String[] names;
     private final String description;
     private final String version;
     private final String driverClass;
-    private final transient TypeArgument[] javaGenerics;
     //-------------
-    private final Operator.PipelineType pipelineType;  //source transform or sink
-    private File pluginFile = new File(System.getProperty("java.io.tmpdir"));
-    private List<Map<String, Object>> pluginConfig = Collections.emptyList(); //Injected by the specific runner
+    private final OperatorType pipelineType;  //source transform or sink
+    private File moduleFile = null;
+    private final List<Map<String, Object>> pluginConfig; //Injected by the specific runner
+    private final List<String> ownerEngine;
 
-    private ConnectorInfo(
+    private OperatorInfo(
             String[] names,
             String description,
             String version,
             boolean realTime,
             String driverClass,
-            TypeArgument[] javaGenerics,
-            Operator.PipelineType pipelineType)
+            OperatorType pipelineType,
+            List<Map<String, Object>> pluginConfig,
+            List<String> ownerEngine)
     {
         this.names = requireNonNull(names, "names is null");
         this.description = requireNonNull(description, "description is null");
         this.version = requireNonNull(version, "version is null");
         this.realTime = realTime;
         this.driverClass = requireNonNull(driverClass, "driverClass is null");
-        this.javaGenerics = requireNonNull(javaGenerics, "javaGenerics is null");
         this.pipelineType = requireNonNull(pipelineType, "pipelineType is null");
+        this.pluginConfig = pluginConfig;
+        this.ownerEngine = ownerEngine;
     }
 
     public String getDriverClass()
@@ -105,14 +98,9 @@ public class ConnectorInfo
         return names;
     }
 
-    public File getPluginFile()
+    public Optional<File> getModuleFile()
     {
-        return pluginFile;
-    }
-
-    public TypeArgument[] getJavaGenerics()
-    {
-        return javaGenerics;
+        return Optional.ofNullable(moduleFile);
     }
 
     public String getDescription()
@@ -125,7 +113,7 @@ public class ConnectorInfo
         return version;
     }
 
-    public Operator.PipelineType getPipelineType()
+    public OperatorType getPipelineType()
     {
         return pipelineType;
     }
@@ -135,20 +123,20 @@ public class ConnectorInfo
         return pluginConfig;
     }
 
-    public void setPluginFile(File pluginFile)
+    public void setModuleFile(File moduleFile)
     {
-        this.pluginFile = pluginFile;
+        this.moduleFile = moduleFile;
     }
 
-    public void setPluginConfig(List<Map<String, Object>> config)
+    public List<String> getOwnerEngine()
     {
-        this.pluginConfig = config;
+        return ownerEngine;
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(realTime, names, description, version, driverClass, javaGenerics, pluginFile, pipelineType, pluginConfig);
+        return Objects.hash(realTime, names, description, version, driverClass, moduleFile, pipelineType, pluginConfig);
     }
 
     @Override
@@ -162,14 +150,13 @@ public class ConnectorInfo
             return false;
         }
 
-        ConnectorInfo other = (ConnectorInfo) obj;
+        OperatorInfo other = (OperatorInfo) obj;
         return Objects.equals(this.realTime, other.realTime)
                 && Arrays.equals(this.names, other.names)
                 && Objects.equals(this.description, other.description)
                 && Objects.equals(this.version, other.version)
                 && Objects.equals(this.driverClass, other.driverClass)
-                && Arrays.equals(this.javaGenerics, other.javaGenerics)
-                && Objects.equals(this.pluginFile, other.pluginFile)
+                && Objects.equals(this.moduleFile, other.moduleFile)
                 && Objects.equals(this.pipelineType, other.pipelineType)
                 && Objects.equals(this.pluginConfig, other.pluginConfig);
     }
@@ -183,8 +170,7 @@ public class ConnectorInfo
                 .add("description", description)
                 .add("version", version)
                 .add("driverClass", driverClass)
-                .add("javaGenerics", javaGenerics)
-                .add("pluginFile", pluginFile)
+                .add("moduleFile", moduleFile)
                 .add("pipelineType", pipelineType)
                 .add("pluginConfig", pluginConfig)
                 .toString();
@@ -193,7 +179,7 @@ public class ConnectorInfo
     /**
      * "This method can only be called by the runner, otherwise it will report an error No classFound"
      */
-    public static List<Map<String, Object>> getConnectorDefaultConfig(Class<? extends Operator> javaClass)
+    public static List<Map<String, Object>> analyzeOperatorDefaultValue(Class<? extends Operator> javaClass)
     {
         Constructor<?>[] constructors = javaClass.getConstructors();
         checkState(constructors.length == 1, "Operator " + javaClass + " must one constructor");
@@ -215,11 +201,10 @@ public class ConnectorInfo
         return ImmutableList.of();
     }
 
-    public static ConnectorInfo getPluginInfo(Class<? extends Operator> javaClass)
+    public static OperatorInfo analyzePluginInfo(Class<? extends Operator> javaClass, List<String> ownerEngine)
     {
-        Operator.PipelineType pipelineType = parserDriverType(javaClass);
+        OperatorType pipelineType = parserDriverType(javaClass);
         boolean realTime = RealTimePipeline.class.isAssignableFrom(javaClass); //is realTime ?
-        TypeArgument[] javaGenerics = realTime ? new TypeArgument[0] : getClassGenericInfo(javaClass, pipelineType);
 
         Name name = javaClass.getAnnotation(Name.class);
         String[] nameArr = ImmutableSet.<String>builder()
@@ -232,73 +217,32 @@ public class ConnectorInfo
         Description description = javaClass.getAnnotation(Description.class);
         Version version = javaClass.getAnnotation(Version.class);
 
-        return new ConnectorInfo(
+        List<Map<String, Object>> pluginConfig = analyzeOperatorDefaultValue(javaClass);
+        return new OperatorInfo(
                 nameArr,
                 description == null ? "" : description.value(),
                 version == null ? "" : version.value(),
                 realTime,
                 javaClass.getName(),
-                javaGenerics,
-                pipelineType
+                pipelineType,
+                pluginConfig,
+                ownerEngine
         );
     }
 
-    private static Operator.PipelineType parserDriverType(Class<? extends Operator> javaClass)
+    private static OperatorType parserDriverType(Class<? extends Operator> javaClass)
     {
         if (Source.class.isAssignableFrom(javaClass)) {
-            return Operator.PipelineType.source;
+            return OperatorType.source;
         }
         else if (TransForm.class.isAssignableFrom(javaClass) || RealTimeTransForm.class.isAssignableFrom(javaClass)) {
-            return Operator.PipelineType.transform;
+            return OperatorType.transform;
         }
         else if (Sink.class.isAssignableFrom(javaClass) || RealTimeSink.class.isAssignableFrom(javaClass)) {
-            return Operator.PipelineType.sink;
+            return OperatorType.sink;
         }
         else {
             throw new IllegalArgumentException("Unknown type " + javaClass.getName());
-        }
-    }
-
-    private static TypeArgument[] getClassGenericInfo(Class<? extends Operator> javaClass, Operator.PipelineType pipelineType)
-    {
-        Map<String, TypeArgument[]> typesMap = getClassGenericInfo(javaClass);
-        String genericString = JavaTypes.getClassGenericString(javaClass);
-
-        logger.info("--The {} is not RealTimePipeline--the Java generics is {} --", javaClass, genericString);
-        TypeArgument[] types = typesMap.getOrDefault(pipelineType.getValue().getName(), new TypeArgument[0]);
-        return types;
-    }
-
-    private static <T, R> R getReflectMethod(Method method, T t)
-            throws InvocationTargetException, IllegalAccessException
-    {
-        method.setAccessible(true);
-        return (R) method.invoke(t);
-    }
-
-    private static Map<String, TypeArgument[]> getClassGenericInfo(Class<?> javaClass)
-    {
-        try {
-            Map<String, TypeArgument[]> typeSignatureMap = new LinkedHashMap<>();
-            ClassRepository classRepository = getReflectMethod(Class.class.getDeclaredMethod("getGenericInfo"), javaClass);
-
-            if (classRepository == null) {
-                return Collections.emptyMap();
-            }
-            //-----2
-            ClassSignature tree = getReflectMethod(AbstractRepository.class.getDeclaredMethod("getTree"), classRepository);
-            //FormalTypeParameter[] formalTypeParameters = tree.getFormalTypeParameters();  //type 个数  === type[]
-            SimpleClassTypeSignature typeSignature = tree.getSuperclass().getPath().get(0);
-            typeSignatureMap.put(typeSignature.getName(), typeSignature.getTypeArguments());
-
-            for (ClassTypeSignature it : tree.getSuperInterfaces()) {
-                typeSignature = it.getPath().get(0);
-                typeSignatureMap.put(typeSignature.getName(), typeSignature.getTypeArguments());
-            }
-            return typeSignatureMap;
-        }
-        catch (Exception e) {
-            throw throwsThrowable(e);
         }
     }
 }

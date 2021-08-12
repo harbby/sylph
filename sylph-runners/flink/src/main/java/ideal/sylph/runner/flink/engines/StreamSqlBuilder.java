@@ -36,8 +36,8 @@ import ideal.sylph.runner.flink.etl.FlinkNodeLoader;
 import ideal.sylph.runner.flink.sql.FlinkSqlParser;
 import ideal.sylph.runner.flink.sql.TriggerWindowHelper;
 import ideal.sylph.runner.flink.table.SylphTableSink;
-import ideal.sylph.spi.ConnectorStore;
 import ideal.sylph.spi.NodeLoader;
+import ideal.sylph.spi.OperatorMetaData;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -72,7 +72,7 @@ public class StreamSqlBuilder
 {
     private static final Logger logger = LoggerFactory.getLogger(StreamSqlBuilder.class);
 
-    private final ConnectorStore connectorStore;
+    private final OperatorMetaData operatorMetaData;
     private final StreamTableEnvironment tableEnv;
     private final StreamExecutionEnvironment execEnv;
     private final AntlrSqlParser sqlParser;
@@ -82,11 +82,11 @@ public class StreamSqlBuilder
 
     public StreamSqlBuilder(
             StreamTableEnvironment tableEnv,
-            ConnectorStore connectorStore,
+            OperatorMetaData operatorMetaData,
             AntlrSqlParser sqlParser
     )
     {
-        this.connectorStore = connectorStore;
+        this.operatorMetaData = operatorMetaData;
         this.tableEnv = tableEnv;
         this.execEnv = ((StreamTableEnvironmentImpl) tableEnv).execEnv();
         this.sqlParser = sqlParser;
@@ -96,7 +96,7 @@ public class StreamSqlBuilder
     {
         FlinkSqlParser flinkSqlParser = FlinkSqlParser.builder()
                 .setTableEnv(tableEnv)
-                .setConnectorStore(connectorStore)
+                .setConnectorStore(operatorMetaData)
                 .build();
         Statement statement = sqlParser.createStatement(sql);
 
@@ -220,7 +220,7 @@ public class StreamSqlBuilder
             }
         });
         final IocFactory iocFactory = IocFactory.create(new FlinkBean(execEnv, tableEnv), bean);
-        NodeLoader<DataStream<Row>> loader = new FlinkNodeLoader(connectorStore, iocFactory);
+        NodeLoader<DataStream<Row>> loader = new FlinkNodeLoader(operatorMetaData, iocFactory);
 
         if (SOURCE == createStream.getType()) {
             DataStream<Row> inputStream = checkStream(loader.loadSource(connector, withConfig).apply(null), tableTypeInfo);

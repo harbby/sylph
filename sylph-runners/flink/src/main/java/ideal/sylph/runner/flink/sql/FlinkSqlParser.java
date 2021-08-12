@@ -16,7 +16,7 @@
 package ideal.sylph.runner.flink.sql;
 
 import com.github.harbby.gadtry.ioc.IocFactory;
-import ideal.sylph.etl.Operator;
+import ideal.sylph.etl.OperatorType;
 import ideal.sylph.etl.api.RealTimeTransForm;
 import ideal.sylph.etl.join.JoinContext;
 import ideal.sylph.etl.join.SelectField;
@@ -25,8 +25,8 @@ import ideal.sylph.parser.calcite.CalciteSqlParser;
 import ideal.sylph.parser.calcite.JoinInfo;
 import ideal.sylph.parser.calcite.TableName;
 import ideal.sylph.runner.flink.engines.StreamSqlUtil;
-import ideal.sylph.spi.ConnectorStore;
 import ideal.sylph.spi.NodeLoader;
+import ideal.sylph.spi.OperatorMetaData;
 import org.apache.calcite.config.Lex;
 import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -86,7 +86,7 @@ public class FlinkSqlParser
             .build();
 
     private StreamTableEnvironment tableEnv;
-    private ConnectorStore connectorStore;
+    private OperatorMetaData operatorMetaData;
 
     public static Builder builder()
     {
@@ -105,9 +105,9 @@ public class FlinkSqlParser
             return Builder.this;
         }
 
-        public Builder setConnectorStore(ConnectorStore connectorStore)
+        public Builder setConnectorStore(OperatorMetaData operatorMetaData)
         {
-            sqlParser.connectorStore = connectorStore;
+            sqlParser.operatorMetaData = operatorMetaData;
             return Builder.this;
         }
 
@@ -121,7 +121,7 @@ public class FlinkSqlParser
         {
             checkState(sqlParser.sqlParserConfig != null);
             checkState(sqlParser.tableEnv != null);
-            checkState(sqlParser.connectorStore != null);
+            checkState(sqlParser.operatorMetaData != null);
             return sqlParser;
         }
     }
@@ -220,7 +220,7 @@ public class FlinkSqlParser
     {
         Map<String, Object> withConfig = batchTable.getWithProperties();
         String driverOrName = batchTable.getConnector();
-        Class<?> driver = connectorStore.getConnectorDriver(driverOrName, Operator.PipelineType.transform);
+        Class<?> driver = operatorMetaData.getConnectorDriver(driverOrName, OperatorType.transform);
         checkState(RealTimeTransForm.class.isAssignableFrom(driver), "batch table type driver must is RealTimeTransForm");
 
         // instance

@@ -22,11 +22,11 @@ project(':sylph-runners:spark').name = 'sylph-spark'
 //----
 include 'sylph-api'
 include 'sylph-connectors'
+include 'sylph-connectors:sylph-example'
 include 'sylph-connectors:flink-kafka'
 include 'sylph-connectors:sylph-mysql'
 include 'sylph-connectors:sylph-hdfs'
 include 'sylph-connectors:sylph-kudu'
-
 include 'sylph-connectors:spark-kafka'
 
 //----

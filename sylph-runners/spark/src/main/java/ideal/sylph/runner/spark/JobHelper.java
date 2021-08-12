@@ -15,13 +15,14 @@
  */
 package ideal.sylph.runner.spark;
 
+import com.github.harbby.gadtry.collection.ImmutableList;
 import com.github.harbby.gadtry.ioc.Bean;
 import com.github.harbby.gadtry.ioc.IocFactory;
 import com.github.harbby.gadtry.jvm.JVMLauncher;
 import com.github.harbby.gadtry.jvm.JVMLaunchers;
 import ideal.sylph.runner.spark.sparkstreaming.StreamNodeLoader;
 import ideal.sylph.runner.spark.structured.StructuredNodeLoader;
-import ideal.sylph.spi.ConnectorStore;
+import ideal.sylph.spi.OperatorMetaData;
 import ideal.sylph.spi.job.EtlFlow;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.Dataset;
@@ -34,7 +35,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
+import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -51,11 +54,12 @@ import static org.fusesource.jansi.Ansi.Color.YELLOW;
  */
 final class JobHelper
 {
-    private JobHelper() {}
-
+    private static final URLClassLoader classLoader = (URLClassLoader) SparkRunner.class.getClassLoader();
     private static final Logger logger = LoggerFactory.getLogger(JobHelper.class);
 
-    static Serializable build2xJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, ConnectorStore connectorStore)
+    private JobHelper() {}
+
+    static Serializable build2xJob(String jobId, EtlFlow flow, List<URL> pluginJars, OperatorMetaData operatorMetaData)
             throws Exception
     {
         final AtomicBoolean isCompile = new AtomicBoolean(true);
@@ -68,7 +72,7 @@ final class JobHelper
                     : SparkSession.builder().getOrCreate();
 
             IocFactory iocFactory = IocFactory.create(binder -> binder.bind(SparkSession.class, spark));
-            StructuredNodeLoader loader = new StructuredNodeLoader(connectorStore, iocFactory)
+            StructuredNodeLoader loader = new StructuredNodeLoader(operatorMetaData, iocFactory)
             {
                 @Override
                 public UnaryOperator<Dataset<Row>> loadSink(String driverStr, Map<String, Object> config)
@@ -89,16 +93,17 @@ final class JobHelper
                     return 1;
                 })
                 .setConsole((line) -> System.out.print(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
-                .addUserURLClassLoader(jobClassLoader)
+                .addUserjars(ImmutableList.copy(classLoader.getURLs()))
+                .addUserjars(pluginJars)
                 .notDepThisJvmClassPath()
-                .setClassLoader(jobClassLoader)
+                .setClassLoader(classLoader)
                 .build();
         launcher.startAndGet();
         isCompile.set(false);
         return (Serializable) appGetter;
     }
 
-    static Serializable build1xJob(String jobId, EtlFlow flow, URLClassLoader jobClassLoader, ConnectorStore connectorStore)
+    static Serializable build1xJob(String jobId, EtlFlow flow, List<URL> pluginJars, OperatorMetaData operatorMetaData)
             throws Exception
     {
         final AtomicBoolean isCompile = new AtomicBoolean(true);
@@ -112,7 +117,7 @@ final class JobHelper
             StreamingContext spark = new StreamingContext(sparkSession.sparkContext(), Seconds.apply(5));
 
             Bean bean = binder -> binder.bind(StreamingContext.class, spark);
-            StreamNodeLoader loader = new StreamNodeLoader(connectorStore, IocFactory.create(bean));
+            StreamNodeLoader loader = new StreamNodeLoader(operatorMetaData, IocFactory.create(bean));
             buildGraph(loader, flow);
             return spark;
         };
@@ -123,9 +128,10 @@ final class JobHelper
                     return 1;
                 })
                 .setConsole((line) -> System.out.print(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
-                .addUserURLClassLoader(jobClassLoader)
+                .addUserjars(ImmutableList.copy(classLoader.getURLs())) //flink jars + runner jar
+                .addUserjars(pluginJars)
                 .notDepThisJvmClassPath()
-                .setClassLoader(jobClassLoader)
+                .setClassLoader(classLoader)
                 .build();
         launcher.startAndGet();
         isCompile.set(false);

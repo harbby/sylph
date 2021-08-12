@@ -15,6 +15,7 @@
  */
 package ideal.sylph.runner.spark;
 
+import com.github.harbby.gadtry.collection.ImmutableList;
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.github.harbby.gadtry.jvm.JVMException;
 import com.github.harbby.gadtry.jvm.JVMLauncher;
@@ -22,15 +23,15 @@ import com.github.harbby.gadtry.jvm.JVMLaunchers;
 import com.google.common.collect.ImmutableSet;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
-import ideal.sylph.etl.Operator;
+import ideal.sylph.etl.OperatorType;
 import ideal.sylph.parser.antlr.AntlrSqlParser;
 import ideal.sylph.parser.antlr.tree.CreateTable;
-import ideal.sylph.spi.ConnectorStore;
+import ideal.sylph.spi.OperatorMetaData;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobConfig;
 import ideal.sylph.spi.job.SqlFlow;
-import ideal.sylph.spi.model.ConnectorInfo;
+import ideal.sylph.spi.model.OperatorInfo;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.streaming.Duration;
@@ -42,8 +43,10 @@ import org.slf4j.LoggerFactory;
 import javax.validation.constraints.NotNull;
 
 import java.io.Serializable;
+import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -62,13 +65,14 @@ public class SparkStreamingSqlEngine
         extends StreamEtlEngine
 {
     private static final Logger logger = LoggerFactory.getLogger(SparkStreamingSqlEngine.class);
-    private final ConnectorStore connectorStore;
+    private static final URLClassLoader classLoader = (URLClassLoader) SparkRunner.class.getClassLoader();
+    private final RunnerContext runnerContext;
 
     @Autowired
     public SparkStreamingSqlEngine(RunnerContext runnerContext)
     {
         super(runnerContext);
-        this.connectorStore = super.getConnectorStore();
+        this.runnerContext = runnerContext;
     }
 
     @NotNull
@@ -80,10 +84,10 @@ public class SparkStreamingSqlEngine
 
     @NotNull
     @Override
-    public Collection<ConnectorInfo> parserFlowDepends(Flow inFlow)
+    public Collection<OperatorInfo> parserFlowDepends(Flow inFlow)
     {
         SqlFlow flow = (SqlFlow) inFlow;
-        ImmutableSet.Builder<ConnectorInfo> builder = ImmutableSet.builder();
+        ImmutableSet.Builder<OperatorInfo> builder = ImmutableSet.builder();
         AntlrSqlParser parser = new AntlrSqlParser();
 
         Stream.of(flow.getSqlSplit())
@@ -92,7 +96,7 @@ public class SparkStreamingSqlEngine
                 .forEach(statement -> {
                     CreateTable createTable = (CreateTable) statement;
                     String driverOrName = createTable.getConnector();
-                    connectorStore.findConnectorInfo(driverOrName, getPipeType(createTable.getType()))
+                    runnerContext.getLatestMetaData(this).findConnectorInfo(driverOrName, getPipeType(createTable.getType()))
                             .ifPresent(builder::add);
                 });
         return builder.build();
@@ -104,18 +108,17 @@ public class SparkStreamingSqlEngine
         return SparkJobConfig.class;
     }
 
-    @NotNull
     @Override
-    public Serializable formJob(String jobId, Flow inFlow, JobConfig jobConfig, URLClassLoader jobClassLoader)
+    public Serializable formJob(String jobId, Flow inFlow, JobConfig jobConfig, List<URL> pluginJars)
             throws Exception
     {
         SqlFlow flow = (SqlFlow) inFlow;
         //----- compile --
         SparkJobConfig sparkJobConfig = (SparkJobConfig) jobConfig;
-        return compile(jobId, flow, connectorStore, sparkJobConfig, jobClassLoader);
+        return compile(jobId, flow, runnerContext.getLatestMetaData(this), sparkJobConfig, pluginJars);
     }
 
-    private static Serializable compile(String jobId, SqlFlow sqlFlow, ConnectorStore connectorStore, SparkJobConfig sparkJobConfig, URLClassLoader jobClassLoader)
+    private static Serializable compile(String jobId, SqlFlow sqlFlow, OperatorMetaData operatorMetaData, SparkJobConfig sparkJobConfig, List<URL> pluginJars)
             throws JVMException
     {
         int batchDuration = sparkJobConfig.getSparkStreamingBatchDuration();
@@ -129,7 +132,7 @@ public class SparkStreamingSqlEngine
             StreamingContext ssc = new StreamingContext(sparkSession.sparkContext(), Duration.apply(batchDuration));
 
             //build sql
-            SqlAnalyse analyse = new SparkStreamingSqlAnalyse(ssc, connectorStore, isCompile.get());
+            SqlAnalyse analyse = new SparkStreamingSqlAnalyse(ssc, operatorMetaData, isCompile.get());
             try {
                 buildSql(analyse, jobId, sqlFlow);
             }
@@ -146,8 +149,9 @@ public class SparkStreamingSqlEngine
                     appGetter.get();
                     return true;
                 })
-                .addUserURLClassLoader(jobClassLoader)
-                .setClassLoader(jobClassLoader)
+                .addUserjars(ImmutableList.copy(classLoader.getURLs())) //flink jars + runner jar
+                .addUserjars(pluginJars)
+                .setClassLoader(classLoader)
                 .notDepThisJvmClassPath()
                 .build();
 
@@ -156,15 +160,15 @@ public class SparkStreamingSqlEngine
         return (Serializable) appGetter;
     }
 
-    private static Operator.PipelineType getPipeType(CreateTable.Type type)
+    private static OperatorType getPipeType(CreateTable.Type type)
     {
         switch (type) {
             case BATCH:
-                return Operator.PipelineType.transform;
+                return OperatorType.transform;
             case SINK:
-                return Operator.PipelineType.sink;
+                return OperatorType.sink;
             case SOURCE:
-                return Operator.PipelineType.source;
+                return OperatorType.source;
             default:
                 throw new IllegalArgumentException("this type " + type + " have't support!");
         }
