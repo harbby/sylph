@@ -15,6 +15,7 @@
  */
 package ideal.sylph.main.service;
 
+import com.github.harbby.gadtry.base.Try;
 import com.github.harbby.gadtry.collection.ImmutableList;
 import com.github.harbby.gadtry.easyspi.Module;
 import com.github.harbby.gadtry.easyspi.ModuleLoader;
@@ -32,15 +33,24 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.lang.reflect.Method;
+import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -71,7 +81,17 @@ public class OperatorManager
         this.loader = ModuleLoader.<Plugin>newScanner()
                 .setPlugin(Plugin.class)
                 .setScanDir(pluginDir)
-                .setClassLoaderFactory(urls -> new VolatileClassLoader(urls, securityClassLoader))
+                .setLoader(OperatorManager::serviceLoad)
+                .setClassLoaderFactory(urls -> new VolatileClassLoader(urls, securityClassLoader)
+                {
+                    @Override
+                    protected void finalize()
+                            throws Throwable
+                    {
+                        super.finalize();
+                        logger.warn("Jvm gc free ClassLoader: {}", Arrays.toString(urls));
+                    }
+                })
                 .setLoadHandler(module -> {
                     logger.info("loading module {} find {} Operator", module.getName(), module.getPlugins().size());
                     userExtPlugins.put(module.getName(), new ModuleInfo(module, new ArrayList<>()));
@@ -144,6 +164,52 @@ public class OperatorManager
     public List<Module<Plugin>> getModules()
     {
         return ImmutableList.copy(userExtPlugins.values());
+    }
+
+    private static final String PREFIX = "META-INF/services/";   // copy form ServiceLoader
+
+    public static <T> Set<T> serviceLoad(Class<T> service, ClassLoader loader)
+    {
+        final String fullName = PREFIX + service.getName();
+
+        Method parseLineMethod = Try.valueOf(() -> ServiceLoader.class.getDeclaredMethod("parseLine",
+                        Class.class, URL.class, BufferedReader.class, int.class, List.class))
+                .onSuccess(method -> method.setAccessible(true))
+                .matchException(Exception.class, e -> {
+                    throw new ServiceConfigurationError("Error find java.util.ServiceLoader.parse(Class.class, URL.class)");
+                }).doTry();
+
+        List<String> names = new ArrayList<>();
+        try (InputStream in = loader.getResourceAsStream(fullName)) {
+            if (in == null) {
+                return Collections.emptySet();
+            }
+            BufferedReader r = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+            ServiceLoader<T> jdkServiceLoader = ServiceLoader.load(service); //don't foreach jdkServiceLoader
+            Try.noCatch(() -> parseLineMethod.invoke(jdkServiceLoader, service, loader.getResource(fullName), r, 1, names));
+        }
+        catch (IOException e) {
+            throw new ServiceConfigurationError(service.getName() + ": " + "Error reading configuration file", e);
+        }
+        return names.stream().map(cn -> {
+            Class<?> c = null;
+            try {
+                c = Class.forName(cn, false, loader);
+            }
+            catch (ClassNotFoundException x) {
+                throw new ServiceConfigurationError("Provider " + cn + " not found");
+            }
+            if (!service.isAssignableFrom(c)) {
+                throw new ServiceConfigurationError("Provider " + cn + " not a subtype");
+            }
+            try {
+                T p = service.cast(c.newInstance());
+                return p;
+            }
+            catch (Throwable x) {
+                throw new ServiceConfigurationError(service.getName() + ": " + "Provider " + cn + " could not be instantiated", x);
+            }
+        }).collect(Collectors.toSet());
     }
 
     private static class ModuleInfo
