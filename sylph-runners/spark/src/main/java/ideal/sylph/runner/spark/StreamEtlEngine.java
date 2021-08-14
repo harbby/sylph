@@ -15,11 +15,10 @@
  */
 package ideal.sylph.runner.spark;
 
-import com.github.harbby.gadtry.collection.MutableSet;
+import com.github.harbby.gadtry.collection.ImmutableList;
 import com.github.harbby.gadtry.ioc.Autowired;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
-import ideal.sylph.spi.ConnectorStore;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.EtlFlow;
 import ideal.sylph.spi.job.EtlJobEngineHandle;
@@ -29,8 +28,8 @@ import ideal.sylph.spi.job.JobConfig;
 import javax.validation.constraints.NotNull;
 
 import java.io.Serializable;
-import java.net.URLClassLoader;
-import java.util.Set;
+import java.net.URL;
+import java.util.List;
 
 @Name("Spark_StreamETL")
 @Description("spark1.x spark streaming StreamETL")
@@ -42,27 +41,27 @@ public class StreamEtlEngine
     @Autowired
     public StreamEtlEngine(RunnerContext runnerContext)
     {
+        super(runnerContext);
         this.runnerContext = runnerContext;
     }
 
     @NotNull
     @Override
-    public Serializable formJob(String jobId, Flow flow, JobConfig jobConfig, URLClassLoader jobClassLoader)
+    public Serializable formJob(String jobId, Flow flow, JobConfig jobConfig, List<URL> pluginJars)
             throws Exception
     {
-        return JobHelper.build1xJob(jobId, (EtlFlow) flow, jobClassLoader, getConnectorStore());
+        return JobHelper.build1xJob(jobId, (EtlFlow) flow, pluginJars, runnerContext.getLatestMetaData(this));
     }
 
     @Override
-    public ConnectorStore getConnectorStore()
+    public List<Class<?>> keywords()
     {
-        Set<Class<?>> filterClass = MutableSet.of(
+        return ImmutableList.of(
                 org.apache.spark.streaming.dstream.DStream.class,
                 org.apache.spark.streaming.api.java.JavaDStream.class,
                 org.apache.spark.rdd.RDD.class,
                 org.apache.spark.api.java.JavaRDD.class,
                 org.apache.spark.sql.Row.class
         );
-        return runnerContext.createConnectorStore(filterClass, SparkRunner.class);
     }
 }

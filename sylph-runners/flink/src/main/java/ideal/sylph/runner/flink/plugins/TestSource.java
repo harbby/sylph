@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.plugins.kafka.flink;
+package ideal.sylph.runner.flink.plugins;
 
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
@@ -94,9 +94,7 @@ public class TestSource
                     TypeExtractor.createTypeInfo(long.class) //createTypeInformation[String]
             };
 
-            RowTypeInfo rowTypeInfo = new RowTypeInfo(types, new String[] {"key", "message", "event_time"});
-            //createTypeInformation[Row]
-            return rowTypeInfo;
+            return new RowTypeInfo(types, new String[] {"key", "message", "event_time"});
         }
 
         @Override

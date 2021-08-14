@@ -8,6 +8,25 @@ allprojects {
   group 'com.github.harbby'
   version '0.8.0-SNAPSHOT'  //SNAPSHOT
 
+  ext.deps = [
+          flink               : '1.13.1',
+          jetty               : "9.4.6.v20170531",   //8.1.17.v20150415   "9.4.6.v20170531"
+          hadoop              : "3.2.1",
+          hbase               : '1.1.2',
+          spark               : "3.1.2",
+          scala               : '2.12.8',
+          joda_time           : '2.9.3',
+          slf4j               : '1.7.25',
+          guice               : '4.2.1',
+          gadtry              : '1.9.2-SNAPSHOT',
+          guava               : '27.0-jre',
+          jackson             : '2.9.8',
+          jersey              : '2.28',
+          scala_binary_version: '2.12'
+  ]
+}
+
+subprojects {
   apply plugin: 'java'
   apply plugin: 'maven'
   apply plugin: 'checkstyle'
@@ -24,25 +43,6 @@ allprojects {
     options.encoding = 'UTF-8'
   }
 
-  ext.deps = [
-          flink               : '1.13.1',
-          jetty               : "9.4.6.v20170531",   //8.1.17.v20150415   "9.4.6.v20170531"
-          hadoop              : "3.2.1",
-          hbase               : '1.1.2',
-          spark               : "3.1.2",
-          scala               : '2.12.8',
-          joda_time           : '2.9.3',
-          slf4j               : '1.7.25',
-          guice               : '4.2.1',
-          gadtry              : '1.9.1',
-          guava               : '27.0-jre',
-          jackson             : '2.9.8',
-          jersey              : '2.28',
-          scala_binary_version: '2.12'
-  ]
-}
-
-subprojects {
   if (project != rootProject) {
     apply plugin: 'com.github.hierynomus.license'
   }
@@ -55,6 +55,9 @@ subprojects {
     mavenLocal()
     //maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
     mavenCentral()
+    maven {
+      url 'https://oss.sonatype.org/service/local/repositories/snapshots/content/'
+    }
   }
 
   dependencies {

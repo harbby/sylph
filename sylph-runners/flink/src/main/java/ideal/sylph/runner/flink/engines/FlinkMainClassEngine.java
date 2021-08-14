@@ -17,17 +17,18 @@ package ideal.sylph.runner.flink.engines;
 
 import com.github.harbby.gadtry.aop.AopGo;
 import com.github.harbby.gadtry.aop.mock.MockGoArgument;
-import com.github.harbby.gadtry.ioc.Autowired;
+import com.github.harbby.gadtry.collection.ImmutableList;
 import com.github.harbby.gadtry.jvm.JVMException;
 import com.github.harbby.gadtry.jvm.JVMLauncher;
 import com.github.harbby.gadtry.jvm.JVMLaunchers;
 import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.runner.flink.FlinkJobConfig;
-import ideal.sylph.spi.RunnerContext;
+import ideal.sylph.runner.flink.FlinkRunner;
 import ideal.sylph.spi.job.Flow;
 import ideal.sylph.spi.job.JobConfig;
-import ideal.sylph.spi.model.ConnectorInfo;
+import ideal.sylph.spi.job.JobEngineHandle;
+import ideal.sylph.spi.model.OperatorInfo;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironmentFactory;
@@ -38,9 +39,11 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 import static com.github.harbby.gadtry.aop.mock.MockGoArgument.anyString;
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
@@ -59,13 +62,9 @@ import static org.fusesource.jansi.Ansi.Color.YELLOW;
 @Name("FlinkMainClass")
 @Description("this is FlinkMainClassEngine Actuator")
 public class FlinkMainClassEngine
-        extends FlinkStreamEtlEngine
+        implements JobEngineHandle
 {
-    @Autowired
-    public FlinkMainClassEngine(RunnerContext runnerContextr)
-    {
-        super(runnerContextr);
-    }
+    private static final URLClassLoader classLoader = (URLClassLoader) FlinkRunner.class.getClassLoader();
 
     @Override
     public Flow formFlow(byte[] flowBytes)
@@ -75,20 +74,26 @@ public class FlinkMainClassEngine
     }
 
     @Override
-    public Collection<ConnectorInfo> parserFlowDepends(Flow inFlow)
+    public Collection<OperatorInfo> parserFlowDepends(Flow inFlow)
             throws IOException
     {
         return Collections.emptyList();
     }
 
     @Override
-    public Serializable formJob(String jobId, Flow flow, JobConfig jobConfig, URLClassLoader jobClassLoader)
-            throws Exception
+    public List<Class<?>> keywords()
     {
-        return compile(jobId, (StringFlow) flow, (FlinkJobConfig) jobConfig, jobClassLoader);
+        return Collections.emptyList();
     }
 
-    private static JobGraph compile(String jobId, StringFlow flow, FlinkJobConfig jobConfig, URLClassLoader jobClassLoader)
+    @Override
+    public Serializable formJob(String jobId, Flow flow, JobConfig jobConfig, List<URL> pluginJars)
+            throws Exception
+    {
+        return compile(jobId, (StringFlow) flow, (FlinkJobConfig) jobConfig, pluginJars);
+    }
+
+    private static JobGraph compile(String jobId, StringFlow flow, FlinkJobConfig jobConfig, List<URL> pluginJars)
             throws JVMException
     {
         JVMLauncher<JobGraph> launcher = JVMLaunchers.<JobGraph>newJvm()
@@ -100,8 +105,9 @@ public class FlinkMainClassEngine
                     FlinkEnvFactory.setJobConfig(execEnv, jobConfig, jobId);
                     return getJobGraphForJarClass(execEnv, mainClass, new String[0]);
                 })
-                .setClassLoader(jobClassLoader)
-                .addUserURLClassLoader(jobClassLoader)
+                .setClassLoader(classLoader)
+                .addUserjars(ImmutableList.copy(classLoader.getURLs())) //flink jars + runner jar
+                .addUserjars(pluginJars)
                 .build();
 
         return launcher.startAndGet();

@@ -26,7 +26,7 @@ import ideal.sylph.runner.flink.sql.FlinkSqlParser;
 import ideal.sylph.runner.flink.resource.PrintTableSink;
 import ideal.sylph.runner.flink.table.SylphTableSource;
 import ideal.sylph.runner.flink.udf.TimeUtil;
-import ideal.sylph.spi.ConnectorStore;
+import ideal.sylph.spi.OperatorMetaData;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.calcite.shaded.com.google.common.collect.ImmutableList;
@@ -88,7 +88,7 @@ public class JoinTest
 
         FlinkSqlParser flinkSqlParser = FlinkSqlParser.builder()
                 .setTableEnv(tableEnv)
-                .setConnectorStore(ConnectorStore.getDefault())
+                .setConnectorStore(OperatorMetaData.getDefault())
                 .build();
 
         flinkSqlParser.parser(leftJoin, ImmutableList.of(dimTable));
@@ -105,7 +105,7 @@ public class JoinTest
 
         FlinkSqlParser flinkSqlParser = FlinkSqlParser.builder()
                 .setTableEnv(tableEnv)
-                .setConnectorStore(ConnectorStore.getDefault())
+                .setConnectorStore(OperatorMetaData.getDefault())
                 .build();
 
         flinkSqlParser.parser(leftJoin, ImmutableList.of(dimTable));
@@ -123,7 +123,7 @@ public class JoinTest
 
         FlinkSqlParser flinkSqlParser = FlinkSqlParser.builder()
                 .setTableEnv(tableEnv)
-                .setConnectorStore(ConnectorStore.getDefault())
+                .setConnectorStore(OperatorMetaData.getDefault())
                 .build();
 
         flinkSqlParser.parser(leftJoin, ImmutableList.of(dimTable));
@@ -140,7 +140,7 @@ public class JoinTest
 
         FlinkSqlParser flinkSqlParser = FlinkSqlParser.builder()
                 .setTableEnv(tableEnv)
-                .setConnectorStore(ConnectorStore.getDefault())
+                .setConnectorStore(OperatorMetaData.getDefault())
                 .build();
 
         flinkSqlParser.parser(leftJoin, ImmutableList.of(dimTable));
@@ -160,7 +160,7 @@ public class JoinTest
 
         FlinkSqlParser flinkSqlParser = FlinkSqlParser.builder()
                 .setTableEnv(tableEnv)
-                .setConnectorStore(ConnectorStore.getDefault())
+                .setConnectorStore(OperatorMetaData.getDefault())
                 .build();
 
         flinkSqlParser.parser(leftJoin, ImmutableList.of(dimTable));
@@ -177,7 +177,7 @@ public class JoinTest
 
         FlinkSqlParser flinkSqlParser = FlinkSqlParser.builder()
                 .setTableEnv(tableEnv)
-                .setConnectorStore(ConnectorStore.getDefault())
+                .setConnectorStore(OperatorMetaData.getDefault())
                 .build();
 
         flinkSqlParser.parser(leftJoin, ImmutableList.of(dimTable));
@@ -194,7 +194,7 @@ public class JoinTest
 
         FlinkSqlParser flinkSqlParser = FlinkSqlParser.builder()
                 .setTableEnv(tableEnv)
-                .setConnectorStore(ConnectorStore.getDefault())
+                .setConnectorStore(OperatorMetaData.getDefault())
                 .build();
 
         flinkSqlParser.parser(leftJoin, ImmutableList.of(dimTable));

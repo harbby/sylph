@@ -80,7 +80,6 @@ public class PluginManagerResource
                     .put("driver", pluginInfo.getDriverClass())
                     .put("description", pluginInfo.getDescription())
                     .put("version", pluginInfo.getVersion())
-                    .put("types", pluginInfo.getJavaGenerics())
                     .put("realTime", pluginInfo.isRealTime())
                     .put("type", pluginInfo.getPipelineType())
                     .put("config", config)
@@ -91,6 +90,7 @@ public class PluginManagerResource
     @GET
     @Path("reload")
     public void reload()
+            throws IOException
     {
         sylphContext.reload();
     }
@@ -119,7 +119,6 @@ public class PluginManagerResource
                     .put("driver", pluginInfo.getDriverClass())
                     .put("description", pluginInfo.getDescription())
                     .put("version", pluginInfo.getVersion())
-                    .put("types", pluginInfo.getJavaGenerics())
                     .put("realTime", pluginInfo.isRealTime() + "")
                     .put("type", pluginInfo.getPipelineType())
                     .put("config", config)
@@ -137,7 +136,7 @@ public class PluginManagerResource
             List<Class<?>> drivers = module.getPlugins().stream().flatMap(x -> x.getConnectors().stream()).collect(Collectors.toList());
             return MutableMap.<String, Object>builder()
                     .put("name", module.getName())
-                    .put("path", module.getModulePath())
+                    .put("path", module.moduleFile())
                     .put("loadTime", module.getLoadTime())
                     .put("size", drivers.size())
                     .put("drivers", drivers)

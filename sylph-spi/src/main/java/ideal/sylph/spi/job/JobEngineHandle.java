@@ -16,46 +16,43 @@
 package ideal.sylph.spi.job;
 
 import com.github.harbby.gadtry.jvm.JVMException;
-import ideal.sylph.spi.ConnectorStore;
-import ideal.sylph.spi.model.ConnectorInfo;
+import ideal.sylph.spi.model.OperatorInfo;
 
 import javax.validation.constraints.NotNull;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.net.URLClassLoader;
+import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 public interface JobEngineHandle
 {
     /**
      * building job
      *
-     * @param flow input Flow
-     * @param jobClassLoader Independent Job ClassLoader
-     * @param jobConfig job config
-     * @param jobId job id
+     * @param flow       input Flow
+     * @param pluginJars user plugin jars
+     * @param jobConfig  job config
+     * @param jobId      job id
      * @return JobHandel
      * @throws JVMException Throw it if the child process fails to compile
      */
     @NotNull
-    default <T extends Serializable> T formJob(
+    public Serializable formJob(
             String jobId,
             Flow flow,
             JobConfig jobConfig,
-            URLClassLoader jobClassLoader)
-            throws Exception
-    {
-        throw new UnsupportedOperationException("this method have't support!");
-    }
+            List<URL> pluginJars)
+            throws Exception;
 
     @NotNull
     Flow formFlow(byte[] flowBytes)
             throws IOException;
 
     @NotNull
-    default Collection<ConnectorInfo> parserFlowDepends(Flow flow)
+    default Collection<OperatorInfo> parserFlowDepends(Flow flow)
             throws IOException
     {
         return Collections.emptyList();
@@ -67,8 +64,5 @@ public interface JobEngineHandle
         return JobConfig.class;
     }
 
-    default ConnectorStore getConnectorStore()
-    {
-        return ConnectorStore.getDefault();
-    }
+    List<Class<?>> keywords();
 }

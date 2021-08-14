@@ -17,15 +17,15 @@ package ideal.sylph.runner.flink.etl;
 
 import com.github.harbby.gadtry.base.JavaTypes;
 import com.github.harbby.gadtry.ioc.IocFactory;
-import ideal.sylph.etl.Operator;
+import ideal.sylph.etl.OperatorType;
 import ideal.sylph.etl.Schema;
 import ideal.sylph.etl.api.RealTimeSink;
 import ideal.sylph.etl.api.RealTimeTransForm;
 import ideal.sylph.etl.api.Sink;
 import ideal.sylph.etl.api.Source;
 import ideal.sylph.etl.api.TransForm;
-import ideal.sylph.spi.ConnectorStore;
 import ideal.sylph.spi.NodeLoader;
+import ideal.sylph.spi.OperatorMetaData;
 import ideal.sylph.spi.exception.SylphException;
 import org.apache.flink.api.dag.Transformation;
 import org.apache.flink.api.java.typeutils.RowTypeInfo;
@@ -51,19 +51,19 @@ public final class FlinkNodeLoader
         implements NodeLoader<DataStream<Row>>
 {
     private static final Logger logger = LoggerFactory.getLogger(FlinkNodeLoader.class);
-    private final ConnectorStore connectorStore;
+    private final OperatorMetaData operatorMetaData;
     private final IocFactory iocFactory;
 
-    public FlinkNodeLoader(ConnectorStore connectorStore, IocFactory iocFactory)
+    public FlinkNodeLoader(OperatorMetaData operatorMetaData, IocFactory iocFactory)
     {
-        this.connectorStore = requireNonNull(connectorStore, "binds is null");
+        this.operatorMetaData = requireNonNull(operatorMetaData, "binds is null");
         this.iocFactory = requireNonNull(iocFactory, "iocFactory is null");
     }
 
     @Override
     public UnaryOperator<DataStream<Row>> loadSource(String driverStr, final Map<String, Object> config)
     {
-        final Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, Operator.PipelineType.source);
+        final Class<?> driverClass = operatorMetaData.getConnectorDriver(driverStr, OperatorType.source);
         checkState(Source.class.isAssignableFrom(driverClass),
                 "The Source driver must is Source.class, But your " + driverClass);
         checkDataStreamRow(Source.class, driverClass);
@@ -93,7 +93,7 @@ public final class FlinkNodeLoader
     @Override
     public UnaryOperator<DataStream<Row>> loadSink(String driverStr, final Map<String, Object> config)
     {
-        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, Operator.PipelineType.sink);
+        Class<?> driverClass = operatorMetaData.getConnectorDriver(driverStr, OperatorType.sink);
         checkState(RealTimeSink.class.isAssignableFrom(driverClass) || Sink.class.isAssignableFrom(driverClass),
                 "The Sink driver must is RealTimeSink.class or Sink.class, But your " + driverClass);
         if (Sink.class.isAssignableFrom(driverClass)) {
@@ -151,7 +151,7 @@ public final class FlinkNodeLoader
     @Override
     public final UnaryOperator<DataStream<Row>> loadTransform(String driverStr, final Map<String, Object> config)
     {
-        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, Operator.PipelineType.transform);
+        Class<?> driverClass = operatorMetaData.getConnectorDriver(driverStr, OperatorType.transform);
         checkState(RealTimeTransForm.class.isAssignableFrom(driverClass) || TransForm.class.isAssignableFrom(driverClass),
                 "driverStr must is RealTimeSink.class or Sink.class");
         if (TransForm.class.isAssignableFrom(driverClass)) {

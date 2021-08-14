@@ -17,7 +17,7 @@ package ideal.sylph.plugins.kafka.flink;
 
 import ideal.sylph.parser.antlr.AntlrSqlParser;
 import ideal.sylph.runner.flink.engines.StreamSqlBuilder;
-import ideal.sylph.spi.ConnectorStore;
+import ideal.sylph.spi.OperatorMetaData;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableEnvironment;
@@ -55,7 +55,7 @@ public class KafkaSourceTest
                 "    kafka_group_id = 'streamload1'\n" +
                 ")";
 
-        StreamSqlBuilder streamSqlBuilder = new StreamSqlBuilder(tableEnv, ConnectorStore.getDefault(), sqlParser);
+        StreamSqlBuilder streamSqlBuilder = new StreamSqlBuilder(tableEnv, OperatorMetaData.getDefault(), sqlParser);
         streamSqlBuilder.buildStreamBySql(sql);
 
         Table kafka = tableEnv.sqlQuery("select * from tb1");

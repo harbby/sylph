@@ -15,10 +15,12 @@
  */
 package ideal.sylph.spi.job;
 
+import com.github.harbby.gadtry.ioc.Autowired;
 import com.google.common.collect.ImmutableSet;
-import ideal.sylph.etl.Operator;
-import ideal.sylph.spi.model.ConnectorInfo;
+import ideal.sylph.etl.OperatorType;
+import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.model.NodeInfo;
+import ideal.sylph.spi.model.OperatorInfo;
 
 import javax.validation.constraints.NotNull;
 
@@ -26,9 +28,19 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Optional;
 
+import static java.util.Objects.requireNonNull;
+
 public abstract class EtlJobEngineHandle
         implements JobEngineHandle
 {
+    private final RunnerContext runnerContext;
+
+    @Autowired
+    protected EtlJobEngineHandle(RunnerContext runnerContext)
+    {
+        this.runnerContext = requireNonNull(runnerContext, "runnerContext is null");
+    }
+
     @NotNull
     @Override
     public Flow formFlow(byte[] flowBytes)
@@ -39,16 +51,16 @@ public abstract class EtlJobEngineHandle
 
     @NotNull
     @Override
-    public Collection<ConnectorInfo> parserFlowDepends(Flow inFlow)
+    public Collection<OperatorInfo> parserFlowDepends(Flow inFlow)
             throws IOException
     {
         EtlFlow flow = (EtlFlow) inFlow;
         //---- flow parser depends ----
-        ImmutableSet.Builder<ConnectorInfo> builder = ImmutableSet.builder();
+        ImmutableSet.Builder<OperatorInfo> builder = ImmutableSet.builder();
         for (NodeInfo nodeInfo : flow.getNodes()) {
             String driverOrName = nodeInfo.getDriverClass();
-            Operator.PipelineType type = Operator.PipelineType.valueOf(nodeInfo.getNodeType());
-            Optional<ConnectorInfo> pluginInfo = this.getConnectorStore().findConnectorInfo(driverOrName, type);
+            OperatorType type = OperatorType.valueOf(nodeInfo.getNodeType());
+            Optional<OperatorInfo> pluginInfo = runnerContext.getLatestMetaData(this).findConnectorInfo(driverOrName, type);
             pluginInfo.ifPresent(builder::add);
         }
         return builder.build();

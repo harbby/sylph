@@ -18,7 +18,7 @@ package ideal.sylph.runner.flink.engines;
 import ideal.sylph.parser.antlr.AntlrSqlParser;
 import ideal.sylph.runner.flink.resource.PrintTableSink;
 import ideal.sylph.runner.flink.resource.TestTableSource;
-import ideal.sylph.spi.ConnectorStore;
+import ideal.sylph.spi.OperatorMetaData;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
@@ -29,7 +29,7 @@ public class StreamSqlBuilderTest
 {
     private final StreamExecutionEnvironment execEnv = StreamExecutionEnvironment.createLocalEnvironment();
     private final StreamTableEnvironment tableEnv = StreamTableEnvironment.create(execEnv);
-    private final StreamSqlBuilder streamSqlBuilder = new StreamSqlBuilder(tableEnv, ConnectorStore.getDefault(), new AntlrSqlParser());
+    private final StreamSqlBuilder streamSqlBuilder = new StreamSqlBuilder(tableEnv, OperatorMetaData.getDefault(), new AntlrSqlParser());
 
     private void registerDataStream()
     {

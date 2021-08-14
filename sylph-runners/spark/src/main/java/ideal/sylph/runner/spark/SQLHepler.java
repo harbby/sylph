@@ -117,7 +117,7 @@ public class SQLHepler
     private static String structTypeToString(StructType structType)
     {
         return Arrays.stream(structType.fields()).map(x -> x.name() + ": " +
-                x.dataType().catalogString())
+                        x.dataType().catalogString())
                 .collect(Collectors.toList())
                 .toString();
     }

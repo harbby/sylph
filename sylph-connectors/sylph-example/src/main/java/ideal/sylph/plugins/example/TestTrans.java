@@ -13,22 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.plugins.mysql;
+package ideal.sylph.plugins.example;
 
-import com.github.harbby.gadtry.collection.MutableSet;
-import ideal.sylph.etl.Operator;
+import ideal.sylph.etl.Collector;
+import ideal.sylph.etl.Record;
+import ideal.sylph.etl.Schema;
+import ideal.sylph.etl.api.RealTimeTransForm;
 
-import java.util.Set;
-
-public class Plugin
-        implements ideal.sylph.etl.Plugin
+public class TestTrans
+        implements RealTimeTransForm
 {
     @Override
-    public Set<Class<? extends Operator>> getConnectors()
+    public void process(Record input, Collector<Record> collector)
     {
-        return MutableSet.<Class<? extends Operator>>builder()
-                .add(MysqlAsyncJoin.class)
-                .add(MysqlSink.class)
-                .build();
+        collector.collect(input);
     }
+
+    @Override
+    public Schema getSchema()
+    {
+        return null;
+    }
+
+    @Override
+    public boolean open(long partitionId, long version)
+            throws Exception
+    {
+        return true;
+    }
+
+    @Override
+    public void close(Throwable errorOrNull)
+    {}
 }

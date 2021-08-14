@@ -27,48 +27,52 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 public class SparkRunner
         implements Runner
 {
+    private RunnerContext context;
+    private Set<JobEngineHandle> engines;
+
     @Override
-    public Set<JobEngineHandle> create(RunnerContext context)
+    public void initialize(RunnerContext context)
     {
-        requireNonNull(context, "context is null");
+        this.context = requireNonNull(context, "context is null");
         String sparkHome = requireNonNull(System.getenv("SPARK_HOME"), "SPARK_HOME not setting");
         checkArgument(new File(sparkHome).exists(), "SPARK_HOME " + sparkHome + " not exists");
 
         ClassLoader classLoader = this.getClass().getClassLoader();
-        try {
-            if (classLoader instanceof DirClassLoader) {
-                ((DirClassLoader) classLoader).addDir(new File(sparkHome, "jars"));
-            }
 
-            IocFactory injector = IocFactory.create(
-                    binder -> {
-                        binder.bind(StreamEtlEngine.class).withSingle();
-                        binder.bind(Stream2EtlEngine.class).withSingle();
-                        binder.bind(SparkSubmitEngine.class).withSingle();
-                        binder.bind(SparkStreamingSqlEngine.class).withSingle();
-                        binder.bind(StructuredStreamingSqlEngine.class).withSingle();
-                        //------------------------
-                        binder.bind(RunnerContext.class).byInstance(context);
-                    });
+        if (classLoader instanceof DirClassLoader) {
+            ((DirClassLoader) classLoader).addDir(new File(sparkHome, "jars"));
+        }
 
-            return Stream.of(
-                    StreamEtlEngine.class,
-                    Stream2EtlEngine.class,
-                    SparkSubmitEngine.class,
-                    SparkStreamingSqlEngine.class,
-                    StructuredStreamingSqlEngine.class
-            ).map(injector::getInstance).collect(Collectors.toSet());
-        }
-        catch (Exception e) {
-            throw throwsThrowable(e);
-        }
+        IocFactory injector = IocFactory.create(
+                binder -> {
+                    binder.bind(StreamEtlEngine.class).withSingle();
+                    binder.bind(Stream2EtlEngine.class).withSingle();
+                    binder.bind(SparkMainClassEngine.class).withSingle();
+                    binder.bind(SparkStreamingSqlEngine.class).withSingle();
+                    binder.bind(StructuredStreamingSqlEngine.class).withSingle();
+                    //------------------------
+                    binder.bind(RunnerContext.class).byInstance(context);
+                });
+
+        this.engines = Stream.of(
+                StreamEtlEngine.class,
+                Stream2EtlEngine.class,
+                SparkMainClassEngine.class,
+                SparkStreamingSqlEngine.class,
+                StructuredStreamingSqlEngine.class
+        ).map(injector::getInstance).collect(Collectors.toSet());
+    }
+
+    @Override
+    public Set<JobEngineHandle> getEngines()
+    {
+        return engines;
     }
 
     @Override

@@ -13,32 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.plugins.mysql;
+package ideal.sylph.plugins.example;
 
-import ideal.sylph.annotation.Description;
-import ideal.sylph.annotation.Name;
-import ideal.sylph.etl.Record;
-import ideal.sylph.etl.api.RealTimeSink;
+import com.github.harbby.gadtry.collection.MutableSet;
+import ideal.sylph.etl.Operator;
 
-@Name("console")
-@Description("print data line console")
-public class PrintSink
-        implements RealTimeSink
+import java.util.Set;
+
+public class Plugin
+        implements ideal.sylph.etl.Plugin
 {
     @Override
-    public boolean open(long partitionId, long version)
+    public Set<Class<? extends Operator>> getConnectors()
     {
-        return true;
-    }
-
-    @Override
-    public void close(Throwable errorOrNull)
-    {
-    }
-
-    @Override
-    public void process(Record value)
-    {
-        System.out.println(value.mkString());
+        return MutableSet.<Class<? extends Operator>>builder()
+                .add(PrintSink.class)
+                .add(TestTrans.class)
+                .build();
     }
 }

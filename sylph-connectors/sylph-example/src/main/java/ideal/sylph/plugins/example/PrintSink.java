@@ -13,11 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ideal.sylph.etl;
+package ideal.sylph.plugins.example;
 
-import java.io.Serializable;
+import ideal.sylph.annotation.Description;
+import ideal.sylph.annotation.Name;
+import ideal.sylph.etl.Record;
+import ideal.sylph.etl.api.RealTimeSink;
 
-public interface Operator
-        extends Serializable
+@Name("console")
+@Description("print data line console")
+public class PrintSink
+        implements RealTimeSink
 {
+    @Override
+    public boolean open(long partitionId, long version)
+    {
+        return true;
+    }
+
+    @Override
+    public void close(Throwable errorOrNull)
+    {
+    }
+
+    @Override
+    public void process(Record value)
+    {
+        System.out.println(value.mkString());
+    }
 }

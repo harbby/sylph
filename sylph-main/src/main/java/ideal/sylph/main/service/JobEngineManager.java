@@ -16,20 +16,21 @@
 package ideal.sylph.main.service;
 
 import com.github.harbby.gadtry.base.Closeables;
-import com.github.harbby.gadtry.easyspi.PluginLoader;
+import com.github.harbby.gadtry.base.Throwables;
+import com.github.harbby.gadtry.easyspi.ModuleLoader;
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.google.common.collect.ImmutableList;
 import ideal.sylph.etl.Operator;
 import ideal.sylph.main.server.ServerMainConfig;
+import ideal.sylph.spi.OperatorMetaData;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
-import ideal.sylph.spi.RunnerContextImpl;
 import ideal.sylph.spi.job.ContainerFactory;
 import ideal.sylph.spi.job.Job;
 import ideal.sylph.spi.job.JobContainer;
 import ideal.sylph.spi.job.JobEngine;
-import ideal.sylph.spi.job.JobEngineHandle;
 import ideal.sylph.spi.job.JobStore;
+import ideal.sylph.spi.model.OperatorInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,8 +59,8 @@ public class JobEngineManager
 {
     private static final Logger logger = LoggerFactory.getLogger(JobEngineManager.class);
     private final Map<String, JobEngine> jobActuatorMap = new HashMap<>();
-    private final OperatorLoader pluginLoader;
     private final ServerMainConfig config;
+    private final OperatorManager operatorManager;
 
     private static final List<String> SPI_PACKAGES = ImmutableList.<String>builder()
             .add("ideal.sylph.spi.")
@@ -78,44 +79,54 @@ public class JobEngineManager
             .build();
 
     @Autowired
-    public JobEngineManager(OperatorLoader pluginLoader, ServerMainConfig config)
+    public JobEngineManager(OperatorManager operatorManager, ServerMainConfig config)
     {
-        this.pluginLoader = requireNonNull(pluginLoader, "pluginLoader is null");
         this.config = requireNonNull(config, "config is null");
+        this.operatorManager = operatorManager;
     }
 
     public void loadRunners()
             throws IOException
     {
-        PluginLoader.<Runner>newScanner()
+        List<Runner> runnerList = new ArrayList<>();
+        ModuleLoader.<Runner>newScanner()
                 .setPlugin(Runner.class)
                 .setScanDir(new File("modules"))
-                .onlyAccessSpiPackages(SPI_PACKAGES)
+                .accessSpiPackages(SPI_PACKAGES)
                 .setLoadHandler(module -> {
-                    logger.info("Found module dir directory {} Try to loading the runner", module.getModulePath());
+                    logger.info("Found module dir directory {} Try to loading the runner", module.moduleFile());
                     List<Runner> plugins = module.getPlugins();
-                    if (plugins.isEmpty()) {
-                        logger.warn("No service providers of type {}", Runner.class.getName());
-                    }
-                    else {
+                    if (!plugins.isEmpty()) {
                         for (Runner runner : plugins) {
                             logger.info("Installing runner {} with dir{}", runner.getClass().getName(), runner);
-                            createRunner(runner);
+                            initializeRunner(runner);
+                            runnerList.add(runner);
                         }
                     }
+                    else {
+                        logger.warn("No service providers of type {}", Runner.class.getName());
+                    }
                 }).load();
+        //begin analyze module plugin class
+        operatorManager.analyzeModulePlugins(runnerList);
     }
 
-    private void createRunner(final Runner runner)
+    private void initializeRunner(final Runner runner)
     {
-        RunnerContext runnerContext = new RunnerContextImpl(pluginLoader::getPluginsInfo);
+        RunnerContext runnerContext = engine -> {
+            Set<OperatorInfo> operatorInfos = operatorManager.getPluginsInfo();
+            List<OperatorInfo> filter = operatorInfos.stream()
+                    .filter(x -> x.isRealTime() || x.getOwnerEngine().contains(engine.getClass().getName()))
+                    .collect(Collectors.toList());
+            return new OperatorMetaData(filter);
+        };
         logger.info("Runner: {} starts loading {}", runner.getClass().getName(), Operator.class.getName());
 
         checkArgument(runner.getContainerFactory() != null, runner.getClass() + " getContainerFactory() return null");
+        Throwables.noCatch(() -> runner.initialize(runnerContext));
 
-        Set<JobEngineHandle> jobActuators = runner.create(runnerContext);
         final ContainerFactory factory = noCatch(() -> runner.getContainerFactory().newInstance());
-        jobActuators.forEach(jobActuatorHandle -> {
+        runner.getEngines().forEach(jobActuatorHandle -> {
             JobEngine jobEngine = new JobEngineImpl(jobActuatorHandle, factory);
             String name = jobEngine.getName();
 
@@ -128,9 +139,6 @@ public class JobEngineManager
         });
     }
 
-    /**
-     * 创建job 运行时
-     */
     JobContainer createJobContainer(JobStore.DbJob dbJob, String runId, String runtimeType)
     {
         requireNonNull(runtimeType, "runtimeType is null");

@@ -28,7 +28,6 @@ public class Plugin
     {
         return MutableSet.<Class<? extends Operator>>builder()
                 .add(KafkaSource.class)
-                .add(TestSource.class)
                 .build();
     }
 }

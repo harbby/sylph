@@ -16,7 +16,7 @@
 package ideal.sylph.runner.spark.structured;
 
 import com.github.harbby.gadtry.ioc.IocFactory;
-import ideal.sylph.etl.Operator;
+import ideal.sylph.etl.OperatorType;
 import ideal.sylph.etl.api.RealTimeSink;
 import ideal.sylph.etl.api.RealTimeTransForm;
 import ideal.sylph.etl.api.Sink;
@@ -24,8 +24,8 @@ import ideal.sylph.etl.api.Source;
 import ideal.sylph.etl.api.TransForm;
 import ideal.sylph.runner.spark.SparkRecord;
 import ideal.sylph.runner.spark.sparkstreaming.StreamNodeLoader;
-import ideal.sylph.spi.ConnectorStore;
 import ideal.sylph.spi.NodeLoader;
+import ideal.sylph.spi.OperatorMetaData;
 import org.apache.spark.api.java.function.MapPartitionsFunction;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
@@ -51,19 +51,19 @@ public class StructuredNodeLoader
 {
     private final Logger logger = LoggerFactory.getLogger(StructuredNodeLoader.class);
 
-    private final ConnectorStore connectorStore;
+    private final OperatorMetaData operatorMetaData;
     private final IocFactory iocFactory;
 
-    public StructuredNodeLoader(ConnectorStore connectorStore, IocFactory iocFactory)
+    public StructuredNodeLoader(OperatorMetaData operatorMetaData, IocFactory iocFactory)
     {
-        this.connectorStore = connectorStore;
+        this.operatorMetaData = operatorMetaData;
         this.iocFactory = iocFactory;
     }
 
     @Override
     public UnaryOperator<Dataset<Row>> loadSource(String driverStr, Map<String, Object> config)
     {
-        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, Operator.PipelineType.source);
+        Class<?> driverClass = operatorMetaData.getConnectorDriver(driverStr, OperatorType.source);
         Source<Dataset<Row>> source = (Source<Dataset<Row>>) getPluginInstance(driverClass, config);
 
         return stream -> {
@@ -85,7 +85,7 @@ public class StructuredNodeLoader
 
     public Function<Dataset<Row>, DataStreamWriter<Row>> loadSinkWithComplic(String driverStr, Map<String, Object> config)
     {
-        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, Operator.PipelineType.sink);
+        Class<?> driverClass = operatorMetaData.getConnectorDriver(driverStr, OperatorType.sink);
         Object driver = getPluginInstance(driverClass, config);
 
         final Sink<DataStreamWriter<Row>> sink;
@@ -128,7 +128,7 @@ public class StructuredNodeLoader
     @Override
     public UnaryOperator<Dataset<Row>> loadTransform(String driverStr, Map<String, Object> config)
     {
-        Class<?> driverClass = connectorStore.getConnectorDriver(driverStr, Operator.PipelineType.transform);
+        Class<?> driverClass = operatorMetaData.getConnectorDriver(driverStr, OperatorType.transform);
         Object driver = getPluginInstance(driverClass, config);
 
         final TransForm<Dataset<Row>> transform;

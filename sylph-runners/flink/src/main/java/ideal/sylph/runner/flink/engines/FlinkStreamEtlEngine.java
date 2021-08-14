@@ -16,6 +16,7 @@
 package ideal.sylph.runner.flink.engines;
 
 import com.github.harbby.gadtry.base.Platform;
+import com.github.harbby.gadtry.collection.ImmutableList;
 import com.github.harbby.gadtry.ioc.Autowired;
 import com.github.harbby.gadtry.ioc.IocFactory;
 import com.github.harbby.gadtry.jvm.JVMLauncher;
@@ -25,8 +26,9 @@ import ideal.sylph.annotation.Description;
 import ideal.sylph.annotation.Name;
 import ideal.sylph.runner.flink.FlinkBean;
 import ideal.sylph.runner.flink.FlinkJobConfig;
+import ideal.sylph.runner.flink.FlinkRunner;
 import ideal.sylph.runner.flink.etl.FlinkNodeLoader;
-import ideal.sylph.spi.ConnectorStore;
+import ideal.sylph.spi.OperatorMetaData;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.EtlFlow;
 import ideal.sylph.spi.job.EtlJobEngineHandle;
@@ -40,13 +42,11 @@ import org.fusesource.jansi.Ansi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.validation.constraints.NotNull;
-
-import java.io.Serializable;
+import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.List;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
-import static ideal.sylph.runner.flink.FlinkRunner.createConnectorStore;
 import static ideal.sylph.spi.GraphAppUtil.buildGraph;
 import static org.fusesource.jansi.Ansi.Color.GREEN;
 import static org.fusesource.jansi.Ansi.Color.YELLOW;
@@ -57,37 +57,38 @@ public class FlinkStreamEtlEngine
         extends EtlJobEngineHandle
 {
     private static final Logger logger = LoggerFactory.getLogger(FlinkStreamEtlEngine.class);
-
+    private static final URLClassLoader classLoader = (URLClassLoader) FlinkRunner.class.getClassLoader();
     private final RunnerContext runnerContext;
 
     @Autowired
     public FlinkStreamEtlEngine(RunnerContext runnerContext)
     {
+        super(runnerContext);
         this.runnerContext = runnerContext;
     }
 
-    @NotNull
     @Override
     public Class<? extends JobConfig> getConfigParser()
     {
         return FlinkJobConfig.class;
     }
 
-    @NotNull
     @Override
-    public Serializable formJob(String jobId, Flow inFlow, JobConfig jobConfig, URLClassLoader jobClassLoader)
+    public JobGraph formJob(String jobId, Flow inFlow, JobConfig jobConfig, List<URL> pluginJars)
             throws Exception
     {
         EtlFlow flow = (EtlFlow) inFlow;
 
         final FlinkJobConfig jobParameter = (FlinkJobConfig) jobConfig;
-        return compile(jobId, flow, jobParameter, jobClassLoader, getConnectorStore());
+        return compile(jobId, flow, jobParameter, pluginJars, runnerContext.getLatestMetaData(this));
     }
 
     @Override
-    public ConnectorStore getConnectorStore()
+    public List<Class<?>> keywords()
     {
-        return createConnectorStore(runnerContext);
+        return ImmutableList.of(
+                org.apache.flink.streaming.api.datastream.DataStream.class,
+                org.apache.flink.types.Row.class);
     }
 
     @Override
@@ -99,7 +100,7 @@ public class FlinkStreamEtlEngine
                 .toString();
     }
 
-    private static JobGraph compile(String jobId, EtlFlow flow, FlinkJobConfig jobConfig, URLClassLoader jobClassLoader, ConnectorStore connectorStore)
+    private static JobGraph compile(String jobId, EtlFlow flow, FlinkJobConfig jobConfig, List<URL> pluginJars, OperatorMetaData operatorMetaData)
     {
         //---- build flow----
         JVMLauncher<JobGraph> launcher = JVMLaunchers.<JobGraph>newJvm()
@@ -113,15 +114,16 @@ public class FlinkStreamEtlEngine
                     final IocFactory iocFactory = IocFactory.create(new FlinkBean(execEnv, tableEnv), binder -> {
                         binder.bind(TableContext.class, sourceContext);
                     });
-                    FlinkNodeLoader loader = new FlinkNodeLoader(connectorStore, iocFactory);
+                    FlinkNodeLoader loader = new FlinkNodeLoader(operatorMetaData, iocFactory);
                     buildGraph(loader, flow);
                     StreamGraph streamGraph = execEnv.getStreamGraph();
                     streamGraph.setJobName(jobId);
                     return streamGraph.getJobGraph();
                 })
                 .setConsole((line) -> System.out.print(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset().toString()))
-                .addUserURLClassLoader(jobClassLoader)
-                .setClassLoader(jobClassLoader)
+                .addUserjars(ImmutableList.copy(classLoader.getURLs())) //flink jars + runner jar
+                .addUserjars(pluginJars)
+                .setClassLoader(classLoader)
                 .build();
         return launcher.startAndGet(); //setJobConfig(jobGraph, jobConfig, jobClassLoader, jobId);
     }
