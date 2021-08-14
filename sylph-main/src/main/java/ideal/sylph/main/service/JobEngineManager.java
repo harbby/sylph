@@ -61,6 +61,7 @@ public class JobEngineManager
     private final Map<String, JobEngine> jobActuatorMap = new HashMap<>();
     private final ServerMainConfig config;
     private final OperatorManager operatorManager;
+    private final RunnerContext runnerContext;
 
     private static final List<String> SPI_PACKAGES = ImmutableList.<String>builder()
             .add("ideal.sylph.spi.")
@@ -83,6 +84,13 @@ public class JobEngineManager
     {
         this.config = requireNonNull(config, "config is null");
         this.operatorManager = operatorManager;
+        this.runnerContext = engine -> {
+            Set<OperatorInfo> operatorInfos = operatorManager.getPluginsInfo();
+            List<OperatorInfo> filter = operatorInfos.stream()
+                    .filter(x -> x.isRealTime() || x.getOwnerEngine().contains(engine.getClass().getName()))
+                    .collect(Collectors.toList());
+            return new OperatorMetaData(filter);
+        };
     }
 
     public void loadRunners()
@@ -108,22 +116,15 @@ public class JobEngineManager
                     }
                 }).load();
         //begin analyze module plugin class
-        operatorManager.analyzeModulePlugins(runnerList);
+        operatorManager.initializeRunners(runnerList);
     }
 
     private void initializeRunner(final Runner runner)
     {
-        RunnerContext runnerContext = engine -> {
-            Set<OperatorInfo> operatorInfos = operatorManager.getPluginsInfo();
-            List<OperatorInfo> filter = operatorInfos.stream()
-                    .filter(x -> x.isRealTime() || x.getOwnerEngine().contains(engine.getClass().getName()))
-                    .collect(Collectors.toList());
-            return new OperatorMetaData(filter);
-        };
         logger.info("Runner: {} starts loading {}", runner.getClass().getName(), Operator.class.getName());
 
         checkArgument(runner.getContainerFactory() != null, runner.getClass() + " getContainerFactory() return null");
-        Throwables.noCatch(() -> runner.initialize(runnerContext));
+        Throwables.noCatch(() -> runner.initialize(this.runnerContext));
 
         final ContainerFactory factory = noCatch(() -> runner.getContainerFactory().newInstance());
         runner.getEngines().forEach(jobActuatorHandle -> {
