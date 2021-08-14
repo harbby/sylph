@@ -55,6 +55,9 @@ subprojects {
     mavenLocal()
     //maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
     mavenCentral()
+    maven {
+      url 'https://oss.sonatype.org/service/local/repositories/snapshots/content/'
+    }
   }
 
   dependencies {
