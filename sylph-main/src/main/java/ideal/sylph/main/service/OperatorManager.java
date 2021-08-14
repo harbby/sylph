@@ -65,6 +65,7 @@ public class OperatorManager
     private final Map<Runner, List<OperatorInfo>> internalOperators = new HashMap<>();
     private ModuleLoader<Plugin> loader;
     private final File pluginDir;
+    private final List<Runner> runnerList = new ArrayList<>();
 
     @Autowired
     public OperatorManager(ServerMainConfig config)
@@ -94,43 +95,50 @@ public class OperatorManager
                 })
                 .setLoadHandler(module -> {
                     logger.info("loading module {} find {} Operator", module.getName(), module.getPlugins().size());
-                    userExtPlugins.put(module.getName(), new ModuleInfo(module, new ArrayList<>()));
+                    ModuleInfo moduleInfo = new ModuleInfo(module, new ArrayList<>());
+                    analyzeModulePlugins(moduleInfo);
+                    ModuleInfo old = userExtPlugins.put(module.getName(), moduleInfo);
+                    if (old != null) {
+                        Try.of(old::close).onFailure(e -> logger.warn("free old module failed", e)).doTry();
+                    }
                 }).load();
     }
 
-    void analyzeModulePlugins(List<Runner> runnerList)
+    void initializeRunners(List<Runner> runnerList)
     {
+        this.runnerList.addAll(runnerList);
         //first add system internal operators
         runnerList.forEach(x -> internalOperators.put(x, x.getInternalOperator()));
+    }
 
-        for (ModuleInfo module : userExtPlugins.values()) {
-            logger.info("analysing module {}", module.getName());
-            List<OperatorInfo> infos = new ArrayList<>();
-            List<Class<? extends Operator>> moduleOperators = module.getPlugins().stream().flatMap(x -> x.getConnectors().stream()).collect(Collectors.toList());
-            for (Class<? extends Operator> javaClass : moduleOperators) {
-                boolean realTime = RealTimePipeline.class.isAssignableFrom(javaClass);
-                if (realTime) {
-                    OperatorInfo operatorInfo = analyzePluginInfo(javaClass, Collections.emptyList());
+    private void analyzeModulePlugins(ModuleInfo module)
+    {
+        logger.info("analysing module {}", module.getName());
+        List<OperatorInfo> infos = new ArrayList<>();
+        List<Class<? extends Operator>> moduleOperators = module.getPlugins().stream().flatMap(x -> x.getConnectors().stream()).collect(Collectors.toList());
+        for (Class<? extends Operator> javaClass : moduleOperators) {
+            boolean realTime = RealTimePipeline.class.isAssignableFrom(javaClass);
+            if (realTime) {
+                OperatorInfo operatorInfo = analyzePluginInfo(javaClass, Collections.emptyList());
+                operatorInfo.setModuleFile(module.moduleFile());
+                infos.add(operatorInfo);
+                continue;
+            }
+
+            for (Runner runner : runnerList) {
+                //use a magic scan
+                List<JobEngineHandle> engines = runner.analyzePlugin(javaClass);
+                if (!engines.isEmpty()) {
+                    OperatorInfo operatorInfo = analyzePluginInfo(javaClass, engines.stream()
+                            .map(x -> x.getClass().getName()).collect(Collectors.toList()));
                     operatorInfo.setModuleFile(module.moduleFile());
                     infos.add(operatorInfo);
-                    continue;
-                }
-
-                for (Runner runner : runnerList) {
-                    //use a magic scan
-                    List<JobEngineHandle> engines = runner.analyzePlugin(javaClass);
-                    if (!engines.isEmpty()) {
-                        OperatorInfo operatorInfo = analyzePluginInfo(javaClass, engines.stream()
-                                .map(x -> x.getClass().getName()).collect(Collectors.toList()));
-                        operatorInfo.setModuleFile(module.moduleFile());
-                        infos.add(operatorInfo);
-                        logger.info("Operator {} support {}", javaClass, engines);
-                        break;
-                    }
+                    logger.info("Operator {} support {}", javaClass, engines);
+                    break;
                 }
             }
-            module.infos.addAll(infos);
         }
+        module.infos.addAll(infos);
     }
 
     public Set<OperatorInfo> getPluginsInfo()
@@ -141,12 +149,11 @@ public class OperatorManager
         return set;
     }
 
-    public void reload()
+    public synchronized void reload()
             throws IOException
     {
         logger.warn("reloading connectors...");
         loader.reload(userExtPlugins);
-        logger.warn("reload connectors done.");
     }
 
     public void deleteModule(String moduleName)
