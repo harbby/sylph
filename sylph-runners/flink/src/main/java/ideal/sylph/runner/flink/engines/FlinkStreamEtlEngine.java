@@ -121,8 +121,8 @@ public class FlinkStreamEtlEngine
                     return streamGraph.getJobGraph();
                 })
                 .setConsole((line) -> System.out.print(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset().toString()))
-                .addUserjars(ImmutableList.copy(classLoader.getURLs())) //flink jars + runner jar
-                .addUserjars(pluginJars)
+                .addUserJars(ImmutableList.copy(classLoader.getURLs())) //flink jars + runner jar
+                .addUserJars(pluginJars)
                 .setClassLoader(classLoader)
                 .build();
         return launcher.startAndGet(); //setJobConfig(jobGraph, jobConfig, jobClassLoader, jobId);

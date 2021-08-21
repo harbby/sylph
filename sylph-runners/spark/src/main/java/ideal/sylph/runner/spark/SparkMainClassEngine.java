@@ -73,8 +73,8 @@ public class SparkMainClassEngine
                     return "";
                 })
                 .setClassLoader(classLoader)
-                .addUserjars(ImmutableList.copy(classLoader.getURLs())) //flink jars + runner jar
-                .addUserjars(pluginJars)
+                .addUserJars(ImmutableList.copy(classLoader.getURLs())) //flink jars + runner jar
+                .addUserJars(pluginJars)
                 .build();
 
         launcher.startAndGet();

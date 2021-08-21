@@ -76,8 +76,8 @@ public class SparkContainerFactory
                     }
                     System.out.print(line);
                 })
-                .notDepThisJvmClassPath()
-                .addUserjars(job.getDepends())
+                .notDependParentJvmClassPath()
+                .addUserJars(job.getDepends())
                 .build();
 
         return new LocalContainer()

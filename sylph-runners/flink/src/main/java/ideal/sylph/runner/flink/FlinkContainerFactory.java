@@ -105,8 +105,8 @@ public class FlinkContainerFactory
                     }
                     System.out.print(line);
                 })
-                .notDepThisJvmClassPath()
-                .addUserjars(job.getDepends())
+                .notDependParentJvmClassPath()
+                .addUserJars(job.getDepends())
                 .build();
         YarnConfiguration yarnConfiguration = injector.getInstance(YarnConfiguration.class);
         return new LocalContainer()

@@ -67,7 +67,7 @@ public final class SylphMaster
                     binder.bind(ControllerApp.class).withSingle()
             ).aop(new AuthAspect()).initialize();
             //----analysis
-            logger.info("Analyzed App dependencies {}", String.join("\n", app.analysis().printShow()));
+            logger.info("Analyzed App dependencies {}", String.join("\n", app.analyze().printShow()));
 
             app.getInstance(JobEngineManager.class).loadRunners();
             app.getInstance(OperatorManager.class).loadPlugins();

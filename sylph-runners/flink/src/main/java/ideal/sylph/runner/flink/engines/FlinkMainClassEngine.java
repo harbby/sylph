@@ -106,8 +106,8 @@ public class FlinkMainClassEngine
                     return getJobGraphForJarClass(execEnv, mainClass, new String[0]);
                 })
                 .setClassLoader(classLoader)
-                .addUserjars(ImmutableList.copy(classLoader.getURLs())) //flink jars + runner jar
-                .addUserjars(pluginJars)
+                .addUserJars(ImmutableList.copy(classLoader.getURLs())) //flink jars + runner jar
+                .addUserJars(pluginJars)
                 .build();
 
         return launcher.startAndGet();
