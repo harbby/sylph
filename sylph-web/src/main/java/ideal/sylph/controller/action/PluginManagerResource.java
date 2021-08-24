@@ -42,16 +42,10 @@ import static com.google.common.base.Preconditions.checkArgument;
 @Path("/plugin")
 public class PluginManagerResource
 {
-    @Context private ServletContext servletContext;
-    @Context private UriInfo uriInfo;
-    private SylphContext sylphContext;
+    private final SylphContext sylphContext;
 
-    public PluginManagerResource(
-            @Context ServletContext servletContext,
-            @Context UriInfo uriInfo)
+    public PluginManagerResource(@Context ServletContext servletContext)
     {
-        this.servletContext = servletContext;
-        this.uriInfo = uriInfo;
         this.sylphContext = (SylphContext) servletContext.getAttribute("sylphContext");
     }
 

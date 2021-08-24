@@ -58,31 +58,31 @@ dependencies {
   annotationProcessor 'org.projectlombok:lombok:1.18.8'
   compileOnly 'org.projectlombok:lombok:1.18.8'
 
-  compile group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'
-  compile(project(':sylph-spi'))
+  api group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'
+  api(project(':sylph-spi'))
 
-  compile group: 'org.eclipse.jetty', name: 'jetty-server', version: deps.jetty
-  compile group: 'org.eclipse.jetty', name: 'jetty-webapp', version: deps.jetty
-  compile group: 'org.eclipse.jetty', name: 'jetty-servlets', version: deps.jetty
+  api group: 'org.eclipse.jetty', name: 'jetty-server', version: deps.jetty
+  api group: 'org.eclipse.jetty', name: 'jetty-webapp', version: deps.jetty
+  api group: 'org.eclipse.jetty', name: 'jetty-servlets', version: deps.jetty
 
-  compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.2'
+  api group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.2'
 
-  compile("org.glassfish.jersey.containers:jersey-container-servlet:$deps.jersey") {
+  api("org.glassfish.jersey.containers:jersey-container-servlet:$deps.jersey") {
     exclude(module: 'javassist')
   }
-  compile("org.glassfish.jersey.media:jersey-media-json-jackson:$deps.jersey") {
+  api("org.glassfish.jersey.media:jersey-media-json-jackson:$deps.jersey") {
     exclude(group: 'com.fasterxml.jackson.core')
     exclude(module: 'javassist')
     exclude(module: 'jackson-jaxrs-base')
     exclude(module: 'jackson-jaxrs-json-provider')
     exclude(module: 'jackson-module-jaxb-annotations')
   }
-  compile(group: 'org.glassfish.jersey.media', name: 'jersey-media-multipart', version: deps.jersey) {
+  api(group: 'org.glassfish.jersey.media', name: 'jersey-media-multipart', version: deps.jersey) {
     exclude(module: 'javassist')
   }
-  compile("org.glassfish.jersey.inject:jersey-hk2:$deps.jersey") {
+  api("org.glassfish.jersey.inject:jersey-hk2:$deps.jersey") {
     exclude(module: 'javassist')
   }
 
-  compile group: 'com.fasterxml.jackson.jaxrs', name: 'jackson-jaxrs-json-provider', version: deps.jackson
+  api group: 'com.fasterxml.jackson.jaxrs', name: 'jackson-jaxrs-json-provider', version: deps.jackson
 }

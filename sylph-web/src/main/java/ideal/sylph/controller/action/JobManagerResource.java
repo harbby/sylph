@@ -46,16 +46,10 @@ public class JobManagerResource
 {
     private static final Logger logger = LoggerFactory.getLogger(JobManagerResource.class);
 
-    private final ServletContext servletContext;
-    private final UriInfo uriInfo;
     private final SylphContext sylphContext;
 
-    public JobManagerResource(
-            @Context ServletContext servletContext,
-            @Context UriInfo uriInfo)
+    public JobManagerResource(@Context ServletContext servletContext)
     {
-        this.servletContext = servletContext;
-        this.uriInfo = uriInfo;
         this.sylphContext = (SylphContext) servletContext.getAttribute("sylphContext");
     }
 

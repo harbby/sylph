@@ -24,14 +24,14 @@ dependencies {
 
   //--- other----
   compileOnly(project(':sylph-spi'))
-  compile(project(':sylph-yarn'))
-  compile(project(':sylph-parser')) {
+  implementation(project(':sylph-yarn'))
+  implementation(project(':sylph-parser')) {
     exclude(module: 'guava')
     exclude(module: 'calcite-core')
   }
 
   //colour
-  compile group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
+  implementation group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
 
-  testCompile "org.apache.flink:flink-runtime-web_2.12:${deps.flink}"
+  testImplementation "org.apache.flink:flink-runtime-web_2.12:${deps.flink}"
 }

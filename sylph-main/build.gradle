@@ -3,14 +3,14 @@ ext.moduleName = 'ideal.sylph.main'
 apply plugin: 'application'
 
 dependencies {
-  compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.8.1'
-  compile 'org.xerial:sqlite-jdbc:3.25.2'
-  compile group: 'commons-dbutils', name: 'commons-dbutils', version: '1.7'
-  
-  compile project(':sylph-web')
-  compile(project(':sylph-spi'))
+  implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.8.1'
+  implementation 'org.xerial:sqlite-jdbc:3.25.2'
+  implementation group: 'commons-dbutils', name: 'commons-dbutils', version: '1.7'
 
-  testCompile group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
+  implementation project(':sylph-web')
+  implementation(project(':sylph-spi'))
+
+  testImplementation group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
 }
 
 application {

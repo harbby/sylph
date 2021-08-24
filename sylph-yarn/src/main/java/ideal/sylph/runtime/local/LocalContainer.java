@@ -35,12 +35,12 @@ public abstract class LocalContainer
     public String getRunId()
     {
         if (vmFuture == null) {
-            return "node";
+            return "none";
         }
         Process process = vmFuture.getVmProcess();
         String system = process.getClass().getName();
         if ("java.lang.UNIXProcess".equals(system)) {
-            int pid = vmFuture.getPid();
+            long pid = vmFuture.getPid();
             return String.valueOf(pid);
         }
         else {

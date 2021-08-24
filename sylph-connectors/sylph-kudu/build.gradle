@@ -1,6 +1,6 @@
 
 dependencies {
-    compile 'org.apache.kudu:kudu-client:1.7.0'
+    implementation 'org.apache.kudu:kudu-client:1.7.0'
 
     testCompile project(':sylph-runners:sylph-flink')
     testCompile project(':sylph-spi')

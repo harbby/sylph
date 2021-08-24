@@ -54,7 +54,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.github.harbby.gadtry.aop.mock.MockGoArgument.any;
+import static com.github.harbby.gadtry.aop.mockgo.MockGoArgument.any;
 import static ideal.sylph.runner.flink.local.MiniExecutor.FLINK_WEB;
 import static ideal.sylph.runner.flink.local.MiniExecutor.createVmCallable;
 import static org.apache.flink.runtime.checkpoint.CheckpointRetentionPolicy.RETAIN_ON_CANCELLATION;
@@ -97,8 +97,8 @@ public class FlinkContainerFactory
     {
         AtomicReference<String> url = new AtomicReference<>();
         JVMLauncher<Boolean> launcher = JVMLaunchers.<Boolean>newJvm()
-                //.setXms("512m")
-                .setXmx("512m")
+                .setXms("32m")
+                .setXmx("256m")
                 .setConsole(line -> {
                     if (url.get() == null && line.contains(FLINK_WEB)) {
                         url.set(line.split(FLINK_WEB)[1].trim());

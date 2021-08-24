@@ -7,7 +7,7 @@ configurations.all {
 dependencies {
   compileOnly group: 'joda-time', name: 'joda-time', version: '2.10.6'
 
-  compile(project(':sylph-spi')) {
+  implementation(project(':sylph-spi')) {
     exclude(group: 'com.fasterxml.jackson.dataformat')
     exclude(group: 'com.fasterxml.jackson.core')
     exclude(module: 'guava')
@@ -28,15 +28,15 @@ dependencies {
   compileOnly("org.apache.spark:spark-yarn_2.12:$deps.spark") {
     exclude(module: '*')
   }
-  
-  compile(project(':sylph-parser')) {
+
+  implementation(project(':sylph-parser')) {
     exclude(module: 'guava')
     exclude(group: 'com.fasterxml.jackson.core')
   }
   
   //--other--
-  compile group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
-  compile(project(':sylph-yarn')){
+  implementation group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
+  implementation(project(':sylph-yarn')){
     exclude(module: project(':sylph-spi'))
   }
 }

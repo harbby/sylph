@@ -29,7 +29,7 @@ import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.github.harbby.gadtry.aop.mock.MockGoArgument.any;
+import static com.github.harbby.gadtry.aop.mockgo.MockGoArgument.any;
 
 /**
  * Enabling and Configuring Checkpointing
