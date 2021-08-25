@@ -114,10 +114,10 @@ public class StructuredStreamingSqlEngine
                     appGetter.get();
                     return true;
                 })
-                .addUserjars(ImmutableList.copy(classLoader.getURLs())) //flink jars + runner jar
-                .addUserjars(pluginJars)
+                .addUserJars(ImmutableList.copy(classLoader.getURLs())) //flink jars + runner jar
+                .addUserJars(pluginJars)
                 .setClassLoader(classLoader)
-                .notDepThisJvmClassPath()
+                .notDependParentJvmClassPath()
                 .build();
 
         launcher.startAndGet();

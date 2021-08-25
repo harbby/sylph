@@ -16,7 +16,7 @@
 package ideal.sylph.runner.flink.engines;
 
 import com.github.harbby.gadtry.aop.AopGo;
-import com.github.harbby.gadtry.aop.mock.MockGoArgument;
+import com.github.harbby.gadtry.aop.mockgo.MockGoArgument;
 import com.github.harbby.gadtry.collection.ImmutableList;
 import com.github.harbby.gadtry.jvm.JVMException;
 import com.github.harbby.gadtry.jvm.JVMLauncher;
@@ -45,7 +45,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static com.github.harbby.gadtry.aop.mock.MockGoArgument.anyString;
+import static com.github.harbby.gadtry.aop.mockgo.MockGoArgument.anyString;
 import static com.github.harbby.gadtry.base.MoreObjects.checkState;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.fusesource.jansi.Ansi.Color.GREEN;
@@ -106,8 +106,8 @@ public class FlinkMainClassEngine
                     return getJobGraphForJarClass(execEnv, mainClass, new String[0]);
                 })
                 .setClassLoader(classLoader)
-                .addUserjars(ImmutableList.copy(classLoader.getURLs())) //flink jars + runner jar
-                .addUserjars(pluginJars)
+                .addUserJars(ImmutableList.copy(classLoader.getURLs())) //flink jars + runner jar
+                .addUserJars(pluginJars)
                 .build();
 
         return launcher.startAndGet();

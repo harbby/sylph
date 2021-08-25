@@ -2,5 +2,5 @@ ext.moduleName = 'ideal.sylph.api'
 
 
 dependencies {
-  compile group: 'com.github.harbby', name: 'gadtry', version: deps.gadtry
+  api group: 'com.github.harbby', name: 'gadtry', version: deps.gadtry
 }

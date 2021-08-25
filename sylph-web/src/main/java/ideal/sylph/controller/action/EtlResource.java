@@ -31,7 +31,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriInfo;
 
 import java.util.Map;
 
@@ -44,9 +43,7 @@ public class EtlResource
     private static final Logger logger = LoggerFactory.getLogger(EtlResource.class);
     private final SylphContext sylphContext;
 
-    public EtlResource(
-            @Context ServletContext servletContext,
-            @Context UriInfo uriInfo)
+    public EtlResource(@Context ServletContext servletContext)
     {
         this.sylphContext = (SylphContext) servletContext.getAttribute("sylphContext");
     }

@@ -16,8 +16,8 @@
 package ideal.sylph.runner.flink;
 
 import com.github.harbby.gadtry.collection.ImmutableList;
-import com.github.harbby.gadtry.easyspi.DirClassLoader;
 import com.github.harbby.gadtry.ioc.IocFactory;
+import com.github.harbby.gadtry.spi.DynamicClassLoader;
 import ideal.sylph.runner.flink.engines.FlinkMainClassEngine;
 import ideal.sylph.runner.flink.engines.FlinkStreamEtlEngine;
 import ideal.sylph.runner.flink.engines.FlinkStreamSqlEngine;
@@ -69,8 +69,8 @@ public class FlinkRunner
 
         final ClassLoader classLoader = this.getClass().getClassLoader();
 
-        if (classLoader instanceof DirClassLoader) {
-            ((DirClassLoader) classLoader).addDir(new File(flinkHome, "lib"));
+        if (classLoader instanceof DynamicClassLoader) {
+            ((DynamicClassLoader) classLoader).addDir(new File(flinkHome, "lib"));
         }
         IocFactory injector = IocFactory.create(binder -> {
             binder.bind(FlinkMainClassEngine.class).withSingle();

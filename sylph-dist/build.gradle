@@ -1,9 +1,9 @@
 dependencies {
-  compile project(':sylph-main')
+  implementation project(':sylph-main')
 }
 
 task copyLibs(type: Copy) {
-  from(configurations.runtime)
+  from(configurations.runtimeClasspath)
   into project.buildDir.path + '/lib'
 }
 task copyFiles(type: Copy, dependsOn: copyLibs) {
@@ -18,7 +18,7 @@ task dist(type: Tar) {
   compression = Compression.GZIP
   def tarpath = baseName + "-${rootProject.version}"
 
-  from(configurations.runtime) {
+  from(configurations.runtimeClasspath) {
     into tarpath + "/lib"
   }
 
@@ -57,5 +57,5 @@ dist.dependsOn copyFiles
 //  'default' dist
 //}
 
-tasks.findByName("uploadArchives").setEnabled(false)
+tasks.findByName("uploadArchives")?.setEnabled(false)
 //tasks.remove(tasks.findByName("uploadArchives"))

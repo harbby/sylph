@@ -7,7 +7,7 @@ subprojects {
   }
 
   dependencies {
-    compile(project(":sylph-api"))
+    implementation(project(":sylph-api"))
 
     compileOnly group: 'org.apache.hadoop', name: 'hadoop-client', version: deps.hadoop
     //compileOnly 'org.apache.flink:flink-shaded-hadoop-2-uber:2.8.3-10.0'
@@ -19,7 +19,7 @@ subprojects {
     into modules + "/conf"
   }
   task copyLibs(type: Copy, dependsOn: copyConf) {
-    from(configurations.runtime)
+    from(configurations.runtimeClasspath)
     into modules + "/lib"
     //include   '*.jar'
   }

@@ -37,6 +37,7 @@ import java.lang.annotation.Annotation;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -103,26 +104,29 @@ public class JobEngineImpl
         String jobName = dbJob.getJobName();
         JobConfig jobConfig = MAPPER.readValue(dbJob.getConfig(), jobEngineHandle.getConfigParser());
 
-        List<URL> pluginJars = new ArrayList<>();
+        List<URL> dependJars = new ArrayList<>();
+        //---add engines jars
+        Collections.addAll(dependJars, getHandleClassLoader().getURLs());
+        //add plugin operator jars
         Flow flow = jobEngineHandle.formFlow(dbJob.getQueryText().getBytes(UTF_8));
         for (OperatorInfo dep : jobEngineHandle.parserFlowDepends(flow)) {
             if (dep.getModuleFile().isPresent()) {
                 for (File file : Files.listFiles(dep.getModuleFile().get(), true)) {
-                    pluginJars.add(file.toURI().toURL());
+                    dependJars.add(file.toURI().toURL());
                 }
             }
         }
 
         Supplier<Serializable> jobDAG = Lazys.goLazy(() -> {
             try {
-                return jobEngineHandle.formJob(jobName, flow, jobConfig, pluginJars);
+                return jobEngineHandle.formJob(jobName, flow, jobConfig, dependJars);
             }
             catch (Exception e) {
                 throw new SylphException(StandardErrorCode.JOB_BUILD_ERROR, e);
             }
         });
 
-        return new Job(dbJob.getId(), jobName, jobWorkDir, pluginJars, jobEngineHandle.getClass().getClassLoader(), jobDAG, jobConfig);
+        return new Job(dbJob.getId(), jobName, jobWorkDir, dependJars, jobEngineHandle.getClass().getClassLoader(), jobDAG, jobConfig);
     }
 
     private <T extends Annotation> T getAnnotation(JobEngineHandle jobActuator, Class<T> annotationClass)

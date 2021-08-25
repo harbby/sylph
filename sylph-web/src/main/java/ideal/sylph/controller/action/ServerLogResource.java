@@ -31,7 +31,7 @@ import java.util.Map;
 @Path("/server")
 public class ServerLogResource
 {
-    public final LogAppender logAppender;
+    private final LogAppender logAppender;
 
     public ServerLogResource(
             @Context ServletContext servletContext)

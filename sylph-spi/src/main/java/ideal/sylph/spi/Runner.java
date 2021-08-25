@@ -16,7 +16,7 @@
 package ideal.sylph.spi;
 
 import com.github.harbby.gadtry.collection.ImmutableList;
-import com.github.harbby.gadtry.easyspi.VolatileClassLoader;
+import com.github.harbby.gadtry.spi.VolatileClassLoader;
 import ideal.sylph.etl.Operator;
 import ideal.sylph.spi.job.ContainerFactory;
 import ideal.sylph.spi.job.JobEngineHandle;

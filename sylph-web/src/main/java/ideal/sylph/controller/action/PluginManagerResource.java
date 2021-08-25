@@ -16,7 +16,7 @@
 package ideal.sylph.controller.action;
 
 import com.github.harbby.gadtry.collection.MutableMap;
-import com.github.harbby.gadtry.easyspi.Module;
+import com.github.harbby.gadtry.spi.Module;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import ideal.sylph.etl.Plugin;
@@ -29,7 +29,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriInfo;
 
 import java.io.IOException;
 import java.util.List;
@@ -42,16 +41,10 @@ import static com.google.common.base.Preconditions.checkArgument;
 @Path("/plugin")
 public class PluginManagerResource
 {
-    @Context private ServletContext servletContext;
-    @Context private UriInfo uriInfo;
-    private SylphContext sylphContext;
+    private final SylphContext sylphContext;
 
-    public PluginManagerResource(
-            @Context ServletContext servletContext,
-            @Context UriInfo uriInfo)
+    public PluginManagerResource(@Context ServletContext servletContext)
     {
-        this.servletContext = servletContext;
-        this.uriInfo = uriInfo;
         this.sylphContext = (SylphContext) servletContext.getAttribute("sylphContext");
     }
 

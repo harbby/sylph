@@ -93,9 +93,9 @@ final class JobHelper
                     return 1;
                 })
                 .setConsole((line) -> System.out.print(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
-                .addUserjars(ImmutableList.copy(classLoader.getURLs()))
-                .addUserjars(pluginJars)
-                .notDepThisJvmClassPath()
+                .addUserJars(ImmutableList.copy(classLoader.getURLs()))
+                .addUserJars(pluginJars)
+                .notDependParentJvmClassPath()
                 .setClassLoader(classLoader)
                 .build();
         launcher.startAndGet();
@@ -128,9 +128,9 @@ final class JobHelper
                     return 1;
                 })
                 .setConsole((line) -> System.out.print(new Ansi().fg(YELLOW).a("[" + jobId + "] ").fg(GREEN).a(line).reset()))
-                .addUserjars(ImmutableList.copy(classLoader.getURLs())) //flink jars + runner jar
-                .addUserjars(pluginJars)
-                .notDepThisJvmClassPath()
+                .addUserJars(ImmutableList.copy(classLoader.getURLs())) //flink jars + runner jar
+                .addUserJars(pluginJars)
+                .notDependParentJvmClassPath()
                 .setClassLoader(classLoader)
                 .build();
         launcher.startAndGet();

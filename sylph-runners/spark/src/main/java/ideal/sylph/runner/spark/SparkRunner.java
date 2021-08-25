@@ -15,8 +15,8 @@
  */
 package ideal.sylph.runner.spark;
 
-import com.github.harbby.gadtry.easyspi.DirClassLoader;
 import com.github.harbby.gadtry.ioc.IocFactory;
+import com.github.harbby.gadtry.spi.DynamicClassLoader;
 import ideal.sylph.spi.Runner;
 import ideal.sylph.spi.RunnerContext;
 import ideal.sylph.spi.job.ContainerFactory;
@@ -45,8 +45,8 @@ public class SparkRunner
 
         ClassLoader classLoader = this.getClass().getClassLoader();
 
-        if (classLoader instanceof DirClassLoader) {
-            ((DirClassLoader) classLoader).addDir(new File(sparkHome, "jars"));
+        if (classLoader instanceof DynamicClassLoader) {
+            ((DynamicClassLoader) classLoader).addDir(new File(sparkHome, "jars"));
         }
 
         IocFactory injector = IocFactory.create(

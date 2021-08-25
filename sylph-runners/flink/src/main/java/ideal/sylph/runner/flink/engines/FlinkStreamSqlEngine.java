@@ -154,8 +154,8 @@ public class FlinkStreamSqlEngine
                     return streamGraph.getJobGraph();
                 })
                 //.notDepThisJvmClassPath() //todo: filter web rest jars 应避免构建作业时平台依赖混入
-                .addUserjars(ImmutableList.copy(classLoader.getURLs())) //flink jars + runner jar
-                .addUserjars(pluginJars)
+                .addUserJars(ImmutableList.copy(classLoader.getURLs())) //flink jars + runner jar
+                .addUserJars(pluginJars)
                 .setClassLoader(classLoader)
                 .build();
 

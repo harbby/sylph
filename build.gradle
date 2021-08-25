@@ -1,6 +1,6 @@
 plugins {
-  id "com.github.hierynomus.license" version "0.14.0"
-  id "com.github.harbby.gradle.serviceloader" version "1.1.5"
+  id "com.github.hierynomus.license" version "0.16.1"
+  id "com.github.harbby.gradle.serviceloader" version "1.1.8"
   id "jacoco"
 }
 
@@ -18,7 +18,7 @@ allprojects {
           joda_time           : '2.9.3',
           slf4j               : '1.7.25',
           guice               : '4.2.1',
-          gadtry              : '1.9.2-SNAPSHOT',
+          gadtry              : '1.9.4',
           guava               : '27.0-jre',
           jackson             : '2.9.8',
           jersey              : '2.28',
@@ -28,7 +28,8 @@ allprojects {
 
 subprojects {
   apply plugin: 'java'
-  apply plugin: 'maven'
+  apply plugin: 'java-library'
+  apply plugin: 'maven-publish'
   apply plugin: 'checkstyle'
   apply plugin: 'jacoco'
 
@@ -53,7 +54,7 @@ subprojects {
 
   repositories {
     mavenLocal()
-    //maven { url 'http://maven.aliyun.com/nexus/content/groups/public' }
+    //maven { url 'https://maven.aliyun.com/nexus/content/groups/public' }
     mavenCentral()
     maven {
       url 'https://oss.sonatype.org/service/local/repositories/snapshots/content/'
@@ -160,49 +161,49 @@ subprojects {
     sign configurations.archives
   }
 
-  uploadArchives {
-    repositories {
-      mavenDeployer {
-        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
-        repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-          authentication(userName: mavenUsername, password: mavenPassword)
-        }
-
-        snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-          authentication(userName: mavenUsername, password: mavenPassword)
-        }
-
-        pom.project {
-          name project.name
-          packaging 'jar'
-          // optionally artifactId can be defined here
-          description 'A lightweight API test framework'
-          url 'https://github.com/harbby/sylph'
-
-          scm {
-            connection 'https://github.com/harbby/sylph.git'
-            developerConnection 'git@github.com:harbby/sylph.git'
-            url 'https://github.com/harbby/sylph'
-          }
-
-          licenses {
-            license {
-              name 'The Apache Software License, Version 2.0'
-              url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-              distribution 'repo'
-            }
-          }
-
-          developers {
-            developer {
-              id 'harbby'
-              name 'harbby'
-              email 'yezhixinghai@gmail.com'
-            }
-          }
-        }
-      }
-    }
-  }
+//  uploadArchives {
+//    repositories {
+//      mavenDeployer {
+//        beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+//
+//        repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+//          authentication(userName: mavenUsername, password: mavenPassword)
+//        }
+//
+//        snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+//          authentication(userName: mavenUsername, password: mavenPassword)
+//        }
+//
+//        pom.project {
+//          name project.name
+//          packaging 'jar'
+//          // optionally artifactId can be defined here
+//          description 'A lightweight API test framework'
+//          url 'https://github.com/harbby/sylph'
+//
+//          scm {
+//            connection 'https://github.com/harbby/sylph.git'
+//            developerConnection 'git@github.com:harbby/sylph.git'
+//            url 'https://github.com/harbby/sylph'
+//          }
+//
+//          licenses {
+//            license {
+//              name 'The Apache Software License, Version 2.0'
+//              url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+//              distribution 'repo'
+//            }
+//          }
+//
+//          developers {
+//            developer {
+//              id 'harbby'
+//              name 'harbby'
+//              email 'yezhixinghai@gmail.com'
+//            }
+//          }
+//        }
+//      }
+//    }
+//  }
 }

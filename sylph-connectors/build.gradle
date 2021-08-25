@@ -19,7 +19,7 @@ subprojects {
   def plugins = project(':sylph-dist').buildDir.path + "/plugins/${name}"
   task buildPlugins(type: Copy) {
 
-    from(configurations.runtime)
+    from(configurations.runtimeClasspath)
     from(jar)
 
     into plugins

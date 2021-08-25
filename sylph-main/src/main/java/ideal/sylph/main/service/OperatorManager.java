@@ -17,11 +17,11 @@ package ideal.sylph.main.service;
 
 import com.github.harbby.gadtry.base.Try;
 import com.github.harbby.gadtry.collection.ImmutableList;
-import com.github.harbby.gadtry.easyspi.Module;
-import com.github.harbby.gadtry.easyspi.ModuleLoader;
-import com.github.harbby.gadtry.easyspi.SecurityClassLoader;
-import com.github.harbby.gadtry.easyspi.VolatileClassLoader;
 import com.github.harbby.gadtry.ioc.Autowired;
+import com.github.harbby.gadtry.spi.Module;
+import com.github.harbby.gadtry.spi.ModuleLoader;
+import com.github.harbby.gadtry.spi.SecurityClassLoader;
+import com.github.harbby.gadtry.spi.VolatileClassLoader;
 import ideal.sylph.etl.Operator;
 import ideal.sylph.etl.Plugin;
 import ideal.sylph.etl.api.RealTimePipeline;
