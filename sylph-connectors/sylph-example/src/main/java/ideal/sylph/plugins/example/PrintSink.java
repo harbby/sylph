@@ -15,10 +15,10 @@
  */
 package ideal.sylph.plugins.example;
 
-import ideal.sylph.annotation.Description;
-import ideal.sylph.annotation.Name;
-import ideal.sylph.etl.Record;
-import ideal.sylph.etl.api.RealTimeSink;
+import com.github.harbby.sylph.api.RealTimeSink;
+import com.github.harbby.sylph.api.Record;
+import com.github.harbby.sylph.api.annotation.Description;
+import com.github.harbby.sylph.api.annotation.Name;
 
 @Name("console")
 @Description("print data line console")

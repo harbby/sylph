@@ -21,6 +21,9 @@ jobs:
     - jdk: openjdk11
       dist: focal
       script: ./gradlew clean assemble --no-daemon -Pjdk=java11
+    - jdk: openjdk17
+      dist: focal
+      script: ./gradlew clean assemble --no-daemon -Pjdk=java17
 
 env:
   - CI=false

@@ -1,13 +1,15 @@
 subprojects {
-
+  apply from: "$rootDir/profile-runtime.gradle"
   apply plugin: 'com.github.harbby.gradle.serviceloader'
+
   serviceLoader {
-    serviceInterface 'ideal.sylph.spi.Runner'
-    serviceInterface 'ideal.sylph.etl.Operator'
+    serviceInterface 'com.github.harbby.sylph.spi.Runner'
+    serviceInterface 'com.github.harbby.sylph.api.Operator'
   }
 
   dependencies {
     implementation(project(":sylph-api"))
+    implementation(project(':sylph-yarn'))
 
     compileOnly group: 'org.apache.hadoop', name: 'hadoop-client', version: deps.hadoop
     //compileOnly 'org.apache.flink:flink-shaded-hadoop-2-uber:2.8.3-10.0'
@@ -18,16 +20,13 @@ subprojects {
     from('conf')
     into modules + "/conf"
   }
-  task copyLibs(type: Copy, dependsOn: copyConf) {
+  task buildModules(type: Copy, dependsOn: copyConf) {
+    into modules
+
     from(configurations.runtimeClasspath)
-    into modules + "/lib"
-    //include   '*.jar'
+    from(jar)
   }
 
-  task buildModules(type: Copy, dependsOn: copyLibs) {
-    from(jar)
-    into modules
-  }
   assemble.dependsOn buildModules
   project(':sylph-dist').dist.dependsOn assemble
 }

@@ -1,6 +1,5 @@
-ext.moduleName = 'ideal.sylph.api'
 
+apply from: "$rootDir/profile-runtime.gradle"
 
 dependencies {
-  api group: 'com.github.harbby', name: 'gadtry', version: deps.gadtry
 }

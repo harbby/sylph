@@ -15,8 +15,9 @@
  */
 package ideal.sylph.spi;
 
-import com.github.harbby.gadtry.collection.mutable.MutableMap;
-import ideal.sylph.etl.PluginConfig;
+import com.github.harbby.gadtry.collection.MutableMap;
+import com.github.harbby.sylph.api.PluginConfig;
+import com.github.harbby.sylph.spi.utils.PluginFactory;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -32,7 +33,7 @@ public class PluginConfigFactoryTest
             throws Exception
     {
         try {
-            PluginConfigFactory.pluginConfigInstance(PluginConfig.class);
+            PluginFactory.pluginConfigInstance(PluginConfig.class);
             Assert.fail();
         }
         catch (IllegalStateException ignored) {
@@ -43,7 +44,7 @@ public class PluginConfigFactoryTest
     public void pluginConfigInstance()
             throws Exception
     {
-        TestConfigs.NoParameterConfig testConfig = PluginConfigFactory.pluginConfigInstance(TestConfigs.NoParameterConfig.class);
+        TestConfigs.NoParameterConfig testConfig = PluginFactory.pluginConfigInstance(TestConfigs.NoParameterConfig.class);
         Assert.assertNull(testConfig.getName());
     }
 
@@ -51,7 +52,7 @@ public class PluginConfigFactoryTest
     public void getDriverClass()
             throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException
     {
-        List<Map<String, Object>> configs = PluginConfigFactory.getPluginConfigDefaultValues(TestConfigs.TestDefaultValueConfig.class);
+        List<Map<String, Object>> configs = PluginFactory.getPluginConfigDefaultValues(TestConfigs.TestDefaultValueConfig.class);
         List<Map> mapList = Arrays.asList(MutableMap.of("key", "name", "description", "", "default", "sylph"),
                 MutableMap.of("key", "age", "description", "this is age", "default", ""));
         Assert.assertEquals(configs, mapList);

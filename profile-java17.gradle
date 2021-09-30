@@ -1,0 +1,32 @@
+//java 17
+
+sourceCompatibility = 17
+targetCompatibility = 17
+
+if (project == project(':sylph-web')) {
+  project.dependencies {
+    implementation group: 'javax.xml.bind', name: 'jaxb-api', version: '2.3.1'
+    implementation 'org.glassfish.jaxb:jaxb-runtime:3.0.2'
+  }
+}
+
+tasks.withType(JavaCompile) {
+  options.encoding = 'UTF-8'
+  options.compilerArgs << "--add-exports=java.base/jdk.internal.ref=ALL-UNNAMED"
+  options.compilerArgs << "--add-exports=java.base/sun.nio.cs=ALL-UNNAMED"
+  options.compilerArgs << "--add-exports=java.base/jdk.internal.vm.annotation=ALL-UNNAMED"
+}
+
+tasks.withType(Test) {
+  jvmArgs += "--add-modules=jdk.unsupported"
+  jvmArgs += "--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED"
+  jvmArgs += "--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED"
+  jvmArgs += "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"
+}
+
+tasks.withType(JavaExec) {
+  jvmArgs += "--add-modules=jdk.unsupported"
+  jvmArgs += "--add-opens=java.base/jdk.internal.ref=ALL-UNNAMED"
+  jvmArgs += "--add-opens=java.base/jdk.internal.loader=ALL-UNNAMED"
+  jvmArgs += "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"
+}

@@ -15,12 +15,12 @@
  */
 package ideal.sylph.plugins.kudu;
 
-import ideal.sylph.TableContext;
-import ideal.sylph.annotation.Description;
-import ideal.sylph.annotation.Name;
-import ideal.sylph.etl.PluginConfig;
-import ideal.sylph.etl.Record;
-import ideal.sylph.etl.api.RealTimeSink;
+import com.github.harbby.sylph.api.PluginConfig;
+import com.github.harbby.sylph.api.RealTimeSink;
+import com.github.harbby.sylph.api.Record;
+import com.github.harbby.sylph.api.TableContext;
+import com.github.harbby.sylph.api.annotation.Description;
+import com.github.harbby.sylph.api.annotation.Name;
 import org.apache.kudu.ColumnSchema;
 import org.apache.kudu.Type;
 import org.apache.kudu.client.KuduClient;
@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
@@ -40,7 +41,6 @@ import java.sql.Timestamp;
 import java.util.List;
 import java.util.function.Supplier;
 
-import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
 import static java.util.Objects.requireNonNull;
 
 @Name("kudu")
@@ -61,7 +61,7 @@ public class KuduSink
     private final int maxBatchSize;
     private final int mutationBufferSpace;
 
-    private int rowNumCnt = 0;
+    private int rowNumCnt;
 
     private Supplier<Operation> operationCreater;
 
@@ -128,7 +128,7 @@ public class KuduSink
             }
         }
         catch (IOException e) {
-            throwsThrowable(e);
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -198,7 +198,7 @@ public class KuduSink
                 break;
 
             default:
-                throw new IllegalStateException("不受支持的kudu类型:" + kuduType);
+                throw new IllegalStateException("don't support type " + kuduType);
         }
     }
 
@@ -212,7 +212,7 @@ public class KuduSink
             }
         }
         catch (IOException e) {
-            throwsThrowable(e);
+            throw new UncheckedIOException(e);
         }
     }
 

@@ -15,11 +15,11 @@
  */
 package ideal.sylph.plugins.jdbc;
 
-import ideal.sylph.annotation.Description;
-import ideal.sylph.annotation.Name;
-import ideal.sylph.etl.PluginConfig;
-import ideal.sylph.etl.Record;
-import ideal.sylph.etl.api.RealTimeSink;
+import com.github.harbby.sylph.api.PluginConfig;
+import com.github.harbby.sylph.api.RealTimeSink;
+import com.github.harbby.sylph.api.Record;
+import com.github.harbby.sylph.api.annotation.Description;
+import com.github.harbby.sylph.api.annotation.Name;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,9 +33,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.github.harbby.gadtry.base.MoreObjects.checkState;
-import static com.github.harbby.gadtry.base.Throwables.throwsThrowable;
-
 public abstract class JdbcRealTimeSink
         implements RealTimeSink
 {
@@ -47,12 +44,15 @@ public abstract class JdbcRealTimeSink
 
     private transient Connection connection;
     private transient PreparedStatement statement;
-    private int num = 0;
+    private int num;
 
     public JdbcRealTimeSink(JdbcConfig mysqlConfig)
     {
         this.config = mysqlConfig;
-        checkState(config.getQuery() != null, "insert into query not setting");
+        if (config.getQuery() == null) {
+            throw new IllegalStateException("insert into query not setting");
+        }
+
         this.prepareStatementQuery = config.getQuery().replaceAll("\\$\\{.*?}", "?");
         // parser sql query ${key}
         Matcher matcher = Pattern.compile("(?<=\\$\\{)(.+?)(?=\\})").matcher(config.getQuery());
@@ -100,7 +100,7 @@ public abstract class JdbcRealTimeSink
             }
         }
         catch (SQLException e) {
-            throwsThrowable(e);
+            throw new IllegalStateException(e);
         }
     }
 
@@ -140,7 +140,7 @@ public abstract class JdbcRealTimeSink
          * */
         @Name("query")
         @Description("this is mysql save query")
-        private String query = null;
+        private String query;
 
         @Name("batchSize")
         @Description("this is mysql write batchSize")

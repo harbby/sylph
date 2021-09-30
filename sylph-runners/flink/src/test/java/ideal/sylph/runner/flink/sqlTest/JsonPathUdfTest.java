@@ -15,7 +15,7 @@
  */
 package ideal.sylph.runner.flink.sqlTest;
 
-import ideal.sylph.runner.flink.udf.UDFJson;
+import com.github.harbby.sylph.runner.flink.runtime.UDFJson;
 import org.apache.flink.shaded.guava18.com.google.common.collect.ImmutableMap;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;

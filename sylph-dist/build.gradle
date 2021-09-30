@@ -1,5 +1,14 @@
+configurations.all {
+  resolutionStrategy { preferProjectModules() }
+}
+configurations {
+  downloadOnly
+}
+apply from: "$rootDir/profile-java17.gradle"
+
 dependencies {
   implementation project(':sylph-main')
+  downloadOnly group: 'org.apache.hadoop', name: 'hadoop-client', version: deps.hadoop
 }
 
 task copyLibs(type: Copy) {
@@ -9,6 +18,10 @@ task copyLibs(type: Copy) {
 task copyFiles(type: Copy, dependsOn: copyLibs) {
   from('src')
   into project.buildDir
+}
+task copyHadoopLibs(type: Copy) {
+  from(configurations.downloadOnly)
+  into project.buildDir.path + '/hadoop-lib'
 }
 
 task dist(type: Tar) {
@@ -38,7 +51,7 @@ task dist(type: Tar) {
     into(tarpath + "/jobs")
   }
 
-  from(project.files('build/webapp')) {
+  from(project.files('src/webapp')) {
     into(tarpath + "/webapp")
   }
 
@@ -46,11 +59,11 @@ task dist(type: Tar) {
     into tarpath + "/modules"
   }
 
-  from(project.files('build/plugins')) {
-    into(tarpath + "/plugins")
+  from(project.files('build/connectors')) {
+    into(tarpath + "/connectors")
   }
 }
-dist.dependsOn copyFiles
+dist.dependsOn copyFiles,copyHadoopLibs
 
 
 //artifacts {

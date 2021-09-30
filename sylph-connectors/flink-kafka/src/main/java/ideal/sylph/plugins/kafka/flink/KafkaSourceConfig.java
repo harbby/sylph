@@ -15,9 +15,9 @@
  */
 package ideal.sylph.plugins.kafka.flink;
 
-import ideal.sylph.annotation.Description;
-import ideal.sylph.annotation.Name;
-import ideal.sylph.etl.PluginConfig;
+import com.github.harbby.sylph.api.PluginConfig;
+import com.github.harbby.sylph.api.annotation.Description;
+import com.github.harbby.sylph.api.annotation.Name;
 
 public class KafkaSourceConfig
         extends PluginConfig
@@ -42,7 +42,7 @@ public class KafkaSourceConfig
 
     @Name("zookeeper.connect")
     @Description("this is kafka zk list, kafka08 and kafka09 Must need to set")
-    private String zookeeper = null;   //"localhost:2181"
+    private String zookeeper;   //"localhost:2181"
 
     @Name("value_type")
     @Description("this is kafka String value Type, use json")

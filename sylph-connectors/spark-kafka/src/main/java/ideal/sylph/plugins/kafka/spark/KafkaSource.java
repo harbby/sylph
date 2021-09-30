@@ -15,16 +15,21 @@
  */
 package ideal.sylph.plugins.kafka.spark;
 
-import com.github.harbby.gadtry.base.Lazys;
-import ideal.sylph.TableContext;
-import ideal.sylph.annotation.Description;
-import ideal.sylph.annotation.Name;
-import ideal.sylph.annotation.Version;
-import ideal.sylph.etl.api.Source;
-import ideal.sylph.runner.spark.kafka.SylphKafkaOffset;
-import ideal.sylph.runner.spark.sparkstreaming.DStreamUtil;
+import com.github.harbby.sylph.api.Schema;
+import com.github.harbby.sylph.api.Source;
+import com.github.harbby.sylph.api.TableContext;
+import com.github.harbby.sylph.api.annotation.Description;
+import com.github.harbby.sylph.api.annotation.Name;
+import com.github.harbby.sylph.api.annotation.Version;
+import com.github.harbby.sylph.json.ByteCodeClassLoader;
+import com.github.harbby.sylph.json.JsonPathReader;
+import com.github.harbby.sylph.json.JsonReadCodeGenerator;
+import com.github.harbby.sylph.json.KafkaRecord;
+import com.github.harbby.sylph.runner.spark.kafka.SylphKafkaOffset;
+import com.github.harbby.sylph.runner.spark.sparkstreaming.DStreamUtil;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
+import org.apache.spark.api.java.function.Function;
 import org.apache.spark.rdd.RDD;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.expressions.GenericRow;
@@ -38,15 +43,17 @@ import org.apache.spark.streaming.kafka010.HasOffsetRanges;
 import org.apache.spark.streaming.kafka010.KafkaUtils;
 import org.apache.spark.streaming.kafka010.LocationStrategies;
 import org.apache.spark.streaming.kafka010.OffsetRange;
+import scala.Serializable;
 import scala.reflect.ClassTag$;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
+import java.util.Objects;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import static com.google.common.base.Preconditions.checkState;
 
 @Name("kafka")
 @Version("1.0.0")
@@ -54,37 +61,55 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class KafkaSource
         implements Source<JavaDStream<Row>>
 {
-    private final transient Supplier<JavaDStream<Row>> loadStream;
+    private final transient JavaStreamingContext ssc;
+    private final transient KafkaSourceConfig config;
+    private final transient TableContext context;
 
     public KafkaSource(JavaStreamingContext ssc, KafkaSourceConfig config, TableContext context)
     {
-        this.loadStream = Lazys.goLazy(() -> createSource(ssc, config, context));
+        this.ssc = ssc;
+        this.config = config;
+        this.context = context;
     }
 
-    public JavaDStream<Row> createSource(JavaStreamingContext ssc, KafkaSourceConfig config, TableContext context)
+    @Override
+    public JavaDStream<Row> createSource()
     {
         String topics = config.getTopics();
-        String brokers = config.getBrokers(); //需要把集群的host 配置到程序所在机器
-        String groupId = config.getGroupid(); //消费者的名字
+        String brokers = config.getBrokers();
+        String groupId = config.getGroupid();
         String offsetMode = config.getOffsetMode();
 
         Map<String, Object> kafkaParams = new HashMap<>(config.getOtherConfig());
         kafkaParams.put("bootstrap.servers", brokers);
         kafkaParams.put("key.deserializer", ByteArrayDeserializer.class); //StringDeserializer
         kafkaParams.put("value.deserializer", ByteArrayDeserializer.class); //StringDeserializer
-        kafkaParams.put("enable.auto.commit", false); //不自动提交偏移量
-        //      "fetch.message.max.bytes" ->
-        //      "session.timeout.ms" -> "30000", //session默认是30秒
-        //      "heartbeat.interval.ms" -> "5000", //10秒提交一次 心跳周期
-        kafkaParams.put("group.id", groupId); //注意不同的流 group.id必须要不同 否则会出现offect commit提交失败的错误
-        kafkaParams.put("auto.offset.reset", offsetMode); //latest   earliest
+        kafkaParams.put("enable.auto.commit", false);
+        kafkaParams.put("group.id", groupId);
+        kafkaParams.put("auto.offset.reset", offsetMode); //latest or earliest
 
         List<String> topicSets = Arrays.asList(topics.split(","));
-        JavaInputDStream<ConsumerRecord<byte[], byte[]>> inputStream = KafkaUtils.createDirectStream(
-                ssc, LocationStrategies.PreferConsistent(), ConsumerStrategies.Subscribe(topicSets, kafkaParams));
+        checkState("json".equalsIgnoreCase(config.getValueType()), "only support json message");
 
+        JavaDStream<ConsumerRecord<byte[], byte[]>> jDStream = createDStream(ssc, topicSets, kafkaParams);
+        //StructType rowTypeInfo = schemaToSparkType(schema);
+        Schema schema = context.getSchema();
+        JsonReadCodeGenerator codeGenerator = new JsonReadCodeGenerator("JsonCodeGenReader");
+        codeGenerator.doCodeGen(schema);
+        StreamingJsonReaderMap jsonReaderMap = new StreamingJsonReaderMap(codeGenerator.getFullName(),
+                codeGenerator.getByteCode(), schema.size());
+        return jDStream.map(jsonReaderMap).filter(Objects::nonNull);
+    }
+
+    private static JavaDStream<ConsumerRecord<byte[], byte[]>> createDStream(JavaStreamingContext ssc, List<String> topicSets, Map<String, Object> kafkaParams)
+    {
+        JavaInputDStream<ConsumerRecord<byte[], byte[]>> inputStream = KafkaUtils.createDirectStream(ssc,
+                LocationStrategies.PreferConsistent(),
+                ConsumerStrategies.Subscribe(topicSets, kafkaParams));
         DStream<ConsumerRecord<byte[], byte[]>> sylphKafkaOffset = new SylphKafkaOffset<ConsumerRecord<byte[], byte[]>>(inputStream.inputDStream())
         {
+            private static final long serialVersionUID = -2021749056188222072L;
+
             @Override
             public void commitOffsets(RDD<?> kafkaRdd)
             {
@@ -94,53 +119,91 @@ public class KafkaSource
                 ((CanCommitOffsets) firstDStream).commitAsync(offsetRanges);
             }
         };
+        return new JavaDStream<>(sylphKafkaOffset, ClassTag$.MODULE$.apply(ConsumerRecord.class));
+    }
 
-        JavaDStream<ConsumerRecord<byte[], byte[]>> javaDStream = new JavaDStream<>(sylphKafkaOffset, ClassTag$.MODULE$.apply(ConsumerRecord.class));
-        if ("json".equalsIgnoreCase(config.getValueType())) {
-            JsonSchema jsonParser = new JsonSchema(context.getSchema());
-            return javaDStream
-                    .map(record -> jsonParser.deserialize(record.key(), record.value(), record.topic(), record.partition(), record.offset()));
+    public static class StreamingJsonReaderMap
+            implements Function<ConsumerRecord<byte[], byte[]>, Row>, Serializable
+    {
+        private static final long serialVersionUID = -192589774321712777L;
+        private final String classFullName;
+        private final byte[] byteCode;
+        private transient JsonPathReader jsonPathReader;
+        private transient KafkaRecordWrapper kafkaRecordWrapper;
+        private final int columnSize;
+
+        public StreamingJsonReaderMap(String classFullName, byte[] byteCode, int columnSize)
+        {
+            this.classFullName = classFullName;
+            this.byteCode = byteCode;
+            this.columnSize = columnSize;
         }
-        else {
-            List<String> names = context.getSchema().getFieldNames();
-            return javaDStream
-                    .map(record -> {
-                        Object[] values = new Object[names.size()];
-                        for (int i = 0; i < names.size(); i++) {
-                            switch (names.get(i)) {
-                                case "_topic":
-                                    values[i] = record.topic();
-                                    continue;
-                                case "_message":
-                                    values[i] = new String(record.value(), UTF_8);
-                                    continue;
-                                case "_key":
-                                    values[i] = record.key() == null ? null : new String(record.key(), UTF_8);
-                                    continue;
-                                case "_partition":
-                                    values[i] = record.partition();
-                                    continue;
-                                case "_offset":
-                                    values[i] = record.offset();
-                                    continue;
-                                case "_timestamp":
-                                    values[i] = record.timestamp();
-                                    continue;
-                                case "_timestampType":
-                                    values[i] = record.timestampType().id;
-                                    continue;
-                                default:
-                                    values[i] = null;
-                            }
-                        }
-                        return new GenericRow(values);  //GenericRowWithSchema
-                    });  //.window(Duration(10 * 1000))
+
+        @Override
+        public Row call(ConsumerRecord<byte[], byte[]> record)
+                throws Exception
+        {
+            byte[] message = record.value();
+            if (message == null) {
+                return null;
+            }
+            if (jsonPathReader == null) {
+                this.jsonPathReader = createJsonDeserializer();
+                this.kafkaRecordWrapper = new KafkaRecordWrapper();
+            }
+            jsonPathReader.initNewMessage(message);
+            Object[] values = new Object[columnSize];
+            kafkaRecordWrapper.record = record;
+            jsonPathReader.deserialize(kafkaRecordWrapper, values);
+            return new GenericRow(values);
+        }
+
+        private JsonPathReader createJsonDeserializer()
+        {
+            ByteCodeClassLoader loader = new ByteCodeClassLoader(Thread.currentThread().getContextClassLoader());
+            Class<? extends JsonPathReader> codeGenClass = loader.defineClass(classFullName, byteCode).asSubclass(JsonPathReader.class);
+            try {
+                return codeGenClass.getConstructor().newInstance();
+            }
+            catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+                throw new IllegalStateException("kafka code gen error");
+            }
         }
     }
 
-    @Override
-    public JavaDStream<Row> getSource()
+    public static class KafkaRecordWrapper
+            extends KafkaRecord<byte[], byte[]>
     {
-        return loadStream.get();
+        private ConsumerRecord<byte[], byte[]> record;
+
+        @Override
+        public String topic()
+        {
+            return record.topic();
+        }
+
+        @Override
+        public Integer partition()
+        {
+            return record.partition();
+        }
+
+        @Override
+        public byte[] key()
+        {
+            return record.key();
+        }
+
+        @Override
+        public byte[] value()
+        {
+            return record.value();
+        }
+
+        @Override
+        public Long offset()
+        {
+            return record.offset();
+        }
     }
 }

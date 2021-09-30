@@ -1,0 +1,8 @@
+
+apply from: "$rootDir/profile-runtime.gradle"
+
+dependencies {
+  compileOnly project(":sylph-api")
+  implementation group: 'com.jayway.jsonpath', name: 'json-path', version: '2.6.0'
+  compileOnly group: 'com.github.harbby', name: 'gadtry', version: deps.gadtry
+}

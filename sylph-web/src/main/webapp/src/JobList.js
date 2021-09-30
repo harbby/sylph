@@ -96,7 +96,7 @@ export default class JobList extends React.Component {
           );
           return (
             <span>
-              {record.status === "STOP" ? DeployBtn : StopBtn}
+              {record.status === "STOP" || record.status === 'RUNNING_FAILED' || record.status === 'DEPLOY_FAILED' ? DeployBtn : StopBtn}
               < Divider type="vertical" />
 
               <Popconfirm

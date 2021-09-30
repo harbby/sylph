@@ -1,8 +1,10 @@
 evaluationDependsOn(':sylph-dist')
 subprojects {
+  apply from: "$rootDir/profile-runtime.gradle"
+
   apply plugin: 'com.github.harbby.gradle.serviceloader'
   serviceLoader {
-    serviceInterface 'ideal.sylph.etl.Plugin'
+    serviceInterface 'com.github.harbby.sylph.api.Plugin'
   }
 
   configurations.all {
@@ -10,13 +12,12 @@ subprojects {
   }
 
   dependencies {
-    compileOnly group: 'com.github.harbby', name: 'gadtry', version: deps.gadtry
     compileOnly project(":sylph-api")
-    
-    testCompile project(":sylph-spi")
+
+    testImplementation project(":sylph-spi")
   }
 
-  def plugins = project(':sylph-dist').buildDir.path + "/plugins/${name}"
+  def plugins = project(':sylph-dist').buildDir.path + "/connectors/${name}"
   task buildPlugins(type: Copy) {
 
     from(configurations.runtimeClasspath)
