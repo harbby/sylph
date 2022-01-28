@@ -12,10 +12,10 @@ jobs:
     - name: check code
       jdk: openjdk17
       dist: xenial
-      script: ./gradlew clean checkstyle licenseMain licenseTest webapp --no-daemon
+      script: ./gradlew clean checkstyle licenseMain licenseTest webapp --daemon
     - jdk: openjdk17
       dist: focal
-      script: ./gradlew clean assemble --no-daemon -Pjdk=java17
+      script: ./gradlew clean assemble --no-daemon
 
 env:
   - CI=false
