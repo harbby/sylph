@@ -15,9 +15,9 @@
  */
 package ideal.sylph.runner.flink.resource;
 
-import ideal.sylph.annotation.Description;
-import ideal.sylph.annotation.Name;
-import ideal.sylph.etl.api.Source;
+import com.github.harbby.sylph.api.annotation.Description;
+import com.github.harbby.sylph.api.annotation.Name;
+import com.github.harbby.sylph.api.Source;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
@@ -39,7 +39,7 @@ public class SylphTestSource
     }
 
     @Override
-    public DataStream<Row> getSource()
+    public DataStream<Row> createSource()
     {
 //        Table table = sess.fromTableSource(new TestTableSource());
 //        table.printSchema();

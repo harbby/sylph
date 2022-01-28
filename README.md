@@ -1,4 +1,7 @@
 # Sylph [![Build Status](https://travis-ci.com/harbby/sylph.svg?branch=master)](https://travis-ci.com/harbby/sylph)
+[![license](https://img.shields.io/badge/license-apache_v2-groon.svg)]()
+[![language](https://img.shields.io/badge/language-java_17-green.svg)]()
+[![os](https://img.shields.io/badge/os-Linux_macOS-blue.svg)]()
 
 Welcome to Sylph !
 
@@ -33,14 +36,16 @@ limitations under the License.
 
 ## StreamingSql
 ```sql
-create function get_json_object as 'ideal.sylph.runner.flink.udf.UDFJson';
+create function get_json_object as 'com.github.harbby.sylph.runner.flink.runtime.UDFJson';
 
 create source table topic1(
     _topic varchar,
     _key varchar,
     _partition integer,
     _offset bigint,
-    _message varchar
+    _message varchar,
+    ip varchar extend '$.conntent.ip',                 -- json path
+    event_time varchar extend '$.conntent.event_time'  -- json path
 ) with (
     type = 'kafka08',
     kafka_topic = 'event_topic',
@@ -71,14 +76,8 @@ from topic1
 ## UDF UDAF UDTF
 The registration of the custom function is consistent with the hive
 ```sql
-create function get_json_object as 'ideal.sylph.runner.flink.udf.UDFJson';
+create function get_json_object as 'com.github.harbby.sylph.runner.flink.runtime.UDFJson';
 ```
-
-## StreamETL 
-Support `flink-stream` `spark-streaming` `spark-structured-streaming(spark2.2x)`
-
-[![loading...](https://raw.githubusercontent.com/harbby/harbby.github.io/master/logo/sylph/job_flow.png)](https://travis-ci.org/harbby/sylph)
-
 
 ## Building
 sylph builds use Gradle and requires Java 8.    
@@ -100,7 +99,7 @@ After opening the project in IntelliJ, double check that the Java SDK is properl
 
 Sylph comes with sample configuration that should work out-of-the-box for development. Use the following options to create a run configuration:
 
-* Main Class: ideal.sylph.main.SylphMaster
+* Main Class: com.github.harbby.sylph.main.SylphMaster
 * VM Options: -Dconfig=etc/sylph/sylph.properties -Dlogging.config=etc/sylph/logback.xml
 * ENV Options: FLINK_HOME=<your flink home>
                HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop

@@ -15,8 +15,8 @@
  */
 package ideal.sylph.plugins.mysql;
 
-import ideal.sylph.annotation.Description;
-import ideal.sylph.annotation.Name;
+import com.github.harbby.sylph.api.annotation.Description;
+import com.github.harbby.sylph.api.annotation.Name;
 import ideal.sylph.plugins.jdbc.JdbcRealTimeSink;
 
 @Name("mysql")

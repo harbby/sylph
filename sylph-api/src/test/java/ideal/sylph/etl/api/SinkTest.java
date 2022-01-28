@@ -15,6 +15,7 @@
  */
 package ideal.sylph.etl.api;
 
+import com.github.harbby.sylph.api.Sink;
 import org.junit.Assert;
 import org.junit.Test;
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;

@@ -1,20 +1,10 @@
-ext.moduleName = 'ideal.sylph.spi'
+
+apply from: "$rootDir/profile-runtime.gradle"
 
 dependencies {
-  annotationProcessor 'org.projectlombok:lombok:1.18.8'
-  compileOnly 'org.projectlombok:lombok:1.18.8'
-  
   api group: 'org.slf4j', name: 'slf4j-api', version: deps.slf4j
-  api group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
-
   api(project(':sylph-api'))
-  api group: 'com.github.harbby', name: 'gadtry', version: deps.gadtry
-  //compile group: 'org.javassist', name: 'javassist', version: '3.26.0-GA'
-  api group: 'commons-io', name: 'commons-io', version: '2.6'
-
-  api group: 'com.google.guava', name: 'guava', version: deps.guava
-  api group: 'javax.validation', name: 'validation-api', version: '2.0.1.Final'
-
-  api group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml', version: deps.jackson
-  api group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: deps.jackson
+  compileOnlyApi group: 'com.github.harbby', name: 'gadtry', version: deps.gadtry
+  implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: deps.jackson
+  implementation project(':sylph-parser')
 }

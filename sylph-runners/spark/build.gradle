@@ -5,38 +5,22 @@ configurations.all {
 }
 
 dependencies {
-  compileOnly group: 'joda-time', name: 'joda-time', version: '2.10.6'
-
-  implementation(project(':sylph-spi')) {
-    exclude(group: 'com.fasterxml.jackson.dataformat')
-    exclude(group: 'com.fasterxml.jackson.core')
-    exclude(module: 'guava')
-    exclude(module: 'validation-api')
-    exclude(module: 'commons-io')
+  compileOnly(project(':sylph-spi'))
+  runtimeOnly(project(':sylph-spi')) {
+    exclude(module: '*')
   }
-  
-  compileOnly 'org.scala-lang:scala-reflect:2.11.8'
+  runtimeOnly group: 'com.github.harbby', name: 'gadtry', version: deps.gadtry
 
+  implementation(project(':sylph-parser')) {
+    exclude(module: '*')
+  }
   compileOnly(group: 'org.apache.spark', name: 'spark-sql_2.12', version: deps.spark) {
-    exclude(module: 'hadoop-client')
-    exclude (module: 'scala-library')
-    exclude module:  'scala-reflect'
+    exclude(group: 'org.apache.hadoop')
   }
   compileOnly(group: 'org.apache.spark', name: 'spark-streaming_2.12', version: deps.spark) {
-    exclude(module: '*')
+    exclude(group: 'org.apache.hadoop')
   }
   compileOnly("org.apache.spark:spark-yarn_2.12:$deps.spark") {
     exclude(module: '*')
-  }
-
-  implementation(project(':sylph-parser')) {
-    exclude(module: 'guava')
-    exclude(group: 'com.fasterxml.jackson.core')
-  }
-  
-  //--other--
-  implementation group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
-  implementation(project(':sylph-yarn')){
-    exclude(module: project(':sylph-spi'))
   }
 }

@@ -69,7 +69,7 @@ set CMD_LINE_ARGS=%*
 set CLASSPATH=lib/*:
 
 @rem Execute sylph
-"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %SYLPH_OPTS%  -classpath lib\* ideal.sylph.main.SylphMaster %CMD_LINE_ARGS%
+"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %SYLPH_OPTS%  -classpath lib\* com.github.harbby.sylph.main.SylphMaster %CMD_LINE_ARGS%
 
 :end
 @rem End local scope for the variables with windows NT shell

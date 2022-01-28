@@ -15,13 +15,12 @@
  */
 package ideal.sylph.plugins.kafka.spark;
 
-import com.github.harbby.gadtry.base.Lazys;
-import ideal.sylph.TableContext;
-import ideal.sylph.annotation.Description;
-import ideal.sylph.annotation.Name;
-import ideal.sylph.annotation.Version;
-import ideal.sylph.etl.PluginConfig;
-import ideal.sylph.etl.api.Source;
+import com.github.harbby.sylph.api.PluginConfig;
+import com.github.harbby.sylph.api.Source;
+import com.github.harbby.sylph.api.TableContext;
+import com.github.harbby.sylph.api.annotation.Description;
+import com.github.harbby.sylph.api.annotation.Name;
+import com.github.harbby.sylph.api.annotation.Version;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema;
 import org.apache.spark.sql.types.Metadata;
@@ -31,7 +30,6 @@ import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 
 import java.util.Arrays;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
@@ -46,39 +44,34 @@ import static org.apache.spark.sql.types.DataTypes.StringType;
 public class SocketSource
         implements Source<JavaDStream<Row>>
 {
-    private static final long serialVersionUID = 1L;
-    private final transient Supplier<JavaDStream<Row>> loadStream;
+    private final transient JavaStreamingContext ssc;
+    private final transient SocketSourceConfig config;
+    private final transient TableContext context;
 
     public SocketSource(JavaStreamingContext ssc, SocketSourceConfig config, TableContext context)
     {
-        this.loadStream = Lazys.goLazy(() -> createSource(ssc, config, context));
+        this.ssc = ssc;
+        this.config = config;
+        this.context = context;
     }
 
-    public JavaDStream<Row> createSource(JavaStreamingContext ssc, SocketSourceConfig config, TableContext context)
+    @Override
+    public JavaDStream<Row> createSource()
     {
-        String socketLoad = requireNonNull(config.hosts, "socketLoad is not setting");
+        String hosts = requireNonNull(config.hosts, "hosts is not setting");
         StructType schema = new StructType(new StructField[] {
                 new StructField("host", StringType, true, Metadata.empty()),
                 new StructField("port", StringType, true, Metadata.empty()),
-                new StructField("value", StringType, true, Metadata.empty())
-        });
-
-        return Arrays.stream(socketLoad.split(",")).filter(x -> x.contains(":"))
-                .collect(Collectors.toSet())
-                .stream()
+                new StructField("value", StringType, true, Metadata.empty())});
+        return Arrays.stream(hosts.split(","))
+                .filter(x -> x.contains(":"))
+                .collect(Collectors.toSet()).stream()
                 .map(socket -> {
                     String[] split = socket.split(":");
                     JavaDStream<Row> socketSteam = ssc.socketTextStream(split[0], Integer.parseInt(split[1]))
                             .map(value -> new GenericRowWithSchema(new Object[] {split[0], Integer.parseInt(split[1]), value}, schema));
                     return socketSteam;
-                }).reduce(JavaDStream::union)
-                .orElseThrow(() -> new RuntimeException());
-    }
-
-    @Override
-    public JavaDStream<Row> getSource()
-    {
-        return loadStream.get();
+                }).reduce(JavaDStream::union).orElseThrow(() -> new IllegalArgumentException("hosts is is Empty"));
     }
 
     private static class SocketSourceConfig

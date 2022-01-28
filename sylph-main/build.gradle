@@ -1,21 +1,30 @@
 ext.moduleName = 'ideal.sylph.main'
-
-apply plugin: 'application'
+apply from: "$rootDir/profile-java17.gradle"
 
 dependencies {
   implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.8.1'
-  implementation 'org.xerial:sqlite-jdbc:3.25.2'
+  implementation 'org.xerial:sqlite-jdbc:3.36.0.2'
   implementation group: 'commons-dbutils', name: 'commons-dbutils', version: '1.7'
+  implementation group: 'com.google.guava', name: 'guava', version: deps.guava
+  implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: deps.jackson
+  implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
+  implementation(group: 'ch.qos.logback', name: 'logback-classic', version: '1.3.0-alpha5') {
+    exclude(group: "javax.activation", module: "activation")
+  }
+  //colour
+  implementation group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
 
   implementation project(':sylph-web')
   implementation(project(':sylph-spi'))
 
+  implementation project(':sylph-parser')
   testImplementation group: 'org.fusesource.jansi', name: 'jansi', version: '1.17.1'
 }
 
-application {
-  mainClassName = "ideal.sylph.main.SylphMaster"
-  applicationName = "sylph"
-  applicationDefaultJvmArgs = ["-Dconfig=etc/sylph/sylph.properties", "-Dlog4j.file=etc/sylph/sylph-log4j.properties"]
-  //applicationDefaultJvmArgs = ["-Xms512m", "-Xmx512m"]
-}
+//apply plugin: 'application'
+//application {
+//  mainClassName = "ideal.sylph.main.SylphMaster"
+//  applicationName = "sylph"
+//  applicationDefaultJvmArgs = ["-Dconfig=etc/sylph/sylph.properties", "-Dlog4j.file=etc/sylph/sylph-log4j.properties"]
+//  //applicationDefaultJvmArgs = ["-Xms512m", "-Xmx512m"]
+//}

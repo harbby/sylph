@@ -16,7 +16,9 @@
 package ideal.sylph.runner.spark;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.harbby.sylph.runner.spark.SparkJobConfig;
 import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.IOException;
 
@@ -24,6 +26,7 @@ public class SparkJobConfigTest
 {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    @Test
     public void testConfigParser()
             throws IOException
     {

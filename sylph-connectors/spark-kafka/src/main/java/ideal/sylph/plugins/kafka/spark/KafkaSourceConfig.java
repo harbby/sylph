@@ -15,9 +15,9 @@
  */
 package ideal.sylph.plugins.kafka.spark;
 
-import ideal.sylph.annotation.Description;
-import ideal.sylph.annotation.Name;
-import ideal.sylph.etl.PluginConfig;
+import com.github.harbby.sylph.api.PluginConfig;
+import com.github.harbby.sylph.api.annotation.Description;
+import com.github.harbby.sylph.api.annotation.Name;
 
 public class KafkaSourceConfig
         extends PluginConfig

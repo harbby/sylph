@@ -15,19 +15,17 @@
  */
 package ideal.sylph.plugins.kafka.flink;
 
-import com.github.harbby.gadtry.collection.MutableSet;
-import ideal.sylph.etl.Operator;
+import com.github.harbby.sylph.api.Operator;
 
+import java.util.Collections;
 import java.util.Set;
 
 public class Plugin
-        implements ideal.sylph.etl.Plugin
+        implements com.github.harbby.sylph.api.Plugin
 {
     @Override
     public Set<Class<? extends Operator>> getConnectors()
     {
-        return MutableSet.<Class<? extends Operator>>builder()
-                .add(KafkaSource.class)
-                .build();
+        return Collections.singleton(KafkaSource.class);
     }
 }

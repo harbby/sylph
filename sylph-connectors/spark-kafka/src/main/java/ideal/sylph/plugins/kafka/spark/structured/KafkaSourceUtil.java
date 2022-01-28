@@ -15,7 +15,7 @@
  */
 package ideal.sylph.plugins.kafka.spark.structured;
 
-import com.github.harbby.gadtry.collection.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
@@ -33,7 +33,7 @@ public class KafkaSourceUtil
     private static final Logger logger = LoggerFactory.getLogger(KafkaSourceUtil.class);
 
     /**
-     * 下面这些参数 是结构化流官网 写明不支持的参数
+     * spark structured streaming not support
      **/
     private static final List<String> filterKeys = ImmutableList.of(
             "kafka_group_id", "group.id",
@@ -42,21 +42,17 @@ public class KafkaSourceUtil
             "key.serializer",
             "value.serializer",
             "enable.auto.commit",
-            "interceptor.classes"
-    );
+            "interceptor.classes");
 
-    /**
-     * 对配置进行解析变换
-     **/
     private static Map<String, String> configParser(Map<String, Object> optionMap)
     {
         return optionMap.entrySet().stream().filter(x -> {
             if (filterKeys.contains(x.getKey())) {
-                logger.warn("spark结构化流引擎 忽略参数:key[{}] value[{}]", x.getKey(), x.getValue());
+                logger.warn("spark structured missing:key[{}] value[{}]", x.getKey(), x.getValue());
                 return false;
             }
             else if (x.getValue() == null) {
-                logger.warn("spark结构化流引擎 忽略value null参数:key[{}] value[null]", x.getKey());
+                logger.warn("spark structured missing value is null, the key is {}", x.getKey());
                 return false;
             }
             else {
@@ -70,7 +66,7 @@ public class KafkaSourceUtil
                         case "kafka_broker":
                             return "kafka.bootstrap.servers";
                         case "auto.offset.reset":
-                            return "startingOffsets"; //注意结构化流上面这里有两个参数
+                            return "startingOffsets";
                         default:
                             return k.getKey();
                     }
@@ -91,6 +87,6 @@ public class KafkaSourceUtil
         //      case "value" => "CAST(value AS STRING) as value"
         //      case that => that
         //    }
-        //    df.selectExpr(columns: _*) //对输入的数据进行 cast转换
+        //    df.selectExpr(columns: _*)
     }
 }

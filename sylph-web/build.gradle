@@ -1,7 +1,7 @@
 plugins {
-  //id "com.moowork.node" version "1.3.1"
   id("com.github.node-gradle.node") version "2.2.0"
 }
+apply from: "$rootDir/profile-java17.gradle"
 
 node {
   // Version of node to use.
@@ -39,12 +39,11 @@ task create_workdir(type: Copy) {
   into project.buildDir.path
 }
 //default yarn_install
-task package_install(type: YarnTask, dependsOn: create_workdir) {
+task package_install(type: NpmTask, dependsOn: create_workdir) {
   // add the express package only
   args = ['install']   //'--modules-folder', project.buildDir.path + '/node_modules'
 }
-task build_package(type: YarnTask, dependsOn: package_install) {
-  //只安装快递包
+task build_package(type: NpmTask, dependsOn: package_install) {
   args = ['run', 'build']
 }
 task webapp(type: Copy, dependsOn: build_package) {
@@ -52,37 +51,31 @@ task webapp(type: Copy, dependsOn: build_package) {
   into project(':sylph-dist').buildDir.path + '/webapp'
 }
 //assemble.dependsOn webapp
-project(':sylph-dist').dist.dependsOn webapp
+//project(':sylph-dist').dist.dependsOn webapp
 
 dependencies {
-  annotationProcessor 'org.projectlombok:lombok:1.18.8'
-  compileOnly 'org.projectlombok:lombok:1.18.8'
+  annotationProcessor 'org.projectlombok:lombok:1.18.22'
+  compileOnly 'org.projectlombok:lombok:1.18.22'
 
-  api group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'
-  api(project(':sylph-spi'))
-
-  api group: 'org.eclipse.jetty', name: 'jetty-server', version: deps.jetty
-  api group: 'org.eclipse.jetty', name: 'jetty-webapp', version: deps.jetty
-  api group: 'org.eclipse.jetty', name: 'jetty-servlets', version: deps.jetty
-
-  api group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.2'
-
-  api("org.glassfish.jersey.containers:jersey-container-servlet:$deps.jersey") {
-    exclude(module: 'javassist')
-  }
-  api("org.glassfish.jersey.media:jersey-media-json-jackson:$deps.jersey") {
-    exclude(group: 'com.fasterxml.jackson.core')
-    exclude(module: 'javassist')
-    exclude(module: 'jackson-jaxrs-base')
-    exclude(module: 'jackson-jaxrs-json-provider')
-    exclude(module: 'jackson-module-jaxb-annotations')
-  }
-  api(group: 'org.glassfish.jersey.media', name: 'jersey-media-multipart', version: deps.jersey) {
-    exclude(module: 'javassist')
-  }
-  api("org.glassfish.jersey.inject:jersey-hk2:$deps.jersey") {
-    exclude(module: 'javassist')
+  implementation group: 'com.google.guava', name: 'guava', version: deps.guava
+  implementation(group: 'ch.qos.logback', name: 'logback-classic', version: '1.3.0-alpha5') {
+    exclude(group: "javax.activation", module: "activation")
   }
 
-  api group: 'com.fasterxml.jackson.jaxrs', name: 'jackson-jaxrs-json-provider', version: deps.jackson
+  implementation(project(':sylph-spi'))
+  implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.2'
+  implementation "org.eclipse.jetty:jetty-servlet:${deps.jetty}"
+  implementation "org.eclipse.jetty:jetty-server:${deps.jetty}"
+  implementation("org.glassfish.jersey.containers:jersey-container-servlet:$deps.jersey") {
+    exclude(module: 'javassist')
+  }
+  implementation("org.glassfish.jersey.media:jersey-media-json-jackson:$deps.jersey") {
+    exclude(module: 'javassist')
+  }
+  implementation(group: 'org.glassfish.jersey.media', name: 'jersey-media-multipart', version: deps.jersey) {
+    exclude(module: 'javassist')
+  }
+  implementation("org.glassfish.jersey.inject:jersey-hk2:$deps.jersey") {
+    exclude(module: 'javassist')
+  }
 }

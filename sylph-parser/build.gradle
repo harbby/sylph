@@ -1,18 +1,10 @@
+
 apply plugin: 'antlr'
+apply from: "$rootDir/profile-runtime.gradle"
 
 dependencies {
-  antlr "org.antlr:antlr4:4.7.1"
+  antlr 'org.antlr:antlr4:4.9.2'
   implementation group: 'com.github.harbby', name: 'gadtry', version: deps.gadtry
-  
-  //
-  implementation(group: 'org.apache.calcite', name: 'calcite-core', version: '1.16.0') {
-    exclude(module: 'guava')
-    exclude(module: 'jsr305')
-    exclude(module: 'jackson-core')
-    exclude(module: 'jackson-annotations')
-    exclude(module: 'commons-logging')
-    exclude(module: 'commons-lang3')
-  }
 }
 generateGrammarSource.dependsOn 'licenseMain', 'licenseTest'
 licenseMain.dependsOn 'clean'
@@ -21,25 +13,6 @@ licenseTest.dependsOn 'clean'
 license {
   excludes(["**/*.g4", "**/*.tokens"])
 }
-
-//sourceSets {
-//    main {
-//        java {
-//            srcDirs = ['src/main/java', 'src/main/thrift-java']
-//        }
-//        resources {
-//            srcDirs = ['src/main/resources']
-//        }
-//    }
-//    test {
-//        java {
-//            srcDirs = ['src/test/java', 'src/test/thrift']
-//        }
-//        resources {
-//            srcDirs = ['src/test/resources']
-//        }
-//    }
-//}
 
 generateGrammarSource {
   maxHeapSize = "64m"
