@@ -1,6 +1,4 @@
 language: java
-#jdk:
-#- openjdk8
 sudo: required
 
 install:
@@ -12,15 +10,9 @@ services:
 jobs:
   include:
     - name: check code
-      jdk: openjdk8
+      jdk: openjdk17
       dist: xenial
       script: ./gradlew clean checkstyle licenseMain licenseTest webapp --no-daemon
-    - jdk: openjdk8
-      dist: xenial
-      script: ./gradlew clean assemble --no-daemon -Pjdk=java8
-    - jdk: openjdk11
-      dist: focal
-      script: ./gradlew clean assemble --no-daemon -Pjdk=java11
     - jdk: openjdk17
       dist: focal
       script: ./gradlew clean assemble --no-daemon -Pjdk=java17
