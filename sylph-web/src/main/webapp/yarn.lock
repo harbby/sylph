@@ -900,6 +900,7 @@
     graceful-fs "^4.1.15"
     jest-changed-files "^24.8.0"
     jest-config "^24.8.0"
+    jest-deployResponse "^24.8.0"
     jest-haste-map "^24.8.0"
     jest-message-util "^24.8.0"
     jest-regex-util "^24.3.0"
@@ -909,7 +910,6 @@
     jest-snapshot "^24.8.0"
     jest-util "^24.8.0"
     jest-validate "^24.8.0"
-    jest-deployResponse "^24.8.0"
     micromatch "^3.1.10"
     p-each-series "^1.0.0"
     pirates "^4.0.1"
@@ -4984,6 +4984,18 @@ jest-config@^24.8.0:
     pretty-format "^24.8.0"
     realpath-native "^1.1.0"
 
+jest-deployResponse@^24.3.0, jest-deployResponse@^24.8.0:
+  version "24.8.0"
+  resolved "https://registry.yarnpkg.com/jest-deployResponse/-/jest-deployResponse-24.8.0.tgz#58d49915ceddd2de85e238f6213cef1c93715de4"
+  dependencies:
+    "@jest/test-result" "^24.8.0"
+    "@jest/types" "^24.8.0"
+    "@types/yargs" "^12.0.9"
+    ansi-escapes "^3.0.0"
+    chalk "^2.0.1"
+    jest-util "^24.8.0"
+    string-length "^2.0.0"
+
 jest-diff@^24.8.0:
   version "24.8.0"
   resolved "https://registry.yarnpkg.com/jest-diff/-/jest-diff-24.8.0.tgz#146435e7d1e3ffdf293d53ff97e193f1d1546172"
@@ -5262,18 +5274,6 @@ jest-watch-typeahead@0.3.0:
     slash "^2.0.0"
     string-length "^2.0.0"
     strip-ansi "^5.0.0"
-
-jest-deployResponse@^24.3.0, jest-deployResponse@^24.8.0:
-  version "24.8.0"
-  resolved "https://registry.yarnpkg.com/jest-deployResponse/-/jest-deployResponse-24.8.0.tgz#58d49915ceddd2de85e238f6213cef1c93715de4"
-  dependencies:
-    "@jest/test-result" "^24.8.0"
-    "@jest/types" "^24.8.0"
-    "@types/yargs" "^12.0.9"
-    ansi-escapes "^3.0.0"
-    chalk "^2.0.1"
-    jest-util "^24.8.0"
-    string-length "^2.0.0"
 
 jest-worker@^24.6.0:
   version "24.6.0"
@@ -5656,8 +5656,8 @@ locate-path@^3.0.0:
     path-exists "^3.0.0"
 
 lodash-es@^4.17.10, lodash-es@^4.17.5, lodash-es@^4.2.1:
-  version "4.17.11"
-  resolved "https://registry.yarnpkg.com/lodash-es/-/lodash-es-4.17.11.tgz#145ab4a7ac5c5e52a3531fb4f310255a152b4be0"
+  version "4.17.21"
+  resolved "https://registry.yarnpkg.com/lodash-es/-/lodash-es-4.17.21.tgz#43e626c46e6591b7750beb2b50117390c609e3ee"
 
 lodash._getnative@^3.0.0:
   version "3.9.1"
