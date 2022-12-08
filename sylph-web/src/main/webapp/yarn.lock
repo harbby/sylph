@@ -900,6 +900,7 @@
     graceful-fs "^4.1.15"
     jest-changed-files "^24.8.0"
     jest-config "^24.8.0"
+    jest-deployResponse "^24.8.0"
     jest-haste-map "^24.8.0"
     jest-message-util "^24.8.0"
     jest-regex-util "^24.3.0"
@@ -909,7 +910,6 @@
     jest-snapshot "^24.8.0"
     jest-util "^24.8.0"
     jest-validate "^24.8.0"
-    jest-deployResponse "^24.8.0"
     micromatch "^3.1.10"
     p-each-series "^1.0.0"
     pirates "^4.0.1"
@@ -4984,6 +4984,18 @@ jest-config@^24.8.0:
     pretty-format "^24.8.0"
     realpath-native "^1.1.0"
 
+jest-deployResponse@^24.3.0, jest-deployResponse@^24.8.0:
+  version "24.8.0"
+  resolved "https://registry.yarnpkg.com/jest-deployResponse/-/jest-deployResponse-24.8.0.tgz#58d49915ceddd2de85e238f6213cef1c93715de4"
+  dependencies:
+    "@jest/test-result" "^24.8.0"
+    "@jest/types" "^24.8.0"
+    "@types/yargs" "^12.0.9"
+    ansi-escapes "^3.0.0"
+    chalk "^2.0.1"
+    jest-util "^24.8.0"
+    string-length "^2.0.0"
+
 jest-diff@^24.8.0:
   version "24.8.0"
   resolved "https://registry.yarnpkg.com/jest-diff/-/jest-diff-24.8.0.tgz#146435e7d1e3ffdf293d53ff97e193f1d1546172"
@@ -5262,18 +5274,6 @@ jest-watch-typeahead@0.3.0:
     slash "^2.0.0"
     string-length "^2.0.0"
     strip-ansi "^5.0.0"
-
-jest-deployResponse@^24.3.0, jest-deployResponse@^24.8.0:
-  version "24.8.0"
-  resolved "https://registry.yarnpkg.com/jest-deployResponse/-/jest-deployResponse-24.8.0.tgz#58d49915ceddd2de85e238f6213cef1c93715de4"
-  dependencies:
-    "@jest/test-result" "^24.8.0"
-    "@jest/types" "^24.8.0"
-    "@types/yargs" "^12.0.9"
-    ansi-escapes "^3.0.0"
-    chalk "^2.0.1"
-    jest-util "^24.8.0"
-    string-length "^2.0.0"
 
 jest-worker@^24.6.0:
   version "24.6.0"
@@ -7460,8 +7460,8 @@ qs@6.7.0:
   resolved "https://registry.yarnpkg.com/qs/-/qs-6.7.0.tgz#41dc1a015e3d581f1621776be31afb2876a9b1bc"
 
 qs@~6.5.2:
-  version "6.5.2"
-  resolved "https://registry.yarnpkg.com/qs/-/qs-6.5.2.tgz#cb3ae806e8740444584ef154ce8ee98d403f3e36"
+  version "6.5.3"
+  resolved "https://registry.yarnpkg.com/qs/-/qs-6.5.3.tgz#3aeeffc91967ef6e35c0e488ef46fb296ab76aad"
 
 query-string@^6.7.0:
   version "6.7.0"
